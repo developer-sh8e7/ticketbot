@@ -1,12 +1,14 @@
 import {
+  ActionRowBuilder,
   AttachmentBuilder,
+  ButtonBuilder,
   ChannelType,
   EmbedBuilder,
+  MessageFlags,
   PermissionFlagsBits,
   type ButtonInteraction,
   type Guild,
   type GuildMember,
-  type GuildTextBasedChannel,
   type ModalSubmitInteraction,
   type Snowflake,
   type StringSelectMenuInteraction,
@@ -286,7 +288,7 @@ export class TicketService {
 
   public async handleOpenSelect(interaction: StringSelectMenuInteraction): Promise<void> {
     if (!interaction.inCachedGuild()) {
-      await interaction.reply({ ephemeral: true, embeds: [buildErrorEmbed(this.config, 'This action only works inside the guild.')] });
+      await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [buildErrorEmbed(this.config, 'This action only works inside the guild.')] });
       return;
     }
 
@@ -295,7 +297,7 @@ export class TicketService {
 
     if (!category) {
       await interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         embeds: [buildErrorEmbed(this.config, 'التصنيف المحدد غير موجود أو معطل.')],
       });
       return;
@@ -304,7 +306,7 @@ export class TicketService {
     const existing = await this.findExistingOpenTicket(interaction.guildId, interaction.user.id);
     if (existing?.channel_id) {
       await interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         embeds: [buildAlreadyOpenEmbed(this.config, existing.channel_id)],
       });
       return;
@@ -315,7 +317,7 @@ export class TicketService {
 
   public async handleOpenModal(interaction: ModalSubmitInteraction): Promise<void> {
     if (!interaction.inCachedGuild()) {
-      await interaction.reply({ ephemeral: true, embeds: [buildErrorEmbed(this.config, 'This action only works inside the guild.')] });
+      await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [buildErrorEmbed(this.config, 'This action only works inside the guild.')] });
       return;
     }
 
@@ -324,13 +326,13 @@ export class TicketService {
 
     if (!category) {
       await interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         embeds: [buildErrorEmbed(this.config, 'تعذر تحديد بيانات هذه التذكرة.')],
       });
       return;
     }
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const existing = await this.findExistingOpenTicket(interaction.guildId, interaction.user.id);
     if (existing?.channel_id) {

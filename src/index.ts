@@ -2,6 +2,7 @@ import {
   Client,
   Events,
   GatewayIntentBits,
+  MessageFlags,
   Partials,
   type ChatInputCommandInteraction,
 } from 'discord.js';
@@ -63,7 +64,7 @@ async function syncCommands(): Promise<void> {
 async function ensurePanelManager(interaction: ChatInputCommandInteraction): Promise<boolean> {
   if (!interaction.inCachedGuild() || !interaction.member) {
     await interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       embeds: [buildErrorEmbed(configStore.current, 'This command only works inside the configured guild.')],
     });
     return false;
@@ -71,7 +72,7 @@ async function ensurePanelManager(interaction: ChatInputCommandInteraction): Pro
 
   if (!canManagePanels(interaction.member, configStore.current)) {
     await interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       embeds: [buildErrorEmbed(configStore.current, configStore.current.ticket.messages.noPermission)],
     });
     return false;
@@ -88,7 +89,7 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
       return;
     }
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const message = await panelService.sendPanel(interaction.guild!);
     await interaction.editReply({
       embeds: [
@@ -103,7 +104,7 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
       return;
     }
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const messageId = interaction.options.getString('message-id') ?? undefined;
     const message = await panelService.refreshPanel(interaction.guild!, messageId);
     await interaction.editReply({
@@ -119,7 +120,7 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
       return;
     }
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     configStore.reload();
     
     try {
