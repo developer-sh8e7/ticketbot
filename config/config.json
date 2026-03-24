@@ -1,0 +1,306 @@
+{
+  "bot": {
+    "presence": {
+      "status": "online",
+      "activityType": "Watching",
+      "activityName": "قسم الدعم الفني | Ticket System"
+    },
+    "locale": "ar",
+    "timezone": "Asia/Riyadh",
+    "embedColor": "#8b5cf6",
+    "errorColor": "#ef4444",
+    "successColor": "#22c55e",
+    "footerText": "Ticket Support System",
+    "footerIconUrl": ""
+  },
+  "guild": {
+    "id": "1413059459630104626",
+    "categoryId": "",
+    "archiveCategoryId": "",
+    "logChannelId": "",
+    "transcriptChannelId": "",
+    "supportRoleIds": [
+      "1483038264393990164",
+      "1483020976966074479",
+      "1483021277181644842",
+      "1483212264025886886",
+      "1483021366792949760",
+      "1483021658003345408",
+      "1483021186559639674"
+    ],
+    "managerRoleIds": [
+      "1483038264393990164",
+      "1483020976966074479",
+      "1483021277181644842",
+      "1483212264025886886",
+      "1483021186559639674"
+    ],
+    "mentionRolesOnOpen": [
+      "1483021658003345408",
+      "1483021366792949760"
+    ]
+  },
+  "images": {
+    "panelBannerUrl": "https://placehold.co/1200x400/1a0533/8b5cf6?text=Support+Section",
+    "ticketBannerUrl": "https://placehold.co/1200x400/1a0533/8b5cf6?text=Welcome+Ticket",
+    "thumbnailUrl": "https://placehold.co/256x256/1a0533/8b5cf6?text=T"
+  },
+  "naming": {
+    "ticketChannelPrefix": "ticket",
+    "maxChannelNameLength": 90,
+    "includeCategorySlug": false,
+    "zeroPadLength": 4,
+    "topicTemplate": "Ticket #{ticketNumber} | User: {userTag} ({userId}) | Category: {categoryLabel}"
+  },
+  "limits": {
+    "allowOnlyOneOpenTicketPerUser": true,
+    "maxQuestionsPerCategory": 5,
+    "maxAnswerLength": 400,
+    "maxCategoryOptions": 25,
+    "pinSummaryMessageOnCreate": false
+  },
+  "panel": {
+    "channelId": "",
+    "messageId": "",
+    "title": "Support section | قسم الدعم الفني",
+    "subtitle": "مرحباً بكم",
+    "description": "يرجى اختيار سبب فتح التذكرة المناسب لمشكلتك أو استفسارك من القائمة أدناه، ثم أجب على الأسئلة المطلوبة وسيتم إنشاء التذكرة تلقائياً.",
+    "menuPlaceholder": "اضغط هنا لفتح تذكرة",
+    "menuCustomId": "ticket:open-select",
+    "defaultMention": "@everyone",
+    "showNumbers": true,
+    "accentText": "يا هلا؟"
+  },
+  "ticket": {
+    "welcomeTitle": "اهلاً بك",
+    "welcomeDescription": "في قسم الدعم الفني، يرجى التحلي بالصبر حتى يتمكن أحد أعضاء طاقم الدعم من معالجة مشكلتك.",
+    "summaryTitle": "معلومات التذكرة",
+    "controls": {
+      "close": {
+        "label": "Close",
+        "style": "Secondary",
+        "emojiId": ""
+      },
+      "add": {
+        "label": "Add",
+        "style": "Secondary",
+        "emojiId": ""
+      },
+      "remove": {
+        "label": "Remove",
+        "style": "Secondary",
+        "emojiId": ""
+      },
+      "claim": {
+        "label": "Check",
+        "style": "Secondary",
+        "emojiId": ""
+      },
+      "pin": {
+        "label": "Pin",
+        "style": "Secondary",
+        "emojiId": ""
+      }
+    },
+    "messages": {
+      "alreadyOpen": "لديك بالفعل تذكرة مفتوحة، وهي:",
+      "created": "تم إنشاء تذكرتك بنجاح.",
+      "closed": "تم إغلاق التذكرة.",
+      "claimed": "تم استلام التذكرة بواسطة",
+      "unclaimed": "تم إلغاء استلام التذكرة.",
+      "addedMember": "تمت إضافة العضو إلى التذكرة.",
+      "removedMember": "تمت إزالة العضو من التذكرة.",
+      "noPermission": "ليس لديك الصلاحية لاستخدام هذا الزر.",
+      "notInTicket": "هذا الزر يعمل داخل قنوات التذاكر فقط."
+    }
+  },
+  "emojis": {
+    "panelIcon": "",
+    "ticketIcon": "",
+    "categories": {
+      "problems": "",
+      "inquiries": "",
+      "hwid_reset": "",
+      "ai_aim": "",
+      "bot_lobby": ""
+    }
+  },
+  "categories": [
+    {
+      "key": "problems",
+      "enabled": true,
+      "label": "Problems",
+      "description": "إذا واجهتك مشكلة في أحد المنتجات، افتح تذكرة هنا.",
+      "channelNameTemplate": "problem-{ticketNumber}",
+      "supportRoleIds": [],
+      "questions": [
+        {
+          "key": "customer",
+          "label": "Are you a customer?",
+          "style": "Short",
+          "placeholder": "نعم / لا",
+          "required": true,
+          "minLength": 1,
+          "maxLength": 100
+        },
+        {
+          "key": "product",
+          "label": "Your inquiry about any product?",
+          "style": "Short",
+          "placeholder": "اذكر المنتج أو الخدمة",
+          "required": true,
+          "minLength": 1,
+          "maxLength": 120
+        },
+        {
+          "key": "issue",
+          "label": "What is your inquiry?",
+          "style": "Paragraph",
+          "placeholder": "اشرح المشكلة أو الاستفسار بالتفصيل",
+          "required": true,
+          "minLength": 3,
+          "maxLength": 400
+        }
+      ]
+    },
+    {
+      "key": "inquiries",
+      "enabled": true,
+      "label": "For inquiries",
+      "description": "للاستفسارات حول أحد منتجات ساين، افتح تذكرة هنا.",
+      "channelNameTemplate": "inquiry-{ticketNumber}",
+      "supportRoleIds": [],
+      "questions": [
+        {
+          "key": "name",
+          "label": "ما اسمك؟",
+          "style": "Short",
+          "placeholder": "اكتب اسمك",
+          "required": true,
+          "minLength": 2,
+          "maxLength": 64
+        },
+        {
+          "key": "topic",
+          "label": "عن أي منتج أو خدمة تريد الاستفسار؟",
+          "style": "Short",
+          "placeholder": "اسم المنتج أو الخدمة",
+          "required": true,
+          "minLength": 2,
+          "maxLength": 100
+        },
+        {
+          "key": "details",
+          "label": "اكتب استفسارك",
+          "style": "Paragraph",
+          "placeholder": "اكتب التفاصيل الكاملة هنا",
+          "required": true,
+          "minLength": 3,
+          "maxLength": 400
+        }
+      ]
+    },
+    {
+      "key": "hwid_reset",
+      "enabled": true,
+      "label": "HWID Reset",
+      "description": "لإعادة تعيين المفتاح الخاص بك، افتح تذكرة هنا.",
+      "channelNameTemplate": "hwid-{ticketNumber}",
+      "supportRoleIds": [],
+      "questions": [
+        {
+          "key": "license_key",
+          "label": "ما هو المفتاح الخاص بك؟",
+          "style": "Short",
+          "placeholder": "ألصق المفتاح هنا",
+          "required": true,
+          "minLength": 4,
+          "maxLength": 150
+        },
+        {
+          "key": "reason",
+          "label": "لماذا تريد إعادة التعيين؟",
+          "style": "Paragraph",
+          "placeholder": "اشرح السبب",
+          "required": true,
+          "minLength": 3,
+          "maxLength": 300
+        }
+      ]
+    },
+    {
+      "key": "ai_aim",
+      "enabled": true,
+      "label": "AI AIM",
+      "description": "بالاستفسار عن منتج تتبع الألوان، افتح تذكرة هنا.",
+      "channelNameTemplate": "ai-aim-{ticketNumber}",
+      "supportRoleIds": [],
+      "questions": [
+        {
+          "key": "customer",
+          "label": "هل أنت عميل حالي؟",
+          "style": "Short",
+          "placeholder": "نعم / لا",
+          "required": true,
+          "minLength": 1,
+          "maxLength": 100
+        },
+        {
+          "key": "need",
+          "label": "ما الذي تحتاجه؟",
+          "style": "Paragraph",
+          "placeholder": "صف احتياجك بالتفصيل",
+          "required": true,
+          "minLength": 3,
+          "maxLength": 350
+        }
+      ]
+    },
+    {
+      "key": "bot_lobby",
+      "enabled": true,
+      "label": "Bot Lobby",
+      "description": "للمتابعة وتنفيذ طلبك الخاص بالبوت لديك، افتح تذكرة هنا.",
+      "channelNameTemplate": "bot-{ticketNumber}",
+      "supportRoleIds": [],
+      "questions": [
+        {
+          "key": "project_type",
+          "label": "ما نوع البوت الذي تريده؟",
+          "style": "Short",
+          "placeholder": "مثال: حماية، تكتات، متجر",
+          "required": true,
+          "minLength": 2,
+          "maxLength": 120
+        },
+        {
+          "key": "budget",
+          "label": "ما هي ميزانيتك؟",
+          "style": "Short",
+          "placeholder": "اكتب الميزانية التقريبية",
+          "required": true,
+          "minLength": 1,
+          "maxLength": 60
+        },
+        {
+          "key": "details",
+          "label": "اكتب تفاصيل طلبك",
+          "style": "Paragraph",
+          "placeholder": "كلما كانت التفاصيل أوضح كان التنفيذ أفضل",
+          "required": true,
+          "minLength": 3,
+          "maxLength": 400
+        }
+      ]
+    }
+  ],
+  "commands": {
+    "registerOnStartup": true,
+    "guildScoped": true,
+    "names": {
+      "panelSend": "ticket-panel-send",
+      "panelRefresh": "ticket-panel-refresh",
+      "configReload": "ticket-config-reload"
+    }
+  }
+}
