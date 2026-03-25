@@ -10,21 +10,7 @@ import type { AppConfig } from '../types/config.js';
 import { hexToDecimal } from '../utils/color.js';
 import { componentEmojiFromId } from '../utils/emoji.js';
 
-function buildCategoryLines(config: AppConfig): string[] {
-  const enabledCategories = config.categories.filter((category) => category.enabled);
-
-  return enabledCategories.map((category, index) => {
-    const numberPrefix = config.panel.showNumbers ? `**${index + 1}**` : '-';
-    return `${numberPrefix} **${category.label}**\n${category.description}`;
-  });
-}
-
 export async function buildPanelEmbeds(config: AppConfig, guild: Guild): Promise<EmbedBuilder[]> {
-  const panelIcon = config.emojis.panelIcon
-    ? await guild.emojis.fetch(config.emojis.panelIcon).catch(() => null)
-    : null;
-  const categoryLines = buildCategoryLines(config);
-
   const introEmbed = new EmbedBuilder()
     .setColor(hexToDecimal(config.bot.embedColor))
     .setAuthor({
@@ -41,23 +27,7 @@ export async function buildPanelEmbeds(config: AppConfig, guild: Guild): Promise
     })
     .setTimestamp();
 
-  if (panelIcon) {
-    introEmbed.setAuthor({
-      name: `${panelIcon.toString()} ${config.panel.title}`,
-      iconURL: config.images.thumbnailUrl,
-    });
-  }
-
-  const categoriesEmbed = new EmbedBuilder()
-    .setColor(hexToDecimal(config.bot.embedColor))
-    .setTitle('التصنيفات المتاحة')
-    .setDescription(categoryLines.join('\n\n'))
-    .setFooter({
-      text: guild.name,
-      iconURL: guild.iconURL() || undefined,
-    });
-
-  return [introEmbed, categoriesEmbed];
+  return [introEmbed];
 }
 
 export function buildPanelComponents(config: AppConfig): ActionRowBuilder<StringSelectMenuBuilder>[] {

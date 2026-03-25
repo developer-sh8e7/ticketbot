@@ -63,7 +63,7 @@
     "channelId": "",
     "messageId": "",
     "title": "قسم الدعم | STB العرب",
-    "subtitle": "مرحباً بكم 👋",
+    "subtitle": "مرحباً بكم",
     "description": "يرجى اختيار نوع طلبك من القائمة أدناه، ثم أجب على الأسئلة المطلوبة وسيتم إنشاء التذكرة تلقائياً.",
     "menuPlaceholder": "اضغط هنا لفتح تذكرة",
     "menuCustomId": "ticket:open-select",
@@ -72,32 +72,32 @@
     "accentText": "يا هلا؟"
   },
   "ticket": {
-    "welcomeTitle": "🎫 تم فتح تذكرتك",
+    "welcomeTitle": "تم فتح تذكرتك",
     "welcomeDescription": "أهلاً بك، يرجى التحلي بالصبر حتى يتمكن أحد أعضاء الفريق من معالجة طلبك.",
-    "summaryTitle": "📋 معلومات التذكرة",
+    "summaryTitle": "معلومات التذكرة",
     "controls": {
       "close": {
-        "label": "🔒 إغلاق",
+        "label": "إغلاق",
         "style": "Secondary",
         "emojiId": ""
       },
       "add": {
-        "label": "➕ إضافة",
+        "label": "إضافة",
         "style": "Secondary",
         "emojiId": ""
       },
       "remove": {
-        "label": "➖ إزالة",
+        "label": "إزالة",
         "style": "Secondary",
         "emojiId": ""
       },
       "claim": {
-        "label": "✋ استلام",
+        "label": "استلام",
         "style": "Primary",
         "emojiId": ""
       },
       "pin": {
-        "label": "📌 تثبيت",
+        "label": "تثبيت",
         "style": "Secondary",
         "emojiId": ""
       }
@@ -127,7 +127,7 @@
     {
       "key": "middleman",
       "enabled": true,
-      "label": "🤝 طلب وسيط مضمون",
+      "label": "طلب وسيط مضمون",
       "description": "لضمان عملية التداول بوجود وسيط، افتح تذكرة هنا.",
       "channelNameTemplate": "middleman-{ticketNumber}",
       "supportRoleIds": [],
@@ -146,7 +146,7 @@
     {
       "key": "house_unlock",
       "enabled": true,
-      "label": "🏠 فك بيوت",
+      "label": "فك بيوت",
       "description": "لطلب فك البيوت الخاصة بك، افتح تذكرة هنا.",
       "channelNameTemplate": "house-{ticketNumber}",
       "supportRoleIds": [],
@@ -165,7 +165,7 @@
     {
       "key": "purchase",
       "enabled": true,
-      "label": "🛒 عملية شراء",
+      "label": "عملية شراء",
       "description": "لإتمام عملية الشراء، افتح تذكرة هنا.",
       "channelNameTemplate": "purchase-{ticketNumber}",
       "supportRoleIds": [],
