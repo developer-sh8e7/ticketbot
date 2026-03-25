@@ -130,6 +130,9 @@ export interface CommandNamesConfig {
   panelSend: string;
   panelRefresh: string;
   configReload: string;
+  emojiRefresh: string;
+  ticketClose: string;
+  ticketStats: string;
 }
 
 export interface CommandConfig {

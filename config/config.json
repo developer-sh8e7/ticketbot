@@ -93,7 +93,7 @@
       },
       "claim": {
         "label": "استلام",
-        "style": "Primary",
+        "style": "Secondary",
         "emojiId": ""
       },
       "pin": {
@@ -197,7 +197,10 @@
     "names": {
       "panelSend": "ticket-panel-send",
       "panelRefresh": "ticket-panel-refresh",
-      "configReload": "ticket-config-reload"
+      "configReload": "ticket-config-reload",
+      "emojiRefresh": "ticket-emoji-refresh",
+      "ticketClose": "ticket-close",
+      "ticketStats": "ticket-stats"
     }
   }
 }

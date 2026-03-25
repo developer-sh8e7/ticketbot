@@ -149,6 +149,24 @@ export class TicketRepository {
     return mapTicket(data);
   }
 
+  public async getStats(guildId: string): Promise<{ open: number; closed: number; total: number }> {
+    const { count: open } = await this.supabase
+      .from('tickets')
+      .select('*', { count: 'exact', head: true })
+      .eq('guild_id', guildId)
+      .eq('status', 'open');
+
+    const { count: closed } = await this.supabase
+      .from('tickets')
+      .select('*', { count: 'exact', head: true })
+      .eq('guild_id', guildId)
+      .eq('status', 'closed');
+
+    const o = open ?? 0;
+    const c = closed ?? 0;
+    return { open: o, closed: c, total: o + c };
+  }
+
   public async closeByChannel(channelId: string, input: CloseTicketInput): Promise<TicketRecord> {
     const { data, error } = await this.supabase
       .from('tickets')

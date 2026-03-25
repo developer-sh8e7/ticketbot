@@ -7,6 +7,7 @@ import {
   MessageFlags,
   PermissionFlagsBits,
   type ButtonInteraction,
+  type ChatInputCommandInteraction,
   type Guild,
   type GuildMember,
   type ModalSubmitInteraction,
@@ -31,6 +32,7 @@ import {
 import { DuplicateOpenTicketError, TicketRepository } from '../database/ticketRepository.js';
 import type { TicketRecord } from '../database/types.js';
 import type { AppConfig, TicketAnswer, TicketCategoryConfig } from '../types/config.js';
+import { hexToDecimal } from '../utils/color.js';
 import { isGuildTextChannelType } from '../utils/discord.js';
 import { logger } from '../utils/logger.js';
 import {
@@ -593,20 +595,10 @@ export class TicketService {
   }
 
   private async handleAddMemberButton(interaction: ButtonInteraction): Promise<void> {
-    const context = await this.ensureManagerAccess(interaction);
-    if (!context) {
-      return;
-    }
-
     await interaction.showModal(buildAddMemberModal());
   }
 
   private async handleRemoveMemberButton(interaction: ButtonInteraction): Promise<void> {
-    const context = await this.ensureManagerAccess(interaction);
-    if (!context) {
-      return;
-    }
-
     await interaction.showModal(buildRemoveMemberModal());
   }
 
@@ -834,6 +826,102 @@ export class TicketService {
         embeds: [buildErrorEmbed(this.config, 'تعذر تعديل أعضاء التذكرة حالياً.')],
       });
       return true;
+    }
+  }
+
+  public async handleSlashClose(interaction: ChatInputCommandInteraction, reason: string): Promise<void> {
+    const channelId = interaction.channelId;
+    if (!channelId || !interaction.guild) {
+      await interaction.editReply({ embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)] });
+      return;
+    }
+
+    const ticket = await this.ticketRepository.findByChannelId(channelId);
+    if (!ticket || !ticket.channel_id) {
+      await interaction.editReply({ embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)] });
+      return;
+    }
+
+    const channel = await interaction.guild.channels.fetch(ticket.channel_id).catch(() => null);
+    if (!isGuildTextChannelType(channel) || channel.type !== ChannelType.GuildText) {
+      await interaction.editReply({ embeds: [buildErrorEmbed(this.config, 'لم يتم العثور على قناة التذكرة.')] });
+      return;
+    }
+
+    const member = interaction.member as GuildMember;
+    const isCreator = ticket.creator_id === interaction.user.id;
+    const isManager = canManageTicket(member, this.config);
+
+    if (!isCreator && !isManager) {
+      await interaction.editReply({ embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.noPermission)] });
+      return;
+    }
+
+    try {
+      const closedTicket = await this.ticketRepository.closeByChannel(channel.id, {
+        closed_by: interaction.user.id,
+        closed_by_tag: interaction.user.tag,
+        close_reason: reason,
+      });
+
+      await this.sendTranscript(interaction.guild, closedTicket, channel).catch((error) => {
+        logger.warn('Failed to generate transcript', error instanceof Error ? error.message : error);
+      });
+
+      const archivedName = normalizeChannelName(
+        `closed-${padTicketNumber(closedTicket.ticket_number, this.config.naming.zeroPadLength)}`,
+        this.config.naming.maxChannelNameLength,
+      );
+
+      await channel.setName(archivedName).catch(() => null);
+      await channel.setParent(this.config.guild.archiveCategoryId).catch(() => null);
+      await channel.permissionOverwrites.edit(ticket.creator_id, {
+        ViewChannel: false,
+        SendMessages: false,
+      }).catch(() => null);
+
+      for (const participantId of ticket.participant_ids) {
+        await channel.permissionOverwrites.edit(participantId, {
+          ViewChannel: false,
+          SendMessages: false,
+        }).catch(() => null);
+      }
+
+      await channel.send({
+        embeds: [buildSuccessEmbed(this.config, 'Ticket Closed', `${this.config.ticket.messages.closed}\nClosed by ${interaction.user}.\nReason: ${reason}`)],
+      }).catch(() => null);
+
+      await this.sendLog(interaction.guild, this.buildCloseLogEmbed(closedTicket, interaction.user.id, archivedName));
+
+      await interaction.editReply({
+        embeds: [buildSuccessEmbed(this.config, 'تم', `${this.config.ticket.messages.closed}`)],
+      });
+    } catch (error) {
+      logger.error('Failed to close ticket via command', error instanceof Error ? error.message : error);
+      await interaction.editReply({ embeds: [buildErrorEmbed(this.config, 'تعذر إغلاق التذكرة حالياً.')] });
+    }
+  }
+
+  public async handleSlashStats(interaction: ChatInputCommandInteraction): Promise<void> {
+    try {
+      const guildId = this.config.guild.id;
+      const stats = await this.ticketRepository.getStats(guildId);
+
+      const embed = new EmbedBuilder()
+        .setColor(hexToDecimal(this.config.bot.embedColor))
+        .setTitle('إحصائيات التذاكر')
+        .addFields(
+          { name: 'التذاكر المفتوحة', value: `${stats.open}`, inline: true },
+          { name: 'التذاكر المغلقة', value: `${stats.closed}`, inline: true },
+          { name: 'إجمالي التذاكر', value: `${stats.total}`, inline: true },
+        )
+        .setFooter({ text: this.config.bot.footerText })
+        .setTimestamp();
+
+      await interaction.editReply({ embeds: [embed] });
+    } catch (error) {
+      logger.error('Failed to fetch stats', error instanceof Error ? error.message : error);
+      await interaction.editReply({ embeds: [buildErrorEmbed(this.config, 'تعذر جلب الإحصائيات.')] });
     }
   }
 }

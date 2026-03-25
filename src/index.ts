@@ -133,6 +133,54 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
     await interaction.editReply({
       embeds: [buildSuccessEmbed(configStore.current, 'Config Reloaded', 'تم إعادة تحميل config.json وتحديث الأوامر.')],
     });
+    return;
+  }
+
+  if (interaction.commandName === config.commands.names.emojiRefresh) {
+    if (!(await ensurePanelManager(interaction))) {
+      return;
+    }
+
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+    try {
+      const guild = interaction.guild!;
+      const categoryKeys = configStore.current.categories.filter((c) => c.enabled).map((c) => c.key);
+      const { ensureEmojis } = await import('./services/emojiService.js');
+      const emojis = await ensureEmojis(guild, categoryKeys, true);
+      configStore.patchEmojis(emojis.categoryEmojis, emojis.buttonEmojis);
+      await interaction.editReply({
+        embeds: [buildSuccessEmbed(configStore.current, 'Emojis Refreshed', `تم تحديث جميع الإيموجيات بنجاح.\nCategories: ${Object.keys(emojis.categoryEmojis).length}\nButtons: ${Object.keys(emojis.buttonEmojis).length}`)],
+      });
+    } catch (error) {
+      logger.error('Failed to refresh emojis', error instanceof Error ? error.message : error);
+      await interaction.editReply({
+        embeds: [buildErrorEmbed(configStore.current, 'تعذر تحديث الإيموجيات.')],
+      });
+    }
+    return;
+  }
+
+  if (interaction.commandName === config.commands.names.ticketClose) {
+    if (!interaction.inCachedGuild()) {
+      await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [buildErrorEmbed(configStore.current, 'هذا الأمر يعمل داخل السيرفر فقط.')] });
+      return;
+    }
+
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    const reason = interaction.options.getString('reason') ?? 'Closed via command';
+    await ticketService.handleSlashClose(interaction, reason);
+    return;
+  }
+
+  if (interaction.commandName === config.commands.names.ticketStats) {
+    if (!(await ensurePanelManager(interaction))) {
+      return;
+    }
+
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    await ticketService.handleSlashStats(interaction);
+    return;
   }
 }
 

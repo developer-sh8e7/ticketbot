@@ -18,5 +18,20 @@ export function buildCommandDefinitions(config: AppConfig) {
     new SlashCommandBuilder()
       .setName(config.commands.names.configReload)
       .setDescription('Reload config.json without restarting the bot.'),
+    new SlashCommandBuilder()
+      .setName(config.commands.names.emojiRefresh)
+      .setDescription('Delete and recreate all custom bot emojis with updated images.'),
+    new SlashCommandBuilder()
+      .setName(config.commands.names.ticketClose)
+      .setDescription('Close the current ticket channel.')
+      .addStringOption((option) =>
+        option
+          .setName('reason')
+          .setDescription('Reason for closing this ticket.')
+          .setRequired(false),
+      ),
+    new SlashCommandBuilder()
+      .setName(config.commands.names.ticketStats)
+      .setDescription('Show ticket statistics for this server.'),
   ];
 }
