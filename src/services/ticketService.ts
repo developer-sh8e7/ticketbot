@@ -10,7 +10,6 @@ import {
   type Guild,
   type GuildMember,
   type ModalSubmitInteraction,
-  type Snowflake,
   type StringSelectMenuInteraction,
   type TextChannel,
 } from 'discord.js';
@@ -788,7 +787,7 @@ export class TicketService {
       return true;
     }
 
-    const member = await context.guild.members.fetch(memberId as Snowflake).catch(() => null);
+    const member = await context.guild.members.fetch(memberId).catch(() => null);
     if (!member) {
       await interaction.editReply({
         embeds: [buildErrorEmbed(this.config, 'تعذر العثور على هذا العضو داخل السيرفر.')],

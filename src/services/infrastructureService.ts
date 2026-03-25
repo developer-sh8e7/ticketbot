@@ -53,15 +53,6 @@ export class InfrastructureService {
 
     const resolved = await this.resolveOrCreate(guild, existing);
 
-    await this.infrastructureRepository.upsert({
-      guild_id: guildId,
-      ticket_category_id: resolved.ticketCategoryId,
-      archive_category_id: resolved.archiveCategoryId,
-      log_channel_id: resolved.logChannelId,
-      transcript_channel_id: resolved.transcriptChannelId,
-      panel_channel_id: resolved.panelChannelId,
-    });
-
     this.configStore.patchGuild({
       categoryId: resolved.ticketCategoryId,
       archiveCategoryId: resolved.archiveCategoryId,
@@ -71,6 +62,17 @@ export class InfrastructureService {
 
     this.configStore.patchPanel({
       channelId: resolved.panelChannelId,
+    });
+
+    await this.infrastructureRepository.upsert({
+      guild_id: guildId,
+      ticket_category_id: resolved.ticketCategoryId,
+      archive_category_id: resolved.archiveCategoryId,
+      log_channel_id: resolved.logChannelId,
+      transcript_channel_id: resolved.transcriptChannelId,
+      panel_channel_id: resolved.panelChannelId,
+    }).catch((error: Error) => {
+      logger.error('Could not persist infrastructure to DB (bot will still work this session):', error.message);
     });
 
     logger.info('Infrastructure setup complete.');
