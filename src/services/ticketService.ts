@@ -302,15 +302,6 @@ export class TicketService {
       return;
     }
 
-    const existing = await this.findExistingOpenTicket(interaction.guildId, interaction.user.id);
-    if (existing?.channel_id) {
-      await interaction.reply({
-        flags: MessageFlags.Ephemeral,
-        embeds: [buildAlreadyOpenEmbed(this.config, existing.channel_id)],
-      });
-      return;
-    }
-
     await interaction.showModal(buildOpenTicketModal(category));
   }
 
