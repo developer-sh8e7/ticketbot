@@ -198,16 +198,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
   } catch (error) {
     logger.error('Unhandled interaction error', error instanceof Error ? error.stack ?? error.message : error);
 
-    const payload = {
-      ephemeral: true,
-      embeds: [buildErrorEmbed(configStore.current, 'حدث خطأ غير متوقع أثناء تنفيذ العملية.')],
-    };
+    const errorEmbeds = [buildErrorEmbed(configStore.current, 'حدث خطأ غير متوقع أثناء تنفيذ العملية.')];
 
     if (interaction.isRepliable()) {
       if (interaction.deferred || interaction.replied) {
-        await interaction.editReply(payload).catch(() => null);
+        await interaction.editReply({ embeds: errorEmbeds }).catch(() => null);
       } else {
-        await interaction.reply(payload).catch(() => null);
+        await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: errorEmbeds }).catch(() => null);
       }
     }
   }

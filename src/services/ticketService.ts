@@ -453,7 +453,7 @@ export class TicketService {
       if (interaction.deferred || interaction.replied) {
         await interaction.editReply({ embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)] });
       } else {
-        await interaction.reply({ ephemeral: true, embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)] });
+        await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)] });
       }
 
       return null;
@@ -464,7 +464,7 @@ export class TicketService {
       if (interaction.deferred || interaction.replied) {
         await interaction.editReply({ embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)] });
       } else {
-        await interaction.reply({ ephemeral: true, embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)] });
+        await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)] });
       }
 
       return null;
@@ -475,7 +475,7 @@ export class TicketService {
       if (interaction.deferred || interaction.replied) {
         await interaction.editReply({ embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)] });
       } else {
-        await interaction.reply({ ephemeral: true, embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)] });
+        await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)] });
       }
 
       return null;
@@ -486,7 +486,7 @@ export class TicketService {
       if (interaction.deferred || interaction.replied) {
         await interaction.editReply({ embeds: [buildErrorEmbed(this.config, 'لم يتم العثور على قناة التذكرة.')] });
       } else {
-        await interaction.reply({ ephemeral: true, embeds: [buildErrorEmbed(this.config, 'لم يتم العثور على قناة التذكرة.')] });
+        await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [buildErrorEmbed(this.config, 'لم يتم العثور على قناة التذكرة.')] });
       }
 
       return null;
@@ -511,7 +511,7 @@ export class TicketService {
       if (interaction.deferred || interaction.replied) {
         await interaction.editReply({ embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.noPermission)] });
       } else {
-        await interaction.reply({ ephemeral: true, embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.noPermission)] });
+        await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.noPermission)] });
       }
 
       return null;
@@ -543,7 +543,7 @@ export class TicketService {
   }
 
   private async handleCloseTicket(interaction: ButtonInteraction): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const context = await this.resolveTicketContext(interaction);
     if (!context) {
@@ -620,7 +620,7 @@ export class TicketService {
   }
 
   private async handleClaimButton(interaction: ButtonInteraction): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const context = await this.ensureManagerAccess(interaction);
     if (!context) {
@@ -746,7 +746,7 @@ export class TicketService {
   }
 
   private async handlePinButton(interaction: ButtonInteraction): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const context = await this.ensureManagerAccess(interaction);
     if (!context) {
@@ -770,7 +770,7 @@ export class TicketService {
       return false;
     }
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const context = await this.ensureManagerAccess(interaction);
     if (!context) {

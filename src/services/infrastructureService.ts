@@ -10,6 +10,7 @@ import {
 import { InfrastructureRepository, type InfrastructureRecord } from '../database/infrastructureRepository.js';
 import type { AppConfig } from '../types/config.js';
 import { ConfigStore } from './configStore.js';
+import { ensureEmojis } from './emojiService.js';
 import { logger } from '../utils/logger.js';
 
 interface InfrastructureServiceDependencies {
@@ -81,6 +82,15 @@ export class InfrastructureService {
     logger.info(`  Log Channel     : ${resolved.logChannelId}`);
     logger.info(`  Transcript Ch.  : ${resolved.transcriptChannelId}`);
     logger.info(`  Panel Channel   : ${resolved.panelChannelId}`);
+
+    try {
+      const categoryKeys = this.config.categories.filter((c) => c.enabled).map((c) => c.key);
+      const emojis = await ensureEmojis(guild, categoryKeys);
+      this.configStore.patchEmojis(emojis.categoryEmojis, emojis.buttonEmojis);
+      logger.info('Emojis verified / created successfully.');
+    } catch (error) {
+      logger.error('Could not setup emojis (bot will still work without them):', error instanceof Error ? error.message : error);
+    }
   }
 
   private async resolveOrCreate(

@@ -7,10 +7,16 @@ export class PanelService {
   public constructor(private readonly configStore: ConfigStore) {}
 
   private async resolvePanelChannel(guild: Guild) {
-    const channel = await guild.channels.fetch(this.configStore.current.panel.channelId);
+    const channelId = this.configStore.current.panel.channelId;
+
+    if (!channelId) {
+      throw new Error('Panel channel ID is not configured. Run infrastructure setup first.');
+    }
+
+    const channel = await guild.channels.fetch(channelId).catch(() => null);
 
     if (!isGuildTextChannelType(channel)) {
-      throw new Error('Configured panel channel is not a text channel.');
+      throw new Error(`Configured panel channel (${channelId}) is not a text channel or does not exist.`);
     }
 
     return channel;
