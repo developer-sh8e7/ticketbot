@@ -309,20 +309,192 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 const HEALTH_PORT = Number(process.env.PORT) || 8080;
 const startedAt = Date.now();
 
+function formatUptime(seconds: number): string {
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  const parts: string[] = [];
+  if (d > 0) parts.push(`${d}d`);
+  if (h > 0) parts.push(`${h}h`);
+  if (m > 0) parts.push(`${m}m`);
+  parts.push(`${s}s`);
+  return parts.join(' ');
+}
+
 const healthServer = createServer((req, res) => {
+  if (req.url === '/api') {
+    const uptime = Math.floor((Date.now() - startedAt) / 1000);
+    const botUser = client.user;
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      status: botUser ? 'online' : 'starting',
+      instance: INSTANCE_ID,
+      uptime,
+      bot: botUser?.tag ?? null,
+      guilds: client.guilds.cache.size,
+      ping: client.ws.ping,
+    }));
+    return;
+  }
+
   const uptime = Math.floor((Date.now() - startedAt) / 1000);
   const botUser = client.user;
-  const status = botUser ? 'online' : 'starting';
+  const isOnline = !!botUser;
+  const statusText = isOnline ? 'Online' : 'Starting...';
+  const statusColor = isOnline ? '#22c55e' : '#eab308';
+  const statusDot = isOnline ? '#22c55e' : '#eab308';
+  const ping = client.ws.ping;
+  const pingColor = ping < 200 ? '#22c55e' : ping < 500 ? '#eab308' : '#ef4444';
+  const guilds = client.guilds.cache.size;
+  const members = client.guilds.cache.reduce((acc, g) => acc + g.memberCount, 0);
 
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({
-    status,
-    instance: INSTANCE_ID,
-    uptime,
-    bot: botUser?.tag ?? null,
-    guilds: client.guilds.cache.size,
-    ping: client.ws.ping,
-  }));
+  const html = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bot Status</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #0a0a0f;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      width: 100%;
+      max-width: 480px;
+    }
+    .card {
+      background: linear-gradient(145deg, #13131f, #1a1a2e);
+      border: 1px solid #2a2a3e;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .bot-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      background: ${statusColor}18;
+      color: ${statusColor};
+      border: 1px solid ${statusColor}40;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: ${statusDot};
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .stat {
+      background: #0f0f1a;
+      border: 1px solid #1e1e32;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: #c4b5fd;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .ping-value { color: ${pingColor}; }
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 11px;
+      color: #475569;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="header">
+        <div class="avatar">${botUser?.username?.charAt(0)?.toUpperCase() ?? 'B'}</div>
+        <div class="bot-name">${botUser?.tag ?? 'Bot'}</div>
+        <div class="status-badge">
+          <span class="status-dot"></span>
+          ${statusText}
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-value">${formatUptime(uptime)}</div>
+          <div class="stat-label">Uptime</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value ping-value">${ping}ms</div>
+          <div class="stat-label">Ping</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">${guilds}</div>
+          <div class="stat-label">Servers</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">${members}</div>
+          <div class="stat-label">Members</div>
+        </div>
+      </div>
+      <div class="footer">Instance ${INSTANCE_ID} &bull; PID ${process.pid}</div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+  res.end(html);
 });
 
 healthServer.listen(HEALTH_PORT, () => {
