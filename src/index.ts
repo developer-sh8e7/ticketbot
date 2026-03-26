@@ -1,3 +1,4 @@
+import { createServer } from 'node:http';
 import {
   Client,
   Events,
@@ -296,13 +297,37 @@ process.on('uncaughtException', (error) => {
 });
 
 function gracefulShutdown(signal: string): void {
-  logger.info(`[instance=${INSTANCE_ID}] Received ${signal}, destroying gateway connection...`);
+  logger.info(`[instance=${INSTANCE_ID}] Received ${signal}, shutting down...`);
+  healthServer.close();
   client.destroy();
   process.exit(0);
 }
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+const HEALTH_PORT = Number(process.env.PORT) || 8080;
+const startedAt = Date.now();
+
+const healthServer = createServer((req, res) => {
+  const uptime = Math.floor((Date.now() - startedAt) / 1000);
+  const botUser = client.user;
+  const status = botUser ? 'online' : 'starting';
+
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({
+    status,
+    instance: INSTANCE_ID,
+    uptime,
+    bot: botUser?.tag ?? null,
+    guilds: client.guilds.cache.size,
+    ping: client.ws.ping,
+  }));
+});
+
+healthServer.listen(HEALTH_PORT, () => {
+  logger.info(`Health check server listening on port ${HEALTH_PORT}`);
+});
 
 client.login(env.DISCORD_TOKEN).catch((error) => {
   logger.error('Failed to login', error instanceof Error ? error.message : error);
