@@ -49,6 +49,7 @@ function buildMemberModal(customId: string, title: string, placeholder: string):
   const input = new TextInputBuilder()
     .setCustomId(MEMBER_MODAL_FIELD_ID)
     .setLabel('Member ID or Mention')
+    .setStyle(1)
     .setPlaceholder(placeholder)
     .setRequired(true)
     .setMinLength(2)
