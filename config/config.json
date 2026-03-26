@@ -140,7 +140,7 @@
       "enabled": true,
       "label": "وسـيــط مـضـمـون",
       "description": "لضمان عملية التداول بوجود وسيط، افتح تذكرة هنا.",
-      "channelNameTemplate": "middleman-{ticketNumber}",
+      "channelNameTemplate": "وسيط-مضمون-{ticketNumber}",
       "supportRoleIds": ["1483021658003345408"],
       "questions": [
         {
@@ -159,7 +159,7 @@
       "enabled": true,
       "label": "اللوان البيوت",
       "description": "لطلب خدمة اللوان البيوت، افتح تذكرة هنا.",
-      "channelNameTemplate": "house-{ticketNumber}",
+      "channelNameTemplate": "اللوان-البيوت-{ticketNumber}",
       "supportRoleIds": ["1483209015961063595"],
       "questions": [
         {
@@ -178,7 +178,7 @@
       "enabled": true,
       "label": "عـمـلـيـة شـرأء",
       "description": "لإتمام عملية الشراء، افتح تذكرة هنا.",
-      "channelNameTemplate": "purchase-{ticketNumber}",
+      "channelNameTemplate": "عملية-شرأء-{ticketNumber}",
       "supportRoleIds": [],
       "questions": [
         {

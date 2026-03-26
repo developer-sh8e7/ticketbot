@@ -41,12 +41,22 @@ export async function buildTicketEmbeds(
   const infoEmoji = await resolveEmojiMention(guild, config.emojis.infoIcon);
   const epicEmoji = await resolveEmojiMention(guild, config.emojis.epicIcon);
 
-  const welcomeEmbed = new EmbedBuilder()
+  const summaryLabel = infoEmoji
+    ? `${infoEmoji} ${config.ticket.summaryTitle}`
+    : config.ticket.summaryTitle;
+
+  const embed = new EmbedBuilder()
     .setColor(hexToDecimal(config.bot.embedColor))
     .setTitle(config.ticket.welcomeTitle)
     .setDescription(config.ticket.welcomeDescription)
     .setThumbnail(config.images.thumbnailUrl)
     .setImage(config.images.ticketBannerUrl)
+    .addFields(
+      { name: '\u200b', value: `**${summaryLabel}**` },
+      { name: 'التصنيف', value: ticket.category_label, inline: true },
+      { name: 'صاحب التذكرة', value: `<@${ticket.creator_id}>`, inline: true },
+      { name: 'رقم التذكرة', value: `#${paddedNumber}`, inline: true },
+    )
     .setFooter({
       text: `${config.bot.footerText} • #${paddedNumber}`,
       iconURL: config.bot.footerIconUrl || undefined,
@@ -54,44 +64,18 @@ export async function buildTicketEmbeds(
     .setTimestamp();
 
   if (ticketIcon) {
-    welcomeEmbed.setAuthor({
+    embed.setAuthor({
       name: `${ticketIcon.toString()} ${ticket.category_label}`,
       iconURL: config.images.thumbnailUrl,
     });
   }
 
-  const summaryTitle = infoEmoji
-    ? `${infoEmoji} ${config.ticket.summaryTitle}`
-    : config.ticket.summaryTitle;
-
-  const summaryEmbed = new EmbedBuilder()
-    .setColor(hexToDecimal(config.bot.embedColor))
-    .setTitle(summaryTitle)
-    .addFields(
-      {
-        name: 'التصنيف',
-        value: ticket.category_label,
-        inline: true,
-      },
-      {
-        name: 'صاحب التذكرة',
-        value: `<@${ticket.creator_id}>`,
-        inline: true,
-      },
-      {
-        name: 'رقم التذكرة',
-        value: `#${paddedNumber}`,
-        inline: true,
-      },
-    );
-
   if (ticket.answers.length > 0) {
-    summaryEmbed.addFields({ name: '\u200b', value: '**الإجابات**' });
     for (const answer of ticket.answers) {
       const fieldName = answer.key === 'epic_id' && epicEmoji
         ? `${epicEmoji} ${answer.label}`
         : answer.label;
-      summaryEmbed.addFields({
+      embed.addFields({
         name: fieldName,
         value: truncateText(answer.value, 1024) || '\u200b',
         inline: false,
@@ -99,12 +83,7 @@ export async function buildTicketEmbeds(
     }
   }
 
-  summaryEmbed.setFooter({
-    text: guild.name,
-    iconURL: guild.iconURL() || undefined,
-  });
-
-  return [welcomeEmbed, summaryEmbed];
+  return [embed];
 }
 
 export function buildTicketActionRows(config: AppConfig, isClaimed = false): ActionRowBuilder<ButtonBuilder>[] {
