@@ -34,6 +34,7 @@ import type { TicketRecord } from '../database/types.js';
 import type { AppConfig, TicketAnswer, TicketCategoryConfig } from '../types/config.js';
 import { hexToDecimal } from '../utils/color.js';
 import { isGuildTextChannelType } from '../utils/discord.js';
+import { isInteractionLifecycleError, safeDeferReply, safeEditReply, safeReply, safeShowModal } from '../utils/interaction.js';
 import { logger } from '../utils/logger.js';
 import {
   formatRoleMentions,
@@ -75,10 +76,6 @@ export class TicketService {
 
   private get config(): AppConfig {
     return this.configStore.current;
-  }
-
-  private isUnknownInteractionError(error: unknown): boolean {
-    return error instanceof Error && error.message.includes('Unknown interaction');
   }
 
   private getEnabledCategory(categoryKey: string): TicketCategoryConfig | undefined {
@@ -293,7 +290,7 @@ export class TicketService {
 
   public async handleOpenSelect(interaction: StringSelectMenuInteraction): Promise<void> {
     if (!interaction.inCachedGuild()) {
-      await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [buildErrorEmbed(this.config, 'This action only works inside the guild.')] }).catch(() => null);
+      await safeReply(interaction, [buildErrorEmbed(this.config, 'This action only works inside the guild.')]);
       return;
     }
 
@@ -301,34 +298,29 @@ export class TicketService {
     const category = this.getEnabledCategory(categoryKey);
 
     if (!category) {
-      await interaction.reply({
-        flags: MessageFlags.Ephemeral,
-        embeds: [buildErrorEmbed(this.config, 'التصنيف المحدد غير موجود أو معطل.')],
-      });
+      await safeReply(interaction, [buildErrorEmbed(this.config, 'التصنيف المحدد غير موجود أو معطل.')]);
       return;
     }
 
     try {
       const modal = buildOpenTicketModal(category);
-      await interaction.showModal(modal);
+      const shown = await safeShowModal(interaction, modal, `open-select:${category.key}`);
+      if (!shown) {
+        return;
+      }
     } catch (error) {
       logger.error('Failed to show ticket modal', error instanceof Error ? error.message : error);
-      if (this.isUnknownInteractionError(error)) {
+      if (isInteractionLifecycleError(error)) {
         return;
       }
 
-      if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({
-          flags: MessageFlags.Ephemeral,
-          embeds: [buildErrorEmbed(this.config, 'تعذر فتح نموذج التذكرة، يرجى المحاولة مرة أخرى.')],
-        }).catch(() => null);
-      }
+      await safeReply(interaction, [buildErrorEmbed(this.config, 'تعذر فتح نموذج التذكرة، يرجى المحاولة مرة أخرى.')]);
     }
   }
 
   public async handleOpenModal(interaction: ModalSubmitInteraction): Promise<void> {
     if (!interaction.inCachedGuild()) {
-      await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [buildErrorEmbed(this.config, 'This action only works inside the guild.')] }).catch(() => null);
+      await safeReply(interaction, [buildErrorEmbed(this.config, 'This action only works inside the guild.')]);
       return;
     }
 
@@ -336,22 +328,12 @@ export class TicketService {
     const category = categoryKey ? this.getEnabledCategory(categoryKey) : undefined;
 
     if (!category) {
-      await interaction.reply({
-        flags: MessageFlags.Ephemeral,
-        embeds: [buildErrorEmbed(this.config, 'تعذر تحديد بيانات هذه التذكرة.')],
-      }).catch(() => null);
+      await safeReply(interaction, [buildErrorEmbed(this.config, 'تعذر تحديد بيانات هذه التذكرة.')]);
       return;
     }
 
-    try {
-      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-    } catch (error) {
-      if (this.isUnknownInteractionError(error)) {
-        logger.warn('Skipped open modal deferReply because interaction expired.');
-        return;
-      }
-
-      throw error;
+    if (!(await safeDeferReply(interaction, `open-modal:${category.key}`))) {
+      return;
     }
 
     const existing = await this.findExistingOpenTicket(interaction.guildId, interaction.user.id);
@@ -365,7 +347,7 @@ export class TicketService {
         }).catch(() => null);
         logger.info(`Auto-closed stale ticket #${existing.ticket_number} (channel deleted)`);
       } else {
-        await interaction.editReply({ embeds: [buildAlreadyOpenEmbed(this.config, existing.channel_id)] }).catch(() => null);
+        await safeEditReply(interaction, [buildAlreadyOpenEmbed(this.config, existing.channel_id)]);
         return;
       }
     }
@@ -436,11 +418,7 @@ export class TicketService {
 
       await this.sendLog(interaction.guild, this.buildOpenLogEmbed(createdTicket, created.id));
 
-      await interaction.editReply({
-        embeds: [
-          buildSuccessEmbed(this.config, 'تم إنشاء التذكرة', `${this.config.ticket.messages.created} <#${created.id}>`),
-        ],
-      }).catch(() => null);
+      await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم إنشاء التذكرة', `${this.config.ticket.messages.created} <#${created.id}>`)]);
     } catch (error) {
       logger.error('Failed to open ticket', error instanceof Error ? error.message : error);
 
@@ -457,23 +435,15 @@ export class TicketService {
         const existingChannelId = duplicate?.channel_id || interaction.channelId || interaction.channel?.id;
 
         if (!existingChannelId) {
-          await interaction.editReply({
-            embeds: [buildErrorEmbed(this.config, 'تم اكتشاف تذكرة مفتوحة لكن تعذر تحديد القناة الخاصة بها.')],
-          }).catch(() => null);
+          await safeEditReply(interaction, [buildErrorEmbed(this.config, 'تم اكتشاف تذكرة مفتوحة لكن تعذر تحديد القناة الخاصة بها.')]);
           return;
         }
 
-        await interaction.editReply({
-          embeds: [
-            buildAlreadyOpenEmbed(this.config, existingChannelId),
-          ],
-        }).catch(() => null);
+        await safeEditReply(interaction, [buildAlreadyOpenEmbed(this.config, existingChannelId)]);
         return;
       }
 
-      await interaction.editReply({
-        embeds: [buildErrorEmbed(this.config, 'حدث خطأ أثناء إنشاء التذكرة.')],
-      }).catch(() => null);
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'حدث خطأ أثناء إنشاء التذكرة.')]);
     }
   }
 
@@ -482,9 +452,9 @@ export class TicketService {
   ): Promise<ResolvedTicketContext | null> {
     if (!interaction.inCachedGuild() || !interaction.member || !interaction.channel) {
       if (interaction.deferred || interaction.replied) {
-        await interaction.editReply({ embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)] });
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)]);
       } else {
-        await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)] });
+        await safeReply(interaction, [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)]);
       }
 
       return null;
@@ -493,9 +463,9 @@ export class TicketService {
     const channelId = interaction.channelId || interaction.channel.id;
     if (!channelId) {
       if (interaction.deferred || interaction.replied) {
-        await interaction.editReply({ embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)] });
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)]);
       } else {
-        await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)] });
+        await safeReply(interaction, [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)]);
       }
 
       return null;
@@ -504,9 +474,9 @@ export class TicketService {
     const ticket = await this.ticketRepository.findByChannelId(channelId);
     if (!ticket || !ticket.channel_id) {
       if (interaction.deferred || interaction.replied) {
-        await interaction.editReply({ embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)] });
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)]);
       } else {
-        await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)] });
+        await safeReply(interaction, [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)]);
       }
 
       return null;
@@ -515,9 +485,9 @@ export class TicketService {
     const channel = await interaction.guild.channels.fetch(ticket.channel_id).catch(() => null);
     if (!isGuildTextChannelType(channel) || channel.type !== ChannelType.GuildText) {
       if (interaction.deferred || interaction.replied) {
-        await interaction.editReply({ embeds: [buildErrorEmbed(this.config, 'لم يتم العثور على قناة التذكرة.')] });
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, 'لم يتم العثور على قناة التذكرة.')]);
       } else {
-        await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [buildErrorEmbed(this.config, 'لم يتم العثور على قناة التذكرة.')] });
+        await safeReply(interaction, [buildErrorEmbed(this.config, 'لم يتم العثور على قناة التذكرة.')]);
       }
 
       return null;
@@ -540,9 +510,9 @@ export class TicketService {
 
     if (!canManageTicket(context.member, context.config)) {
       if (interaction.deferred || interaction.replied) {
-        await interaction.editReply({ embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.noPermission)] });
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, this.config.ticket.messages.noPermission)]);
       } else {
-        await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.noPermission)] });
+        await safeReply(interaction, [buildErrorEmbed(this.config, this.config.ticket.messages.noPermission)]);
       }
 
       return null;
@@ -552,15 +522,24 @@ export class TicketService {
   }
 
   public async handleTicketButton(interaction: ButtonInteraction): Promise<void> {
+    // Modal buttons must NOT be deferred — handle them first
+    if (interaction.customId === TICKET_BUTTON_IDS.add) {
+      await this.handleAddMemberButton(interaction);
+      return;
+    }
+    if (interaction.customId === TICKET_BUTTON_IDS.remove) {
+      await this.handleRemoveMemberButton(interaction);
+      return;
+    }
+
+    // All other buttons: defer ASAP to avoid the 3-second expiry
+    if (!(await safeDeferReply(interaction, `ticket-button:${interaction.customId}`))) {
+      return;
+    }
+
     switch (interaction.customId) {
       case TICKET_BUTTON_IDS.close:
         await this.handleCloseTicket(interaction);
-        return;
-      case TICKET_BUTTON_IDS.add:
-        await this.handleAddMemberButton(interaction);
-        return;
-      case TICKET_BUTTON_IDS.remove:
-        await this.handleRemoveMemberButton(interaction);
         return;
       case TICKET_BUTTON_IDS.claim:
         await this.handleClaimButton(interaction);
@@ -577,8 +556,6 @@ export class TicketService {
   }
 
   private async handleCloseTicket(interaction: ButtonInteraction): Promise<void> {
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
     const context = await this.resolveTicketContext(interaction);
     if (!context) {
       return;
@@ -588,7 +565,7 @@ export class TicketService {
     const isManager = canManageTicket(context.member, context.config);
 
     if (!isCreator && !isManager) {
-      await interaction.editReply({ embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.noPermission)] });
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, this.config.ticket.messages.noPermission)]);
       return;
     }
 
@@ -626,26 +603,22 @@ export class TicketService {
       await context.channel.send({ embeds: [closedEmbed] }).catch(() => null);
       await this.sendLog(context.guild, this.buildCloseLogEmbed(closedTicket, interaction.user.id, archivedName));
 
-      await interaction.editReply({
-        embeds: [buildSuccessEmbed(this.config, 'تم', `${this.config.ticket.messages.closed}\n${context.channel}`)],
-      });
+      await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم', `${this.config.ticket.messages.closed}\n${context.channel}`)]);
     } catch (error) {
       logger.error('Failed to close ticket', error instanceof Error ? error.message : error);
-      await interaction.editReply({ embeds: [buildErrorEmbed(this.config, 'تعذر إغلاق التذكرة حالياً.')] });
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'تعذر إغلاق التذكرة حالياً.')]);
     }
   }
 
   private async handleAddMemberButton(interaction: ButtonInteraction): Promise<void> {
-    await interaction.showModal(buildAddMemberModal());
+    await safeShowModal(interaction, buildAddMemberModal(), 'add-member-button');
   }
 
   private async handleRemoveMemberButton(interaction: ButtonInteraction): Promise<void> {
-    await interaction.showModal(buildRemoveMemberModal());
+    await safeShowModal(interaction, buildRemoveMemberModal(), 'remove-member-button');
   }
 
   private async handleClaimButton(interaction: ButtonInteraction): Promise<void> {
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
     const context = await this.ensureManagerAccess(interaction);
     if (!context) {
       return;
@@ -656,9 +629,7 @@ export class TicketService {
       const isClaimedBySelf = context.ticket.claimed_by === interaction.user.id;
 
       if (isAlreadyClaimed && !isClaimedBySelf) {
-        await interaction.editReply({
-          embeds: [buildErrorEmbed(this.config, `هذه التذكرة مستلمة بالفعل بواسطة <@${context.ticket.claimed_by}>.`)],
-        });
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, `هذه التذكرة مستلمة بالفعل بواسطة <@${context.ticket.claimed_by}>.`)]);
         return;
       }
 
@@ -697,10 +668,10 @@ export class TicketService {
         ),
       );
 
-      await interaction.editReply({ embeds: [buildSuccessEmbed(this.config, 'تم', message)] });
+      await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم', message)]);
     } catch (error) {
       logger.error('Failed to update claim state', error instanceof Error ? error.message : error);
-      await interaction.editReply({ embeds: [buildErrorEmbed(this.config, 'تعذر تحديث حالة الاستلام.')] });
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'تعذر تحديث حالة الاستلام.')]);
     }
   }
 
@@ -770,8 +741,6 @@ export class TicketService {
   }
 
   private async handlePinButton(interaction: ButtonInteraction): Promise<void> {
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
     const context = await this.ensureManagerAccess(interaction);
     if (!context) {
       return;
@@ -779,13 +748,9 @@ export class TicketService {
 
     try {
       await interaction.message.pin();
-      await interaction.editReply({
-        embeds: [buildSuccessEmbed(this.config, 'Pinned', 'تم تثبيت رسالة التذكرة بنجاح.')],
-      });
+      await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'Pinned', 'تم تثبيت رسالة التذكرة بنجاح.')]);
     } catch {
-      await interaction.editReply({
-        embeds: [buildErrorEmbed(this.config, 'تعذر تثبيت هذه الرسالة، ربما هي مثبتة مسبقاً.')],
-      });
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'تعذر تثبيت هذه الرسالة، ربما هي مثبتة مسبقاً.')]);
     }
   }
 
@@ -794,7 +759,9 @@ export class TicketService {
       return false;
     }
 
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    if (!(await safeDeferReply(interaction, `member-modal:${interaction.customId}`))) {
+      return true;
+    }
 
     const context = await this.ensureManagerAccess(interaction);
     if (!context) {
@@ -805,17 +772,13 @@ export class TicketService {
     const memberId = normalizeSnowflake(rawValue);
 
     if (!memberId) {
-      await interaction.editReply({
-        embeds: [buildErrorEmbed(this.config, 'المعرف أو المنشن غير صالح.')],
-      });
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'المعرف أو المنشن غير صالح.')]);
       return true;
     }
 
     const member = await context.guild.members.fetch(memberId).catch(() => null);
     if (!member) {
-      await interaction.editReply({
-        embeds: [buildErrorEmbed(this.config, 'تعذر العثور على هذا العضو داخل السيرفر.')],
-      });
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'تعذر العثور على هذا العضو داخل السيرفر.')]);
       return true;
     }
 
@@ -837,16 +800,12 @@ export class TicketService {
           embeds: [buildSuccessEmbed(this.config, 'Member Added', `${this.config.ticket.messages.addedMember} ${member}`)],
         });
 
-        await interaction.editReply({
-          embeds: [buildSuccessEmbed(this.config, 'تم', `${this.config.ticket.messages.addedMember} ${member}`)],
-        });
+        await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم', `${this.config.ticket.messages.addedMember} ${member}`)]);
         return true;
       }
 
       if (member.id === context.ticket.creator_id) {
-        await interaction.editReply({
-          embeds: [buildErrorEmbed(this.config, 'لا يمكن إزالة صاحب التذكرة الأساسي من التذكرة.')],
-        });
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, 'لا يمكن إزالة صاحب التذكرة الأساسي من التذكرة.')]);
         return true;
       }
 
@@ -857,28 +816,22 @@ export class TicketService {
         embeds: [buildSuccessEmbed(this.config, 'Member Removed', `${this.config.ticket.messages.removedMember} ${member}`)],
       });
 
-      await interaction.editReply({
-        embeds: [buildSuccessEmbed(this.config, 'تم', `${this.config.ticket.messages.removedMember} ${member}`)],
-      });
+      await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم', `${this.config.ticket.messages.removedMember} ${member}`)]);
       return true;
     } catch (error) {
       logger.error('Failed to update ticket members', error instanceof Error ? error.message : error);
-      await interaction.editReply({
-        embeds: [buildErrorEmbed(this.config, 'تعذر تعديل أعضاء التذكرة حالياً.')],
-      });
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'تعذر تعديل أعضاء التذكرة حالياً.')]);
       return true;
     }
   }
 
   private async handleStatsButton(interaction: ButtonInteraction): Promise<void> {
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
     const allowedRoles = this.config.ticket.controls.stats?.allowedRoleIds ?? [];
     const member = interaction.member as GuildMember;
     const hasRole = allowedRoles.length === 0 || allowedRoles.some((roleId) => member.roles.cache.has(roleId));
 
     if (!hasRole) {
-      await interaction.editReply({ embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.noPermission)] });
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, this.config.ticket.messages.noPermission)]);
       return;
     }
 
@@ -906,29 +859,29 @@ export class TicketService {
         embed.addFields({ name: 'مستلمة بواسطة', value: `<@${context.ticket.claimed_by}>`, inline: true });
       }
 
-      await interaction.editReply({ embeds: [embed] });
+      await safeEditReply(interaction, [embed]);
     } catch (error) {
       logger.error('Failed to fetch stats via button', error instanceof Error ? error.message : error);
-      await interaction.editReply({ embeds: [buildErrorEmbed(this.config, 'تعذر جلب الإحصائيات.')] });
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'تعذر جلب الإحصائيات.')]);
     }
   }
 
   public async handleSlashClose(interaction: ChatInputCommandInteraction, reason: string): Promise<void> {
     const channelId = interaction.channelId;
     if (!channelId || !interaction.guild) {
-      await interaction.editReply({ embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)] });
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)]);
       return;
     }
 
     const ticket = await this.ticketRepository.findByChannelId(channelId);
     if (!ticket || !ticket.channel_id) {
-      await interaction.editReply({ embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)] });
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, this.config.ticket.messages.notInTicket)]);
       return;
     }
 
     const channel = await interaction.guild.channels.fetch(ticket.channel_id).catch(() => null);
     if (!isGuildTextChannelType(channel) || channel.type !== ChannelType.GuildText) {
-      await interaction.editReply({ embeds: [buildErrorEmbed(this.config, 'لم يتم العثور على قناة التذكرة.')] });
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'لم يتم العثور على قناة التذكرة.')]);
       return;
     }
 
@@ -937,7 +890,7 @@ export class TicketService {
     const isManager = canManageTicket(member, this.config);
 
     if (!isCreator && !isManager) {
-      await interaction.editReply({ embeds: [buildErrorEmbed(this.config, this.config.ticket.messages.noPermission)] });
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, this.config.ticket.messages.noPermission)]);
       return;
     }
 
@@ -977,12 +930,10 @@ export class TicketService {
 
       await this.sendLog(interaction.guild, this.buildCloseLogEmbed(closedTicket, interaction.user.id, archivedName));
 
-      await interaction.editReply({
-        embeds: [buildSuccessEmbed(this.config, 'تم', `${this.config.ticket.messages.closed}`)],
-      });
+      await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم', `${this.config.ticket.messages.closed}`)]);
     } catch (error) {
       logger.error('Failed to close ticket via command', error instanceof Error ? error.message : error);
-      await interaction.editReply({ embeds: [buildErrorEmbed(this.config, 'تعذر إغلاق التذكرة حالياً.')] });
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'تعذر إغلاق التذكرة حالياً.')]);
     }
   }
 
@@ -1002,10 +953,10 @@ export class TicketService {
         .setFooter({ text: this.config.bot.footerText })
         .setTimestamp();
 
-      await interaction.editReply({ embeds: [embed] });
+      await safeEditReply(interaction, [embed]);
     } catch (error) {
       logger.error('Failed to fetch stats', error instanceof Error ? error.message : error);
-      await interaction.editReply({ embeds: [buildErrorEmbed(this.config, 'تعذر جلب الإحصائيات.')] });
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'تعذر جلب الإحصائيات.')]);
     }
   }
 }

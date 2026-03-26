@@ -34,6 +34,8 @@ function isInteractionLifecycleError(error: unknown): boolean {
     return (
       msg.includes('unknown interaction') ||
       msg.includes('already been acknowledged') ||
+      msg.includes('already been sent or deferred') ||
+      msg.includes('interaction was not replied') ||
       msg.includes('not active')
     );
   }
@@ -57,18 +59,13 @@ export async function safeDeferReply(
     return true;
   }
 
-  const age = interactionAge(interaction);
-  if (age > 2800) {
-    logger.warn(`[${label ?? interaction.id}] Interaction too old (${age}ms), skipping deferReply.`);
-    return false;
-  }
-
   try {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     return true;
   } catch (error) {
     if (isInteractionLifecycleError(error)) {
-      logger.warn(`[${label ?? interaction.id}] deferReply skipped: ${error instanceof Error ? error.message : error}`);
+      const age = interactionAge(interaction);
+      logger.warn(`[${label ?? interaction.id}] deferReply skipped (${age}ms old): ${error instanceof Error ? error.message : error}`);
       return false;
     }
 
@@ -124,17 +121,12 @@ export async function safeShowModal(
     return false;
   }
 
-  const age = interactionAge(interaction);
-  if (age > 2500) {
-    logger.warn(`[${label ?? interaction.id}] Interaction too old (${age}ms), skipping showModal.`);
-    return false;
-  }
-
   try {
     await interaction.showModal(modal);
     return true;
   } catch (error) {
     if (isInteractionLifecycleError(error)) {
+      const age = interactionAge(interaction);
       logger.warn(`[${label ?? interaction.id}] showModal skipped (${age}ms old): ${error instanceof Error ? error.message : error}`);
       return false;
     }
