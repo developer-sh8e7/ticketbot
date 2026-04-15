@@ -580,28 +580,10 @@ export class TicketService {
         logger.warn('Failed to generate transcript', error instanceof Error ? error.message : error);
       });
 
-      const archivedName = normalizeChannelName(
-        `closed-${padTicketNumber(closedTicket.ticket_number, this.config.naming.zeroPadLength)}`,
-        this.config.naming.maxChannelNameLength,
-      );
+      const channelName = context.channel.name;
+      await this.sendLog(context.guild, this.buildCloseLogEmbed(closedTicket, interaction.user.id, channelName));
 
-      await context.channel.setName(archivedName).catch(() => null);
-      await context.channel.setParent(this.config.guild.archiveCategoryId).catch(() => null);
-      await context.channel.permissionOverwrites.edit(context.ticket.creator_id, {
-        ViewChannel: false,
-        SendMessages: false,
-      }).catch(() => null);
-
-      for (const participantId of context.ticket.participant_ids) {
-        await context.channel.permissionOverwrites.edit(participantId, {
-          ViewChannel: false,
-          SendMessages: false,
-        }).catch(() => null);
-      }
-
-      const closedEmbed = buildSuccessEmbed(this.config, 'Ticket Closed', `${this.config.ticket.messages.closed}\nClosed by ${interaction.user}.`);
-      await context.channel.send({ embeds: [closedEmbed] }).catch(() => null);
-      await this.sendLog(context.guild, this.buildCloseLogEmbed(closedTicket, interaction.user.id, archivedName));
+      await context.channel.delete().catch(() => null);
 
       await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم', `${this.config.ticket.messages.closed}\n${context.channel}`)]);
     } catch (error) {
