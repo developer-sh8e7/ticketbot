@@ -284,6 +284,52 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
+client.on(Events.MessageCreate, async (message) => {
+  try {
+    if (message.author.bot || !message.inGuild()) return;
+
+    const channelId = message.channelId;
+    const ticket = await ticketRepository.findByChannelId(channelId);
+
+    if (!ticket) return;
+
+    const messageContent = message.content.toLowerCase().trim();
+    const greetings = [
+      'salam',
+      'peace',
+      'hello',
+      'hi',
+      'hey',
+    ];
+    const arabicGreetings = [
+      ' Salam',
+      'salam',
+      ' SLS',
+      'sls',
+      ' SLS ',
+      'sls ',
+      ' SLS',
+      'sls',
+    ];
+
+    const isGreeting = greetings.some(g => messageContent.includes(g)) || 
+                       arabicGreetings.some(g => messageContent.includes(g));
+
+    if (isGreeting) {
+      const responses = [
+        'Allah wa rahmatohu wa barakatuh',
+        'Wa Alaikum Assalam Wa Rahmatullahi Wa Barakatuh',
+        'Ahlan wa sahlan',
+        'Welcome',
+      ];
+      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+      await message.reply(randomResponse).catch(() => null);
+    }
+  } catch (error) {
+    logger.error('Auto-reply error', error instanceof Error ? error.message : error);
+  }
+});
+
 client.on(Events.Error, (error) => {
   logger.error('Discord client error', error.message);
 });
