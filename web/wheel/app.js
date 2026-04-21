@@ -44,6 +44,11 @@ async function init() {
   loadAnalytics();
   drawWheel();
   setupEvents();
+  setTimeout(() => {
+    const loader = document.getElementById('loader');
+    if (loader) loader.style.opacity = '0';
+    setTimeout(() => { if(loader) loader.remove(); }, 500);
+  }, 1000);
 }
 
 function initParticles() {

@@ -6,12 +6,17 @@
   <title>عجلة سرقة البرينروت | Steal the Brainrot Wheel</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg: #05050a; }
+    body { background: var(--bg); color: #fff; margin: 0; font-family: 'Tajawal', sans-serif; direction: rtl; overflow-x: hidden; }
+    .loading-screen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.5s; }
+    .loader { width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.1); border-top-color: #8b5cf6; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="particles" id="particles"></div>
-  <canvas id="bgFx" class="bg-fx" aria-hidden="true"></canvas>
-  <canvas id="confetti" class="confetti" aria-hidden="true"></canvas>
+  <div class="loading-screen" id="loader"><div class="loader"></div></div>
 
   <div class="app-container">
     <header class="main-header">
@@ -28,9 +33,20 @@
     </header>
 
     <main class="game-area">
+      <div class="sidebar sidebar-right">
+        <div class="panel recent-spins">
+          <h3>🎰 آخر النتائج</h3>
+          <div class="spins-list" id="recentSpins"></div>
+        </div>
+        <div class="panel top-players">
+          <h3>🏆 أفضل اللاعبين</h3>
+          <div class="players-list" id="topPlayers"></div>
+        </div>
+      </div>
+
       <div class="wheel-section">
         <div class="wheel-container">
-          <canvas id="wheelCanvas" width="600" height="600"></canvas>
+          <canvas id="wheelCanvas" width="800" height="800"></canvas>
           <div class="wheel-center">
             <div class="center-glow"></div>
             <button class="spin-btn" id="spinBtn">
@@ -39,75 +55,37 @@
             </button>
           </div>
           <div class="wheel-pointer">
-            <svg viewBox="0 0 40 60"><polygon points="20,0 0,50 20,40 40,50"/></svg>
+            <svg viewBox="0 0 40 60"><path d="M20 0L40 60L20 45L0 60L20 0Z" fill="white" stroke="#8b5cf6" stroke-width="2"/></svg>
           </div>
         </div>
 
         <div class="wheel-info">
           <div class="info-card rarity-legend">
-            <h3>⚡ نادره العجلة</h3>
+            <h3>⚡ نادرة العجلة</h3>
             <div class="rarity-list">
-              <span class="rarity-tag common">عادي <small>70%</small></span>
-              <span class="rarity-tag uncommon">غير شائع <small>20%</small></span>
-              <span class="rarity-tag rare">نادر <small>8%</small></span>
-              <span class="rarity-tag epic">ملحمي <small>1.9%</small></span>
-              <span class="rarity-tag legendary">أسطوري <small>0.1%</small></span>
-              <span class="rarity-tag secret">سري <small>0% (مستحيل)</small></span>
+              <span class="rarity-tag common">عادي</span>
+              <span class="rarity-tag uncommon">غير شائع</span>
+              <span class="rarity-tag rare">نادر</span>
+              <span class="rarity-tag epic">ملحمي</span>
+              <span class="rarity-tag legendary">أسطوري</span>
+              <span class="rarity-tag secret">سري للغاية</span>
             </div>
           </div>
           <div class="info-card cooldown-card" id="cooldownCard" style="display:none;">
             <h3>⏳ التبريد</h3>
             <div class="countdown" id="countdown">--:--:--</div>
           </div>
-
-          <div class="info-card bonus-card" id="bonusCard" style="display:none;">
-            <h3>🎁 الدورة اليومية</h3>
-            <div class="bonus-count" id="bonusCount">--</div>
-            <p class="bonus-label">دورات مجانية متاحة</p>
-          </div>
-
-          <div class="info-card streak-card" id="streakCard" style="display:none;">
-            <h3>🔥 السلسلة</h3>
-            <div class="streak-count" id="streakCount">--</div>
-            <p class="streak-label">أيام متتالية</p>
-          </div>
         </div>
       </div>
 
-      <div class="sidebar">
-        <div class="panel recent-spins">
-          <h3>🎰 آخر النتائج</h3>
-          <div class="spins-list" id="recentSpins">
-            <p class="empty">لا توجد نتائج بعد</p>
-          </div>
-        </div>
-
-        <div class="panel top-players">
-          <h3>🏆 أفضل اللاعبين</h3>
-          <div class="players-list" id="topPlayers">
-            <p class="empty">لا يوجد لاعبين بعد</p>
-          </div>
-        </div>
-
+      <div class="sidebar sidebar-left">
         <div class="panel my-collection">
           <h3>🎒 مجموعتي</h3>
-          <div class="collection-grid" id="myCollection">
-            <p class="empty">سجل الدخول لرؤية مجموعتك</p>
-          </div>
+          <div class="collection-grid" id="myCollection"></div>
         </div>
-
-        <div class="panel achievements">
-          <h3>🏆 الإنجازات</h3>
-          <div class="achievements-grid" id="achievementsGrid">
-            <p class="empty">سجل الدخول لرؤية إنجازاتك</p>
-          </div>
-        </div>
-
         <div class="panel analytics">
           <h3>📊 الإحصائيات</h3>
-          <div class="analytics-content" id="analyticsContent">
-            <p class="empty">سجل الدخول لرؤية إحصائياتك</p>
-          </div>
+          <div class="analytics-content" id="analyticsContent"></div>
         </div>
       </div>
     </main>
