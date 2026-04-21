@@ -274,9 +274,13 @@
       <div class="brand">
         <i data-lucide="compass" style="width: 32px; height: 32px;"></i>
         <h1>STEAL THE BRAINROT</h1>
+        <div style="display:flex; align-items:center; gap:8px; margin-left:20px; background:rgba(34, 197, 94, 0.1); padding:4px 12px; border-radius:20px; border:1px solid rgba(34, 197, 94, 0.2);">
+          <span style="width:8px; height:8px; background:#22c55e; border-radius:50%; box-shadow:0 0 10px #22c55e;"></span>
+          <span style="font-size:0.75rem; font-weight:900; color:#22c55e; letter-spacing:1px;">ONLINE: <span id="onlineCount">--</span></span>
+        </div>
       </div>
       <div id="userArea">
-        <button class="btn-auth" id="loginBtn">
+        <button class="btn-auth" id="loginBtn" onclick="window.location.href='/api/wheel/auth/discord'">
           <i data-lucide="shield-check" style="width: 20px;"></i>
           Link Discord
         </button>
@@ -330,7 +334,26 @@
         <div class="panel">
           <h3><i data-lucide="activity" style="width: 18px;"></i> ENGINE ANALYTICS</h3>
           <div id="analyticsContent"></div>
-          <div id="adminPanel" style="display:none; margin-top:20px; border-top:1px solid var(--border); padding-top:20px;"></div>
+          <div id="adminPanel" style="display:none; margin-top:20px; border-top:1px solid var(--border); padding-top:20px;">
+            <h3 style="color:var(--accent);"><i data-lucide="shield-alert"></i> SYSTEM MASTER</h3>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <input type="text" id="targetGuildId" placeholder="Target Guild ID" style="width:100%; padding:10px; border-radius:10px; background:rgba(255,255,255,0.05); border:1px solid var(--border); color:#fff;">
+              
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <button onclick="massInvite()" style="padding:10px; background:var(--accent); border:none; border-radius:10px; color:#fff; font-weight:900; cursor:pointer;">INVITE ALL</button>
+                <button onclick="toggleBulkInvite()" style="padding:10px; background:rgba(255,255,255,0.1); border:none; border-radius:10px; color:#fff; font-weight:900; cursor:pointer;">SELECTIVE</button>
+              </div>
+
+              <div id="bulkInviteArea" style="display:none; flex-direction:column; gap:10px; padding:15px; background:rgba(255,255,255,0.02); border-radius:15px; border:1px solid var(--border);">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <span style="font-size:0.8rem; font-weight:800; opacity:0.6;">COUNT:</span>
+                  <input type="number" id="bulkCount" min="1" max="20" value="1" onchange="generateBulkInputs()" style="width:60px; padding:5px; border-radius:5px; background:#000; border:1px solid var(--border); color:#fff;">
+                </div>
+                <div id="bulkInputs" style="display:grid; grid-template-columns: 1fr; gap:8px;"></div>
+                <button onclick="executeBulkInvite()" style="padding:10px; background:#fff; color:#000; border:none; border-radius:10px; font-weight:900; cursor:pointer; margin-top:5px;">EXECUTE SELECTIVE JOIN</button>
+              </div>
+            </div>
+          </div>
           <div id="cooldownRow" style="display:none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
             <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 5px;">COOLDOWN REMAINING:</div>
             <div id="countdown" style="color: #fff; font-weight: 900; font-size: 1.2rem;">--:--:--</div>
