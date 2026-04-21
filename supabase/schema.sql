@@ -154,6 +154,10 @@ create table if not exists public.wheel_users (
   last_spin_at timestamptz,
   total_spins integer not null default 0,
   best_character_id uuid references public.brainrot_characters(id),
+  daily_bonus_spins integer not null default 0,
+  last_daily_bonus_date date,
+  spin_streak integer not null default 0,
+  last_spin_date date,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
@@ -168,6 +172,26 @@ create table if not exists public.wheel_spins (
   weight float not null,
   is_real boolean not null default true,
   spun_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.achievements (
+  id uuid primary key default gen_random_uuid(),
+  code text unique not null,
+  name text not null,
+  name_ar text not null,
+  description text,
+  icon text,
+  requirement jsonb not null,
+  reward_xp integer not null default 0,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.user_achievements (
+  id uuid primary key default gen_random_uuid(),
+  discord_id text not null references public.wheel_users(discord_id),
+  achievement_id uuid not null references public.achievements(id),
+  unlocked_at timestamptz not null default timezone('utc', now()),
+  unique(discord_id, achievement_id)
 );
 
 create or replace function public.set_wheel_user_updated_at()
@@ -193,4 +217,6 @@ grant all on table public.bot_infrastructure to service_role;
 grant all on table public.brainrot_characters to service_role;
 grant all on table public.wheel_users to service_role;
 grant all on table public.wheel_spins to service_role;
+grant all on table public.achievements to service_role;
+grant all on table public.user_achievements to service_role;
 grant execute on function public.next_ticket_number() to service_role;

@@ -56,9 +56,20 @@
             </div>
           </div>
           <div class="info-card cooldown-card" id="cooldownCard" style="display:none;">
-            <h3>⏳ الانتظار</h3>
-            <p>يمكنك الدوران مرة أخرى بعد:</p>
+            <h3>⏳ التبريد</h3>
             <div class="countdown" id="countdown">--:--:--</div>
+          </div>
+
+          <div class="info-card bonus-card" id="bonusCard" style="display:none;">
+            <h3>🎁 الدورة اليومية</h3>
+            <div class="bonus-count" id="bonusCount">--</div>
+            <p class="bonus-label">دورات مجانية متاحة</p>
+          </div>
+
+          <div class="info-card streak-card" id="streakCard" style="display:none;">
+            <h3>🔥 السلسلة</h3>
+            <div class="streak-count" id="streakCount">--</div>
+            <p class="streak-label">أيام متتالية</p>
           </div>
         </div>
       </div>
@@ -82,6 +93,20 @@
           <h3>🎒 مجموعتي</h3>
           <div class="collection-grid" id="myCollection">
             <p class="empty">سجل الدخول لرؤية مجموعتك</p>
+          </div>
+        </div>
+
+        <div class="panel achievements">
+          <h3>🏆 الإنجازات</h3>
+          <div class="achievements-grid" id="achievementsGrid">
+            <p class="empty">سجل الدخول لرؤية إنجازاتك</p>
+          </div>
+        </div>
+
+        <div class="panel analytics">
+          <h3>📊 الإحصائيات</h3>
+          <div class="analytics-content" id="analyticsContent">
+            <p class="empty">سجل الدخول لرؤية إحصائياتك</p>
           </div>
         </div>
       </div>

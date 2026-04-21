@@ -87,6 +87,53 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
     return json({ remaining: Math.floor(remaining / 1000), total_spins: data?.total_spins || 0 });
   }
 
+  if (path === '/api/wheel/achievements' && method === 'GET') {
+    const discordId = url.searchParams.get('discord_id');
+    if (!discordId) return json({ error: 'missing id' }, 400);
+
+    const [achievements, userAchievements] = await Promise.all([
+      supabase!.from('achievements').select('*').order('reward_xp', { ascending: false }),
+      supabase!.from('user_achievements').select('achievement_id').eq('discord_id', discordId)
+    ]);
+
+    const unlocked = new Set((userAchievements.data || []).map((ua: any) => ua.achievement_id));
+    const result = (achievements.data || []).map((a: any) => ({
+      ...a,
+      unlocked: unlocked.has(a.id)
+    }));
+
+    return json(result);
+  }
+
+  if (path === '/api/wheel/analytics' && method === 'GET') {
+    const discordId = url.searchParams.get('discord_id');
+    if (!discordId) return json({ error: 'missing id' }, 400);
+
+    const [spins, user] = await Promise.all([
+      supabase!.from('wheel_spins').select('*').eq('discord_id', discordId).order('spun_at', { ascending: false }),
+      supabase!.from('wheel_users').select('*').eq('discord_id', discordId).single()
+    ]);
+
+    const rarityStats: Record<string, number> = {};
+    (spins.data || []).forEach((s: any) => {
+      rarityStats[s.rarity] = (rarityStats[s.rarity] || 0) + 1;
+    });
+
+    const total = spins.data?.length || 0;
+    const tierStats: Record<number, number> = {};
+    (spins.data || []).forEach((s: any) => {
+      tierStats[s.tier] = (tierStats[s.tier] || 0) + 1;
+    });
+
+    return json({
+      total_spins: total,
+      rarity_distribution: rarityStats,
+      tier_distribution: tierStats,
+      best_rarity: Object.entries(rarityStats).sort((a: any, b: any) => b[1] - a[1])[0] || null,
+      user: user.data
+    });
+  }
+
   if (path === '/api/wheel/collection' && method === 'GET') {
     const discordId = url.searchParams.get('discord_id');
     if (!discordId) return json({ error: 'missing id' }, 400);
@@ -111,10 +158,39 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
     const discordId = body.discord_id;
     if (!discordId) return json({ error: 'missing discord_id' }, 400);
 
-    const { data: userData } = await supabase!.from('wheel_users').select('last_spin_at,total_spins').eq('discord_id', discordId).single();
-    const lastSpin = userData?.last_spin_at ? new Date(userData.last_spin_at).getTime() : 0;
-    if (Date.now() - lastSpin < COOLDOWN_MS) {
-      return json({ error: 'cooldown', remaining: Math.floor((COOLDOWN_MS - (Date.now() - lastSpin)) / 1000) }, 429);
+    const { data: userData } = await supabase!.from('wheel_users').select('*').eq('discord_id', discordId).single();
+    if (!userData) return json({ error: 'user not found' }, 404);
+
+    const today = new Date().toISOString().split('T')[0];
+    const lastSpinDate = userData.last_spin_date;
+    const lastDailyBonusDate = userData.last_daily_bonus_date;
+
+    // Reset daily bonus if new day
+    let dailyBonusSpins = userData.daily_bonus_spins || 0;
+    if (lastDailyBonusDate !== today) {
+      dailyBonusSpins = 1;
+    }
+
+    // Check cooldown (unless using daily bonus)
+    const lastSpin = userData.last_spin_at ? new Date(userData.last_spin_at).getTime() : 0;
+    const elapsed = Date.now() - lastSpin;
+    const isOnCooldown = elapsed < COOLDOWN_MS;
+
+    let useBonus = false;
+    if (isOnCooldown && dailyBonusSpins > 0) {
+      useBonus = true;
+    }
+
+    // Update streak
+    let streak = userData.spin_streak || 0;
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    if (lastSpinDate === yesterdayStr) {
+      streak++;
+    } else if (lastSpinDate !== today) {
+      streak = 1;
     }
 
     const { data: chars, error: charError } = await supabase!.from('brainrot_characters').select('*').gt('weight', 0).order('tier', { ascending: false }).order('weight', { ascending: false });
@@ -140,12 +216,28 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
 
     const sel = selected as any;
     const { data: spinData, error: spinError } = await supabase!.from('wheel_spins').insert({
-      discord_id: discordId, character_id: sel.id,
-      character_name: sel.name, rarity: sel.rarity,
-      tier: sel.tier, weight: sel.weight, is_real: sel.is_real
+      discord_id: discordId,
+      character_id: sel.id,
+      character_name: sel.name_ar || sel.name,
+      rarity: sel.rarity,
+      tier: sel.tier,
+      weight: sel.weight,
+      is_real: sel.is_real
     }).select('*, character:character_id(*)').single();
 
     if (spinError) return json({ error: spinError.message }, 500);
+
+    // Update user data with streak and daily bonus
+    const newDailyBonusSpins = useBonus ? dailyBonusSpins - 1 : dailyBonusSpins;
+    await supabase!.from('wheel_users').update({
+      last_spin_at: new Date().toISOString(),
+      total_spins: (userData.total_spins || 0) + 1,
+      best_character_id: (!userData.best_character_id || sel.tier > (userData.best_tier || 0)) ? sel.id : userData.best_character_id,
+      daily_bonus_spins: newDailyBonusSpins,
+      last_daily_bonus_date: today,
+      spin_streak: streak,
+      last_spin_date: today
+    }).eq('discord_id', discordId);
 
     if (WEBHOOK_URL) {
       try {
@@ -166,6 +258,31 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
           })
         }).catch(() => null);
       } catch {}
+    }
+
+    // Check achievements
+    const { data: allAchievements } = await supabase!.from('achievements').select('*');
+    const { data: unlocked } = await supabase!.from('user_achievements').select('achievement_id').eq('discord_id', discordId);
+    const unlockedSet = new Set((unlocked || []).map((u: any) => u.achievement_id));
+
+    for (const ach of (allAchievements || [])) {
+      if (unlockedSet.has(ach.id)) continue;
+
+      const req = ach.requirement as any;
+      let achieved = false;
+
+      if (req.type === 'total_spins') {
+        if ((userData?.total_spins || 0) + 1 >= req.min) achieved = true;
+      } else if (req.type === 'win_rarity' && sel.tier >= req.min_tier) {
+        achieved = true;
+      }
+
+      if (achieved) {
+        await supabase!.from('user_achievements').insert({
+          discord_id: discordId,
+          achievement_id: ach.id
+        });
+      }
     }
 
     return json({ ...(spinData as any), character: sel });

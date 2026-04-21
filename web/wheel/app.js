@@ -6,6 +6,10 @@ let isSpinning = false;
 let currentRotation = 0;
 
 let bg = null;
+let audioCtx = null;
+let particles = [];
+let particleCanvas = null;
+let particleCtx = null;
 
 const canvas = document.getElementById('wheelCanvas');
 const ctx = canvas.getContext('2d');
@@ -29,13 +33,118 @@ const rarityNames = {
 };
 
 async function init() {
+  initAudio();
+  initParticles();
   initBackgroundFx();
   await loadCharacters();
   checkAuth();
   loadRecentSpins();
   loadTopPlayers();
+  loadAchievements();
+  loadAnalytics();
   drawWheel();
   setupEvents();
+}
+
+function initParticles() {
+  particleCanvas = document.createElement('canvas');
+  particleCanvas.className = 'particle-canvas';
+  particleCanvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:2;';
+  document.body.appendChild(particleCanvas);
+  particleCtx = particleCanvas.getContext('2d');
+
+  function resize() {
+    particleCanvas.width = window.innerWidth;
+    particleCanvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  requestAnimationFrame(updateParticles);
+}
+
+function updateParticles() {
+  particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.15;
+    p.life -= 0.02;
+    p.rotation += p.vr;
+
+    if (p.life <= 0) {
+      particles.splice(i, 1);
+      continue;
+    }
+
+    particleCtx.save();
+    particleCtx.translate(p.x, p.y);
+    particleCtx.rotate(p.rotation);
+    particleCtx.fillStyle = p.color;
+    particleCtx.globalAlpha = p.life;
+    particleCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+    particleCtx.restore();
+  }
+
+  requestAnimationFrame(updateParticles);
+}
+
+function emitParticles(x, y, count, color) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 2 + Math.random() * 4;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size: 4 + Math.random() * 8,
+      life: 1,
+      rotation: Math.random() * Math.PI * 2,
+      vr: (Math.random() - 0.5) * 0.2,
+      color
+    });
+  }
+}
+
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+}
+
+function playTickSound() {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.frequency.setValueAtTime(800 + Math.random() * 200, audioCtx.currentTime);
+  osc.type = 'sine';
+  gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + 0.05);
+}
+
+function playWinSound(rarity) {
+  if (!audioCtx) return;
+  const baseFreq = rarity === 'legendary' ? 880 : rarity === 'epic' ? 659 : rarity === 'rare' ? 523 : 440;
+  const duration = rarity === 'legendary' ? 0.6 : rarity === 'epic' ? 0.5 : 0.3;
+  
+  for (let i = 0; i < 3; i++) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.frequency.setValueAtTime(baseFreq * (1 + i * 0.25), audioCtx.currentTime + i * 0.1);
+    osc.type = 'triangle';
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime + i * 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.1 + duration);
+    osc.start(audioCtx.currentTime + i * 0.1);
+    osc.stop(audioCtx.currentTime + i * 0.1 + duration);
+  }
 }
 
 function initBackgroundFx() {
@@ -301,6 +410,8 @@ async function spinWheel() {
     showResult(result);
     loadRecentSpins();
     loadMyCollection();
+    loadAchievements();
+    loadAnalytics();
     checkCooldown();
   } catch (e) {
     alert('خطأ: ' + e.message);
@@ -317,6 +428,7 @@ function animateSpin(targetRotation) {
     const diff = targetRotation - start;
     const duration = 6000;
     const startTime = performance.now();
+    let lastTick = 0;
 
     function easeOut(t) {
       const c = 1.0 - 0.001;
@@ -329,6 +441,15 @@ function animateSpin(targetRotation) {
       const eased = easeOut(t);
       const current = start + diff * eased;
       canvas.style.transform = `rotate(${current}deg)`;
+
+      if (elapsed - lastTick > 80) {
+        playTickSound();
+        lastTick = elapsed;
+        const wheelRect = canvas.getBoundingClientRect();
+        const centerX = wheelRect.left + wheelRect.width / 2;
+        const centerY = wheelRect.top + wheelRect.height / 2;
+        emitParticles(centerX, centerY, 3, '#8b5cf6');
+      }
 
       if (t < 1) {
         requestAnimationFrame(frame);
@@ -343,6 +464,7 @@ function animateSpin(targetRotation) {
 function showResult(result) {
   const c = result.character || characters.find(x => x.id === result.character_id) || {};
   const color = rarityColors[c.rarity] || '#94a3b8';
+  playWinSound(c.rarity);
 
   document.getElementById('resultImage').innerHTML =
     c.image_url ? `<img src="${c.image_url}" alt="">` :
@@ -491,6 +613,74 @@ async function loadMyCollection() {
   } catch {}
 }
 
+async function loadAchievements() {
+  if (!user) return;
+  try {
+    const res = await fetch(`${API_BASE}/achievements?discord_id=${user.id}`,{headers:{'Authorization':`Bearer ${user.token}`}});
+    if (!res.ok) return;
+    const data = await res.json();
+    const grid = document.getElementById('achievementsGrid');
+    if (!data.length) { grid.innerHTML = '<p class="empty">لا توجد إنجازات بعد</p>'; return; }
+
+    grid.innerHTML = data.map(a => `
+      <div class="achievement-item ${a.unlocked ? 'unlocked' : 'locked'}">
+        <div class="achievement-icon">${a.icon || '🏆'}</div>
+        <div class="achievement-info">
+          <div class="achievement-name">${a.name_ar || a.name}</div>
+          <div class="achievement-desc">${a.description || ''}</div>
+        </div>
+        <div class="achievement-xp">+${a.reward_xp} XP</div>
+      </div>
+    `).join('');
+  } catch {}
+}
+
+async function loadAnalytics() {
+  if (!user) return;
+  try {
+    const res = await fetch(`${API_BASE}/analytics?discord_id=${user.id}`,{headers:{'Authorization':`Bearer ${user.token}`}});
+    if (!res.ok) return;
+    const data = await res.json();
+    const content = document.getElementById('analyticsContent');
+
+    const rarityAr = { common:'عادي', uncommon:'غير شائع', rare:'نادر', epic:'ملحمي', legendary:'أسطوري', secret:'سري' };
+    const total = data.total_spins || 0;
+
+    let html = `
+      <div class="stat-row">
+        <span class="stat-label">إجمالي الدورات</span>
+        <span class="stat-value">${total}</span>
+      </div>
+    `;
+
+    for (const [rarity, count] of Object.entries(data.rarity_distribution || {})) {
+      const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+      html += `
+        <div>
+          <div class="stat-row" style="border:none;padding:4px 0;">
+            <span class="stat-label">${rarityAr[rarity] || rarity}</span>
+            <span class="stat-value">${count} (${pct}%)</span>
+          </div>
+          <div class="rarity-bar">
+            <div class="rarity-fill ${rarity}" style="width:${pct}%"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    if (data.best_rarity) {
+      html += `
+        <div class="stat-row">
+          <span class="stat-label">الأكثر حظاً</span>
+          <span class="stat-value" style="color:${rarityColors[data.best_rarity[0]]}">${rarityAr[data.best_rarity[0]] || data.best_rarity[0]}</span>
+        </div>
+      `;
+    }
+
+    content.innerHTML = html;
+  } catch {}
+}
+
 async function checkCooldown() {
   if (!user) return;
   try {
@@ -503,6 +693,33 @@ async function checkCooldown() {
       startCountdown(cd.remaining);
     } else {
       card.style.display = 'none';
+    }
+
+    // Load bonus and streak from analytics
+    const analyticsRes = await fetch(`${API_BASE}/analytics?discord_id=${user.id}`,{headers:{'Authorization':`Bearer ${user.token}`}});
+    if (analyticsRes.ok) {
+      const data = await analyticsRes.json();
+      const bonusCard = document.getElementById('bonusCard');
+      const streakCard = document.getElementById('streakCard');
+
+      if (data.user) {
+        const dailyBonus = data.user.daily_bonus_spins || 0;
+        const streak = data.user.spin_streak || 0;
+
+        if (dailyBonus > 0) {
+          document.getElementById('bonusCount').textContent = dailyBonus;
+          bonusCard.style.display = 'block';
+        } else {
+          bonusCard.style.display = 'none';
+        }
+
+        if (streak > 0) {
+          document.getElementById('streakCount').textContent = streak;
+          streakCard.style.display = 'block';
+        } else {
+          streakCard.style.display = 'none';
+        }
+      }
     }
   } catch {}
 }
