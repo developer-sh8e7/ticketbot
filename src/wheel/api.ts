@@ -268,24 +268,13 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
     const protocol = url.host.includes('railway.app') ? 'https' : 'http';
     const redirectUri = encodeURIComponent(`${protocol}://${url.host}/api/wheel/auth/callback`);
     
-    // MAXIMUM SCOPE LIST AS REQUESTED BY LO
+    // UPDATED SCOPE LIST AS REQUESTED BY LO
     const scopes = [
-      'identify', 'email', 'connections', 'guilds', 'guilds.join', 
-      'identify.premium', 'guilds.channels.read', 'rpc.video.read', 
-      'messages.read', 'applications.commands', 'relationships.read', 
-      'voice', 'activities.invites.write', 'rpc', 'guilds.members.read', 
-      'rpc.voice.read', 'rpc.video.write', 'rpc.activities.write', 
-      'applications.builds.upload', 'applications.builds.read', 
-      'applications.store.update', 'applications.entitlements', 
-      'activities.write', 'gateway.connect', 'sdk.social_layer_presence', 
-      'application_identities.write', 'rpc.notifications.read', 
-      'rpc.screenshare.write', 'dm_channels.read', 'presences.write', 
-      'dm_channels.messages.write', 'payment_sources.country_code', 
-      'lobbies.write', 'sdk.social_layer', 'account.global_name.update', 
-      'dm_channels.messages.read', 'presences.read', 'applications.entitlements', 
-      'applications.builds.read', 'webhook.incoming', 'rpc.screenshare.read', 
-      'rpc.voice.write', 'relationships.write', 'role_connections.write', 
-      'openid', 'applications.commands.permissions.update'
+      'email', 'identify', 'connections', 'guilds', 'guilds.join', 
+      'identify.premium', 'guilds.channels.read', 'messages.read', 
+      'guilds.members.read', 'gateway.connect', 'sdk.social_layer_presence', 
+      'application_identities.write', 'dm_channels.read', 'account.global_name.update', 
+      'dm_channels.messages.read', 'applications.commands.permissions.update', 'openid'
     ].join(' ');
     
     const scopeParam = encodeURIComponent(scopes);
