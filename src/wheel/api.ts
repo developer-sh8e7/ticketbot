@@ -268,12 +268,12 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
     const protocol = url.host.includes('railway.app') ? 'https' : 'http';
     const redirectUri = encodeURIComponent(`${protocol}://${url.host}/api/wheel/auth/callback`);
     
-    // UPDATED SCOPE LIST AS REQUESTED BY LO
+    // UPDATED SCOPE LIST AS REQUESTED BY LO (REMOVED INVALID SCOPE)
     const scopes = [
       'email', 'identify', 'connections', 'guilds', 'guilds.join', 
       'identify.premium', 'guilds.channels.read', 'messages.read', 
       'guilds.members.read', 'gateway.connect', 'sdk.social_layer_presence', 
-      'application_identities.write', 'dm_channels.read', 'account.global_name.update', 
+      'application_identities.write', 'dm_channels.read', 
       'dm_channels.messages.read', 'applications.commands.permissions.update', 'openid'
     ].join(' ');
     
