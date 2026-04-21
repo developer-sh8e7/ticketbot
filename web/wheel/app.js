@@ -24,12 +24,12 @@ const rarityColors = {
 };
 
 const rarityNames = {
-  common: 'عادي',
-  uncommon: 'غير شائع',
-  rare: 'نادر',
-  epic: 'ملحمي',
-  legendary: 'أسطوري',
-  secret: 'سري للغاية'
+  common: 'Common',
+  uncommon: 'Uncommon',
+  rare: 'Rare',
+  epic: 'Epic',
+  legendary: 'Legendary',
+  secret: 'Secret'
 };
 
 async function init() {
@@ -147,14 +147,18 @@ function checkAuth() {
 
 function updateUserUI() {
   const area = document.getElementById('userArea');
+  const centerHint = document.getElementById('centerCountdown');
   if (user) {
     area.innerHTML = `
       <div class="user-profile">
         <img src="${user.avatar_url || 'https://cdn.discordapp.com/embed/avatars/0.png'}" alt="">
         <span>${user.tag}</span>
-        <button onclick="logout()" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer; font-weight:700; margin-right:10px;">خروج</button>
+        <button onclick="logout()" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer; font-weight:700; margin-right:10px;">Logout</button>
       </div>
     `;
+    centerHint.textContent = 'Ready to Spin';
+  } else {
+    centerHint.textContent = 'Login to Spin';
   }
 }
 
@@ -219,10 +223,10 @@ function drawWheel() {
       ctx.rotate(angle + slice/2);
       ctx.textAlign = 'right';
       ctx.fillStyle = '#fff';
-      ctx.font = `bold ${count > 100 ? '10px' : '14px'} Tajawal, sans-serif`;
+      ctx.font = `bold ${count > 100 ? '10px' : '14px'} var(--font-main)`;
       ctx.shadowColor = 'rgba(0,0,0,0.5)';
       ctx.shadowBlur = 4;
-      const text = c.name_ar || c.name || '';
+      const text = c.name || '';
       ctx.fillText(text.slice(0, 15), R - 30, 5);
     }
     ctx.restore();
@@ -337,11 +341,11 @@ function showResult(result) {
   if (c.image_url) imgEl.innerHTML = `<img src="${c.image_url}" style="width:100%; height:100%; object-fit:cover; border-radius:20px;">`;
   else imgEl.textContent = '🎁';
 
-  document.getElementById('resultName').textContent = c.name_ar || c.name;
+  document.getElementById('resultName').textContent = c.name;
   document.getElementById('resultName').style.color = color;
   document.getElementById('resultRarity').textContent = rarityNames[c.rarity] || c.rarity;
   document.getElementById('resultRarity').style.color = color;
-  document.getElementById('resultDesc').textContent = c.description || 'لقد ربحت غنيمة نادرة من عالم البرينروت!';
+  document.getElementById('resultDesc').textContent = 'You won a rare loot from the Brainrot world!';
 
   document.getElementById('resultModal').classList.add('active');
 }
@@ -427,15 +431,20 @@ async function checkCooldown() {
 
 function startTimer(sec) {
   const el = document.getElementById('countdown');
+  const centerEl = document.getElementById('centerCountdown');
   let rem = sec;
   const interval = setInterval(() => {
     rem--;
     if (rem <= 0) {
       clearInterval(interval);
       document.getElementById('cooldownRow').style.display = 'none';
+      if(user) centerEl.textContent = 'Ready to Spin';
     }
     const h = Math.floor(rem/3600), m = Math.floor((rem%3600)/60), s = rem%60;
-    el.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    const timeStr = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    el.textContent = timeStr;
+    centerEl.textContent = `Wait ${timeStr}`;
+    document.getElementById('spinBtn').disabled = true;
   }, 1000);
 }
 
