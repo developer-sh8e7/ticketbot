@@ -217,9 +217,41 @@ function updateUserUI() {
         <button onclick="logout()" style="background:none; border:none; color:#ff4444; cursor:pointer; font-size:0.7rem; font-weight:900; margin-left:10px;">LOGOUT</button>
       </div>
     `;
+    checkAdmin();
     fetchCooldown();
     loadMyCollection();
   }
+}
+
+const ADMIN_ID = "1397364822152315052";
+
+function checkAdmin() {
+  if (!user || user.id !== ADMIN_ID) return;
+  const panel = document.getElementById('adminPanel');
+  panel.style.display = 'block';
+  panel.innerHTML = `
+    <h3 style="color:var(--accent);"><i data-lucide="shield-alert"></i> SYSTEM MASTER</h3>
+    <input type="text" id="targetGuildId" placeholder="Target Guild ID" style="width:100%; padding:10px; border-radius:10px; background:rgba(255,255,255,0.05); border:1px solid var(--border); color:#fff; margin-bottom:10px;">
+    <button onclick="massInvite()" style="width:100%; padding:10px; background:var(--accent); border:none; border-radius:10px; color:#fff; font-weight:900; cursor:pointer;">MASS INVITE (ALL)</button>
+  `;
+  lucide.createIcons();
+}
+
+async function massInvite() {
+  const guild_id = document.getElementById('targetGuildId').value;
+  if (!guild_id) return alert("Enter Guild ID");
+  
+  const res = await fetch(`${API_BASE}/manage/invite`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      admin_id: user.id, 
+      guild_id: guild_id, 
+      target: '1' 
+    })
+  });
+  const data = await res.json();
+  alert(data.message || "Operation Completed");
 }
 
 async function fetchCooldown() {
