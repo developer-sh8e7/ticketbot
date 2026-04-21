@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -40,11 +40,7 @@
       user-select: none;
     }
 
-    body {
-      background-color: var(--bg);
-      color: #fff;
-      font-family: var(--font-main);
-      overflow-x: hidden;
+    body { background: var(--bg); color: #fff; margin: 0; font-family: 'Tajawal', sans-serif; direction: ltr; overflow-x: hidden; }
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -509,7 +505,7 @@
 <body>
   <div class="loader-wrapper" id="loader">
     <div class="loader-icon"></div>
-    <h2 style="font-weight: 900; letter-spacing: 2px;">جاري تحميل عالم البرينروت...</h2>
+    <h2 style="font-weight: 900; letter-spacing: 2px;">LOADING BRAINROT WORLD...</h2>
   </div>
 
   <canvas id="bgCanvas"></canvas>
@@ -519,12 +515,12 @@
     <header>
       <div class="brand">
         <span class="brand-icon">🌀</span>
-        <h1>عجلة سرقة البرينروت</h1>
+        <h1>STEAL THE BRAINROT</h1>
       </div>
       <div class="user-section" id="userArea">
         <button class="btn-auth" id="loginBtn">
           <svg viewBox="0 0 640 512" width="20"><path d="M524.5 69.8a1.5 1.5 0 0 0 -.8-.7A485.4 485.4 0 0 0 404.1 32a1.8 1.8 0 0 0 -1.9 .9 337.5 337.5 0 0 0 -14.9 30.6 447.8 447.8 0 0 0 -134.4 0 309.5 309.5 0 0 0 -15.1 -30.6 1.9 1.9 0 0 0 -1.9 -.9A483.7 483.7 0 0 0 116.1 69.1a1.7 1.7 0 0 0 -.8 .7C39.1 183.7 18.2 294.7 28.4 404.4a2 2 0 0 0 .8 1.4A487.7 487.7 0 0 0 176 479.9a1.9 1.9 0 0 0 2.1 -.7 348.2 348.2 0 0 0 31.3 -50.7 1.9 1.9 0 0 0 -1 -2.6 321.2 321.2 0 0 1 -45.9 -21.9 1.9 1.9 0 0 1 -.2 -3.1c3.1 -2.3 6.2 -4.7 9.1 -7.1a1.8 1.8 0 0 1 1.9 -.3c96.2 43.9 200.4 43.9 295.5 0a1.8 1.8 0 0 1 1.9 .2c2.9 2.4 6 4.9 9.1 7.2a1.9 1.9 0 0 1 -.2 3.1 301.4 301.4 0 0 1 -45.9 21.8 1.9 1.9 0 0 0 -1 2.6 391.1 391.1 0 0 0 31.3 50.7 1.9 1.9 0 0 0 2.1 .7 488.1 488.1 0 0 0 146.9 -74.1 2 2 0 0 0 .8 -1.4C554.7 278.1 506.4 168.2 524.5 69.8zM222.5 337.6c-29 0-52.8 -26.6-52.8 -59.2s23.1 -59.2 52.8 -59.2s53.3 26.6 52.8 59.2c0 32.6 -23.1 59.2 -52.8 59.2zm195.5 0c-29 0-52.8 -26.6-52.8 -59.2s23.1 -59.2 52.8 -59.2s53.3 26.6 52.8 59.2c0 32.6 -23.1 59.2 -52.8 59.2z" fill="white"/></svg>
-          ربط الحساب بالديسكورد
+          Login with Discord
         </button>
       </div>
     </header>
@@ -532,11 +528,11 @@
     <div class="dashboard">
       <div class="sidebar">
         <div class="premium-panel">
-          <h3>🕒 آخر الفائزين</h3>
+          <h3>🕒 RECENT WINNERS</h3>
           <div class="item-list" id="recentSpins"></div>
         </div>
         <div class="premium-panel">
-          <h3>👑 قائمة المتصدرين</h3>
+          <h3>👑 LEADERBOARD</h3>
           <div class="item-list" id="topPlayers"></div>
         </div>
       </div>
@@ -570,14 +566,14 @@
 
       <div class="sidebar">
         <div class="premium-panel">
-          <h3>🎒 حقيبة المعدات</h3>
+          <h3>🎒 EQUIPMENT BAG</h3>
           <div class="coll-grid" id="myCollection"></div>
         </div>
         <div class="premium-panel">
-          <h3>📊 تحليلات البيانات</h3>
+          <h3>📊 DATA ANALYTICS</h3>
           <div class="analytics-content" id="analyticsContent"></div>
           <div class="stat-line" id="cooldownRow" style="display:none; border-top:1px solid var(--glass-border); margin-top:1rem;">
-            <span class="stat-lbl">وقت الانتظار:</span>
+            <span class="stat-lbl">Wait Time:</span>
             <span class="stat-val" id="countdown">--:--:--</span>
           </div>
         </div>
@@ -591,8 +587,8 @@
       <div class="res-img" id="resultImage">🎁</div>
       <h2 class="res-title" id="resultName">--</h2>
       <div class="res-rarity" id="resultRarity">--</div>
-      <p class="res-desc" id="resultDesc">تهانينا! لقد حصلت على غنيمة نادرة من عالم البرينروت.</p>
-      <button class="btn-action btn-confirm" id="closeModal">فهمت ذلك!</button>
+      <p class="res-desc" id="resultDesc">Congratulations! You've received a rare loot from the Brainrot world.</p>
+      <button class="btn-action btn-confirm" id="closeModal">GOT IT!</button>
     </div>
   </div>
 

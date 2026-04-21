@@ -250,16 +250,16 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            content: `**عجلة البرينروت** | فائز جديد! <@${discordId}>`,
+            content: `**Brainrot Wheel** | New Winner! <@${discordId}>`,
             embeds: [{
-              title: `${sel.name_ar || sel.name}`,
-              description: `**الايدي:** \`${discordId}\`\n**المنشن:** <@${discordId}>\n**النادرة:** ${sel.rarity_ar || sel.rarity}\n**الوصف:** ${sel.description || ''}`,
+              title: `${sel.name}`,
+              description: `**User ID:** \`${discordId}\`\n**Mention:** <@${discordId}>\n**Rarity:** ${sel.rarity}\n**Description:** ${sel.description || ''}`,
               color: sel.tier === 6 ? 0xef4444 : sel.tier === 5 ? 0xf59e0b : sel.tier === 4 ? 0xa855f7 : sel.tier === 3 ? 0x3b82f6 : sel.tier === 2 ? 0x22c55e : 0x94a3b8,
               image: sel.image_url ? { url: sel.image_url } : undefined,
               thumbnail: avatar ? { url: avatar } : undefined,
               fields: [
-                { name: 'الندرة', value: sel.rarity_ar || sel.rarity, inline: true },
-                { name: 'القوة', value: `${sel.tier}`, inline: true }
+                { name: 'Rarity', value: sel.rarity, inline: true },
+                { name: 'Power', value: `${sel.tier}`, inline: true }
               ],
               footer: { text: 'Steal the Brainrot Wheel' },
               timestamp: new Date().toISOString()

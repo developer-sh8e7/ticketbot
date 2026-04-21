@@ -377,7 +377,7 @@ async function loadTopPlayers() {
         <div class="entry-icon" style="background:var(--accent); font-weight:900; font-size:1rem;">${i+1}</div>
         <div class="entry-info">
           <div class="entry-name">${p.discord_tag}</div>
-          <div class="entry-meta">${p.total_spins} دورة ناجحة</div>
+          <div class="entry-meta">${p.total_spins} successful spins</div>
         </div>
       </div>
     `).join('');
@@ -406,12 +406,12 @@ async function loadAnalytics() {
     const area = document.getElementById('analyticsContent');
     area.innerHTML = `
       <div class="stat-line">
-        <span class="stat-lbl">إجمالي الدورات:</span>
+        <span class="stat-lbl">Total Spins:</span>
         <span class="stat-val">${data.total_spins}</span>
       </div>
       <div class="stat-line">
-        <span class="stat-lbl">أفضل ندرة:</span>
-        <span class="stat-val" style="color:${rarityColors[data.best_rarity]}">${rarityNames[data.best_rarity] || 'لا يوجد'}</span>
+        <span class="stat-lbl">Best Rarity:</span>
+        <span class="stat-val" style="color:${rarityColors[data.best_rarity]}">${rarityNames[data.best_rarity] || 'None'}</span>
       </div>
     `;
   } catch {}
@@ -454,10 +454,10 @@ function getEmoji(r) {
 
 function timeAgo(iso) {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 60) return 'الآن';
-  if (diff < 3600) return `${Math.floor(diff/60)} د`;
-  if (diff < 86400) return `${Math.floor(diff/3600)} س`;
-  return `${Math.floor(diff/86400)} ي`;
+  if (diff < 60) return 'Now';
+  if (diff < 3600) return `${Math.floor(diff/60)}m`;
+  if (diff < 86400) return `${Math.floor(diff/3600)}h`;
+  return `${Math.floor(diff/86400)}d`;
 }
 
 init();
