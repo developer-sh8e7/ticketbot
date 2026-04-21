@@ -136,6 +136,8 @@ function drawWheel() {
   const R = Math.min(W,H)/2 - 16;
   const count = characters.length;
   const slice = (2 * Math.PI) / count;
+  const labelStep = Math.max(1, Math.ceil(count / 36));
+  const fontSize = count > 120 ? 8 : count > 80 ? 9 : 11;
 
   ctx.clearRect(0,0,W,H);
 
@@ -161,12 +163,18 @@ function drawWheel() {
     ctx.save();
     ctx.translate(CX,CY);
     ctx.rotate(angle + slice/2);
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 11px Tajawal,sans-serif';
-    ctx.shadowColor = 'rgba(0,0,0,0.8)';
-    ctx.shadowBlur = 4;
-    ctx.fillText(c.name_ar || c.name, R-20, 4);
+    if (i % labelStep === 0) {
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#fff';
+      ctx.font = `bold ${fontSize}px Tajawal,sans-serif`;
+      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      ctx.shadowBlur = 4;
+
+      const raw = String(c.name_ar || c.name || '');
+      const maxLen = count > 120 ? 10 : count > 80 ? 12 : 16;
+      const label = raw.length > maxLen ? raw.slice(0, maxLen - 1) + '…' : raw;
+      ctx.fillText(label, R-20, 4);
+    }
     ctx.restore();
   }
 

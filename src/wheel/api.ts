@@ -5,7 +5,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const WEB_DIR = join(__dirname, '..', '..', 'web', 'wheel');
+const WEB_DIR = join(process.cwd(), 'web', 'wheel');
 const WEBHOOK_URL = process.env.WHEEL_WEBHOOK_URL || '';
 const COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000;
 
