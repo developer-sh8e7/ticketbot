@@ -390,11 +390,16 @@ async function loadMyCollection() {
     const res = await fetch(`${API_BASE}/collection?discord_id=${user.id}`, { headers: { 'Authorization': `Bearer ${user.token}` } });
     const data = await res.json();
     const grid = document.getElementById('myCollection');
-    grid.innerHTML = data.map(c => `
-      <div class="coll-box" title="${c.name_ar || c.name}" style="border-color:${rarityColors[c.rarity]}">
-        ${getEmoji(c.rarity)}
+    if (data.length === 0) {
+        grid.innerHTML = '<div class="coll-box" style="font-size:0.8rem; font-weight:700;">No Loot</div>';
+        return;
+    }
+    const latest = data[0];
+    grid.innerHTML = `
+      <div class="coll-box" title="${latest.name}" style="border-color:${rarityColors[latest.rarity]}; width:100%; grid-column: 1 / -1; height: auto; padding: 10px;">
+        ${getEmoji(latest.rarity)} <span style="font-size:0.8rem; margin-left:10px;">${latest.name}</span>
       </div>
-    `).join('');
+    `;
   } catch {}
 }
 

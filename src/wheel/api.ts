@@ -161,41 +161,12 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
     const { data: userData } = await supabase!.from('wheel_users').select('*').eq('discord_id', discordId).single();
     if (!userData) return json({ error: 'user not found' }, 404);
 
-    const today = new Date().toISOString().split('T')[0];
-    const lastSpinDate = userData.last_spin_date;
-    const lastDailyBonusDate = userData.last_daily_bonus_date;
-
-    // Reset daily bonus if new day
-    let dailyBonusSpins = userData.daily_bonus_spins || 0;
-    if (lastDailyBonusDate !== today) {
-      dailyBonusSpins = 1;
-    }
-
-    // Check cooldown (unless using daily bonus)
+    // Check cooldown
     const lastSpin = userData.last_spin_at ? new Date(userData.last_spin_at).getTime() : 0;
     const elapsed = Date.now() - lastSpin;
-    const isOnCooldown = elapsed < COOLDOWN_MS;
-
-    let useBonus = false;
-    if (isOnCooldown) {
-      if (dailyBonusSpins > 0) {
-        useBonus = true;
-      } else {
-        const remaining = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
-        return json({ error: `cooldown: ${remaining}` }, 403);
-      }
-    }
-
-    // Update streak
-    let streak = userData.spin_streak || 0;
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-    if (lastSpinDate === yesterdayStr) {
-      streak++;
-    } else if (lastSpinDate !== today) {
-      streak = 1;
+    if (elapsed < COOLDOWN_MS) {
+      const remaining = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
+      return json({ error: `cooldown: ${remaining}` }, 403);
     }
 
     const { data: chars, error: charError } = await supabase!.from('brainrot_characters').select('*').gt('weight', 0).order('tier', { ascending: false }).order('weight', { ascending: false });
@@ -232,16 +203,11 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
 
     if (spinError) return json({ error: spinError.message }, 500);
 
-    // Update user data with streak and daily bonus
-    const newDailyBonusSpins = useBonus ? dailyBonusSpins - 1 : dailyBonusSpins;
+    // Update user data
     await supabase!.from('wheel_users').update({
       last_spin_at: new Date().toISOString(),
       total_spins: (userData.total_spins || 0) + 1,
-      best_character_id: (!userData.best_character_id || sel.tier > (userData.best_tier || 0)) ? sel.id : userData.best_character_id,
-      daily_bonus_spins: newDailyBonusSpins,
-      last_daily_bonus_date: today,
-      spin_streak: streak,
-      last_spin_date: today
+      best_character_id: (!userData.best_character_id || sel.tier > (userData.best_tier || 0)) ? sel.id : userData.best_character_id
     }).eq('discord_id', discordId);
 
     if (WEBHOOK_URL) {
