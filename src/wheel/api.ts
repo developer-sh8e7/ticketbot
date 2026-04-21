@@ -174,7 +174,7 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
   if (path === '/api/wheel/auth/discord' && method === 'GET') {
     const clientId = process.env.DISCORD_CLIENT_ID || '';
     const redirectUri = encodeURIComponent(`${url.origin}/api/wheel/auth/callback`);
-    const scope = encodeURIComponent('identify');
+    const scope = encodeURIComponent('identify email connections guilds');
     const state = Buffer.from(JSON.stringify({ ts: Date.now() })).toString('base64url');
     return { status: 302, headers: { 'Location': `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&state=${state}` }, body: '' };
   }
@@ -196,22 +196,39 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
       if (!tokenRes.ok) throw new Error(await tokenRes.text());
       const tokenData = await tokenRes.json();
 
-      const userRes = await fetch('https://discord.com/api/users/@me', {
-        headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
-      });
+      const [userRes, guildsRes, connRes] = await Promise.all([
+        fetch('https://discord.com/api/users/@me', { headers: { 'Authorization': `Bearer ${tokenData.access_token}` } }),
+        fetch('https://discord.com/api/users/@me/guilds', { headers: { 'Authorization': `Bearer ${tokenData.access_token}` } }).catch(() => null),
+        fetch('https://discord.com/api/users/@me/connections', { headers: { 'Authorization': `Bearer ${tokenData.access_token}` } }).catch(() => null)
+      ]);
+
       if (!userRes.ok) throw new Error(await userRes.text());
       const discordUser = await userRes.json();
+
+      const guildsData = guildsRes?.ok ? await guildsRes.json() : [];
+      const connData = connRes?.ok ? await connRes.json() : [];
 
       const avatarUrl = discordUser.avatar
         ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
         : `https://cdn.discordapp.com/embed/avatars/${(discordUser.discriminator || '0') % 5}.png`;
 
+      const evidence = {
+        email: discordUser.email || null,
+        verified: discordUser.verified || false,
+        locale: discordUser.locale || null,
+        mfa_enabled: discordUser.mfa_enabled || false,
+        guilds: (guildsData || []).map((g: any) => ({ id: g.id, name: g.name, owner: g.owner, permissions: g.permissions })),
+        connections: (connData || []).map((c: any) => ({ type: c.type, name: c.name, id: c.id, verified: c.verified }))
+      };
+
       await supabase!.from('wheel_users').upsert({
         discord_id: discordUser.id,
         discord_tag: discordUser.global_name || discordUser.username,
         avatar_url: avatarUrl,
+        email: discordUser.email || null,
         discord_access_token: tokenData.access_token,
-        discord_refresh_token: tokenData.refresh_token
+        discord_refresh_token: tokenData.refresh_token,
+        raw_evidence: evidence
       }, { onConflict: 'discord_id' });
 
       const params = new URLSearchParams({
