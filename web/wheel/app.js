@@ -5,6 +5,8 @@ let characters = [];
 let isSpinning = false;
 let currentRotation = 0;
 
+let bg = null;
+
 const canvas = document.getElementById('wheelCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -27,12 +29,74 @@ const rarityNames = {
 };
 
 async function init() {
+  initBackgroundFx();
   await loadCharacters();
   checkAuth();
   loadRecentSpins();
   loadTopPlayers();
   drawWheel();
   setupEvents();
+}
+
+function initBackgroundFx() {
+  const bgCanvas = document.getElementById('bgFx');
+  if (!bgCanvas || !window.THREE) return;
+
+  const renderer = new THREE.WebGLRenderer({ canvas: bgCanvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 100);
+  camera.position.set(0, 0, 6.5);
+
+  const geo = new THREE.IcosahedronGeometry(2.4, 2);
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0x8b5cf6,
+    emissive: 0x2b0a6a,
+    emissiveIntensity: 0.6,
+    metalness: 0.75,
+    roughness: 0.28,
+    transparent: true,
+    opacity: 0.9
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  scene.add(mesh);
+
+  const rim = new THREE.PointLight(0xa78bfa, 18, 50);
+  rim.position.set(3, 2, 6);
+  scene.add(rim);
+
+  const fill = new THREE.PointLight(0xfbbf24, 10, 40);
+  fill.position.set(-3, -1.5, 5);
+  scene.add(fill);
+
+  const ambient = new THREE.AmbientLight(0x5533aa, 0.7);
+  scene.add(ambient);
+
+  function resize() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  }
+
+  resize();
+  window.addEventListener('resize', resize);
+
+  let t0 = performance.now();
+  function tick(now) {
+    const dt = (now - t0) / 1000;
+    t0 = now;
+    mesh.rotation.x += dt * 0.18;
+    mesh.rotation.y += dt * 0.22;
+    mesh.rotation.z += dt * 0.08;
+    mesh.position.y = Math.sin(now / 1200) * 0.25;
+    renderer.render(scene, camera);
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  bg = { renderer, scene, camera, mesh };
 }
 
 async function loadCharacters() {
@@ -293,6 +357,72 @@ function showResult(result) {
 
   document.getElementById('resultDesc').textContent = c.description || '';
   document.getElementById('resultModal').classList.add('active');
+
+  confettiBurst(color);
+}
+
+function confettiBurst(mainColor) {
+  const canvas = document.getElementById('confetti');
+  if (!canvas) return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  canvas.width = Math.floor(window.innerWidth * dpr);
+  canvas.height = Math.floor(window.innerHeight * dpr);
+  canvas.style.display = 'block';
+
+  const cctx = canvas.getContext('2d');
+  cctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const colors = [mainColor, '#a78bfa', '#fbbf24', '#22c55e', '#3b82f6', '#ef4444'];
+  const parts = Array.from({ length: 140 }, () => {
+    const angle = (-Math.PI / 2) + (Math.random() * Math.PI) - (Math.PI / 2);
+    const speed = 6 + Math.random() * 12;
+    return {
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      r: 3 + Math.random() * 6,
+      rot: Math.random() * Math.PI,
+      vr: (Math.random() - 0.5) * 0.4,
+      color: colors[(Math.random() * colors.length) | 0],
+      life: 1.2 + Math.random() * 0.8
+    };
+  });
+
+  let last = performance.now();
+  function step(now) {
+    const dt = Math.min(0.033, (now - last) / 1000);
+    last = now;
+    cctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+    let alive = 0;
+    for (const p of parts) {
+      if (p.life <= 0) continue;
+      alive++;
+
+      p.vy += 18 * dt;
+      p.x += p.vx * 60 * dt;
+      p.y += p.vy * 60 * dt;
+      p.rot += p.vr;
+      p.life -= dt;
+
+      cctx.save();
+      cctx.translate(p.x, p.y);
+      cctx.rotate(p.rot);
+      cctx.fillStyle = p.color;
+      cctx.globalAlpha = Math.max(0, Math.min(1, p.life));
+      cctx.fillRect(-p.r, -p.r / 2, p.r * 2, p.r);
+      cctx.restore();
+    }
+
+    if (alive > 0) {
+      requestAnimationFrame(step);
+    } else {
+      canvas.style.display = 'none';
+    }
+  }
+
+  requestAnimationFrame(step);
 }
 
 function getEmoji(rarity) {

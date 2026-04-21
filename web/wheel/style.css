@@ -27,6 +27,26 @@ body {
   position: relative;
 }
 
+.bg-fx {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.confetti {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 200;
+  pointer-events: none;
+  display: none;
+}
+
 .particles {
   position: fixed; inset: 0;
   pointer-events: none; z-index: 0;
