@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+import { initWheelAPI, handleWheelRequest } from './wheel/api.js';
 import {
   Client,
   Events,
@@ -30,6 +31,7 @@ let consecutiveInteractionFailures = 0;
 const DUPLICATE_THRESHOLD = 5;
 const configStore = new ConfigStore(env.CONFIG_PATH);
 const supabase = createSupabaseClient(env);
+initWheelAPI(supabase);
 const ticketRepository = new TicketRepository(supabase);
 const infrastructureRepository = new InfrastructureRepository(supabase);
 const transcriptService = new TranscriptService();
@@ -368,7 +370,24 @@ function formatUptime(seconds: number): string {
   return parts.join(' ');
 }
 
-const healthServer = createServer((req, res) => {
+const healthServer = createServer(async (req, res) => {
+  const url = new URL(req.url || '/', `http://${req.headers.host}`);
+
+  if (url.pathname.startsWith('/wheel') || url.pathname.startsWith('/api/wheel')) {
+    try {
+      const chunks: Buffer[] = [];
+      for await (const chunk of req) chunks.push(chunk);
+      const body = Buffer.concat(chunks).toString('utf-8') || undefined;
+      const result = await handleWheelRequest(url, req.method || 'GET', body);
+      res.writeHead(result.status, result.headers);
+      res.end(result.body);
+    } catch (err: any) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
   if (req.url === '/api') {
     const uptime = Math.floor((Date.now() - startedAt) / 1000);
     const botUser = client.user;

@@ -125,8 +125,70 @@ alter table public.ticket_counters disable row level security;
 alter table public.tickets disable row level security;
 alter table public.bot_infrastructure disable row level security;
 
+-- ============================================================
+-- Brainrot Spin Wheel Tables
+-- ============================================================
+
+create table if not exists public.brainrot_characters (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  name_ar text not null,
+  image_url text not null,
+  rarity text not null default 'common',
+  rarity_ar text not null default 'عادي',
+  tier integer not null default 1,
+  weight float not null default 100.0,
+  is_real boolean not null default true,
+  description text,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.wheel_users (
+  discord_id text primary key,
+  discord_tag text not null,
+  avatar_url text,
+  discord_access_token text,
+  discord_refresh_token text,
+  last_spin_at timestamptz,
+  total_spins integer not null default 0,
+  best_character_id uuid references public.brainrot_characters(id),
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.wheel_spins (
+  id uuid primary key default gen_random_uuid(),
+  discord_id text not null references public.wheel_users(discord_id),
+  character_id uuid not null references public.brainrot_characters(id),
+  character_name text not null,
+  rarity text not null,
+  tier integer not null,
+  weight float not null,
+  is_real boolean not null default true,
+  spun_at timestamptz not null default timezone('utc', now())
+);
+
+create or replace function public.set_wheel_user_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = timezone('utc', now());
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_wheel_users_updated_at on public.wheel_users;
+create trigger trg_wheel_users_updated_at
+before update on public.wheel_users
+for each row
+execute function public.set_wheel_user_updated_at();
+
 grant usage on schema public to service_role;
 grant all on table public.ticket_counters to service_role;
 grant all on table public.tickets to service_role;
 grant all on table public.bot_infrastructure to service_role;
+grant all on table public.brainrot_characters to service_role;
+grant all on table public.wheel_users to service_role;
+grant all on table public.wheel_spins to service_role;
 grant execute on function public.next_ticket_number() to service_role;
