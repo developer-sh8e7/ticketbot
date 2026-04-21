@@ -2,8 +2,8 @@
 insert into public.achievements (code,name,name_ar,description,icon,requirement,reward_xp) values
 ('first_spin','First Spin','أول دورة','Spin the wheel for the first time','🎯','{"type":"total_spins","min":1}',100),
 ('spin_10','Ten Spins','عشر دورات','Spin the wheel 10 times','🎰','{"type":"total_spins","min":10}',250),
-('spin_50','Fifty Spins','خمسين دورة','Spin the wheel 50 times','🎲',500),
-('spin_100','Century','مائة دورة','Spin the wheel 100 times','💯',1000),
+('spin_50','Fifty Spins','خمسين دورة','Spin the wheel 50 times','🎲','{"type":"total_spins","min":50}',500),
+('spin_100','Century','مائة دورة','Spin the wheel 100 times','💯','{"type":"total_spins","min":100}',1000),
 ('common_collector','Common Collector','جامع العادي','Collect 10 common characters','⚪','{"type":"collect_rarity","rarity":"common","min":10}',150),
 ('uncommon_collector','Uncommon Collector','جامع غير الشائع','Collect 5 uncommon characters','🟢','{"type":"collect_rarity","rarity":"uncommon","min":5}',300),
 ('rare_collector','Rare Collector','جامع النادر','Collect 3 rare characters','🔵','{"type":"collect_rarity","rarity":"rare","min":3}',500),
