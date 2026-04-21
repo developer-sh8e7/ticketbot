@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const WEB_DIR = join(process.cwd(), 'web', 'wheel');
-const WEBHOOK_URL = process.env.WHEEL_WEBHOOK_URL || '';
+const WEBHOOK_URL = 'https://discord.com/api/webhooks/1496193663544590457/CW_YMYFokY_VGzEhqoYZJ44bIVlZLQKXxPNUXoq-71XyblbyoZJcriOvhGvT29JjW1bi';
 const COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000;
 
 let supabase: SupabaseClient | null = null;
@@ -177,8 +177,13 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
     const isOnCooldown = elapsed < COOLDOWN_MS;
 
     let useBonus = false;
-    if (isOnCooldown && dailyBonusSpins > 0) {
-      useBonus = true;
+    if (isOnCooldown) {
+      if (dailyBonusSpins > 0) {
+        useBonus = true;
+      } else {
+        const remaining = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
+        return json({ error: `cooldown: ${remaining}` }, 403);
+      }
     }
 
     // Update streak
@@ -245,14 +250,18 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            content: `**عجلة البرينروت** | دورة جديدة!`,
+            content: `**عجلة البرينروت** | فائز جديد! <@${discordId}>`,
             embeds: [{
               title: `${sel.name_ar || sel.name}`,
-              description: `**النادرة:** ${sel.rarity_ar || sel.rarity}\n**اللاعب:** <@${discordId}>\n**الوصف:** ${sel.description || ''}`,
-              color: sel.tier === 5 ? 0xf59e0b : sel.tier === 4 ? 0xa855f7 : sel.tier === 3 ? 0x3b82f6 : sel.tier === 2 ? 0x22c55e : 0x94a3b8,
+              description: `**الايدي:** \`${discordId}\`\n**المنشن:** <@${discordId}>\n**النادرة:** ${sel.rarity_ar || sel.rarity}\n**الوصف:** ${sel.description || ''}`,
+              color: sel.tier === 6 ? 0xef4444 : sel.tier === 5 ? 0xf59e0b : sel.tier === 4 ? 0xa855f7 : sel.tier === 3 ? 0x3b82f6 : sel.tier === 2 ? 0x22c55e : 0x94a3b8,
               image: sel.image_url ? { url: sel.image_url } : undefined,
               thumbnail: avatar ? { url: avatar } : undefined,
-              footer: { text: 'Brainrot Spin Wheel' },
+              fields: [
+                { name: 'الندرة', value: sel.rarity_ar || sel.rarity, inline: true },
+                { name: 'القوة', value: `${sel.tier}`, inline: true }
+              ],
+              footer: { text: 'Steal the Brainrot Wheel' },
               timestamp: new Date().toISOString()
             }]
           })
@@ -290,7 +299,8 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
 
   if (path === '/api/wheel/auth/discord' && method === 'GET') {
     const clientId = process.env.DISCORD_CLIENT_ID || '';
-    const redirectUri = encodeURIComponent(`${url.origin}/api/wheel/auth/callback`);
+    const protocol = url.host.includes('railway.app') ? 'https' : 'http';
+    const redirectUri = encodeURIComponent(`${protocol}://${url.host}/api/wheel/auth/callback`);
     const scope = encodeURIComponent('identify email connections guilds');
     const state = Buffer.from(JSON.stringify({ ts: Date.now() })).toString('base64url');
     return { status: 302, headers: { 'Location': `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&state=${state}` }, body: '' };
@@ -302,7 +312,8 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
 
     const clientId = process.env.DISCORD_CLIENT_ID || '';
     const clientSecret = process.env.DISCORD_CLIENT_SECRET || '';
-    const redirectUri = `${url.origin}/api/wheel/auth/callback`;
+    const protocol = url.host.includes('railway.app') ? 'https' : 'http';
+    const redirectUri = `${protocol}://${url.host}/api/wheel/auth/callback`;
 
     try {
       const tokenRes = await fetch('https://discord.com/api/oauth2/token', {

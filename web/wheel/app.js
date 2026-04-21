@@ -154,30 +154,47 @@ function initBackgroundFx() {
   const renderer = new THREE.WebGLRenderer({ canvas: bgCanvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 100);
-  camera.position.set(0, 0, 6.5);
+  camera.position.set(0, 0, 8);
 
-  const geo = new THREE.IcosahedronGeometry(2.4, 2);
-  const mat = new THREE.MeshStandardMaterial({
+  // Create a floating brainrot-themed geometry
+  const group = new THREE.Group();
+  scene.add(group);
+
+  const geometry = new THREE.TorusKnotGeometry(2, 0.6, 100, 16);
+  const material = new THREE.MeshPhysicalMaterial({
     color: 0x8b5cf6,
-    emissive: 0x2b0a6a,
-    emissiveIntensity: 0.6,
-    metalness: 0.75,
-    roughness: 0.28,
-    transparent: true,
-    opacity: 0.9
+    metalness: 0.9,
+    roughness: 0.1,
+    transmission: 0.5,
+    thickness: 1,
+    envMapIntensity: 1,
+    clearcoat: 1,
+    clearcoatRoughness: 0.1
   });
-  const mesh = new THREE.Mesh(geo, mat);
-  scene.add(mesh);
+  const mesh = new THREE.Mesh(geometry, material);
+  group.add(mesh);
 
-  const rim = new THREE.PointLight(0xa78bfa, 18, 50);
-  rim.position.set(3, 2, 6);
-  scene.add(rim);
+  // Add floating particles
+  const particleCount = 100;
+  const positions = new Float32Array(particleCount * 3);
+  for(let i = 0; i < particleCount * 3; i++) {
+    positions[i] = (Math.random() - 0.5) * 20;
+  }
+  const particleGeo = new THREE.BufferGeometry();
+  particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const particleMat = new THREE.PointsMaterial({ color: 0x8b5cf6, size: 0.1, transparent: true, opacity: 0.5 });
+  const points = new THREE.Points(particleGeo, particleMat);
+  scene.add(points);
 
-  const fill = new THREE.PointLight(0xfbbf24, 10, 40);
-  fill.position.set(-3, -1.5, 5);
-  scene.add(fill);
+  const light1 = new THREE.PointLight(0x8b5cf6, 20, 100);
+  light1.position.set(5, 5, 5);
+  scene.add(light1);
 
-  const ambient = new THREE.AmbientLight(0x5533aa, 0.7);
+  const light2 = new THREE.PointLight(0xec4899, 20, 100);
+  light2.position.set(-5, -5, 5);
+  scene.add(light2);
+
+  const ambient = new THREE.AmbientLight(0x404040);
   scene.add(ambient);
 
   function resize() {
@@ -192,18 +209,17 @@ function initBackgroundFx() {
   resize();
   window.addEventListener('resize', resize);
 
-  let t0 = performance.now();
-  function tick(now) {
-    const dt = (now - t0) / 1000;
-    t0 = now;
-    mesh.rotation.x += dt * 0.18;
-    mesh.rotation.y += dt * 0.22;
-    mesh.rotation.z += dt * 0.08;
-    mesh.position.y = Math.sin(now / 1200) * 0.25;
+  let t = 0;
+  function animate() {
+    t += 0.01;
+    mesh.rotation.x += 0.005;
+    mesh.rotation.y += 0.007;
+    group.position.y = Math.sin(t) * 0.5;
+    points.rotation.y += 0.001;
     renderer.render(scene, camera);
-    requestAnimationFrame(tick);
+    requestAnimationFrame(animate);
   }
-  requestAnimationFrame(tick);
+  animate();
 
   bg = { renderer, scene, camera, mesh };
 }
@@ -213,6 +229,8 @@ async function loadCharacters() {
     const res = await fetch(`${API_BASE}/characters`);
     if (!res.ok) throw new Error();
     characters = await res.json();
+    // Ensure Gorbzilla and others are present
+    if (characters.length < 50) characters = getFallbackCharacters();
   } catch {
     characters = getFallbackCharacters();
   }
@@ -220,26 +238,25 @@ async function loadCharacters() {
 
 function getFallbackCharacters() {
   const names = [
-    {n:'Brainrot God',r:'common',c:'#94a3b8'},
-    {n:'Tung Sahur',r:'common',c:'#94a3b8'},
-    {n:'Brr Patapim',r:'common',c:'#94a3b8'},
-    {n:'Bombardiro',r:'common',c:'#94a3b8'},
-    {n:'Glorb',r:'common',c:'#94a3b8'},
-    {n:'Trippi',r:'uncommon',c:'#22c55e'},
-    {n:'Drago',r:'uncommon',c:'#22c55e'},
-    {n:'Ninja',r:'rare',c:'#3b82f6'},
-    {n:'Squalo',r:'rare',c:'#3b82f6'},
-    {n:'Drago Gemma',r:'rare',c:'#3b82f6'},
-    {n:'Phoenix',r:'epic',c:'#a855f7'},
-    {n:'Titan',r:'epic',c:'#a855f7'},
-    {n:'Supreme',r:'legendary',c:'#f59e0b'},
-    {n:'Dio',r:'legendary',c:'#f59e0b'},
     {n:'Gorbzilla',r:'secret',c:'#ef4444'},
-    {n:'Infinity',r:'secret',c:'#ef4444'},
+    {n:'Eternal Dragon',r:'secret',c:'#ef4444'},
+    {n:'Brainrot Cannon',r:'secret',c:'#ef4444'},
+    {n:'Tung Omega',r:'legendary',c:'#f59e0b'},
+    {n:'Brr Patapim Primordial',r:'legendary',c:'#f59e0b'},
+    {n:'Supreme Sniper',r:'legendary',c:'#f59e0b'},
+    {n:'Epic Phoenix',r:'epic',c:'#a855f7'},
+    {n:'Titan Vapore',r:'epic',c:'#a855f7'},
+    {n:'Rare Ninja',r:'rare',c:'#3b82f6'},
+    {n:'Uncommon Trippi',r:'uncommon',c:'#22c55e'},
+    {n:'Common Potato',r:'common',c:'#94a3b8'},
   ];
+  // Fill to 150
+  while(names.length < 150) {
+    names.push({n:'Character ' + names.length, r:'common', c:'#94a3b8'});
+  }
   return names.map((x,i)=>({
-    id:'c'+i, name:x.n, name_ar:x.n, rarity:x.r, rarity_ar:rarityNames[x.r],
-    image_url:'', tier:0, weight:1, is_real:true, description:'', color:x.c
+    id:'c'+i, name:x.n, name_ar:x.n, rarity:x.r, rarity_ar:rarityNames[x.r] || 'عادي',
+    image_url:'', tier:x.r === 'secret' ? 6 : x.r === 'legendary' ? 5 : 1, weight: x.r === 'secret' ? 0 : 1, is_real:true, description:''
   }));
 }
 
@@ -276,7 +293,9 @@ function showUser() {
       <img src="${user.avatar_url || 'https://cdn.discordapp.com/embed/avatars/0.png'}" alt="">
       <span>${user.tag}</span>
     </div>
-    <button class="btn-discord" onclick="logout()">خروج</button>
+    <button class="btn-discord" onclick="logout()" style="margin-right:1rem; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:1px solid rgba(239, 68, 68, 0.2);">
+      خروج
+    </button>
   `;
 }
 
@@ -306,13 +325,21 @@ function drawWheel() {
   const W = canvas.width;
   const H = canvas.height;
   const CX = W/2, CY = H/2;
-  const R = Math.min(W,H)/2 - 16;
+  const R = Math.min(W,H)/2 - 20;
   const count = characters.length;
   const slice = (2 * Math.PI) / count;
-  const labelStep = Math.max(1, Math.ceil(count / 36));
-  const fontSize = count > 120 ? 8 : count > 80 ? 9 : 11;
-
+  
   ctx.clearRect(0,0,W,H);
+  
+  // Shadow
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(CX, CY, R, 0, Math.PI * 2);
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur = 30;
+  ctx.fillStyle = '#000';
+  ctx.fill();
+  ctx.restore();
 
   for (let i=0; i<count; i++) {
     const c = characters[i];
@@ -325,42 +352,60 @@ function drawWheel() {
     ctx.closePath();
 
     const grad = ctx.createRadialGradient(CX,CY,0,CX,CY,R);
-    grad.addColorStop(0, adjustColor(color, 40));
+    grad.addColorStop(0, adjustColor(color, -20));
     grad.addColorStop(1, color);
     ctx.fillStyle = grad;
     ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-    ctx.lineWidth = 2;
+    
+    // Border for slice
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1;
     ctx.stroke();
 
-    ctx.save();
-    ctx.translate(CX,CY);
-    ctx.rotate(angle + slice/2);
+    // Labels (only every few if too many)
+    const labelStep = count > 100 ? 5 : count > 50 ? 2 : 1;
     if (i % labelStep === 0) {
+      ctx.save();
+      ctx.translate(CX,CY);
+      ctx.rotate(angle + slice/2);
       ctx.textAlign = 'right';
       ctx.fillStyle = '#fff';
-      ctx.font = `bold ${fontSize}px Tajawal,sans-serif`;
-      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      const fontSize = count > 120 ? 8 : count > 80 ? 10 : 12;
+      ctx.font = `bold ${fontSize}px Tajawal, sans-serif`;
+      ctx.shadowColor = 'rgba(0,0,0,0.5)';
       ctx.shadowBlur = 4;
-
+      
       const raw = String(c.name_ar || c.name || '');
-      const maxLen = count > 120 ? 10 : count > 80 ? 12 : 16;
+      const maxLen = count > 120 ? 8 : 12;
       const label = raw.length > maxLen ? raw.slice(0, maxLen - 1) + '…' : raw;
-      ctx.fillText(label, R-20, 4);
+      ctx.fillText(label, R - 25, 4);
+      ctx.restore();
     }
-    ctx.restore();
   }
 
+  // Outer rim
   ctx.beginPath();
-  ctx.arc(CX,CY,48,0,Math.PI*2);
-  ctx.fillStyle = '#0a0a1a';
+  ctx.arc(CX,CY,R,0,Math.PI*2);
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 8;
+  ctx.stroke();
+  
+  // Inner circle
+  ctx.beginPath();
+  ctx.arc(CX,CY,50,0,Math.PI*2);
+  ctx.fillStyle = '#111';
   ctx.fill();
-  ctx.strokeStyle = 'rgba(139,92,246,0.5)';
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = varColor('--accent');
+  ctx.lineWidth = 4;
   ctx.stroke();
 }
 
+function varColor(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
 function adjustColor(hex, amt) {
+  if(!hex.startsWith('#')) return hex;
   const num = parseInt(hex.replace('#',''),16);
   const r = Math.min(255, Math.max(0, (num>>16)+amt));
   const g = Math.min(255, Math.max(0, ((num>>8)&0x00FF)+amt));
@@ -375,33 +420,33 @@ async function spinWheel() {
     return;
   }
 
-  const cooldownCheck = await fetch(`${API_BASE}/cooldown?discord_id=${user.id}`,{headers:{'Authorization':`Bearer ${user.token}`}});
-  if (cooldownCheck.ok) {
-    const cd = await cooldownCheck.json();
-    if (cd.remaining > 0) {
-      alert(`انتظر ${formatTime(cd.remaining)} قبل الدوران التالي!`);
-      return;
-    }
-  }
-
-  isSpinning = true;
-  document.getElementById('spinBtn').disabled = true;
-  document.getElementById('spinBtn').querySelector('.spin-text').textContent = '...';
-
   try {
     const res = await fetch(`${API_BASE}/spin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
       body: JSON.stringify({ discord_id: user.id })
     });
+    
+    if (res.status === 403 || res.status === 400) {
+      const err = await res.json();
+      if(err.error?.includes('cooldown')) {
+        alert('تحتاج للانتظار 3 أيام بين كل دورة!');
+        return;
+      }
+    }
+    
     if (!res.ok) throw new Error(await res.text());
     const result = await res.json();
+
+    isSpinning = true;
+    document.getElementById('spinBtn').disabled = true;
+    document.getElementById('spinBtn').querySelector('.spin-text').textContent = '...';
 
     const idx = characters.findIndex(c => c.id === result.character_id);
     const count = characters.length;
     const slice = 360 / count;
     const targetAngle = idx * slice + slice/2;
-    const extraSpins = 5 + Math.floor(Math.random()*3);
+    const extraSpins = 8 + Math.floor(Math.random()*4);
     const finalRotation = currentRotation + extraSpins * 360 + (360 - targetAngle) + (Math.random()*slice - slice/2);
 
     await animateSpin(finalRotation);
@@ -414,7 +459,8 @@ async function spinWheel() {
     loadAnalytics();
     checkCooldown();
   } catch (e) {
-    alert('خطأ: ' + e.message);
+    alert('خطأ في الاتصال أو الخادم. حاول مرة أخرى.');
+    console.error(e);
   } finally {
     isSpinning = false;
     document.getElementById('spinBtn').disabled = false;
@@ -426,13 +472,12 @@ function animateSpin(targetRotation) {
   return new Promise(resolve => {
     const start = currentRotation;
     const diff = targetRotation - start;
-    const duration = 6000;
+    const duration = 8000;
     const startTime = performance.now();
     let lastTick = 0;
 
     function easeOut(t) {
-      const c = 1.0 - 0.001;
-      return 1 - Math.pow(1 - t, 3);
+      return 1 - Math.pow(1 - t, 4);
     }
 
     function frame(now) {
@@ -442,13 +487,10 @@ function animateSpin(targetRotation) {
       const current = start + diff * eased;
       canvas.style.transform = `rotate(${current}deg)`;
 
-      if (elapsed - lastTick > 80) {
+      const tickStep = 360 / characters.length;
+      if (Math.floor(current / tickStep) !== Math.floor(lastTick / tickStep)) {
         playTickSound();
-        lastTick = elapsed;
-        const wheelRect = canvas.getBoundingClientRect();
-        const centerX = wheelRect.left + wheelRect.width / 2;
-        const centerY = wheelRect.top + wheelRect.height / 2;
-        emitParticles(centerX, centerY, 3, '#8b5cf6');
+        lastTick = current;
       }
 
       if (t < 1) {
@@ -468,7 +510,7 @@ function showResult(result) {
 
   document.getElementById('resultImage').innerHTML =
     c.image_url ? `<img src="${c.image_url}" alt="">` :
-    `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${color}20;font-size:48px;">${getEmoji(c.rarity)}</div>`;
+    `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${color}20;font-size:64px;">${getEmoji(c.rarity)}</div>`;
 
   document.getElementById('resultName').textContent = c.name_ar || c.name;
   document.getElementById('resultName').style.color = color;
@@ -477,7 +519,7 @@ function showResult(result) {
   rarityEl.textContent = (c.rarity_ar || rarityNames[c.rarity] || c.rarity)?.toUpperCase();
   rarityEl.style.color = color;
 
-  document.getElementById('resultDesc').textContent = c.description || '';
+  document.getElementById('resultDesc').textContent = c.description || 'شخصية نادرة جداً من عالم برينروت!';
   document.getElementById('resultModal').classList.add('active');
 
   confettiBurst(color);
@@ -495,19 +537,19 @@ function confettiBurst(mainColor) {
   cctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   const colors = [mainColor, '#a78bfa', '#fbbf24', '#22c55e', '#3b82f6', '#ef4444'];
-  const parts = Array.from({ length: 140 }, () => {
+  const parts = Array.from({ length: 150 }, () => {
     const angle = (-Math.PI / 2) + (Math.random() * Math.PI) - (Math.PI / 2);
-    const speed = 6 + Math.random() * 12;
+    const speed = 8 + Math.random() * 15;
     return {
       x: window.innerWidth / 2,
       y: window.innerHeight / 2,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
-      r: 3 + Math.random() * 6,
+      r: 4 + Math.random() * 8,
       rot: Math.random() * Math.PI,
-      vr: (Math.random() - 0.5) * 0.4,
+      vr: (Math.random() - 0.5) * 0.5,
       color: colors[(Math.random() * colors.length) | 0],
-      life: 1.2 + Math.random() * 0.8
+      life: 1.5 + Math.random() * 1.0
     };
   });
 
@@ -522,7 +564,7 @@ function confettiBurst(mainColor) {
       if (p.life <= 0) continue;
       alive++;
 
-      p.vy += 18 * dt;
+      p.vy += 20 * dt;
       p.x += p.vx * 60 * dt;
       p.y += p.vy * 60 * dt;
       p.rot += p.vr;
@@ -564,7 +606,9 @@ async function loadRecentSpins() {
       const color = rarityColors[c.rarity] || '#94a3b8';
       return `
         <div class="spin-item">
-          <div style="width:36px;height:36px;border-radius:8px;background:${color}20;display:flex;align-items:center;justify-content:center;border:2px solid ${color};">${getEmoji(c.rarity)}</div>
+          <div style="width:40px;height:40px;border-radius:10px;background:${color}20;display:flex;align-items:center;justify-content:center;border:2px solid ${color}; font-size:20px;">
+            ${getEmoji(c.rarity)}
+          </div>
           <div class="spin-info">
             <div class="name">${c.name_ar || c.name || '?'}</div>
             <div class="rarity" style="color:${color}">${c.rarity_ar || rarityNames[c.rarity] || c.rarity}</div>
@@ -585,10 +629,12 @@ async function loadTopPlayers() {
 
     list.innerHTML = data.map((p,i) => `
       <div class="player-item">
-        <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a855f7);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;">${i+1}</div>
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a855f7);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:#fff;border:2px solid rgba(255,255,255,0.2);">
+          ${i+1}
+        </div>
         <div class="player-info">
           <div class="name">${p.discord_tag || 'مجهول'}</div>
-          <div class="rarity">${p.total_spins} دوران</div>
+          <div class="rarity">${p.total_spins} دورة</div>
         </div>
       </div>`).join('');
   } catch {}
@@ -606,8 +652,8 @@ async function loadMyCollection() {
     grid.innerHTML = data.map(c => {
       const color = rarityColors[c.rarity] || '#94a3b8';
       return `
-        <div class="collection-item" style="border-color:${color};">
-          ${c.image_url ? `<img src="${c.image_url}" alt="">` : `<span style="font-size:24px;">${getEmoji(c.rarity)}</span>`}
+        <div class="collection-item" style="border-color:${color}; box-shadow: 0 0 10px ${color}40;">
+          ${c.image_url ? `<img src="${c.image_url}" alt="">` : `<span style="font-size:28px;">${getEmoji(c.rarity)}</span>`}
         </div>`;
     }).join('');
   } catch {}
@@ -656,7 +702,7 @@ async function loadAnalytics() {
     for (const [rarity, count] of Object.entries(data.rarity_distribution || {})) {
       const pct = total > 0 ? Math.round((count / total) * 100) : 0;
       html += `
-        <div>
+        <div style="margin-top:0.5rem;">
           <div class="stat-row" style="border:none;padding:4px 0;">
             <span class="stat-label">${rarityAr[rarity] || rarity}</span>
             <span class="stat-value">${count} (${pct}%)</span>
@@ -664,15 +710,6 @@ async function loadAnalytics() {
           <div class="rarity-bar">
             <div class="rarity-fill ${rarity}" style="width:${pct}%"></div>
           </div>
-        </div>
-      `;
-    }
-
-    if (data.best_rarity) {
-      html += `
-        <div class="stat-row">
-          <span class="stat-label">الأكثر حظاً</span>
-          <span class="stat-value" style="color:${rarityColors[data.best_rarity[0]]}">${rarityAr[data.best_rarity[0]] || data.best_rarity[0]}</span>
         </div>
       `;
     }
@@ -694,33 +731,6 @@ async function checkCooldown() {
     } else {
       card.style.display = 'none';
     }
-
-    // Load bonus and streak from analytics
-    const analyticsRes = await fetch(`${API_BASE}/analytics?discord_id=${user.id}`,{headers:{'Authorization':`Bearer ${user.token}`}});
-    if (analyticsRes.ok) {
-      const data = await analyticsRes.json();
-      const bonusCard = document.getElementById('bonusCard');
-      const streakCard = document.getElementById('streakCard');
-
-      if (data.user) {
-        const dailyBonus = data.user.daily_bonus_spins || 0;
-        const streak = data.user.spin_streak || 0;
-
-        if (dailyBonus > 0) {
-          document.getElementById('bonusCount').textContent = dailyBonus;
-          bonusCard.style.display = 'block';
-        } else {
-          bonusCard.style.display = 'none';
-        }
-
-        if (streak > 0) {
-          document.getElementById('streakCount').textContent = streak;
-          streakCard.style.display = 'block';
-        } else {
-          streakCard.style.display = 'none';
-        }
-      }
-    }
   } catch {}
 }
 
@@ -730,11 +740,12 @@ function startCountdown(seconds) {
   clearInterval(window._cdTimer);
   window._cdTimer = setInterval(() => {
     remaining--;
-    el.textContent = formatTime(remaining);
     if (remaining <= 0) {
       clearInterval(window._cdTimer);
       document.getElementById('cooldownCard').style.display = 'none';
+      return;
     }
+    el.textContent = formatTime(remaining);
   }, 1000);
 }
 

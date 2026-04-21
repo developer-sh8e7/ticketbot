@@ -2,8 +2,8 @@
   "bot": {
     "presence": {
       "status": "online",
-      "activityType": "Watching",
-      "activityName": "قسم الدعم الفني | Ticket System"
+      "activityType": "Playing",
+      "activityName": "🎁〢عجلة・الحظ"
     },
     "locale": "ar",
     "timezone": "Asia/Riyadh",
@@ -64,7 +64,7 @@
   "panel": {
     "channelId": "",
     "messageId": "",
-    "title": "قسم الدعم | STB العرب",
+    "title": "عجلة الحظ | Steal the Brainrot",
     "subtitle": "مرحباً بكم",
     "description": "يرجى اختيار نوع طلبك من القائمة أدناه، ثم أجب على الأسئلة المطلوبة وسيتم إنشاء التذكرة تلقائياً.",
     "menuPlaceholder": "اضغط هنا لفتح تذكرة",
