@@ -3,18 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>STEAL THE BRAINROT | Light Edition</title>
+  <title>STEAL THE BRAINROT | Premium v4</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-  <!-- Lucide Icons for light weight professional feel -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     :root {
-      --bg: #05050a;
-      --accent: #7c3aed;
-      --glass: rgba(255, 255, 255, 0.05);
+      --bg: #030308;
+      --accent: #8b5cf6;
+      --accent-glow: rgba(139, 92, 246, 0.4);
+      --glass: rgba(255, 255, 255, 0.04);
+      --glass-hover: rgba(255, 255, 255, 0.08);
       --border: rgba(255, 255, 255, 0.1);
-      --font-main: 'Inter', sans-serif;
+      --font-main: 'Outfit', sans-serif;
+      
+      --common: #94a3b8;
+      --uncommon: #22c55e;
+      --rare: #3b82f6;
+      --epic: #a855f7;
+      --legendary: #f59e0b;
+      --secret: #ef4444;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
@@ -25,67 +33,84 @@
       direction: ltr; 
       overflow-x: hidden;
       min-height: 100vh;
+      background-image: 
+        radial-gradient(circle at 20% 30%, rgba(139, 92, 246, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(236, 72, 153, 0.05) 0%, transparent 50%);
     }
 
     .app-wrapper {
-      max-width: 1400px;
+      max-width: 1600px;
       margin: 0 auto;
-      padding: 20px;
+      padding: 30px;
     }
 
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 15px 30px;
-      background: var(--glass);
+      padding: 20px 40px;
+      background: rgba(10, 10, 20, 0.6);
+      backdrop-filter: blur(20px);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      margin-bottom: 30px;
+      border-radius: 24px;
+      margin-bottom: 40px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     }
 
-    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand { display: flex; align-items: center; gap: 15px; }
     .brand i { color: var(--accent); }
-    .brand h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
+    .brand h1 { font-size: 1.8rem; font-weight: 900; background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
     .btn-auth {
       background: #5865f2;
       color: #fff;
-      padding: 8px 18px;
-      border-radius: 8px;
+      padding: 10px 22px;
+      border-radius: 12px;
       border: none;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 8px;
-      transition: 0.2s;
+      gap: 10px;
+      transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 15px rgba(88, 101, 242, 0.3);
     }
-    .btn-auth:hover { background: #4752c4; }
+    .btn-auth:hover { background: #4752c4; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(88, 101, 242, 0.4); }
 
     .dashboard {
       display: grid;
-      grid-template-columns: 320px 1fr 320px;
-      gap: 20px;
+      grid-template-columns: 350px 1fr 350px;
+      gap: 30px;
     }
 
     .panel {
-      background: var(--glass);
+      background: rgba(15, 15, 25, 0.8);
+      backdrop-filter: blur(30px);
       border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 20px;
+      border-radius: 28px;
+      padding: 25px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+
+    .panel::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
     }
 
     .panel h3 {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: #94a3b8;
-      margin-bottom: 15px;
+      font-size: 1rem;
+      font-weight: 800;
+      color: #cbd5e1;
+      margin-bottom: 20px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 1.5px;
     }
 
     /* Wheel Core */
@@ -93,33 +118,32 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 30px;
+      justify-content: center;
+      gap: 40px;
     }
 
     .wheel-container {
       position: relative;
-      width: 600px;
-      height: 600px;
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.05) 0%, transparent 70%);
+      padding: 10px;
     }
 
-    #wheelCanvas {
-      width: 100%;
-      height: 100%;
-    }
+    #wheelCanvas { width: 100%; height: 100%; filter: drop-shadow(0 0 30px rgba(0,0,0,0.8)); }
 
     .wheel-center-ui {
       position: absolute;
-      top: 50%;
-      left: 50%;
+      top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      z-index: 10;
+      z-index: 100;
     }
 
     .spin-trigger {
-      width: 100px;
-      height: 100px;
-      background: var(--accent);
-      border: 4px solid #fff;
+      width: 130px;
+      height: 130px;
+      background: linear-gradient(135deg, #7c3aed, #4c1d95);
+      border: 5px solid #fff;
       border-radius: 50%;
       color: #fff;
       cursor: pointer;
@@ -127,119 +151,134 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 30px rgba(124, 58, 237, 0.4);
-      transition: 0.2s;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.7), inset 0 0 20px rgba(255,255,255,0.2);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    .spin-trigger:hover:not(:disabled) { transform: scale(1.05); }
-    .spin-trigger:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+    .spin-trigger:hover:not(:disabled) { transform: scale(1.1); box-shadow: 0 20px 50px rgba(124, 58, 237, 0.5); }
+    .spin-trigger:active:not(:disabled) { transform: scale(0.9); }
 
-    .spin-main { font-weight: 800; font-size: 1.2rem; }
-    .spin-hint { font-size: 0.6rem; opacity: 0.7; }
+    .spin-main { font-weight: 900; font-size: 1.6rem; letter-spacing: 1px; }
+    .spin-hint { font-size: 0.7rem; font-weight: 700; opacity: 0.8; margin-top: 4px; }
 
     .wheel-pointer {
       position: absolute;
-      top: -10px;
-      left: 50%;
+      top: -15px; left: 50%;
       transform: translateX(-50%);
-      width: 40px;
-      height: 40px;
-      z-index: 20;
+      width: 50px; height: 60px;
+      z-index: 110;
       color: #fff;
+      filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5));
     }
 
     /* Lists */
-    .item-list { display: flex; flex-direction: column; gap: 8px; }
+    .item-list { display: flex; flex-direction: column; gap: 12px; }
     .list-entry {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 10px;
-      background: rgba(255,255,255,0.02);
-      border-radius: 12px;
-      font-size: 0.85rem;
+      gap: 15px;
+      padding: 12px 18px;
+      background: var(--glass);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      transition: 0.3s;
     }
+    .list-entry:hover { background: var(--glass-hover); transform: translateX(-5px); }
     .entry-icon { color: var(--accent); }
+    .entry-name { font-weight: 700; font-size: 0.95rem; }
+    .entry-meta { font-size: 0.75rem; font-weight: 800; }
 
-    /* Loot Display */
+    /* Loot Box */
     .loot-box {
-      padding: 15px;
-      background: rgba(255,255,255,0.03);
-      border-radius: 12px;
+      padding: 20px;
+      background: var(--glass);
+      border-radius: 20px;
       border: 1px solid var(--border);
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 15px;
+      box-shadow: inset 0 0 20px rgba(255,255,255,0.02);
     }
 
     /* Modal */
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.9);
-      backdrop-filter: blur(5px);
-      z-index: 1000;
+      background: rgba(0,0,0,0.95);
+      backdrop-filter: blur(15px);
+      z-index: 10000;
       display: none;
       align-items: center;
       justify-content: center;
+      animation: fadeIn 0.4s forwards;
     }
     .modal-overlay.active { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
     .result-card {
-      background: #111;
+      background: #0a0a15;
       border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 40px;
+      border-radius: 36px;
+      padding: 50px;
       text-align: center;
-      width: 90%;
-      max-width: 400px;
+      width: 90%; max-width: 500px;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.9);
+      position: relative;
     }
+    .result-card::before { content: ''; position: absolute; inset: 0; border-radius: 36px; box-shadow: 0 0 80px var(--accent-glow); pointer-events: none; }
 
-    .res-title { font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; }
-    .res-rarity { font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 24px; }
+    .res-title { font-size: 2.2rem; font-weight: 900; margin-bottom: 8px; }
+    .res-rarity { font-size: 1.1rem; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px; }
     
     .btn-confirm {
       width: 100%;
-      padding: 12px;
-      background: #fff;
-      color: #000;
-      border: none;
-      border-radius: 10px;
-      font-weight: 800;
-      cursor: pointer;
+      padding: 16px;
+      background: #fff; color: #000;
+      border: none; border-radius: 14px;
+      font-weight: 900; font-size: 1.1rem;
+      cursor: pointer; transition: 0.3s;
     }
+    .btn-confirm:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(255,255,255,0.2); }
 
     /* Loader */
     #loader {
       position: fixed;
       inset: 0;
       background: var(--bg);
-      z-index: 2000;
+      z-index: 20000;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 20px;
     }
+    #loader h2 { font-weight: 900; letter-spacing: 4px; font-size: 0.9rem; opacity: 0.6; }
 
-    @media (max-width: 1200px) {
+    @media (max-width: 1400px) {
       .dashboard { grid-template-columns: 1fr; }
-      .wheel-container { width: 450px; height: 450px; }
+      .sidebar { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    }
+    @media (max-width: 800px) {
+      .wheel-container { width: 400px; height: 400px; }
+      .sidebar { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
   <div id="loader">
-    <i data-lucide="loader-2" class="animate-spin" style="width: 40px; height: 40px; color: var(--accent);"></i>
+    <i data-lucide="loader-2" class="animate-spin" style="width: 50px; height: 50px; color: var(--accent);"></i>
+    <h2>PREMIUM ACCESS LOADING</h2>
   </div>
 
   <div class="app-wrapper">
     <header>
       <div class="brand">
-        <i data-lucide="disc"></i>
+        <i data-lucide="compass" style="width: 32px; height: 32px;"></i>
         <h1>STEAL THE BRAINROT</h1>
       </div>
       <div id="userArea">
         <button class="btn-auth" id="loginBtn">
-          <i data-lucide="log-in" style="width: 18px;"></i>
-          Login with Discord
+          <i data-lucide="shield-check" style="width: 20px;"></i>
+          Link Discord
         </button>
       </div>
     </header>
@@ -247,11 +286,11 @@
     <div class="dashboard">
       <div class="sidebar">
         <div class="panel">
-          <h3><i data-lucide="history" style="width: 16px;"></i> RECENT WINNERS</h3>
+          <h3><i data-lucide="zap" style="width: 18px;"></i> RECENT WINNERS</h3>
           <div class="item-list" id="recentSpins"></div>
         </div>
-        <div class="panel" style="margin-top: 20px;">
-          <h3><i data-lucide="award" style="width: 16px;"></i> LEADERBOARD</h3>
+        <div class="panel">
+          <h3><i data-lucide="trophy" style="width: 18px;"></i> TOP PLAYERS</h3>
           <div class="item-list" id="topPlayers"></div>
         </div>
       </div>
@@ -259,40 +298,41 @@
       <div class="wheel-core">
         <div class="wheel-container">
           <div class="wheel-pointer">
-            <i data-lucide="chevron-down" style="width: 40px; height: 40px;"></i>
+            <i data-lucide="arrow-big-down-dash" style="width: 50px; height: 50px;"></i>
           </div>
           <canvas id="wheelCanvas" width="900" height="900"></canvas>
           <div class="wheel-center-ui">
             <button class="spin-trigger" id="spinBtn">
               <span class="spin-main">SPIN</span>
-              <span class="spin-hint" id="centerCountdown">3D CD</span>
+              <span class="spin-hint" id="centerCountdown">READY</span>
             </button>
           </div>
         </div>
 
-        <div class="panel" style="width: 100%;">
-          <h3><i data-lucide="info" style="width: 16px;"></i> RARITY SYSTEM</h3>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <span style="color: #94a3b8; font-weight: 700;">Common</span>
-            <span style="color: #22c55e; font-weight: 700;">Uncommon</span>
-            <span style="color: #3b82f6; font-weight: 700;">Rare</span>
-            <span style="color: #a855f7; font-weight: 700;">Epic</span>
-            <span style="color: #f59e0b; font-weight: 700;">Legendary</span>
-            <span style="color: #ef4444; font-weight: 700;">Secret</span>
+        <div class="panel" style="width: 100%; border: none; background: none; box-shadow: none;">
+          <h3><i data-lucide="layers" style="width: 18px;"></i> RARITY TIERS</h3>
+          <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+            <span style="color: var(--common); font-weight: 900; font-size: 0.8rem; text-transform: uppercase;">Common</span>
+            <span style="color: var(--uncommon); font-weight: 900; font-size: 0.8rem; text-transform: uppercase;">Uncommon</span>
+            <span style="color: var(--rare); font-weight: 900; font-size: 0.8rem; text-transform: uppercase;">Rare</span>
+            <span style="color: var(--epic); font-weight: 900; font-size: 0.8rem; text-transform: uppercase;">Epic</span>
+            <span style="color: var(--legendary); font-weight: 900; font-size: 0.8rem; text-transform: uppercase;">Legendary</span>
+            <span style="color: var(--secret); font-weight: 900; font-size: 0.8rem; text-transform: uppercase;">Secret</span>
           </div>
         </div>
       </div>
 
       <div class="sidebar">
         <div class="panel">
-          <h3><i data-lucide="box" style="width: 16px;"></i> LATEST LOOT</h3>
+          <h3><i data-lucide="package-search" style="width: 18px;"></i> LATEST LOOT</h3>
           <div id="myCollection"></div>
         </div>
-        <div class="panel" style="margin-top: 20px;">
-          <h3><i data-lucide="bar-chart-2" style="width: 16px;"></i> ANALYTICS</h3>
+        <div class="panel">
+          <h3><i data-lucide="activity" style="width: 18px;"></i> ENGINE ANALYTICS</h3>
           <div id="analyticsContent"></div>
-          <div id="cooldownRow" style="display:none; margin-top: 15px; font-size: 0.8rem; color: #94a3b8;">
-            Wait Time: <span id="countdown" style="color: #fff; font-weight: 800;">--:--:--</span>
+          <div id="cooldownRow" style="display:none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+            <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 5px;">COOLDOWN REMAINING:</div>
+            <div id="countdown" style="color: #fff; font-weight: 900; font-size: 1.2rem;">--:--:--</div>
           </div>
         </div>
       </div>
@@ -303,15 +343,12 @@
     <div class="result-card">
       <h2 class="res-title" id="resultName">--</h2>
       <div class="res-rarity" id="resultRarity">--</div>
-      <p style="color: #94a3b8; margin-bottom: 30px;">You've received a new loot from the Brainrot world.</p>
-      <button class="btn-confirm" id="closeModal">GOT IT</button>
+      <p style="color: #94a3b8; font-size: 1.1rem; line-height: 1.6; margin-bottom: 40px;">Your heist was successful! A new character has been added to your intelligence file.</p>
+      <button class="btn-confirm" id="closeModal">CONFIRM RECEIPT</button>
     </div>
   </div>
 
-  <script>
-    // Initializing Lucide icons
-    lucide.createIcons();
-  </script>
+  <script>lucide.createIcons();</script>
   <script src="app.js"></script>
 </body>
 </html>
