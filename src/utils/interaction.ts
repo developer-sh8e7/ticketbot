@@ -27,6 +27,7 @@ export function consumeLifecycleErrors(): number {
 const DISCORD_UNKNOWN_INTERACTION = 10062;
 const DISCORD_ALREADY_ACKNOWLEDGED = 40060;
 const DISCORD_INTERACTION_NOT_ACTIVE = 40004;
+const DISCORD_UNKNOWN_MESSAGE = 10008;
 
 function isInteractionLifecycleError(error: unknown): boolean {
   if (error instanceof DiscordAPIError) {
@@ -34,6 +35,7 @@ function isInteractionLifecycleError(error: unknown): boolean {
       DISCORD_UNKNOWN_INTERACTION,
       DISCORD_ALREADY_ACKNOWLEDGED,
       DISCORD_INTERACTION_NOT_ACTIVE,
+      DISCORD_UNKNOWN_MESSAGE,
     ].includes(error.code as number);
   }
 
@@ -44,7 +46,8 @@ function isInteractionLifecycleError(error: unknown): boolean {
       msg.includes('already been acknowledged') ||
       msg.includes('already been sent or deferred') ||
       msg.includes('interaction was not replied') ||
-      msg.includes('not active')
+      msg.includes('not active') ||
+      msg.includes('unknown message')
     );
   }
 

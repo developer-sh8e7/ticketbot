@@ -583,9 +583,9 @@ export class TicketService {
       const channelName = context.channel.name;
       await this.sendLog(context.guild, this.buildCloseLogEmbed(closedTicket, interaction.user.id, channelName));
 
-      await context.channel.delete().catch(() => null);
-
       await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم', `${this.config.ticket.messages.closed}\n${context.channel}`)]);
+
+      await context.channel.delete().catch(() => null);
     } catch (error) {
       logger.error('Failed to close ticket', error instanceof Error ? error.message : error);
       await safeEditReply(interaction, [buildErrorEmbed(this.config, 'تعذر إغلاق التذكرة حالياً.')]);

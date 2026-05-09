@@ -378,7 +378,7 @@ const healthServer = createServer(async (req, res) => {
       const chunks: Buffer[] = [];
       for await (const chunk of req) chunks.push(chunk);
       const body = Buffer.concat(chunks).toString('utf-8') || undefined;
-      const result = await handleWheelRequest(url, req.method || 'GET', body);
+      const result = await handleWheelRequest(url, req.method || 'GET', body, req.headers as Record<string, string | string[] | undefined>);
       res.writeHead(result.status, result.headers);
       res.end(result.body);
     } catch (err: any) {
