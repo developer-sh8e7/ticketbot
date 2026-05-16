@@ -117,8 +117,8 @@
     "infoIcon": "",
     "epicIcon": "",
     "categories": {
-      "purchase": "🛒",
-      "support": "🎧"
+      "purchase": "",
+      "support": ""
     }
   },
   "categories": [
