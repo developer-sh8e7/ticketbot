@@ -32,7 +32,7 @@ const categorySchema = z.object({
   description: z.string().min(1).max(100),
   channelNameTemplate: z.string().min(1),
   supportRoleIds: z.array(z.string()),
-  questions: z.array(questionSchema).min(1).max(5),
+  questions: z.array(questionSchema).min(0).max(5),
 });
 
 export const appConfigSchema = z.object({
@@ -74,7 +74,7 @@ export const appConfigSchema = z.object({
   }),
   limits: z.object({
     allowOnlyOneOpenTicketPerUser: z.boolean(),
-    maxQuestionsPerCategory: z.number().int().min(1).max(5),
+    maxQuestionsPerCategory: z.number().int().min(0).max(5),
     maxAnswerLength: z.number().int().min(50).max(4000),
     maxCategoryOptions: z.number().int().min(1).max(25),
     pinSummaryMessageOnCreate: z.boolean(),

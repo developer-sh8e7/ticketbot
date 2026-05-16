@@ -302,6 +302,11 @@ export class TicketService {
       return;
     }
 
+    if (!category.questions || category.questions.length === 0) {
+      await this.processTicketCreation(interaction, category, []);
+      return;
+    }
+
     try {
       const modal = buildOpenTicketModal(category);
       const shown = await safeShowModal(interaction, modal, `open-select:${category.key}`);
@@ -332,6 +337,16 @@ export class TicketService {
       return;
     }
 
+    const answers = this.buildAnswers(interaction, category);
+    await this.processTicketCreation(interaction, category, answers);
+  }
+
+  private async processTicketCreation(
+    interaction: StringSelectMenuInteraction | ModalSubmitInteraction,
+    category: TicketCategoryConfig,
+    answers: TicketAnswer[]
+  ): Promise<void> {
+    if (!interaction.inCachedGuild()) return;
     if (!(await safeDeferReply(interaction, `open-modal:${category.key}`))) {
       return;
     }
@@ -352,7 +367,6 @@ export class TicketService {
       }
     }
 
-    const answers = this.buildAnswers(interaction, category);
     let createdChannel: TextChannel | null = null;
     let createdTicket: TicketRecord | null = null;
 

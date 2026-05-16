@@ -129,17 +129,7 @@
       "description": "لشراء منتج من المتجر.",
       "channelNameTemplate": "شراء-{ticketNumber}",
       "supportRoleIds": ["1398328577312821361"],
-      "questions": [
-        {
-          "key": "product_details",
-          "label": "ما هو المنتج الذي ترغب بشرائه؟",
-          "style": "Paragraph",
-          "placeholder": "اكتب اسم المنتج أو تفاصيل طلبك هنا...",
-          "required": true,
-          "minLength": 2,
-          "maxLength": 400
-        }
-      ]
+      "questions": []
     },
     {
       "key": "support",
@@ -148,17 +138,7 @@
       "description": "لأي استفسار عام أو مشكلة.",
       "channelNameTemplate": "دعم-{ticketNumber}",
       "supportRoleIds": ["1398328577312821361"],
-      "questions": [
-        {
-          "key": "support_details",
-          "label": "كيف يمكننا مساعدتك؟",
-          "style": "Paragraph",
-          "placeholder": "اشرح استفسارك أو مشكلتك بالتفصيل...",
-          "required": true,
-          "minLength": 2,
-          "maxLength": 400
-        }
-      ]
+      "questions": []
     }
   ],
   "commands": {
