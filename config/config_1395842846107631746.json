@@ -1,0 +1,176 @@
+{
+  "bot": {
+    "presence": {
+      "status": "online",
+      "activityType": "Listening",
+      "activityName": "لطلباتكم واستفساراتكم"
+    },
+    "locale": "ar",
+    "timezone": "Asia/Riyadh",
+    "embedColor": "#808080",
+    "errorColor": "#ef4444",
+    "successColor": "#22c55e",
+    "footerText": "Store Support System",
+    "footerIconUrl": ""
+  },
+  "guild": {
+    "id": "1395842846107631746",
+    "categoryId": "1396465861379883146",
+    "archiveCategoryId": "1496476170349183037",
+    "logChannelId": "1496476170349183037",
+    "transcriptChannelId": "1496476170349183037",
+    "supportRoleIds": [
+      "1398328577312821361"
+    ],
+    "managerRoleIds": [
+      "1396566007413215242"
+    ],
+    "mentionRolesOnOpen": [
+      "1398328577312821361"
+    ]
+  },
+  "images": {
+    "panelBannerUrl": "https://placehold.co/1200x400/000000/ffffff?text=Store+Support",
+    "ticketBannerUrl": "https://placehold.co/1200x400/000000/ffffff?text=Welcome",
+    "thumbnailUrl": "https://placehold.co/256x256/000000/ffffff?text=S"
+  },
+  "naming": {
+    "ticketChannelPrefix": "ticket",
+    "maxChannelNameLength": 90,
+    "includeCategorySlug": false,
+    "zeroPadLength": 4,
+    "topicTemplate": "Ticket #{ticketNumber} | User: {userTag}"
+  },
+  "limits": {
+    "allowOnlyOneOpenTicketPerUser": true,
+    "maxQuestionsPerCategory": 5,
+    "maxAnswerLength": 400,
+    "maxCategoryOptions": 25,
+    "pinSummaryMessageOnCreate": false
+  },
+  "panel": {
+    "channelId": "1396403268388655145",
+    "messageId": "",
+    "title": "قسم التذاكر | متجرنا",
+    "subtitle": "أهلاً بك",
+    "description": "لخدمتكم بشكل أسرع، يرجى اختيار نوع التذكرة المناسب لطلبك من القائمة أدناه.",
+    "menuPlaceholder": "اختر نوع التذكرة...",
+    "menuCustomId": "ticket:open-select",
+    "defaultMention": "@everyone",
+    "showNumbers": false,
+    "accentText": "مرحباً بك في الدعم الفني"
+  },
+  "ticket": {
+    "welcomeTitle": "تم فتح التذكرة بنجاح",
+    "welcomeDescription": "أهلاً بك. يرجى كتابة تفاصيل طلبك أو استفسارك بوضوح، وسيقوم فريق الدعم الفني بالرد عليك في أقرب وقت ممكن.",
+    "summaryTitle": "معلومات التذكرة",
+    "controls": {
+      "close": {
+        "label": "إغلاق",
+        "style": "Secondary",
+        "emojiId": ""
+      },
+      "add": {
+        "label": "إضافة",
+        "style": "Secondary",
+        "emojiId": ""
+      },
+      "remove": {
+        "label": "إزالة",
+        "style": "Secondary",
+        "emojiId": ""
+      },
+      "claim": {
+        "label": "استلام",
+        "style": "Secondary",
+        "emojiId": ""
+      },
+      "pin": {
+        "label": "تثبيت",
+        "style": "Secondary",
+        "emojiId": ""
+      },
+      "stats": {
+        "label": "إحصائيات",
+        "style": "Secondary",
+        "emojiId": "",
+        "allowedRoleIds": [
+          "1396566007413215242"
+        ]
+      }
+    },
+    "messages": {
+      "alreadyOpen": "لديك بالفعل تذكرة مفتوحة.",
+      "created": "تم إنشاء تذكرتك بنجاح.",
+      "closed": "تم إغلاق التذكرة.",
+      "claimed": "تم استلام التذكرة بواسطة",
+      "unclaimed": "تم إلغاء استلام التذكرة.",
+      "addedMember": "تمت إضافة العضو إلى التذكرة.",
+      "removedMember": "تمت إزالة العضو من التذكرة.",
+      "noPermission": "ليس لديك الصلاحية لاستخدام هذا الزر.",
+      "notInTicket": "هذا الزر يعمل داخل قنوات التذاكر فقط."
+    }
+  },
+  "emojis": {
+    "panelIcon": "",
+    "ticketIcon": "",
+    "infoIcon": "",
+    "epicIcon": "",
+    "categories": {
+      "purchase": "🛒",
+      "support": "🎧"
+    }
+  },
+  "categories": [
+    {
+      "key": "purchase",
+      "enabled": true,
+      "label": "عملية شراء",
+      "description": "لشراء منتج من المتجر.",
+      "channelNameTemplate": "شراء-{ticketNumber}",
+      "supportRoleIds": ["1398328577312821361"],
+      "questions": [
+        {
+          "key": "product_details",
+          "label": "ما هو المنتج الذي ترغب بشرائه؟",
+          "style": "Paragraph",
+          "placeholder": "اكتب اسم المنتج أو تفاصيل طلبك هنا...",
+          "required": true,
+          "minLength": 2,
+          "maxLength": 400
+        }
+      ]
+    },
+    {
+      "key": "support",
+      "enabled": true,
+      "label": "تواصل مع الدعم الفني",
+      "description": "لأي استفسار عام أو مشكلة.",
+      "channelNameTemplate": "دعم-{ticketNumber}",
+      "supportRoleIds": ["1398328577312821361"],
+      "questions": [
+        {
+          "key": "support_details",
+          "label": "كيف يمكننا مساعدتك؟",
+          "style": "Paragraph",
+          "placeholder": "اشرح استفسارك أو مشكلتك بالتفصيل...",
+          "required": true,
+          "minLength": 2,
+          "maxLength": 400
+        }
+      ]
+    }
+  ],
+  "commands": {
+    "registerOnStartup": true,
+    "guildScoped": true,
+    "names": {
+      "panelSend": "ticket-panel-send",
+      "panelRefresh": "ticket-panel-refresh",
+      "configReload": "ticket-config-reload",
+      "emojiRefresh": "ticket-emoji-refresh",
+      "ticketClose": "ticket-close",
+      "ticketStats": "ticket-stats"
+    }
+  }
+}

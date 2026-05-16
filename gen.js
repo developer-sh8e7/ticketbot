@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // --- LO'S CONFIG ---
-const USER_TOKEN = process.env.USER_TOKEN || ''; 
+const USER_TOKEN = ''; 
 const BASE_NAME = 'Opus Solutions';
 const START_INDEX = 1;
 const END_INDEX = 500;

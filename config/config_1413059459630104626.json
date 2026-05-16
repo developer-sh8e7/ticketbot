@@ -1,0 +1,223 @@
+{
+  "bot": {
+    "presence": {
+      "status": "online",
+      "activityType": "Playing",
+      "activityName": "🎁〢عجلة・الحظ"
+    },
+    "locale": "ar",
+    "timezone": "Asia/Riyadh",
+    "embedColor": "#8b5cf6",
+    "errorColor": "#ef4444",
+    "successColor": "#22c55e",
+    "footerText": "Ticket Support System",
+    "footerIconUrl": ""
+  },
+  "guild": {
+    "id": "1413059459630104626",
+    "categoryId": "",
+    "archiveCategoryId": "",
+    "logChannelId": "",
+    "transcriptChannelId": "",
+    "supportRoleIds": [
+      "1483021658003345408",
+      "1483209015961063595",
+      "1483021366792949760",
+      "1483212264025886886",
+      "1483021277181644842",
+      "1483020976966074479",
+      "1483038264393990164"
+    ],
+    "managerRoleIds": [
+      "1483021658003345408",
+      "1483209015961063595",
+      "1483021366792949760",
+      "1483212264025886886",
+      "1483021277181644842",
+      "1483020976966074479",
+      "1483038264393990164"
+    ],
+    "mentionRolesOnOpen": [
+      "1483021658003345408",
+      "1483021366792949760"
+    ]
+  },
+  "images": {
+    "panelBannerUrl": "https://placehold.co/1200x400/1a0533/8b5cf6?text=Support+Section",
+    "ticketBannerUrl": "https://placehold.co/1200x400/1a0533/8b5cf6?text=Welcome+Ticket",
+    "thumbnailUrl": "https://placehold.co/256x256/1a0533/8b5cf6?text=T"
+  },
+  "naming": {
+    "ticketChannelPrefix": "ticket",
+    "maxChannelNameLength": 90,
+    "includeCategorySlug": false,
+    "zeroPadLength": 4,
+    "topicTemplate": "Ticket #{ticketNumber} | User: {userTag} ({userId}) | Category: {categoryLabel}"
+  },
+  "limits": {
+    "allowOnlyOneOpenTicketPerUser": true,
+    "maxQuestionsPerCategory": 5,
+    "maxAnswerLength": 400,
+    "maxCategoryOptions": 25,
+    "pinSummaryMessageOnCreate": false
+  },
+  "panel": {
+    "channelId": "",
+    "messageId": "",
+    "title": "عجلة الحظ | Steal the Brainrot",
+    "subtitle": "مرحباً بكم",
+    "description": "يرجى اختيار نوع طلبك من القائمة أدناه، ثم أجب على الأسئلة المطلوبة وسيتم إنشاء التذكرة تلقائياً.",
+    "menuPlaceholder": "اضغط هنا لفتح تذكرة",
+    "menuCustomId": "ticket:open-select",
+    "defaultMention": "@everyone",
+    "showNumbers": true,
+    "accentText": "يا هلا؟"
+  },
+  "ticket": {
+    "welcomeTitle": "تم فتح تذكرتك",
+    "welcomeDescription": "أهلاً بك، يرجى التحلي بالصبر حتى يتمكن أحد أعضاء الفريق من معالجة طلبك.",
+    "summaryTitle": "معلومات التذكرة",
+    "controls": {
+      "close": {
+        "label": "إغلاق",
+        "style": "Secondary",
+        "emojiId": ""
+      },
+      "add": {
+        "label": "إضافة",
+        "style": "Secondary",
+        "emojiId": ""
+      },
+      "remove": {
+        "label": "إزالة",
+        "style": "Secondary",
+        "emojiId": ""
+      },
+      "claim": {
+        "label": "استلام",
+        "style": "Secondary",
+        "emojiId": ""
+      },
+      "pin": {
+        "label": "تثبيت",
+        "style": "Secondary",
+        "emojiId": ""
+      },
+      "stats": {
+        "label": "إحصائيات",
+        "style": "Secondary",
+        "emojiId": "1486832130754482328",
+        "allowedRoleIds": [
+          "1483021658003345408",
+          "1483209015961063595",
+          "1483021366792949760",
+          "1483038264393990164",
+          "1483020976966074479",
+          "1483212264025886886"
+        ]
+      }
+    },
+    "messages": {
+      "alreadyOpen": "لديك بالفعل تذكرة مفتوحة، وهي:",
+      "created": "تم إنشاء تذكرتك بنجاح.",
+      "closed": "تم إغلاق التذكرة.",
+      "claimed": "تم استلام التذكرة بواسطة",
+      "unclaimed": "تم إلغاء استلام التذكرة.",
+      "addedMember": "تمت إضافة العضو إلى التذكرة.",
+      "removedMember": "تمت إزالة العضو من التذكرة.",
+      "noPermission": "ليس لديك الصلاحية لاستخدام هذا الزر.",
+      "notInTicket": "هذا الزر يعمل داخل قنوات التذاكر فقط."
+    }
+  },
+  "emojis": {
+    "panelIcon": "",
+    "ticketIcon": "",
+    "infoIcon": "1486832255216386109",
+    "epicIcon": "1486832108990107891",
+    "categories": {
+      "middleman": "1486832234299134092",
+      "house_unlock": "1486832226875215987",
+      "purchase": "1486832176677781584"
+    }
+  },
+  "categories": [
+    {
+      "key": "middleman",
+      "enabled": true,
+      "label": "وسـيــط مـضـمـون",
+      "description": "لضمان عملية التداول بوجود وسيط، افتح تذكرة هنا.",
+      "channelNameTemplate": "وسيط-مضمون-{ticketNumber}",
+      "supportRoleIds": ["1483021658003345408"],
+      "questions": [
+        {
+          "key": "epic_id",
+          "label": "ايديك EPIC",
+          "style": "Short",
+          "placeholder": "اكتب ايدي الـ EPIC الخاص بك",
+          "required": true,
+          "minLength": 3,
+          "maxLength": 100
+        }
+      ]
+    },
+    {
+      "key": "house_unlock",
+      "enabled": true,
+      "label": "اللوان البيوت",
+      "description": "لطلب خدمة اللوان البيوت، افتح تذكرة هنا.",
+      "channelNameTemplate": "اللوان-البيوت-{ticketNumber}",
+      "supportRoleIds": ["1483209015961063595"],
+      "questions": [
+        {
+          "key": "epic_id",
+          "label": "ايديك EPIC",
+          "style": "Short",
+          "placeholder": "اكتب ايدي الـ EPIC الخاص بك",
+          "required": true,
+          "minLength": 3,
+          "maxLength": 100
+        }
+      ]
+    },
+    {
+      "key": "purchase",
+      "enabled": true,
+      "label": "عـمـلـيـة شـرأء",
+      "description": "لإتمام عملية الشراء، افتح تذكرة هنا.",
+      "channelNameTemplate": "عملية-شرأء-{ticketNumber}",
+      "supportRoleIds": [],
+      "questions": [
+        {
+          "key": "epic_id",
+          "label": "ايديك EPIC",
+          "style": "Short",
+          "placeholder": "اكتب ايدي الـ EPIC الخاص بك",
+          "required": true,
+          "minLength": 3,
+          "maxLength": 100
+        },
+        {
+          "key": "purchase_type",
+          "label": "وش عملية الشراء؟",
+          "style": "Paragraph",
+          "placeholder": "اشرح ماذا تريد شراء بالتفصيل",
+          "required": true,
+          "minLength": 5,
+          "maxLength": 400
+        }
+      ]
+    }
+  ],
+  "commands": {
+    "registerOnStartup": true,
+    "guildScoped": true,
+    "names": {
+      "panelSend": "ticket-panel-send",
+      "panelRefresh": "ticket-panel-refresh",
+      "configReload": "ticket-config-reload",
+      "emojiRefresh": "ticket-emoji-refresh",
+      "ticketClose": "ticket-close",
+      "ticketStats": "ticket-stats"
+    }
+  }
+}
