@@ -16,7 +16,7 @@ import clearCommand from "./commands/moderation/clear";
 import unbanCommand from "./commands/moderation/unban";
 import slowmodeCommand from "./commands/moderation/slowmode";
 import { lockCommand, unlockCommand } from "./commands/moderation/lock";
-import nukeCommand from "./commands/moderation/nuke";
+
 
 import serverinfoCommand from "./commands/info/serverinfo";
 import userinfoCommand from "./commands/info/userinfo";
@@ -64,6 +64,7 @@ import guildMemberAddEvent from "./events/guildMemberAdd";
 import guildMemberRemoveEvent from "./events/guildMemberRemove";
 import { messageDeleteEvent, messageUpdateEvent } from "./events/messageLogs";
 import voiceStateUpdateEvent from "./events/voiceStateUpdate";
+import channelDeleteEvent from "./events/channelDelete";
 
 
 import bombCommand from "./commands/games/bomb";
@@ -95,7 +96,7 @@ const allCommands = [
   slowmodeCommand,
   lockCommand,
   unlockCommand,
-  nukeCommand,
+
   serverinfoCommand,
   userinfoCommand,
   avatarCommand,
@@ -135,6 +136,7 @@ const allEvents = [
   messageDeleteEvent,
   messageUpdateEvent,
   voiceStateUpdateEvent,
+  channelDeleteEvent,
 ];
 
 // Initialize Discord Client with all required intents

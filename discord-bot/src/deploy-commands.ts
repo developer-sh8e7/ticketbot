@@ -17,7 +17,7 @@ import clearCommand from "./commands/moderation/clear";
 import unbanCommand from "./commands/moderation/unban";
 import slowmodeCommand from "./commands/moderation/slowmode";
 import { lockCommand, unlockCommand } from "./commands/moderation/lock";
-import nukeCommand from "./commands/moderation/nuke";
+
 
 import serverinfoCommand from "./commands/info/serverinfo";
 import userinfoCommand from "./commands/info/userinfo";
@@ -87,7 +87,7 @@ const allCommands = [
   slowmodeCommand,
   lockCommand,
   unlockCommand,
-  nukeCommand,
+
   serverinfoCommand,
   userinfoCommand,
   avatarCommand,
