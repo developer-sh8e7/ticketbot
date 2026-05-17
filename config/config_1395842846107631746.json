@@ -10,7 +10,7 @@
     "embedColor": "#808080",
     "errorColor": "#ef4444",
     "successColor": "#22c55e",
-    "footerText": "Store Support System",
+    "footerText": "",
     "footerIconUrl": ""
   },
   "guild": {
@@ -56,7 +56,7 @@
     "description": "",
     "menuPlaceholder": "اختر نوع التذكرة...",
     "menuCustomId": "ticket:open-select",
-    "defaultMention": "@everyone",
+    "defaultMention": "",
     "showNumbers": false,
     "accentText": ""
   },

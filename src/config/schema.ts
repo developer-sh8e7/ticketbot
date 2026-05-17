@@ -47,7 +47,7 @@ export const appConfigSchema = z.object({
     embedColor: z.string().regex(/^#?[0-9a-fA-F]{6}$/),
     errorColor: z.string().regex(/^#?[0-9a-fA-F]{6}$/),
     successColor: z.string().regex(/^#?[0-9a-fA-F]{6}$/),
-    footerText: z.string().min(1),
+    footerText: z.string(),
     footerIconUrl: z.string(),
   }),
   guild: z.object({

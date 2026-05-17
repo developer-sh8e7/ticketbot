@@ -33,10 +33,13 @@ export async function buildPanelEmbeds(config: AppConfig, guild: Guild): Promise
   if (config.images.thumbnailUrl) introEmbed.setThumbnail(config.images.thumbnailUrl);
   if (config.images.panelBannerUrl) introEmbed.setImage(config.images.panelBannerUrl);
 
-  introEmbed.setFooter({
-    text: config.bot.footerText || '\u200B',
-    iconURL: config.bot.footerIconUrl || undefined,
-  }).setTimestamp();
+  if (config.bot.footerText || config.bot.footerIconUrl) {
+    introEmbed.setFooter({
+      text: config.bot.footerText || '\u200B',
+      iconURL: config.bot.footerIconUrl || undefined,
+    });
+    introEmbed.setTimestamp();
+  }
 
   return [introEmbed];
 }
