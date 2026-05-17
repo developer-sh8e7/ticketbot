@@ -61,9 +61,9 @@ export const appConfigSchema = z.object({
     mentionRolesOnOpen: z.array(z.string()),
   }),
   images: z.object({
-    panelBannerUrl: z.string().url(),
-    ticketBannerUrl: z.string().url(),
-    thumbnailUrl: z.string().url(),
+    panelBannerUrl: z.string(),
+    ticketBannerUrl: z.string(),
+    thumbnailUrl: z.string(),
   }),
   naming: z.object({
     ticketChannelPrefix: z.string().min(1),

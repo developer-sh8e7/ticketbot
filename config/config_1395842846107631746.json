@@ -30,9 +30,9 @@
     ]
   },
   "images": {
-    "panelBannerUrl": "https://placehold.co/1200x400/000000/ffffff?text=Store+Support",
-    "ticketBannerUrl": "https://placehold.co/1200x400/000000/ffffff?text=Welcome",
-    "thumbnailUrl": "https://placehold.co/256x256/000000/ffffff?text=S"
+    "panelBannerUrl": "https://i.imgur.com/2ogHr6L.png",
+    "ticketBannerUrl": "",
+    "thumbnailUrl": ""
   },
   "naming": {
     "ticketChannelPrefix": "ticket",
