@@ -65,6 +65,10 @@ import guildMemberRemoveEvent from "./events/guildMemberRemove";
 import { messageDeleteEvent, messageUpdateEvent } from "./events/messageLogs";
 import voiceStateUpdateEvent from "./events/voiceStateUpdate";
 import channelDeleteEvent from "./events/channelDelete";
+import channelCreateEvent from "./events/channelCreate";
+import roleDeleteEvent from "./events/roleDelete";
+import roleCreateEvent from "./events/roleCreate";
+import guildBanAddEvent from "./events/guildBanAdd";
 
 
 import bombCommand from "./commands/games/bomb";
@@ -137,6 +141,10 @@ const allEvents = [
   messageUpdateEvent,
   voiceStateUpdateEvent,
   channelDeleteEvent,
+  channelCreateEvent,
+  roleDeleteEvent,
+  roleCreateEvent,
+  guildBanAddEvent,
 ];
 
 // Initialize Discord Client with all required intents
@@ -149,6 +157,8 @@ const client = new Client({
     GatewayIntentBits.GuildPresences,
     GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildModeration,
+    GatewayIntentBits.GuildBans,
   ],
   partials: [Partials.Message, Partials.Channel, Partials.Reaction, Partials.User, Partials.GuildMember],
 });
