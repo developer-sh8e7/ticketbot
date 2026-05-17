@@ -7,9 +7,8 @@ export const once = true;
 export function execute(client: Client): void {
   logger.info(`Bot is online as ${client.user?.tag}`);
   
-  // ديسكورد يجبرنا على استخدام رابط Twitch أو YouTube لتفعيل زر البث القابل للضغط
-  client.user?.setActivity('Opus Solutions 🔗 discord.gg/ZavYFR4qFr', { 
-    type: ActivityType.Streaming,
-    url: 'https://twitch.tv/discord' 
+  // ضبط الحالة الرسمية لتكون "Watching Opus Solutions" بشكل نظيف ومستقر 100%
+  client.user?.setActivity('Opus Solutions', { 
+    type: ActivityType.Watching 
   });
 }
