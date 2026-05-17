@@ -5,7 +5,7 @@ import { logger } from '../utils/logger';
 
 export async function loadEvents(client: ExtendedClient): Promise<void> {
   const eventsPath = join(__dirname, '..', 'events');
-  const files = readdirSync(eventsPath).filter(f => f.endsWith('.ts') || f.endsWith('.js'));
+  const files = readdirSync(eventsPath).filter(f => (f.endsWith('.ts') || f.endsWith('.js')) && !f.endsWith('.d.ts'));
 
   for (const file of files) {
     const filePath = join(eventsPath, file);
