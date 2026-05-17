@@ -16,6 +16,7 @@ import clearCommand from "./commands/moderation/clear";
 import unbanCommand from "./commands/moderation/unban";
 import slowmodeCommand from "./commands/moderation/slowmode";
 import { lockCommand, unlockCommand } from "./commands/moderation/lock";
+import antinukeCommand from "./commands/moderation/antinuke";
 
 
 import serverinfoCommand from "./commands/info/serverinfo";
@@ -81,7 +82,6 @@ import typeraceCommand from "./commands/games/typerace";
 import wordchainCommand from "./commands/games/wordchain";
 
 const allCommands = [
-
   bombCommand,
   guessCommand,
   luckyCommand,
@@ -100,6 +100,7 @@ const allCommands = [
   slowmodeCommand,
   lockCommand,
   unlockCommand,
+  antinukeCommand,
 
   serverinfoCommand,
   userinfoCommand,
@@ -113,7 +114,7 @@ const allCommands = [
   autoRoleCommand,
   embedCommand,
   antiRaidCommand,
-  protectionCommand, // NEW Unified Command
+  protectionCommand,
 
   roleCommand,
   hideCommand,

@@ -1,7 +1,6 @@
 // ══════════════════════════════════════════════════════════════
 //  Deploy Slash Commands to Discord API
 //  Run: npx ts-node src/deploy-commands.ts
-//  V2 — Added antiswear command
 // ══════════════════════════════════════════════════════════════
 
 import { REST, Routes } from "discord.js";
@@ -17,7 +16,7 @@ import clearCommand from "./commands/moderation/clear";
 import unbanCommand from "./commands/moderation/unban";
 import slowmodeCommand from "./commands/moderation/slowmode";
 import { lockCommand, unlockCommand } from "./commands/moderation/lock";
-
+import antinukeCommand from "./commands/moderation/antinuke";
 
 import serverinfoCommand from "./commands/info/serverinfo";
 import userinfoCommand from "./commands/info/userinfo";
@@ -39,13 +38,7 @@ import {
   antiRaidCommand,
 } from "./commands/settings/settings";
 
-import {
-  protectionCommand,
-  antiLinksCommand,
-  antiSpamCommand,
-  antiBotsCommand,
-  antiSwearCommand,
-} from "./commands/settings/protection";
+import { protectionCommand } from "./commands/settings/protection";
 
 import creditsCommand from "./commands/economy/credits";
 import dailyCommand from "./commands/economy/daily";
@@ -57,7 +50,6 @@ import topCommand from "./commands/levels/top";
 import rollCommand from "./commands/fun/roll";
 import coinflipCommand from "./commands/fun/coinflip";
 
-
 import bombCommand from "./commands/games/bomb";
 import guessCommand from "./commands/games/guess";
 import luckyCommand from "./commands/games/lucky";
@@ -68,7 +60,6 @@ import typeraceCommand from "./commands/games/typerace";
 import wordchainCommand from "./commands/games/wordchain";
 
 const allCommands = [
-
   bombCommand,
   guessCommand,
   luckyCommand,
@@ -87,6 +78,7 @@ const allCommands = [
   slowmodeCommand,
   lockCommand,
   unlockCommand,
+  antinukeCommand,
 
   serverinfoCommand,
   userinfoCommand,
@@ -100,7 +92,7 @@ const allCommands = [
   autoRoleCommand,
   embedCommand,
   antiRaidCommand,
-  protectionCommand, // NEW Unified Command
+  protectionCommand,
 
   roleCommand,
   hideCommand,
@@ -127,13 +119,11 @@ const rest = new REST({ version: "10" }).setToken(Config.token);
     Logger.info(`Deploying ${commandData.length} slash commands...`);
 
     if (Config.guildId) {
-      // Guild-specific (instant, for development)
       await rest.put(Routes.applicationGuildCommands(Config.clientId, Config.guildId), {
         body: commandData,
       });
       Logger.success(`Deployed ${commandData.length} commands to guild ${Config.guildId}`);
     } else {
-      // Global (takes ~1 hour to propagate)
       await rest.put(Routes.applicationCommands(Config.clientId), {
         body: commandData,
       });
