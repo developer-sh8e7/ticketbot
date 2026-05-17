@@ -1,31 +1,31 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, Client, Collection } from 'discord.js';
+// ══════════════════════════════════════════════════════════════
+//  Opus System Bot — Type Definitions
+// ══════════════════════════════════════════════════════════════
 
+import {
+  ChatInputCommandInteraction,
+  SlashCommandBuilder,
+  SlashCommandSubcommandsOnlyBuilder,
+  SlashCommandOptionsOnlyBuilder,
+  Client,
+  ClientEvents,
+} from "discord.js";
+
+/** Slash command structure */
 export interface Command {
-  data: Omit<SlashCommandBuilder, 'addSubcommand' | 'addSubcommandGroup'> | SlashCommandBuilder;
-  execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
+  data:
+    | SlashCommandBuilder
+    | SlashCommandSubcommandsOnlyBuilder
+    | SlashCommandOptionsOnlyBuilder
+    | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">;
+  execute: (interaction: ChatInputCommandInteraction) => Promise<any>;
+  ownerOnly?: boolean;
   cooldown?: number;
 }
 
-export interface ExtendedClient extends Client {
-  commands: Collection<string, Command>;
-  cooldowns: Collection<string, Collection<string, number>>;
-}
-
-export interface ServerConfig {
-  welcomeChannelId?: string;
-  goodbyeChannelId?: string;
-  logChannelId?: string;
-  verificationChannelId?: string;
-  adminChannelId?: string;
-  defaultRoleId?: string;
-  verifiedRoleId?: string;
-  unverifiedRoleId?: string;
-  rules: string[];
-}
-
-export interface GameSession {
-  active: boolean;
-  players: string[];
-  currentPlayer?: string;
-  data?: Record<string, unknown>;
+/** Event handler structure */
+export interface BotEvent<K extends keyof ClientEvents = keyof ClientEvents> {
+  name: K;
+  once?: boolean;
+  execute: (client: Client, ...args: ClientEvents[K]) => void | Promise<void>;
 }

@@ -1,13 +1,14 @@
 // ══════════════════════════════════════════════════════════════
-//  Opus System Bot — Entry Point (V2)
+//  Deploy Slash Commands to Discord API
+//  Run: npx ts-node src/deploy-commands.ts
+//  V2 — Added antiswear command
 // ══════════════════════════════════════════════════════════════
 
-import { Client, GatewayIntentBits, Partials, Collection, REST, Routes } from "discord.js";
+import { REST, Routes } from "discord.js";
 import { Config } from "./config";
 import { Logger } from "./utils/logger";
-import { Command } from "./types";
 
-// Import all commands manually (avoids fs/path issues in some compiled environments)
+// Import all commands
 import banCommand from "./commands/moderation/ban";
 import kickCommand from "./commands/moderation/kick";
 import timeoutCommand from "./commands/moderation/timeout";
@@ -55,15 +56,6 @@ import topCommand from "./commands/levels/top";
 
 import rollCommand from "./commands/fun/roll";
 import coinflipCommand from "./commands/fun/coinflip";
-
-// Import Events
-import readyEvent from "./events/ready";
-import messageCreateEvent from "./events/messageCreate";
-import interactionCreateEvent from "./events/interactionCreate";
-import guildMemberAddEvent from "./events/guildMemberAdd";
-import guildMemberRemoveEvent from "./events/guildMemberRemove";
-import { messageDeleteEvent, messageUpdateEvent } from "./events/messageLogs";
-import voiceStateUpdateEvent from "./events/voiceStateUpdate";
 
 
 import bombCommand from "./commands/games/bomb";
@@ -126,86 +118,28 @@ const allCommands = [
   coinflipCommand,
 ];
 
-const allEvents = [
-  readyEvent,
-  messageCreateEvent,
-  interactionCreateEvent,
-  guildMemberAddEvent,
-  guildMemberRemoveEvent,
-  messageDeleteEvent,
-  messageUpdateEvent,
-  voiceStateUpdateEvent,
-];
+const commandData = allCommands.map((c) => c.data.toJSON());
 
-// Initialize Discord Client with all required intents
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildPresences,
-    GatewayIntentBits.GuildVoiceStates,
-    GatewayIntentBits.GuildMessageReactions,
-  ],
-  partials: [Partials.Message, Partials.Channel, Partials.Reaction, Partials.User, Partials.GuildMember],
-});
+const rest = new REST({ version: "10" }).setToken(Config.token);
 
-// Create command collection and attach to client
-(client as any).commands = new Collection<string, Command>();
-
-// Register Commands
-for (const cmd of allCommands) {
-  (client as any).commands.set(cmd.data.name, cmd);
-}
-
-// Register Events
-for (const event of allEvents) {
-  if (event.once) {
-    // @ts-ignore
-    client.once(event.name, (...args: any[]) => event.execute(client as any, ...args));
-  } else {
-    // @ts-ignore
-    client.on(event.name, (...args: any[]) => event.execute(client as any, ...args));
-  }
-}
-
-// Global unhandled rejection handler to prevent bot crashes
-process.on("unhandledRejection", (error) => {
-  Logger.error(`Unhandled Rejection: ${error}`);
-});
-
-async function deploySlashCommands() {
-  if (!Config.token || !Config.clientId) {
-    Logger.warn("Skipping command deployment: missing token or clientId");
-    return;
-  }
-  const commandData = allCommands.map((c) => c.data.toJSON());
-  const rest = new REST({ version: "10" }).setToken(Config.token);
+(async () => {
   try {
-    Logger.info(`Started refreshing ${commandData.length} application (/) commands.`);
+    Logger.info(`Deploying ${commandData.length} slash commands...`);
+
     if (Config.guildId) {
+      // Guild-specific (instant, for development)
       await rest.put(Routes.applicationGuildCommands(Config.clientId, Config.guildId), {
         body: commandData,
       });
-      Logger.success(`Successfully deployed ${commandData.length} commands to guild ${Config.guildId}`);
+      Logger.success(`Deployed ${commandData.length} commands to guild ${Config.guildId}`);
     } else {
+      // Global (takes ~1 hour to propagate)
       await rest.put(Routes.applicationCommands(Config.clientId), {
         body: commandData,
       });
-      Logger.success(`Successfully deployed ${commandData.length} commands globally`);
+      Logger.success(`Deployed ${commandData.length} commands globally`);
     }
   } catch (err) {
     Logger.error(`Failed to deploy commands: ${err}`);
   }
-}
-
-async function start() {
-  await deploySlashCommands();
-}
-
-// Start the bot
-start().then(() => client.login(Config.token)).catch((err) => {
-  Logger.error(`Failed to login: ${err}`);
-});
-// Trigger deployment
+})();

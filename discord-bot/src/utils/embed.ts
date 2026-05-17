@@ -1,33 +1,85 @@
-import { EmbedBuilder } from 'discord.js';
+// ══════════════════════════════════════════════════════════════
+//  Opus System Bot V2 — Embed Utilities
+//  Premium dark theme with Application Emoji branding
+// ══════════════════════════════════════════════════════════════
 
-export function successEmbed(title: string, description: string): EmbedBuilder {
-  return new EmbedBuilder()
-    .setColor(0x2ecc71)
-    .setTitle(`✅ ${title}`)
-    .setDescription(description)
-    .setTimestamp();
-}
+import { EmbedBuilder, ColorResolvable } from "discord.js";
+import { Config } from "../config";
+import { Emojis } from "./emojis";
 
-export function errorEmbed(description: string): EmbedBuilder {
-  return new EmbedBuilder()
-    .setColor(0xe74c3c)
-    .setTitle('❌ خطأ')
-    .setDescription(description)
-    .setTimestamp();
-}
+/** V2 Premium Color Palette */
+export const Colors = {
+  primary: Config.embed.color as ColorResolvable,
+  success: 0x2dce89 as ColorResolvable,
+  warning: 0xfb6340 as ColorResolvable,
+  error: 0xf5365c as ColorResolvable,
+  info: 0x11cdef as ColorResolvable,
+  moderation: 0xff6b35 as ColorResolvable,
+  ticket: 0x8965e0 as ColorResolvable,
+  welcome: 0x2dce89 as ColorResolvable,
+  leave: 0xf5365c as ColorResolvable,
+  filter: 0xe74c3c as ColorResolvable,
+  economy: 0xffd600 as ColorResolvable,
+  level: 0x5e72e4 as ColorResolvable,
+};
 
-export function infoEmbed(title: string, description: string): EmbedBuilder {
+/**
+ * Creates a pre-styled V2 embed with bot branding.
+ */
+export function createEmbed(
+  title: string,
+  description: string,
+  color: ColorResolvable = Colors.primary,
+): EmbedBuilder {
   return new EmbedBuilder()
-    .setColor(0x3498db)
     .setTitle(title)
     .setDescription(description)
-    .setTimestamp();
-}
-
-export function gameEmbed(title: string, description: string, color = 0x9b59b6): EmbedBuilder {
-  return new EmbedBuilder()
     .setColor(color)
-    .setTitle(title)
-    .setDescription(description)
+    .setFooter({ text: Config.embed.footer ?? "Opus System Bot" })
     .setTimestamp();
+}
+
+/** Quick success embed */
+export function successEmbed(title: string, desc: string) {
+  return createEmbed(`${Emojis.success}  ${title}`, desc, Colors.success);
+}
+
+/** Quick error embed */
+export function errorEmbed(title: string, desc: string) {
+  return createEmbed(`${Emojis.error}  ${title}`, desc, Colors.error);
+}
+
+/** Quick warning embed */
+export function warningEmbed(title: string, desc: string) {
+  return createEmbed(`${Emojis.warning}  ${title}`, desc, Colors.warning);
+}
+
+/** Quick info embed */
+export function infoEmbed(title: string, desc: string) {
+  return createEmbed(`${Emojis.info}  ${title}`, desc, Colors.info);
+}
+
+/** Quick moderation embed */
+export function modEmbed(title: string, desc: string) {
+  return createEmbed(`${Emojis.ban}  ${title}`, desc, Colors.moderation);
+}
+
+/** Filter / Auto-mod embed */
+export function filterEmbed(title: string, desc: string) {
+  return createEmbed(`${Emojis.filter}  ${title}`, desc, Colors.filter);
+}
+
+/** Economy embed */
+export function economyEmbed(title: string, desc: string) {
+  return createEmbed(`${Emojis.credits}  ${title}`, desc, Colors.economy);
+}
+
+/** Level embed */
+export function levelEmbed(title: string, desc: string) {
+  return createEmbed(`${Emojis.xp}  ${title}`, desc, Colors.level);
+}
+
+/** Game embed */
+export function gameEmbed(title: string, desc: string) {
+  return createEmbed(`🎮  ${title}`, desc, 0x9b59b6);
 }
