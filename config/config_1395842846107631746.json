@@ -68,32 +68,32 @@
       "close": {
         "label": "إغلاق",
         "style": "Secondary",
-        "emojiId": ""
+        "emojiId": "1505356484471685201"
       },
       "add": {
         "label": "إضافة",
         "style": "Secondary",
-        "emojiId": ""
+        "emojiId": "1505357680842375319"
       },
       "remove": {
         "label": "إزالة",
         "style": "Secondary",
-        "emojiId": ""
+        "emojiId": "1505357865072984115"
       },
       "claim": {
         "label": "استلام",
         "style": "Secondary",
-        "emojiId": ""
+        "emojiId": "1505361811258609705"
       },
       "pin": {
         "label": "تثبيت",
         "style": "Secondary",
-        "emojiId": ""
+        "emojiId": "1505361828186816592"
       },
       "stats": {
         "label": "إحصائيات",
         "style": "Secondary",
-        "emojiId": "",
+        "emojiId": "1505361794510622823",
         "allowedRoleIds": [
           "1396566007413215242"
         ]
@@ -117,8 +117,8 @@
     "infoIcon": "",
     "epicIcon": "",
     "categories": {
-      "purchase": "",
-      "support": ""
+      "purchase": "1505361775510556763",
+      "support": "1505361752303599645"
     }
   },
   "categories": [
