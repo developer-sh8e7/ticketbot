@@ -59,63 +59,7 @@ export default {
 
       Logger.warn(`🚨 Anti-Nuke: Channel "${channel.name}" was deleted by ${executor.tag} (${executor.id})!`);
 
-      // 2. Fetch executor as GuildMember to punish
-      const executorMember = await channel.guild.members.fetch(executor.id).catch(() => null);
-      if (!executorMember) return;
-
-      // Skip if executor has a higher role than the bot
-      const botMember = channel.guild.members.me;
-      if (botMember && executorMember.roles.highest.position >= botMember.roles.highest.position) {
-        Logger.warn(`Anti-Nuke: Cannot punish ${executor.tag} because their role is higher than the bot.`);
-        return;
-      }
-
-      // 3. Keep track of recent channel deletions (Time frame: 2 minutes = 120,000 ms)
-      const now = Date.now();
-      const twoMinutes = 2 * 60 * 1000;
-      
-      let userHistory = deletionHistory.get(executor.id) || [];
-      // Clean up deletions older than 2 minutes
-      userHistory = userHistory.filter((timestamp) => now - timestamp < twoMinutes);
-      userHistory.push(now);
-      deletionHistory.set(executor.id, userHistory);
-
-      const deletionCount = userHistory.length;
-      Logger.info(`Anti-Nuke: ${executor.tag} has deleted ${deletionCount} channels in the last 2 minutes.`);
-
-      // 4. Determine Punishment
-      let isKicked = false;
-      if (deletionCount >= 4) {
-        // Punish: STRIP ALL ROLES + KICK
-        Logger.warn(`🚨 GRIEFER DETECTED! ${executor.tag} deleted ${deletionCount} channels in under 2 minutes. Kicking...`);
-        
-        // Strip roles first
-        if (executorMember.manageable) {
-          await executorMember.roles.set([]).catch((err) => {
-            Logger.error(`Anti-Nuke: Failed to strip roles from ${executor.tag}: ${err}`);
-          });
-        }
-
-        // Kick from server
-        if (executorMember.kickable) {
-          await executorMember.kick("Anti-Nuke Protection: Deleted 4 channels in less than 2 minutes.").then(() => {
-            isKicked = true;
-            Logger.success(`Anti-Nuke: Successfully kicked griefer ${executor.tag}.`);
-          }).catch((err) => {
-            Logger.error(`Anti-Nuke: Failed to kick ${executor.tag}: ${err}`);
-          });
-        }
-      } else {
-        // Punish: STRIP ALL ROLES
-        Logger.warn(`Anti-Nuke: Stripping all roles from ${executor.tag} for deleting channel "${channel.name}".`);
-        if (executorMember.manageable) {
-          await executorMember.roles.set([]).catch((err) => {
-            Logger.error(`Anti-Nuke: Failed to strip roles from ${executor.tag}: ${err}`);
-          });
-        }
-      }
-
-      // 5. Auto-Restore the deleted channel
+      // ── Step 1: Auto-Restore the deleted channel (Unconditionally) ──
       Logger.info(`Anti-Nuke: Auto-restoring deleted channel "${channel.name}"...`);
       
       const parentId = channel.parentId;
@@ -154,13 +98,71 @@ export default {
         Logger.success(`Anti-Nuke: Successfully restored channel "${channel.name}"!`);
       }
 
-      // 6. Log punishment to standard Logs channel
+      // ── Step 2: Punish Griefer (If possible) ──
+      const executorMember = await channel.guild.members.fetch(executor.id).catch(() => null);
+      let isKicked = false;
+      let punished = false;
+
+      if (executorMember) {
+        const botMember = channel.guild.members.me;
+        if (botMember && executorMember.roles.highest.position < botMember.roles.highest.position) {
+          punished = true;
+          // Keep track of recent channel deletions (Time frame: 2 minutes = 120,000 ms)
+          const now = Date.now();
+          const twoMinutes = 2 * 60 * 1000;
+          
+          let userHistory = deletionHistory.get(executor.id) || [];
+          userHistory = userHistory.filter((timestamp) => now - timestamp < twoMinutes);
+          userHistory.push(now);
+          deletionHistory.set(executor.id, userHistory);
+
+          const deletionCount = userHistory.length;
+          Logger.info(`Anti-Nuke: ${executor.tag} has deleted ${deletionCount} channels in the last 2 minutes.`);
+
+          if (deletionCount >= 4) {
+            // Punish: STRIP ALL ROLES + KICK
+            Logger.warn(`🚨 GRIEFER DETECTED! ${executor.tag} deleted ${deletionCount} channels in under 2 minutes. Kicking...`);
+            
+            // Strip roles first
+            if (executorMember.manageable) {
+              await executorMember.roles.set([]).catch((err) => {
+                Logger.error(`Anti-Nuke: Failed to strip roles from ${executor.tag}: ${err}`);
+              });
+            }
+
+            // Kick from server
+            if (executorMember.kickable) {
+              await executorMember.kick("Anti-Nuke Protection: Deleted 4 channels in less than 2 minutes.").then(() => {
+                isKicked = true;
+                Logger.success(`Anti-Nuke: Successfully kicked griefer ${executor.tag}.`);
+              }).catch((err) => {
+                Logger.error(`Anti-Nuke: Failed to kick ${executor.tag}: ${err}`);
+              });
+            }
+          } else {
+            // Punish: STRIP ALL ROLES
+            Logger.warn(`Anti-Nuke: Stripping all roles from ${executor.tag} for deleting channel "${channel.name}".`);
+            if (executorMember.manageable) {
+              await executorMember.roles.set([]).catch((err) => {
+                Logger.error(`Anti-Nuke: Failed to strip roles from ${executor.tag}: ${err}`);
+              });
+            }
+          }
+        } else {
+          Logger.warn(`Anti-Nuke: Cannot punish ${executor.tag} because their role is higher than the bot.`);
+        }
+      }
+
+      // ── Step 3: Log to standard Logs channel ──
       const dbConfig = await getGuildConfig(channel.guild.id);
       const logsChannel = channel.guild.channels.cache.get(dbConfig.channels.logs_channel ?? "");
       if (logsChannel?.isTextBased()) {
-        const punishmentText = isKicked 
-          ? `❌ **طرد العضو لسحب رتبه بالكامل وطره من السيرفر لتجاوزه الحد المسموح (حذف 4 رومات في أقل من دقيقتين)**`
-          : `⚠️ **سحب رتب العضو بالكامل لـ محاولة تخريب وحذف الروم**`;
+        let punishmentText = `⚠️ **لم يتم اتخاذ إجراء عقابي لعدم امتلاك البوت الصلاحية الكافية (رتبة الفاعل أعلى من البوت)**`;
+        if (punished) {
+          punishmentText = isKicked 
+            ? `❌ **طرد العضو لسحب رتبه بالكامل وطره من السيرفر لتجاوزه الحد المسموح (حذف 4 رومات في أقل من دقيقتين)**`
+            : `⚠️ **سحب رتب العضو بالكامل لـ محاولة تخريب وحذف الروم**`;
+        }
 
         const logEmbed = modEmbed(
           "نظام حماية السيرفر — Anti-Nuke",
