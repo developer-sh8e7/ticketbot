@@ -37,13 +37,13 @@ export default {
 
         // Send warning embed
         const warnEmbed = new EmbedBuilder()
-          .setTitle(`${Emojis.filter}  Auto-Filter`)
+          .setTitle(`${Emojis.filter}  الفلتر التلقائي (حظر الكلمات)`)
           .setDescription(
             [
-              `${message.author} has been timed out for **24 hours**.`,
+              `${message.author} تم إسكاته مؤقتاً لمدة **24 ساعة**.`,
               "",
-              `**Reason:** Profanity / Offensive language detected`,
-              `**Detection:** ${result.type}`,
+              `**السبب:** استخدام كلمات بذيئة / غير لائقة في السيرفر`,
+              `**التصنيف:** ${result.type}`,
             ].join("\n"),
           )
           .setColor(Colors.filter)
@@ -62,15 +62,15 @@ export default {
           const logChannel = message.guild.channels.cache.get(guildConfig.channels.logs_channel);
           if (logChannel?.isTextBased()) {
             const logEmbed = new EmbedBuilder()
-              .setTitle(`${Emojis.filter}  Auto-Filter Log`)
+              .setTitle(`${Emojis.filter}  سجل الفلتر التلقائي`)
               .setDescription(
                 [
-                  `**User:** ${message.author.tag} (\`${message.author.id}\`)`,
-                  `**Channel:** ${message.channel}`,
-                  `**Detection Type:** ${result.type}`,
-                  `**Matched Word:** ||\`${result.word}\`||`,
-                  `**Original Message:** ||\`${message.content.slice(0, 500)}\`||`,
-                  `**Action:** Timeout 24h + Message Deleted`,
+                  `**المستخدم:** ${message.author.tag} (\`${message.author.id}\`)`,
+                  `**الروم:** ${message.channel}`,
+                  `**نوع التصفية:** ${result.type}`,
+                  `**الكلمة المخالفة:** ||\`${result.word}\`||`,
+                  `**الرسالة الأصلية:** ||\`${message.content.slice(0, 500)}\`||`,
+                  `**الإجراء المتخذ:** إسكات 24 ساعة + حذف الرسالة تلقائياً`,
                 ].join("\n"),
               )
               .setColor(Colors.filter)
@@ -93,7 +93,7 @@ export default {
         if (message.channel.isTextBased() && "send" in message.channel) {
           const sent = await message.channel.send({
             content: `${message.author}`,
-            embeds: [filterEmbed("Anti-Links", "Links are not allowed in this server.")],
+            embeds: [filterEmbed("🚫 منع الروابط", "يُمنع إرسال الروابط الخارجية في هذا السيرفر.")],
           }).catch(() => null);
           if (sent) setTimeout(() => sent.delete().catch(() => {}), 5000);
         }
@@ -113,7 +113,7 @@ export default {
         if (message.channel.isTextBased() && "send" in message.channel) {
           const sent = await message.channel.send({
             content: `${message.author}`,
-            embeds: [filterEmbed("Anti-Spam", "Spam detected. You have been muted for 1 minute.")],
+            embeds: [filterEmbed("🚫 منع التكرار والسبام", "تم اكتشاف إرسال رسائل أو منشن مكرر بشكل مفرط. تم إسكاتك مؤقتاً لمدة دقيقة واحدة لحماية السيرفر.")],
           }).catch(() => null);
           if (sent) setTimeout(() => sent.delete().catch(() => {}), 5000);
         }

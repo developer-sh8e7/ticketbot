@@ -28,13 +28,13 @@ export default {
           .join(", ");
 
         const embed = new EmbedBuilder()
-          .setTitle(`${Emojis.leave}  Goodbye!`)
+          .setTitle(`${Emojis.leave}  مع السلامة!`)
           .setDescription(
             [
-              `**${member.user?.tag ?? "Unknown"}** has left the server.`,
+              `لقد غادرنا العضو **${member.user?.tag ?? "عضو غير معروف"}** من السيرفر.`,
               "",
-              `We now have **${member.guild.memberCount}** members.`,
-              roles ? `\n**Roles:** ${roles}` : "",
+              `👥 عدد أعضاء السيرفر الآن هو **${member.guild.memberCount}** عضو.`,
+              roles ? `\n**الرتب التي كان يحملها:** ${roles}` : "",
             ].join("\n"),
           )
           .setColor(dbConfig.settings.embed_color ? parseInt(dbConfig.settings.embed_color, 16) : Colors.leave)
@@ -51,12 +51,12 @@ export default {
       const logChannel = member.guild.channels.cache.get(dbConfig.channels.join_leave_logs_channel);
       if (logChannel?.isTextBased()) {
         const logEmbed = new EmbedBuilder()
-          .setTitle(`${Emojis.arrow}  Member Left`)
+          .setTitle(`${Emojis.arrow}  مغادرة عضو`)
           .setDescription(
             [
-              `**User:** ${member.user?.tag ?? "Unknown"} (\`${member.id}\`)`,
-              `**Joined:** ${member.joinedAt ? `<t:${Math.floor(member.joinedTimestamp! / 1000)}:R>` : "Unknown"}`,
-              `**Total Members:** ${member.guild.memberCount}`,
+              `**المستخدم:** ${member.user?.tag ?? "عضو غير معروف"} (\`${member.id}\`)`,
+              `**وقت الانضمام:** ${member.joinedAt ? `<t:${Math.floor(member.joinedTimestamp! / 1000)}:R>` : "غير معروف"}`,
+              `**إجمالي الأعضاء:** ${member.guild.memberCount}`,
             ].join("\n"),
           )
           .setColor(Colors.error)

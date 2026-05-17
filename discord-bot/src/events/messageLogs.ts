@@ -22,12 +22,12 @@ export const messageDeleteEvent = {
     if (!logChannel?.isTextBased() || !("send" in logChannel)) return;
 
     const embed = new EmbedBuilder()
-      .setTitle(`${Emojis.delete}  Message Deleted`)
+      .setTitle(`${Emojis.delete}  حذف رسالة`)
       .setDescription(
         [
-          `**Author:** ${message.author?.tag ?? "Unknown"} (\`${message.author?.id ?? "?"}\`)`,
-          `**Channel:** ${message.channel}`,
-          `**Content:**\n\`\`\`${(message.content ?? "No content").slice(0, 1000)}\`\`\``,
+          `**الكاتب:** ${message.author?.tag ?? "غير معروف"} (\`${message.author?.id ?? "?"}\`)`,
+          `**الروم:** ${message.channel}`,
+          `**المحتوى:**\n\`\`\`${(message.content ?? "لا يوجد محتوى").slice(0, 1000)}\`\`\``,
         ].join("\n"),
       )
       .setColor(Colors.error)
@@ -36,7 +36,7 @@ export const messageDeleteEvent = {
 
     if (message.attachments.size > 0) {
       embed.addFields({
-        name: `${Emojis.link} Attachments`,
+        name: `${Emojis.link} المرفقات`,
         value: message.attachments.map((a) => a.url).join("\n"),
       });
     }
@@ -59,22 +59,22 @@ export const messageUpdateEvent = {
     if (!logChannel?.isTextBased() || !("send" in logChannel)) return;
 
     const embed = new EmbedBuilder()
-      .setTitle(`${Emojis.edit}  Message Edited`)
+      .setTitle(`${Emojis.edit}  تعديل رسالة`)
       .setDescription(
         [
-          `**Author:** ${oldMessage.author?.tag ?? "Unknown"} (\`${oldMessage.author?.id ?? "?"}\`)`,
-          `**Channel:** ${oldMessage.channel}`,
-          `**[Jump to Message](${newMessage.url})**`,
+          `**الكاتب:** ${oldMessage.author?.tag ?? "غير معروف"} (\`${oldMessage.author?.id ?? "?"}\`)`,
+          `**الروم:** ${oldMessage.channel}`,
+          `**[الانتقال إلى الرسالة](${newMessage.url})**`,
         ].join("\n"),
       )
       .addFields(
         {
-          name: "Before",
-          value: `\`\`\`${(oldMessage.content ?? "No content").slice(0, 500)}\`\`\``,
+          name: "قبل التعديل",
+          value: `\`\`\`${(oldMessage.content ?? "لا يوجد محتوى").slice(0, 500)}\`\`\``,
         },
         {
-          name: "After",
-          value: `\`\`\`${(newMessage.content ?? "No content").slice(0, 500)}\`\`\``,
+          name: "بعد التعديل",
+          value: `\`\`\`${(newMessage.content ?? "لا يوجد محتوى").slice(0, 500)}\`\`\``,
         },
       )
       .setColor(Colors.warning)

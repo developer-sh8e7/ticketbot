@@ -32,22 +32,22 @@ export default {
     // Join
     if (!oldState.channelId && newState.channelId) {
       embed
-        .setTitle(`${Emojis.voice}  Voice Join`)
-        .setDescription(`Joined ${newState.channel}`)
+        .setTitle(`${Emojis.voice}  دخول روم صوتي`)
+        .setDescription(`دخل إلى الروم الصوتي ${newState.channel}`)
         .setColor(Colors.success);
     }
     // Leave
     else if (oldState.channelId && !newState.channelId) {
       embed
-        .setTitle(`${Emojis.voice}  Voice Leave`)
-        .setDescription(`Left ${oldState.channel}`)
+        .setTitle(`${Emojis.voice}  مغادرة روم صوتي`)
+        .setDescription(`غادر الروم الصوتي ${oldState.channel}`)
         .setColor(Colors.error);
     }
     // Move
     else if (oldState.channelId !== newState.channelId) {
       embed
-        .setTitle(`${Emojis.voice}  Voice Move`)
-        .setDescription(`Moved from ${oldState.channel} to ${newState.channel}`)
+        .setTitle(`${Emojis.voice}  انتقال بين الرومات الصوتية`)
+        .setDescription(`انتقل من الروم الصوتي ${oldState.channel} إلى ${newState.channel}`)
         .setColor(Colors.warning);
     } else {
       // Stream, mute, deafen updates

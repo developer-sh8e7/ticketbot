@@ -35,9 +35,9 @@ export default {
       if (Date.now() - member.user.createdTimestamp < minAge) {
         try {
           await member.send({
-            content: `${Emojis.warning} You were kicked from **${member.guild.name}** because your account is too new (< 7 days).`,
+            content: `${Emojis.warning} **لقد تم طردك من سيرفر ${member.guild.name}** لأن حسابك جديد جداً (أقل من 7 أيام).`,
           }).catch(() => {});
-          await member.kick("Anti-Raid: Account too new");
+          await member.kick("Anti-Raid: Account too new (< 7 days)");
           Logger.info(`New account ${member.user.tag} was kicked (Anti-Raid)`);
           return;
         } catch (err) {
@@ -61,14 +61,14 @@ export default {
       const channel = member.guild.channels.cache.get(dbConfig.channels.welcome_channel);
       if (channel?.isTextBased()) {
         const embed = new EmbedBuilder()
-          .setTitle(`${Emojis.welcome}  Welcome!`)
+          .setTitle(`${Emojis.welcome}  أهلاً بك في السيرفر!`)
           .setDescription(
             [
-              `Welcome to **${member.guild.name}**, ${member}!`,
+              `أهلاً بك في سيرفر **${member.guild.name}**، ${member}! ✨`,
               "",
-              `You are member **#${member.guild.memberCount}**`,
+              `👤 أنت العضو رقم **#${member.guild.memberCount}** في السيرفر.`,
               "",
-              `Account created: <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`,
+              `📅 تاريخ إنشاء الحساب: <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`,
             ].join("\n"),
           )
           .setColor(dbConfig.settings.embed_color ? parseInt(dbConfig.settings.embed_color, 16) : Colors.welcome)
@@ -86,12 +86,12 @@ export default {
       const logChannel = member.guild.channels.cache.get(dbConfig.channels.join_leave_logs_channel);
       if (logChannel?.isTextBased()) {
         const logEmbed = new EmbedBuilder()
-          .setTitle(`${Emojis.arrow}  Member Joined`)
+          .setTitle(`${Emojis.arrow}  انضمام عضو جديد`)
           .setDescription(
             [
-              `**User:** ${member.user.tag} (\`${member.id}\`)`,
-              `**Account Age:** <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`,
-              `**Total Members:** ${member.guild.memberCount}`,
+              `**المستخدم:** ${member.user.tag} (\`${member.id}\`)`,
+              `**عمر الحساب:** <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`,
+              `**إجمالي الأعضاء:** ${member.guild.memberCount}`,
             ].join("\n"),
           )
           .setColor(Colors.success)
