@@ -51,14 +51,14 @@
   "panel": {
     "channelId": "1396403268388655145",
     "messageId": "",
-    "title": "قسم التذاكر | متجرنا",
-    "subtitle": "أهلاً بك",
-    "description": "لخدمتكم بشكل أسرع، يرجى اختيار نوع التذكرة المناسب لطلبك من القائمة أدناه.",
+    "title": "",
+    "subtitle": "",
+    "description": "",
     "menuPlaceholder": "اختر نوع التذكرة...",
     "menuCustomId": "ticket:open-select",
     "defaultMention": "@everyone",
     "showNumbers": false,
-    "accentText": "مرحباً بك في الدعم الفني"
+    "accentText": ""
   },
   "ticket": {
     "welcomeTitle": "تم فتح التذكرة بنجاح",

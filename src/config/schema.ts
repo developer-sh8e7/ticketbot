@@ -82,14 +82,14 @@ export const appConfigSchema = z.object({
   panel: z.object({
     channelId: z.string(),
     messageId: z.string(),
-    title: z.string().min(1),
-    subtitle: z.string().min(1),
-    description: z.string().min(1),
+    title: z.string(),
+    subtitle: z.string(),
+    description: z.string(),
     menuPlaceholder: z.string().min(1).max(150),
     menuCustomId: z.string().min(1),
     defaultMention: z.string(),
     showNumbers: z.boolean(),
-    accentText: z.string().min(1),
+    accentText: z.string(),
   }),
   ticket: z.object({
     welcomeTitle: z.string().min(1),

@@ -12,20 +12,31 @@ import { componentEmojiFromId } from '../utils/emoji.js';
 
 export async function buildPanelEmbeds(config: AppConfig, guild: Guild): Promise<EmbedBuilder[]> {
   const introEmbed = new EmbedBuilder()
-    .setColor(hexToDecimal(config.bot.embedColor))
-    .setAuthor({
-      name: config.panel.title,
-      iconURL: config.images.thumbnailUrl,
-    })
-    .setTitle(config.panel.subtitle)
-    .setDescription(`${config.panel.accentText}\n\n${config.panel.description}`)
-    .setThumbnail(config.images.thumbnailUrl)
-    .setImage(config.images.panelBannerUrl)
-    .setFooter({
-      text: config.bot.footerText,
-      iconURL: config.bot.footerIconUrl || undefined,
-    })
-    .setTimestamp();
+    .setColor(hexToDecimal(config.bot.embedColor));
+
+  if (config.panel.title || config.images.thumbnailUrl) {
+    introEmbed.setAuthor({
+      name: config.panel.title || '\u200B',
+      iconURL: config.images.thumbnailUrl || undefined,
+    });
+  }
+
+  if (config.panel.subtitle) introEmbed.setTitle(config.panel.subtitle);
+  
+  const descriptionParts = [];
+  if (config.panel.accentText) descriptionParts.push(config.panel.accentText);
+  if (config.panel.description) descriptionParts.push(config.panel.description);
+  const fullDescription = descriptionParts.join('\n\n').trim();
+  
+  if (fullDescription) introEmbed.setDescription(fullDescription);
+  
+  if (config.images.thumbnailUrl) introEmbed.setThumbnail(config.images.thumbnailUrl);
+  if (config.images.panelBannerUrl) introEmbed.setImage(config.images.panelBannerUrl);
+
+  introEmbed.setFooter({
+    text: config.bot.footerText || '\u200B',
+    iconURL: config.bot.footerIconUrl || undefined,
+  }).setTimestamp();
 
   return [introEmbed];
 }
