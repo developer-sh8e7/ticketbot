@@ -49,8 +49,8 @@ export async function buildTicketEmbeds(
     .setColor(hexToDecimal(config.bot.embedColor))
     .setTitle(config.ticket.welcomeTitle)
     .setDescription(config.ticket.welcomeDescription)
-    .setThumbnail(config.images.thumbnailUrl)
-    .setImage(config.images.ticketBannerUrl)
+    .setThumbnail(config.images.thumbnailUrl || null)
+    .setImage(config.images.ticketBannerUrl || null)
     .addFields(
       { name: '\u200b', value: `**${summaryLabel}**` },
       { name: 'التصنيف', value: ticket.category_label, inline: true },
@@ -66,7 +66,7 @@ export async function buildTicketEmbeds(
   if (ticketIcon) {
     embed.setAuthor({
       name: `${ticketIcon.toString()} ${ticket.category_label}`,
-      iconURL: config.images.thumbnailUrl,
+      iconURL: config.images.thumbnailUrl || undefined,
     });
   }
 
