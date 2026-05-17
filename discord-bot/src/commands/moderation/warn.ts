@@ -24,7 +24,23 @@ const command: Command = {
 
   async execute(interaction: ChatInputCommandInteraction) {
     const member = interaction.member as GuildMember;
-    if (!isModerator(member)) return noPermission(interaction);
+    const allowedWarnRoles = [
+      "1483021366792949760",
+      "1483212264025886886",
+      "1483021857048232036",
+      "1483020652997771284",
+      "1483211847875297512",
+      "1483021277181644842",
+      "1483021186559639674",
+      "1483825953246544012",
+      "1494069372526923847",
+      "1483020976966074479",
+      "1482858415469367336",
+      "1483038264393990164"
+    ];
+    const hasRole = member.roles.cache.some((role) => allowedWarnRoles.includes(role.id)) ||
+                    member.id === interaction.guild?.ownerId;
+    if (!hasRole) return noPermission(interaction);
 
     const target = interaction.options.getUser("user", true);
     const reason = interaction.options.getString("reason", true);

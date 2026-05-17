@@ -20,7 +20,7 @@ const command: Command = {
 
     if (target.bot) {
       return interaction.editReply({
-        embeds: [errorEmbed("Invalid Target", "Bots do not have a rank.")],
+        embeds: [errorEmbed("❌ خطأ", "البوتات لا تمتلك مستويات أو لفل.")],
       });
     }
 
@@ -36,12 +36,12 @@ const command: Command = {
     await interaction.editReply({
       embeds: [
         levelEmbed(
-          `${target.tag}'s Rank`,
+          `📈 مستوى وترتيب — ${target.username}`,
           [
-            `**Level:** ${level}`,
-            `**XP:** ${Number(xp).toLocaleString()} / ${nextLevelXP.toLocaleString()}`,
+            `**المستوى الحالي:** \`Lvl ${level}\``,
+            `**نقاط الخبرة (XP):** \`${Number(xp).toLocaleString()} / ${nextLevelXP.toLocaleString()}\``,
             "",
-            `**Progress:** \`${progressBar}\` ${Math.floor((Number(xp) / nextLevelXP) * 100)}%`,
+            `**شريط التقدم:** \`[ ${progressBar} ]\` ${Math.floor((Number(xp) / nextLevelXP) * 100)}%`,
           ].join("\n"),
         ).setThumbnail(target.displayAvatarURL()),
       ],

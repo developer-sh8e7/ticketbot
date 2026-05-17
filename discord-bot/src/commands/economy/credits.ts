@@ -29,7 +29,7 @@ const command: Command = {
     if (!target && !amount) {
       const userData = await getUserData(interaction.user.id, interaction.user.username);
       return interaction.editReply({
-        embeds: [economyEmbed("Bank Balance", `You currently have **${userData?.credits.toLocaleString() ?? 0}** credits.`)],
+        embeds: [economyEmbed("💳 رصيدك البنكي", `أنت تمتلك حالياً **${userData?.credits.toLocaleString() ?? 0}** نقطة/كريديت.`)],
       });
     }
 
@@ -37,12 +37,12 @@ const command: Command = {
     if (target && !amount) {
       if (target.bot) {
         return interaction.editReply({
-          embeds: [errorEmbed("Invalid Target", "Bots do not have credits.")],
+          embeds: [errorEmbed("❌ خطأ", "البوتات لا تمتلك رصيداً أو نقاطاً.")],
         });
       }
       const targetData = await getUserData(target.id, target.username);
       return interaction.editReply({
-        embeds: [economyEmbed("Bank Balance", `${target.tag} has **${targetData?.credits.toLocaleString() ?? 0}** credits.`)],
+        embeds: [economyEmbed("💳 الرصيد البنكي", `العضو ${target} يمتلك حالياً **${targetData?.credits.toLocaleString() ?? 0}** نقطة/كريديت.`)],
       });
     }
 
@@ -50,27 +50,27 @@ const command: Command = {
     if (target && amount) {
       if (target.id === interaction.user.id) {
         return interaction.editReply({
-          embeds: [errorEmbed("Invalid Transfer", "You cannot transfer credits to yourself.")],
+          embeds: [errorEmbed("❌ تحويل غير صالح", "لا يمكنك تحويل النقاط لنفسك.")],
         });
       }
 
       if (target.bot) {
         return interaction.editReply({
-          embeds: [errorEmbed("Invalid Transfer", "You cannot transfer credits to a bot.")],
+          embeds: [errorEmbed("❌ تحويل غير صالح", "لا يمكنك تحويل النقاط للبوتات.")],
         });
       }
 
       const senderData = await getUserData(interaction.user.id, interaction.user.username);
       if (!senderData || senderData.credits < amount) {
         return interaction.editReply({
-          embeds: [errorEmbed("Insufficient Funds", "You do not have enough credits for this transfer.")],
+          embeds: [errorEmbed("❌ رصيد غير كافٍ", "رصيدك الحالي غير كافٍ لإتمام عملية التحويل هذه.")],
         });
       }
 
       const targetData = await getUserData(target.id, target.username);
       if (!targetData) {
         return interaction.editReply({
-          embeds: [errorEmbed("Error", "Could not fetch the target user's data.")],
+          embeds: [errorEmbed("❌ خطأ", "حدث خطأ أثناء محاولة جلب بيانات المستلم.")],
         });
       }
 
@@ -84,8 +84,8 @@ const command: Command = {
       return interaction.editReply({
         embeds: [
           successEmbed(
-            "Transfer Successful",
-            `Transferred **${amount.toLocaleString()}** credits to ${target}.\n*A 5% tax (${tax.toLocaleString()} credits) was applied.*`,
+            "✅ تم التحويل بنجاح",
+            `تم تحويل **${amount.toLocaleString()}** نقطة إلى ${target} بنجاح.\n*ضريبة التحويل 5% بقيمة (${tax.toLocaleString()} نقطة) تم استقطاعها.*`,
           ),
         ],
       });

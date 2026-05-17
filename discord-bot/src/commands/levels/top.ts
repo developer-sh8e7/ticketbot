@@ -26,7 +26,7 @@ const command: Command = {
 
     if (error || !data || data.length === 0) {
       return interaction.editReply({
-        embeds: [errorEmbed("No Data", "No leveling data found for this server yet.")],
+        embeds: [errorEmbed("❌ لا توجد بيانات", "لا توجد بيانات تفاعل أو مستويات مسجلة لهذا السيرفر بعد.")],
       });
     }
 
@@ -39,15 +39,15 @@ const command: Command = {
           user = null;
         }
 
-        const tag = user ? user.tag : `Unknown User (${row.user_id})`;
-        const rankPrefix = index === 0 ? Emojis.rank : `**#${index + 1}**`;
-        return `${rankPrefix} **${tag}** — Level: **${row.level}** (XP: ${row.xp})`;
+        const tag = user ? user.username : `عضو غير معروف (${row.user_id})`;
+        const rankPrefix = index === 0 ? "👑" : `**#${index + 1}**`;
+        return `${rankPrefix} **${tag}** — المستوى: **${row.level}** (XP: ${row.xp})`;
       }),
     );
 
-    await interaction.reply({
+    await interaction.editReply({
       embeds: [
-        levelEmbed(`Leaderboard for ${interaction.guild?.name}`, leaderboard.join("\n\n")),
+        levelEmbed(`🏆 قائمة المتصدرين — ${interaction.guild?.name}`, leaderboard.join("\n\n")),
       ],
     });
   },

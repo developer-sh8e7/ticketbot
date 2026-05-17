@@ -23,7 +23,7 @@ const command: Command = {
     const userData = await getUserData(interaction.user.id, interaction.user.username);
     if (!userData) {
       return interaction.editReply({
-        embeds: [errorEmbed("Database Error", "Failed to load user data.")],
+        embeds: [errorEmbed("❌ خطأ", "فشل تحميل بيانات المستخدم من قاعدة البيانات.")],
       });
     }
 
@@ -36,8 +36,8 @@ const command: Command = {
       return interaction.editReply({
         embeds: [
           errorEmbed(
-            "Cooldown",
-            `You have already claimed your daily credits.\nTry again in **${ms(timeLeft, { long: true })}**.`,
+            "⏳ فترة الانتظار",
+            `لقد قمت بالمطالبة بنقاطك اليومية بالفعل اليوم.\nحاول مجدداً بعد **${ms(timeLeft, { long: true })}**.`,
           ),
         ],
       });
@@ -52,8 +52,8 @@ const command: Command = {
     return interaction.editReply({
       embeds: [
         successEmbed(
-          "Daily Claimed",
-          `${Emojis.daily} You have claimed your daily **${DAILY_AMOUNT}** credits!\nYour new balance is **${newCredits.toLocaleString()}**.`,
+          "🎁 تمت المطالبة بالنقاط",
+          `${Emojis.daily} لقد حصلت على نقاطك اليومية المجانية بقيمة **${DAILY_AMOUNT}** نقطة!\nرصيدك الإجمالي الجديد هو **${newCredits.toLocaleString()}** نقطة.`,
         ),
       ],
     });

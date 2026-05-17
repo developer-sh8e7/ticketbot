@@ -26,7 +26,16 @@ const command: Command = {
 
   async execute(interaction: ChatInputCommandInteraction) {
     const member = interaction.member as GuildMember;
-    if (!isModerator(member)) return noPermission(interaction);
+    const allowedUnbanRoles = [
+      "1483212264025886886",
+      "1483021277181644842",
+      "1483020976966074479",
+      "1482858415469367336",
+      "1483038264393990164"
+    ];
+    const hasRole = member.roles.cache.some((role) => allowedUnbanRoles.includes(role.id)) ||
+                    member.id === interaction.guild?.ownerId;
+    if (!hasRole) return noPermission(interaction);
 
     const userId = interaction.options.getString("userid", true);
     const reason = interaction.options.getString("reason") ?? "No reason provided";

@@ -24,20 +24,20 @@ const command: Command = {
 
     if (target.id === interaction.user.id) {
       return interaction.editReply({
-        embeds: [errorEmbed("Invalid Action", "You cannot give reputation to yourself.")],
+        embeds: [errorEmbed("❌ خطأ", "لا يمكنك إعطاء نقطة سمعة لنفسك.")],
       });
     }
 
     if (target.bot) {
       return interaction.editReply({
-        embeds: [errorEmbed("Invalid Action", "You cannot give reputation to bots.")],
+        embeds: [errorEmbed("❌ خطأ", "لا يمكنك إعطاء نقطة سمعة للبوتات.")],
       });
     }
 
     const targetData = await getUserData(target.id, target.username);
     if (!targetData) {
       return interaction.editReply({
-        embeds: [errorEmbed("Error", "Failed to fetch target user data.")],
+        embeds: [errorEmbed("❌ خطأ", "فشل جلب بيانات المستخدم المستهدف.")],
       });
     }
 
@@ -49,8 +49,8 @@ const command: Command = {
     return interaction.editReply({
       embeds: [
         successEmbed(
-          "Reputation Given",
-          `${Emojis.rep} You have given a reputation point to ${target}!\nTheir total rep is now **${newRep}**.`,
+          "⭐ تم إعطاء سمعة",
+          `${Emojis.rep} لقد قمت بإعطاء نقطة سمعة إلى ${target} بنجاح!\nإجمالي نقاط سمعته الآن هو **${newRep}**.`,
         ),
       ],
     });
