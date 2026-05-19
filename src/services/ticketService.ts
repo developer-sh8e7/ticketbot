@@ -153,6 +153,7 @@ export class TicketService {
       ...this.config.guild.managerRoleIds,
       ...supportRoleIdsToAllow,
     ]);
+    const filteredStaffRoleIds = staffRoleIds.filter((roleId) => guild.roles.cache.has(roleId));
     const botMemberId = guild.members.me?.id;
 
     return [
@@ -190,7 +191,7 @@ export class TicketService {
             },
           ]
         : []),
-      ...staffRoleIds.map((roleId) => ({
+      ...filteredStaffRoleIds.map((roleId) => ({
         id: roleId,
         allow: [
           PermissionFlagsBits.ViewChannel,
@@ -203,7 +204,7 @@ export class TicketService {
           PermissionFlagsBits.ManageMessages,
         ],
       })),
-      ...supportRoleIdsToViewOnly.map((roleId) => ({
+      ...supportRoleIdsToViewOnly.filter((roleId) => guild.roles.cache.has(roleId)).map((roleId) => ({
         id: roleId,
         allow: [
           PermissionFlagsBits.ViewChannel,

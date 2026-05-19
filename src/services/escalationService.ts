@@ -88,7 +88,7 @@ export class EscalationService {
           messageText = `⚠️ **تنبيه تصعيد التذكرة (مرت ساعتان):**\nمرت ساعتان كاملتان ولم يتم استلام التذكرة من قبل وسطاء متوسطين. تم الآن تفعيل صلاحية الكتابة والمشاركة للوسطاء الجدد <@&${NEW_MM}> لتسهيل عملية الاستلام وإتمام التريد!`;
         }
 
-        if (roleToEscalate) {
+        if (roleToEscalate && guild.roles.cache.has(roleToEscalate)) {
           logger.info(`Escalating ticket #${ticket.ticket_number} (Channel: ${channel.name}) to role: ${roleToEscalate}`);
 
           // Update permission overwrites to allow SendMessages for the escalated role
