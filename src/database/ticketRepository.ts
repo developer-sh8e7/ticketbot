@@ -149,6 +149,21 @@ export class TicketRepository {
     return mapTicket(data);
   }
 
+  public async updateAnswers(channelId: string, answers: any[]): Promise<TicketRecord> {
+    const { data, error } = await this.supabase
+      .from('tickets')
+      .update({ answers })
+      .eq('channel_id', channelId)
+      .select('*')
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update answers: ${error.message}`);
+    }
+
+    return mapTicket(data);
+  }
+
   public async updateMetadata(channelId: string, metadata: Record<string, any>): Promise<TicketRecord> {
     const { data, error } = await this.supabase
       .from('tickets')
