@@ -84,13 +84,13 @@ export async function parseTradeAmountSmartly(input: string): Promise<number | n
   const baseUrl = process.env.AI_BASE_URL || 'https://opencode.ai/zen/v1';
 
   try {
-    let response: Response;
     let responseText = '';
+    let ok = false;
 
     const prompt = `Extract the trade amount in USD from this user input. If the input contains a text representation of a number (like "مئة وخمسين" or "fifty"), convert it to a number. Return ONLY a JSON object in this format: {"amount": number | null}. Do not include markdown code block formatting. Just return the raw JSON string.\n\nInput: "${input}"`;
 
     if (provider === 'gemini') {
-      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -104,39 +104,67 @@ export async function parseTradeAmountSmartly(input: string): Promise<number | n
             }
           ]
         }),
-        signal: AbortSignal.timeout(5000), // 5 seconds timeout
+        signal: AbortSignal.timeout(10000), // 10 seconds timeout
       });
 
       if (response.ok) {
         const data = await response.json();
         responseText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+        ok = true;
       }
     } else {
-      response = await fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: model,
-          messages: [
-            {
-              role: 'user',
-              content: prompt,
-            }
-          ]
-        }),
-        signal: AbortSignal.timeout(5000), // 5 seconds timeout
-      });
+      const modelsToTry = [model];
+      const fallbackList = [
+        'deepseek-v4-flash-free',
+        'minimax-m2.5-free',
+        'nemotron-3-super-free',
+        'qwen3.6-plus-free'
+      ];
+      for (const fb of fallbackList) {
+        if (!modelsToTry.includes(fb)) {
+          modelsToTry.push(fb);
+        }
+      }
 
-      if (response.ok) {
-        const data = await response.json();
-        responseText = data.choices?.[0]?.message?.content?.trim() || '';
+      for (const modelName of modelsToTry) {
+        try {
+          logger.info(`Attempting trade amount extraction with model: ${modelName}`);
+          const response = await fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model: modelName,
+              messages: [
+                {
+                  role: 'user',
+                  content: prompt,
+                }
+              ]
+            }),
+            signal: AbortSignal.timeout(15000), // 15 seconds timeout per model
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            responseText = data.choices?.[0]?.message?.content?.trim() || '';
+            if (responseText) {
+              logger.info(`Trade amount extraction succeeded using model: ${modelName}`);
+              ok = true;
+              break;
+            }
+          } else {
+            logger.warn(`Model ${modelName} returned status ${response.status} for extraction`);
+          }
+        } catch (err: any) {
+          logger.error(`Model ${modelName} extraction failed or timed out: ${err.message || err}`);
+        }
       }
     }
 
-    if (response.ok && responseText) {
+    if (ok && responseText) {
       // Parse JSON from text. Remove any markdown code blocks if LLM returns them despite instructions.
       const jsonText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
       const result = JSON.parse(jsonText);

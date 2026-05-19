@@ -391,7 +391,7 @@ You are the bridge between user and human support.`;
                   }
                 ]
               }),
-              signal: AbortSignal.timeout(8000), // 8 seconds timeout per model
+              signal: AbortSignal.timeout(25000), // 25 seconds timeout per model
             });
 
             status = res.status;
