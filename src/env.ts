@@ -8,9 +8,9 @@ const envSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   CONFIG_PATH: z.string().min(1).default('./config/config.json'),
   GEMINI_API_KEY: z.string().optional(),
-  AI_PROVIDER: z.enum(['gemini', 'openai']).default('gemini'),
-  AI_BASE_URL: z.string().optional(),
-  AI_MODEL: z.string().default('gemini-2.5-flash'),
+  AI_PROVIDER: z.enum(['gemini', 'openai']).default('openai'),
+  AI_BASE_URL: z.string().default('https://opencode.ai/zen/v1'),
+  AI_MODEL: z.string().default('deepseek-v4-flash-free'),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -23,8 +23,8 @@ export function loadEnv(): Env {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     CONFIG_PATH: process.env.CONFIG_PATH ?? './config/config.json',
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
-    AI_PROVIDER: (process.env.AI_PROVIDER || 'gemini') as 'gemini' | 'openai',
-    AI_BASE_URL: process.env.AI_BASE_URL,
-    AI_MODEL: process.env.AI_MODEL ?? 'gemini-2.5-flash',
+    AI_PROVIDER: (process.env.AI_PROVIDER || 'openai') as 'gemini' | 'openai',
+    AI_BASE_URL: process.env.AI_BASE_URL ?? 'https://opencode.ai/zen/v1',
+    AI_MODEL: process.env.AI_MODEL ?? 'deepseek-v4-flash-free',
   });
 }

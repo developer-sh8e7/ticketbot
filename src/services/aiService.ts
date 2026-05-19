@@ -324,12 +324,13 @@ Status: Awaiting human support (وسيط يقرب)
 
 You are the bridge between user and human support.`;
 
-      let response: Response;
       let aiResponseText = '';
+      let ok = false;
+      let status = 200;
 
       if (this.provider === 'gemini') {
         const prompt = `System Instructions:\n${systemInstruction}\n\nRecent Channel Chat History:\n${history}\n\nAI Response:`;
-        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -343,44 +344,75 @@ You are the bridge between user and human support.`;
               }
             ]
           }),
-          signal: AbortSignal.timeout(60000), // 60 seconds timeout
+          signal: AbortSignal.timeout(10000), // 10 seconds timeout
         });
 
+        status = response.status;
         if (response.ok) {
           const data = await response.json();
           aiResponseText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+          ok = true;
         }
       } else {
-        const baseUrl = this.baseURL || 'https://opencode.ai/zen/v1';
-        response = await fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`,
-          },
-          body: JSON.stringify({
-            model: this.model,
-            messages: [
-              {
-                role: 'system',
-                content: systemInstruction,
-              },
-              {
-                role: 'user',
-                content: `Recent Channel Chat History:\n${history}\n\nAI Response:`,
-              }
-            ]
-          }),
-          signal: AbortSignal.timeout(60000), // 60 seconds timeout
-        });
+        const modelsToTry = [this.model];
+        const fallbackList = [
+          'deepseek-v4-flash-free',
+          'minimax-m2.5-free',
+          'nemotron-3-super-free',
+          'qwen3.6-plus-free'
+        ];
+        for (const fb of fallbackList) {
+          if (!modelsToTry.includes(fb)) {
+            modelsToTry.push(fb);
+          }
+        }
 
-        if (response.ok) {
-          const data = await response.json();
-          aiResponseText = data.choices?.[0]?.message?.content?.trim() || '';
+        const baseUrl = this.baseURL || 'https://opencode.ai/zen/v1';
+
+        for (const modelName of modelsToTry) {
+          try {
+            logger.info(`Attempting AI generation with model: ${modelName}`);
+            const res = await fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.apiKey}`,
+              },
+              body: JSON.stringify({
+                model: modelName,
+                messages: [
+                  {
+                    role: 'system',
+                    content: systemInstruction,
+                  },
+                  {
+                    role: 'user',
+                    content: `Recent Channel Chat History:\n${history}\n\nAI Response:`,
+                  }
+                ]
+              }),
+              signal: AbortSignal.timeout(8000), // 8 seconds timeout per model
+            });
+
+            status = res.status;
+            if (res.ok) {
+              const data = await res.json();
+              aiResponseText = data.choices?.[0]?.message?.content?.trim() || '';
+              if (aiResponseText) {
+                logger.info(`AI generation succeeded using model: ${modelName}`);
+                ok = true;
+                break;
+              }
+            } else {
+              logger.warn(`Model ${modelName} returned status ${res.status}: ${await res.text().catch(() => '')}`);
+            }
+          } catch (err: any) {
+            logger.error(`Model ${modelName} call failed or timed out: ${err.message || err}`);
+          }
         }
       }
 
-      if (response.ok) {
+      if (ok) {
 
         if (aiResponseText) {
           // Parse Action if present
@@ -475,14 +507,14 @@ You are the bridge between user and human support.`;
             allowedMentions: { repliedUser: true },
           });
         }
-      } else if (response.status === 429) {
+      } else if (status === 429) {
         logger.warn(`AI API rate limit exceeded (429) for ticket channel ${channelId}. Increasing cooldown.`);
         this.cooldowns.set(channelId, Date.now() + 50000);
       } else {
-        logger.error(`AI API returned error status: ${response.status}`);
+        logger.error(`AI API returned error status: ${status}`);
       }
     } catch (err) {
-      logger.error('Failed to process message with AI Ticket Assistant:', err instanceof Error ? err.stack || err.message : err);
+      logger.error('Failed to process message with AI Ticket Assistant:', err);
     } finally {
       this.processing.delete(channelId);
       this.cooldowns.set(channelId, Date.now());
