@@ -343,7 +343,7 @@ You are the bridge between user and human support.`;
               }
             ]
           }),
-          signal: AbortSignal.timeout(10000), // 10 seconds timeout
+          signal: AbortSignal.timeout(60000), // 60 seconds timeout
         });
 
         if (response.ok) {
@@ -371,7 +371,7 @@ You are the bridge between user and human support.`;
               }
             ]
           }),
-          signal: AbortSignal.timeout(10000), // 10 seconds timeout
+          signal: AbortSignal.timeout(60000), // 60 seconds timeout
         });
 
         if (response.ok) {
@@ -476,13 +476,13 @@ You are the bridge between user and human support.`;
           });
         }
       } else if (response.status === 429) {
-        logger.warn(`Gemini API rate limit exceeded (429) for ticket channel ${channelId}. Increasing cooldown.`);
+        logger.warn(`AI API rate limit exceeded (429) for ticket channel ${channelId}. Increasing cooldown.`);
         this.cooldowns.set(channelId, Date.now() + 50000);
       } else {
-        logger.error(`Gemini API returned error status: ${response.status}`);
+        logger.error(`AI API returned error status: ${response.status}`);
       }
     } catch (err) {
-      logger.error('Failed to process message with Gemini AI Ticket Assistant:', err);
+      logger.error('Failed to process message with AI Ticket Assistant:', err instanceof Error ? err.stack || err.message : err);
     } finally {
       this.processing.delete(channelId);
       this.cooldowns.set(channelId, Date.now());
