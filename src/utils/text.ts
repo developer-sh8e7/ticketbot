@@ -75,41 +75,78 @@ export async function parseTradeAmountSmartly(input: string): Promise<number | n
   
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    logger.debug(`No GEMINI_API_KEY found, using local regex parser: ${localParsed}`);
+    logger.debug(`No API key found, using local regex parser: ${localParsed}`);
     return localParsed;
   }
 
-  try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: `Extract the trade amount in USD from this user input. If the input contains a text representation of a number (like "مئة وخمسين" or "fifty"), convert it to a number. Return ONLY a JSON object in this format: {"amount": number | null}. Do not include markdown code block formatting. Just return the raw JSON string.\n\nInput: "${input}"` }
-            ]
-          }
-        ]
-      }),
-      signal: AbortSignal.timeout(5000), // 5 seconds timeout
-    });
+  const provider = process.env.AI_PROVIDER || 'gemini';
+  const model = process.env.AI_MODEL || 'gemini-2.5-flash';
+  const baseUrl = process.env.AI_BASE_URL || 'https://opencode.ai/zen/v1';
 
-    if (response.ok) {
-      const data = await response.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-      // Parse JSON from text. Remove any markdown code blocks if Gemini returns them despite instructions.
-      const jsonText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+  try {
+    let response: Response;
+    let responseText = '';
+
+    const prompt = `Extract the trade amount in USD from this user input. If the input contains a text representation of a number (like "مئة وخمسين" or "fifty"), convert it to a number. Return ONLY a JSON object in this format: {"amount": number | null}. Do not include markdown code block formatting. Just return the raw JSON string.\n\nInput: "${input}"`;
+
+    if (provider === 'gemini') {
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: prompt }
+              ]
+            }
+          ]
+        }),
+        signal: AbortSignal.timeout(5000), // 5 seconds timeout
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        responseText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+      }
+    } else {
+      response = await fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: [
+            {
+              role: 'user',
+              content: prompt,
+            }
+          ]
+        }),
+        signal: AbortSignal.timeout(5000), // 5 seconds timeout
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        responseText = data.choices?.[0]?.message?.content?.trim() || '';
+      }
+    }
+
+    if (response.ok && responseText) {
+      // Parse JSON from text. Remove any markdown code blocks if LLM returns them despite instructions.
+      const jsonText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
       const result = JSON.parse(jsonText);
       if (typeof result.amount === 'number') {
-        logger.info(`Gemini extracted trade amount: ${result.amount} (from: "${input}")`);
+        logger.info(`AI extracted trade amount: ${result.amount} (from: "${input}")`);
         return result.amount;
       }
     }
   } catch (error) {
-    logger.error('Failed to parse trade amount with Gemini, falling back to local regex', error);
+    logger.error('Failed to parse trade amount with AI, falling back to local regex', error);
   }
 
   return localParsed;
