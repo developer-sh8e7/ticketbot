@@ -20,6 +20,7 @@ import { PanelService } from './services/panelService.js';
 import { canManagePanels } from './services/permissionService.js';
 import { TicketService } from './services/ticketService.js';
 import { EscalationService } from './services/escalationService.js';
+import { AIService } from './services/aiService.js';
 import { TranscriptService } from './services/transcriptService.js';
 import { activityTypeFromName } from './utils/discord.js';
 import { consumeLifecycleErrors, isInteractionLifecycleError, safeDeferReply, safeEditReply, safeReply } from './utils/interaction.js';
@@ -46,6 +47,7 @@ const ticketService = new TicketService({
   ticketRepository,
   transcriptService,
 });
+const aiService = new AIService(env.GEMINI_API_KEY);
 
 const client = new Client({
   intents: [
@@ -303,38 +305,7 @@ client.on(Events.MessageCreate, async (message) => {
 
     if (!ticket) return;
 
-    const messageContent = message.content.toLowerCase().trim();
-    const greetings = [
-      'salam',
-      'peace',
-      'hello',
-      'hi',
-      'hey',
-    ];
-    const arabicGreetings = [
-      ' Salam',
-      'salam',
-      ' SLS',
-      'sls',
-      ' SLS ',
-      'sls ',
-      ' SLS',
-      'sls',
-    ];
-
-    const isGreeting = greetings.some(g => messageContent.includes(g)) || 
-                       arabicGreetings.some(g => messageContent.includes(g));
-
-    if (isGreeting) {
-      const responses = [
-        'Allah wa rahmatohu wa barakatuh',
-        'Wa Alaikum Assalam Wa Rahmatullahi Wa Barakatuh',
-        'Ahlan wa sahlan',
-        'Welcome',
-      ];
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-      await message.reply(randomResponse).catch(() => null);
-    }
+    await aiService.handleTicketMessage(message, ticket);
   } catch (error) {
     logger.error('Auto-reply error', error instanceof Error ? error.message : error);
   }
