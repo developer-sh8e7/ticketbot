@@ -286,12 +286,17 @@ MARKET TIMING:
 ---
 ⚙️ AGENTIC CAPABILITIES:
 
-You can dynamically modify tickets!
-If user mentions trade amount error or tier change, use:
-\`||ACTION:{"action": "update_trade_amount", "amount": NEW_VALUE}||\`
+You can dynamically update the ticket's trade amount!
+If the user indicates their trade amount is wrong, or says "under 50$" or "it's 150$" or "it's 300$", you must include the action at the very end of your response.
 
-Example: User says "وريت 300$ بالغلط، التريد حقي 50$"
-You respond professionally and add the action at end.
+⚠️ STRICT RULES FOR ACTIONS:
+1. The action MUST be wrapped EXACTLY in: ||ACTION:{"action": "update_trade_amount", "amount": <number>}||
+2. The "amount" value MUST be a number, not a string (e.g. 40, 150, 300).
+   - If they say "under 50$" or "تحت 50" or "وسيط جديد", use 40.
+   - If they say "between 50$ and 250$" or "متوسط", use 150.
+   - If they say "above 250$" or "مضمون", use 300.
+3. NEVER output the action as plain text (e.g. do not write "ACTION: {...}"). It must always be wrapped in "||ACTION:..." and "||" without spaces inside the delimiters.
+4. Do not output any other action name. Only "update_trade_amount" is supported.
 
 ---
 💬 COMMUNICATION STYLE:
@@ -415,16 +420,32 @@ You are the bridge between user and human support.`;
       if (ok) {
 
         if (aiResponseText) {
-          // Parse Action if present
-          const actionRegex = /\|\|ACTION:(\{[\s\S]*?\})\|\|/;
+          // Parse Action if present (robust regex matching ||ACTION:{...}|| or ACTION:{...})
+          const actionRegex = /(?:\|\|)?ACTION:(\{[\s\S]*?\})(?:\|\|)?/i;
           const actionMatch = aiResponseText.match(actionRegex);
 
           if (actionMatch) {
             try {
               const actionObj = JSON.parse(actionMatch[1]);
               
-              if (actionObj.action === 'update_trade_amount' && typeof actionObj.amount === 'number') {
-                const newAmount = actionObj.amount;
+              if (actionObj.action === 'update_trade_amount' || actionObj.action === 'update_category' || actionObj.amount !== undefined || actionObj.category !== undefined) {
+                let newAmount = 0;
+                
+                if (typeof actionObj.amount === 'number') {
+                  newAmount = actionObj.amount;
+                } else if (actionObj.amount !== undefined) {
+                  const parsedNum = parseInt(String(actionObj.amount).replace(/[^\d]/g, ''), 10);
+                  newAmount = isNaN(parsedNum) ? 0 : parsedNum;
+                } else if (actionObj.category !== undefined) {
+                  const catStr = String(actionObj.category).toLowerCase();
+                  if (catStr.includes('جديد') || catStr.includes('new')) {
+                    newAmount = 40;
+                  } else if (catStr.includes('متوسط') || catStr.includes('medium')) {
+                    newAmount = 150;
+                  } else {
+                    newAmount = 300;
+                  }
+                }
 
                 // 1. Update the Supabase Database Answers
                 const updatedAnswers = ticket.answers.map((ans) => {
@@ -490,8 +511,9 @@ You are the bridge between user and human support.`;
                   await message.channel.setName(newName).catch(() => null);
                 }
 
-                // Clean the raw ACTION string from the AI text for the user display
-                aiResponseText = aiResponseText.replace(actionRegex, '').trim();
+                // Clean all raw ACTION strings from the AI text globally for the user display
+                const actionGlobalRegex = /(?:\|\|)?ACTION:(\{[\s\S]*?\})(?:\|\|)?/gi;
+                aiResponseText = aiResponseText.replace(actionGlobalRegex, '').trim();
 
                 // Append an elegant confirmation message in Arabic
                 aiResponseText += `\n\n⚙️ **[نظام المساعد الآلي]:** تم تعديل قيمة التريد في النظام إلى **${newAmount}$**، وتغيير صلاحيات الرتب واسم القناة تلقائياً لتناسب الفئة الصحيحة!`;
