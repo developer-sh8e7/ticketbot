@@ -2,15 +2,31 @@ import { Message, ChannelType } from 'discord.js';
 import type { TicketRecord } from '../database/types.js';
 import { logger } from '../utils/logger.js';
 import { padTicketNumber } from '../utils/text.js';
+export interface AIServiceConfig {
+  apiKey?: string;
+  provider: 'gemini' | 'openai';
+  baseURL?: string;
+  model: string;
+}
+
 export class AIService {
   private readonly cooldowns = new Map<string, number>();
   private readonly processing = new Set<string>();
   private readonly COOLDOWN_MS = 10000; // 10 seconds cooldown
+  private readonly apiKey: string | undefined;
+  private readonly provider: 'gemini' | 'openai';
+  private readonly baseURL: string | undefined;
+  private readonly model: string;
 
   public constructor(
-    private readonly apiKey: string | undefined,
+    config: AIServiceConfig,
     private readonly ticketRepository: any
-  ) {}
+  ) {
+    this.apiKey = config.apiKey;
+    this.provider = config.provider;
+    this.baseURL = config.baseURL;
+    this.model = config.model;
+  }
 
   public async handleTicketMessage(message: Message, ticket: TicketRecord): Promise<void> {
     if (!this.apiKey) {
@@ -308,28 +324,63 @@ Status: Awaiting human support (وسيط يقرب)
 
 You are the bridge between user and human support.`;
 
-      const prompt = `System Instructions:\n${systemInstruction}\n\nRecent Channel Chat History:\n${history}\n\nAI Response:`;
+      let response: Response;
+      let aiResponseText = '';
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.apiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: prompt }
-              ]
-            }
-          ]
-        }),
-        signal: AbortSignal.timeout(10000), // 10 seconds timeout
-      });
+      if (this.provider === 'gemini') {
+        const prompt = `System Instructions:\n${systemInstruction}\n\nRecent Channel Chat History:\n${history}\n\nAI Response:`;
+        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  { text: prompt }
+                ]
+              }
+            ]
+          }),
+          signal: AbortSignal.timeout(10000), // 10 seconds timeout
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          aiResponseText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+        }
+      } else {
+        const baseUrl = this.baseURL || 'https://opencode.ai/zen/v1';
+        response = await fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.apiKey}`,
+          },
+          body: JSON.stringify({
+            model: this.model,
+            messages: [
+              {
+                role: 'system',
+                content: systemInstruction,
+              },
+              {
+                role: 'user',
+                content: `Recent Channel Chat History:\n${history}\n\nAI Response:`,
+              }
+            ]
+          }),
+          signal: AbortSignal.timeout(10000), // 10 seconds timeout
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          aiResponseText = data.choices?.[0]?.message?.content?.trim() || '';
+        }
+      }
 
       if (response.ok) {
-        const data = await response.json();
-        let aiResponseText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
 
         if (aiResponseText) {
           // Parse Action if present

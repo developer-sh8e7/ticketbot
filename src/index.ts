@@ -47,7 +47,15 @@ const ticketService = new TicketService({
   ticketRepository,
   transcriptService,
 });
-const aiService = new AIService(env.GEMINI_API_KEY, ticketRepository);
+const aiService = new AIService(
+  {
+    apiKey: env.GEMINI_API_KEY,
+    provider: env.AI_PROVIDER,
+    baseURL: env.AI_BASE_URL,
+    model: env.AI_MODEL,
+  },
+  ticketRepository
+);
 
 const client = new Client({
   intents: [
