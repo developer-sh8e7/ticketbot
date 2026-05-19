@@ -2,8 +2,11 @@ import { Message, ChannelType } from 'discord.js';
 import type { TicketRecord } from '../database/types.js';
 import { logger } from '../utils/logger.js';
 import { padTicketNumber } from '../utils/text.js';
-
 export class AIService {
+  private readonly cooldowns = new Map<string, number>();
+  private readonly processing = new Set<string>();
+  private readonly COOLDOWN_MS = 10000; // 10 seconds cooldown
+
   public constructor(
     private readonly apiKey: string | undefined,
     private readonly ticketRepository: any
@@ -22,7 +25,24 @@ export class AIService {
       return;
     }
 
+    const channelId = message.channel.id;
+
+    // Prevent concurrent requests for the same channel
+    if (this.processing.has(channelId)) {
+      logger.debug(`AI is already processing a request for channel ${channelId}. Ignoring message.`);
+      return;
+    }
+
+    // Enforce cooldown per channel
+    const lastResponse = this.cooldowns.get(channelId) || 0;
+    const now = Date.now();
+    if (now - lastResponse < this.COOLDOWN_MS) {
+      logger.debug(`AI is on cooldown for channel ${channelId}. Remaining: ${this.COOLDOWN_MS - (now - lastResponse)}ms`);
+      return;
+    }
+
     try {
+      this.processing.add(channelId);
       const guild = message.guild;
       if (!guild) return;
 
@@ -399,11 +419,18 @@ You are the bridge between user and human support.`;
             allowedMentions: { repliedUser: true },
           });
         }
+      } else if (response.status === 429) {
+        logger.warn(`Gemini API rate limit exceeded (429) for ticket channel ${channelId}. Increasing cooldown.`);
+        this.cooldowns.set(channelId, Date.now() + 50000);
       } else {
         logger.error(`Gemini API returned error status: ${response.status}`);
       }
     } catch (err) {
       logger.error('Failed to process message with Gemini AI Ticket Assistant:', err);
+    } finally {
+      this.processing.delete(channelId);
+      this.cooldowns.set(channelId, Date.now());
     }
   }
 }
+
