@@ -19,6 +19,7 @@ import { InfrastructureService } from './services/infrastructureService.js';
 import { PanelService } from './services/panelService.js';
 import { canManagePanels } from './services/permissionService.js';
 import { TicketService } from './services/ticketService.js';
+import { EscalationService } from './services/escalationService.js';
 import { TranscriptService } from './services/transcriptService.js';
 import { activityTypeFromName } from './utils/discord.js';
 import { consumeLifecycleErrors, isInteractionLifecycleError, safeDeferReply, safeEditReply, safeReply } from './utils/interaction.js';
@@ -209,6 +210,13 @@ client.once(Events.ClientReady, async (readyClient) => {
     await syncCommands();
   } catch (error) {
     logger.error('Failed to register commands', error instanceof Error ? error.message : error);
+  }
+
+  try {
+    const escalationService = new EscalationService(readyClient, ticketRepository, config);
+    escalationService.start();
+  } catch (error) {
+    logger.error('Failed to start EscalationService', error instanceof Error ? error.message : error);
   }
 });
 

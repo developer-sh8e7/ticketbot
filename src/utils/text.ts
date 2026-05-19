@@ -52,3 +52,66 @@ export function normalizeSnowflake(input: string): string | null {
 export function toCodeBlock(value: string): string {
   return `\`\`\`${value.replace(/\`\`\`/g, '```')}\`\`\``;
 }
+
+export function parseTradeAmount(input: string): number | null {
+  if (!input) return null;
+  // Let's strip spaces and search for numbers
+  const cleaned = input.replace(/\s+/g, '');
+  // Match any sequence of numbers, optionally followed by $, or preceded by $, or followed by "دولار" or "dollar"
+  // For example: "150$", "150", "150 دولار", "بيصير تريد 150$"
+  // Let's find all numbers in the string
+  const matches = cleaned.match(/\d+(\.\d+)?/g);
+  if (!matches) return null;
+  
+  // If there's a number, let's take the first one or the most prominent one
+  const amount = parseFloat(matches[0]);
+  return isNaN(amount) ? null : amount;
+}
+
+import { logger } from './logger.js';
+
+export async function parseTradeAmountSmartly(input: string): Promise<number | null> {
+  const localParsed = parseTradeAmount(input);
+  
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    logger.debug(`No GEMINI_API_KEY found, using local regex parser: ${localParsed}`);
+    return localParsed;
+  }
+
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { text: `Extract the trade amount in USD from this user input. If the input contains a text representation of a number (like "مئة وخمسين" or "fifty"), convert it to a number. Return ONLY a JSON object in this format: {"amount": number | null}. Do not include markdown code block formatting. Just return the raw JSON string.\n\nInput: "${input}"` }
+            ]
+          }
+        ]
+      }),
+      signal: AbortSignal.timeout(5000), // 5 seconds timeout
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+      // Parse JSON from text. Remove any markdown code blocks if Gemini returns them despite instructions.
+      const jsonText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      const result = JSON.parse(jsonText);
+      if (typeof result.amount === 'number') {
+        logger.info(`Gemini extracted trade amount: ${result.amount} (from: "${input}")`);
+        return result.amount;
+      }
+    }
+  } catch (error) {
+    logger.error('Failed to parse trade amount with Gemini, falling back to local regex', error);
+  }
+
+  return localParsed;
+}
+

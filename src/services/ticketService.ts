@@ -45,6 +45,7 @@ import {
   truncateText,
   uniqueStrings,
 } from '../utils/text.js';
+import { parseTradeAmountSmartly } from '../utils/text.js';
 import { canManageTicket } from './permissionService.js';
 import { ConfigStore } from './configStore.js';
 import { TranscriptService } from './transcriptService.js';
@@ -93,9 +94,18 @@ export class TicketService {
     }));
   }
 
-  private buildTicketChannelName(category: TicketCategoryConfig, ticketNumber: number): string {
+  private buildTicketChannelName(category: TicketCategoryConfig, ticketNumber: number, tradeAmount?: number | null): string {
     const paddedTicketNumber = padTicketNumber(ticketNumber, this.config.naming.zeroPadLength);
-    const template = category.channelNameTemplate || `${this.config.naming.ticketChannelPrefix}-{ticketNumber}`;
+    let template = category.channelNameTemplate || `${this.config.naming.ticketChannelPrefix}-{ticketNumber}`;
+    if (category.key === 'middleman' && typeof tradeAmount === 'number') {
+      if (tradeAmount <= 50) {
+        template = "وسيط-جديد-{ticketNumber}";
+      } else if (tradeAmount > 50 && tradeAmount <= 250) {
+        template = "وسيط-متوسط-{ticketNumber}";
+      } else {
+        template = "وسيط-مضمون-{ticketNumber}";
+      }
+    }
     const replaced = replaceTokens(template, {
       ticketNumber,
       paddedTicketNumber,
@@ -117,11 +127,31 @@ export class TicketService {
     });
   }
 
-  private buildPermissionOverwrites(guild: Guild, openerId: string, category: TicketCategoryConfig) {
+  private buildPermissionOverwrites(guild: Guild, openerId: string, category: TicketCategoryConfig, tradeAmount?: number | null) {
+    let supportRoleIdsToAllow = [...category.supportRoleIds];
+    let supportRoleIdsToViewOnly: string[] = [];
+
+    if (category.key === 'middleman' && typeof tradeAmount === 'number') {
+      const NEW_MM = "1506010346777874472";
+      const MEDIUM_MM = "1506010306407694346";
+      const GUARANTEED_MM = "1506009944053387264";
+
+      if (tradeAmount <= 50) {
+        supportRoleIdsToAllow = [NEW_MM, MEDIUM_MM, GUARANTEED_MM];
+      } else if (tradeAmount > 50 && tradeAmount <= 250) {
+        supportRoleIdsToAllow = [MEDIUM_MM, GUARANTEED_MM];
+        supportRoleIdsToViewOnly = [NEW_MM];
+      } else {
+        supportRoleIdsToAllow = [GUARANTEED_MM];
+        supportRoleIdsToViewOnly = [NEW_MM, MEDIUM_MM];
+      }
+    }
+    (this as any)._lastSupportRoleIdsToViewOnly = supportRoleIdsToViewOnly;
+
     const staffRoleIds = uniqueStrings([
       ...this.config.guild.supportRoleIds,
       ...this.config.guild.managerRoleIds,
-      ...category.supportRoleIds,
+      ...supportRoleIdsToAllow,
     ]);
     const botMemberId = guild.members.me?.id;
 
@@ -171,6 +201,16 @@ export class TicketService {
           PermissionFlagsBits.AddReactions,
           PermissionFlagsBits.UseExternalEmojis,
           PermissionFlagsBits.ManageMessages,
+        ],
+      })),
+      ...supportRoleIdsToViewOnly.map((roleId) => ({
+        id: roleId,
+        allow: [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.ReadMessageHistory,
+        ],
+        deny: [
+          PermissionFlagsBits.SendMessages,
         ],
       })),
     ];
@@ -371,8 +411,11 @@ export class TicketService {
     let createdTicket: TicketRecord | null = null;
 
     try {
+      const tradeAmountValue = answers.find((ans) => ans.key === 'trade_amount')?.value;
+      const tradeAmount = tradeAmountValue ? await parseTradeAmountSmartly(tradeAmountValue) : null;
+
       const ticketNumber = await this.ticketRepository.nextTicketNumber();
-      const channelName = this.buildTicketChannelName(category, ticketNumber);
+      const channelName = this.buildTicketChannelName(category, ticketNumber, tradeAmount);
       const topic = this.buildTicketTopic(ticketNumber, interaction.user.tag, interaction.user.id, category);
 
       const created = await interaction.guild.channels.create({
@@ -380,7 +423,7 @@ export class TicketService {
         type: ChannelType.GuildText,
         parent: this.config.guild.categoryId,
         topic,
-        permissionOverwrites: this.buildPermissionOverwrites(interaction.guild, interaction.user.id, category),
+        permissionOverwrites: this.buildPermissionOverwrites(interaction.guild, interaction.user.id, category, tradeAmount),
       });
 
       if (!isGuildTextChannelType(created) || created.type !== ChannelType.GuildText) {
@@ -407,10 +450,25 @@ export class TicketService {
         },
       });
 
+      let supportRolesToMention = [...category.supportRoleIds];
+      if (category.key === 'middleman' && typeof tradeAmount === 'number') {
+        const NEW_MM = "1506010346777874472";
+        const MEDIUM_MM = "1506010306407694346";
+        const GUARANTEED_MM = "1506009944053387264";
+
+        if (tradeAmount <= 50) {
+          supportRolesToMention = [NEW_MM];
+        } else if (tradeAmount > 50 && tradeAmount <= 250) {
+          supportRolesToMention = [MEDIUM_MM];
+        } else {
+          supportRolesToMention = [GUARANTEED_MM];
+        }
+      }
+
       const welcomeEmbeds = await buildTicketEmbeds(interaction.guild, this.config, createdTicket);
       const mentionRoles = formatRoleMentions([
         ...this.config.guild.mentionRolesOnOpen,
-        ...category.supportRoleIds,
+        ...supportRolesToMention,
       ]);
 
       const sentMessage = await created.send({
@@ -421,7 +479,7 @@ export class TicketService {
           users: [interaction.user.id],
           roles: uniqueStrings([
             ...this.config.guild.mentionRolesOnOpen,
-            ...category.supportRoleIds,
+            ...supportRolesToMention,
           ]),
         },
       });

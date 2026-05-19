@@ -147,7 +147,11 @@
       "label": "وسـيــط مـضـمـون",
       "description": "لضمان عملية التداول بوجود وسيط، افتح تذكرة هنا.",
       "channelNameTemplate": "وسيط-مضمون-{ticketNumber}",
-      "supportRoleIds": ["1483021658003345408"],
+      "supportRoleIds": [
+        "1506009944053387264",
+        "1506010306407694346",
+        "1506010346777874472"
+      ],
       "questions": [
         {
           "key": "epic_id",
@@ -156,6 +160,15 @@
           "placeholder": "اكتب ايدي الـ EPIC الخاص بك",
           "required": true,
           "minLength": 3,
+          "maxLength": 100
+        },
+        {
+          "key": "trade_amount",
+          "label": "التريد في حدود كم؟ ($)",
+          "style": "Short",
+          "placeholder": "مثال: 150 (يجب كتابة رقم فقط)",
+          "required": true,
+          "minLength": 1,
           "maxLength": 100
         }
       ]
@@ -166,7 +179,9 @@
       "label": "اللوان البيوت",
       "description": "لطلب خدمة اللوان البيوت، افتح تذكرة هنا.",
       "channelNameTemplate": "اللوان-البيوت-{ticketNumber}",
-      "supportRoleIds": ["1483209015961063595"],
+      "supportRoleIds": [
+        "1483209015961063595"
+      ],
       "questions": [
         {
           "key": "epic_id",

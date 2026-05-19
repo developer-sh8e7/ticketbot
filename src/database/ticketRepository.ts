@@ -149,6 +149,21 @@ export class TicketRepository {
     return mapTicket(data);
   }
 
+  public async updateMetadata(channelId: string, metadata: Record<string, any>): Promise<TicketRecord> {
+    const { data, error } = await this.supabase
+      .from('tickets')
+      .update({ metadata })
+      .eq('channel_id', channelId)
+      .select('*')
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update metadata: ${error.message}`);
+    }
+
+    return mapTicket(data);
+  }
+
   public async getStats(guildId: string): Promise<{ open: number; closed: number; total: number }> {
     const { count: open } = await this.supabase
       .from('tickets')
@@ -187,5 +202,19 @@ export class TicketRepository {
     }
 
     return mapTicket(data);
+  }
+
+  public async findOpenTickets(guildId: string): Promise<TicketRecord[]> {
+    const { data, error } = await this.supabase
+      .from('tickets')
+      .select('*')
+      .eq('guild_id', guildId)
+      .eq('status', 'open');
+
+    if (error) {
+      throw new Error(`Failed to query open tickets: ${error.message}`);
+    }
+
+    return (data || []).map(mapTicket);
   }
 }

@@ -7,6 +7,7 @@ const envSchema = z.object({
   SUPABASE_URL: z.string().url(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   CONFIG_PATH: z.string().min(1).default('./config/config.json'),
+  GEMINI_API_KEY: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -18,5 +19,6 @@ export function loadEnv(): Env {
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     CONFIG_PATH: process.env.CONFIG_PATH ?? './config/config.json',
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
   });
 }
