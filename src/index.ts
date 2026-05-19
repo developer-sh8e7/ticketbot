@@ -192,6 +192,26 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
     await ticketService.handleSlashStats(interaction);
     return;
   }
+
+  if (interaction.commandName === 'ai') {
+    if (!(await ensurePanelManager(interaction))) {
+      return;
+    }
+
+    if (!(await safeDeferReply(interaction))) {
+      return;
+    }
+
+    const subcommand = interaction.options.getSubcommand();
+    if (subcommand === 'on') {
+      await ticketRepository.setAIEnabled(true);
+      await safeEditReply(interaction, [buildSuccessEmbed(config, 'تفعيل المساعد الآلي', 'تم تفعيل المساعد الآلي (AI) بنجاح للتذاكر المفتوحة.')]);
+    } else if (subcommand === 'off') {
+      await ticketRepository.setAIEnabled(false);
+      await safeEditReply(interaction, [buildSuccessEmbed(config, 'إيقاف المساعد الآلي', 'تم إيقاف المساعد الآلي (AI) بنجاح.')]);
+    }
+    return;
+  }
 }
 
 client.once(Events.ClientReady, async (readyClient) => {
@@ -312,6 +332,12 @@ client.on(Events.MessageCreate, async (message) => {
     const ticket = await ticketRepository.findByChannelId(channelId);
 
     if (!ticket) return;
+
+    // Check if AI is enabled globally
+    const aiEnabled = await ticketRepository.getAIEnabled();
+    if (!aiEnabled) {
+      return;
+    }
 
     await aiService.handleTicketMessage(message, ticket);
   } catch (error) {

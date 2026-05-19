@@ -232,4 +232,33 @@ export class TicketRepository {
 
     return (data || []).map(mapTicket);
   }
+
+  public async getAIEnabled(): Promise<boolean> {
+    const { data, error } = await this.supabase
+      .from('ticket_counters')
+      .select('current_value')
+      .eq('key', 'ai_disabled')
+      .maybeSingle();
+
+    if (error) {
+      return true; // Default to true on error
+    }
+
+    if (!data) return true; // Default to true if not set
+    return Number(data.current_value) === 0;
+  }
+
+  public async setAIEnabled(enabled: boolean): Promise<void> {
+    const { error } = await this.supabase
+      .from('ticket_counters')
+      .upsert({
+        key: 'ai_disabled',
+        current_value: enabled ? 0 : 1,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'key' });
+
+    if (error) {
+      throw new Error(`Failed to set AI status in DB: ${error.message}`);
+    }
+  }
 }

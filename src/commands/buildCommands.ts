@@ -65,5 +65,22 @@ export function buildCommandDefinitions(config: AppConfig) {
     );
   }
 
+  // AI Toggle command
+  commands.push(
+    new SlashCommandBuilder()
+      .setName('ai')
+      .setDescription('تشغيل أو إيقاف المساعد الآلي (AI) في السيرفر')
+      .addSubcommand((sub) =>
+        sub
+          .setName('on')
+          .setDescription('تفعيل المساعد الآلي للتذاكر بالكامل')
+      )
+      .addSubcommand((sub) =>
+        sub
+          .setName('off')
+          .setDescription('إيقاف المساعد الآلي للتذاكر بالكامل')
+      ) as unknown as SlashCommandBuilder
+  );
+
   return commands;
 }
