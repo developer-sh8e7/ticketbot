@@ -2,16 +2,16 @@ import type { GuildMember } from 'discord.js';
 import type { AppConfig } from '../types/config.js';
 import { uniqueStrings } from '../utils/text.js';
 
-function hasAnyRole(member: GuildMember, roleIds: string[]): boolean {
-  return uniqueStrings(roleIds).some((roleId) => member.roles.cache.has(roleId));
+function hasAnyRoleOrUserId(member: GuildMember, ids: string[]): boolean {
+  return uniqueStrings(ids).some((id) => member.roles.cache.has(id) || member.id === id);
 }
 
 export function isSupportMember(member: GuildMember, config: AppConfig): boolean {
-  return hasAnyRole(member, [...config.guild.supportRoleIds]);
+  return hasAnyRoleOrUserId(member, [...config.guild.supportRoleIds]);
 }
 
 export function isManagerMember(member: GuildMember, config: AppConfig): boolean {
-  return hasAnyRole(member, [...config.guild.managerRoleIds]);
+  return hasAnyRoleOrUserId(member, [...config.guild.managerRoleIds]);
 }
 
 export function canManageTicket(member: GuildMember, config: AppConfig): boolean {

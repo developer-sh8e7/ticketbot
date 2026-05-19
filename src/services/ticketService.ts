@@ -886,7 +886,7 @@ export class TicketService {
   private async handleStatsButton(interaction: ButtonInteraction): Promise<void> {
     const allowedRoles = this.config.ticket.controls.stats?.allowedRoleIds ?? [];
     const member = interaction.member as GuildMember;
-    const hasRole = allowedRoles.length === 0 || allowedRoles.some((roleId) => member.roles.cache.has(roleId));
+    const hasRole = allowedRoles.length === 0 || allowedRoles.some((roleId) => member.roles.cache.has(roleId) || member.id === roleId);
 
     if (!hasRole) {
       await safeEditReply(interaction, [buildErrorEmbed(this.config, this.config.ticket.messages.noPermission)]);
