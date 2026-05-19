@@ -467,10 +467,12 @@ export class TicketService {
       }
 
       const welcomeEmbeds = await buildTicketEmbeds(interaction.guild, this.config, createdTicket);
-      const mentionRoles = formatRoleMentions([
+      const validMentions = [
         ...this.config.guild.mentionRolesOnOpen,
         ...supportRolesToMention,
-      ]);
+      ].filter((roleId) => interaction.guild.roles.cache.has(roleId));
+
+      const mentionRoles = formatRoleMentions(validMentions);
 
       const sentMessage = await created.send({
         content: `${interaction.user} ${mentionRoles}`.trim(),
@@ -478,10 +480,7 @@ export class TicketService {
         components: buildTicketActionRows(this.config),
         allowedMentions: {
           users: [interaction.user.id],
-          roles: uniqueStrings([
-            ...this.config.guild.mentionRolesOnOpen,
-            ...supportRolesToMention,
-          ]),
+          roles: uniqueStrings(validMentions),
         },
       });
 
