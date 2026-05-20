@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Local Build outputs
+dist/
+build/
+out/
+output/
+
+# Git and OS metadata
+.git/
+.gitignore
+.gitattributes
+
+# Environment files (it is better to set these variables in the Discloud dashboard)
+.env
+.env.*
+.tmp/
+coverage/
+*.log
