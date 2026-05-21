@@ -27,35 +27,58 @@ function buildButton(customId: string, config: TicketControlConfig): ButtonBuild
   return button;
 }
 
+function withIcon(icon: string, label: string): string {
+  return icon ? `${icon} ${label}` : label;
+}
+
+function iconForAnswer(answerKey: string, icons: Record<string, string>): string {
+  if (answerKey === 'epic_id') return icons.epic;
+  if (answerKey === 'trade_amount') return icons.stats;
+  if (answerKey === 'house_color') return icons.house;
+  if (answerKey === 'purchase_type') return icons.purchase;
+  return icons.info;
+}
 
 export async function buildTicketEmbeds(
   guild: Guild,
   config: AppConfig,
   ticket: TicketRecord,
 ): Promise<EmbedBuilder[]> {
-  const ticketIcon = config.emojis.ticketIcon
-    ? await guild.emojis.fetch(config.emojis.ticketIcon).catch(() => null)
-    : null;
   const paddedNumber = padTicketNumber(ticket.ticket_number, config.naming.zeroPadLength);
 
-  const infoEmoji = await resolveEmojiMention(guild, config.emojis.infoIcon);
-  const epicEmoji = await resolveEmojiMention(guild, config.emojis.epicIcon);
+  const ticketIcon = await resolveEmojiMention(guild, config.emojis.ticketIcon);
+  const categoryIcon = await resolveEmojiMention(guild, config.emojis.categories[ticket.category_key]);
+  const infoIcon = await resolveEmojiMention(guild, config.emojis.infoIcon);
+  const epicIcon = await resolveEmojiMention(guild, config.emojis.epicIcon);
+  const houseIcon = await resolveEmojiMention(guild, config.emojis.categories.house_unlock);
+  const purchaseIcon = await resolveEmojiMention(guild, config.emojis.categories.purchase);
+  const statsIcon = await resolveEmojiMention(guild, config.ticket.controls.stats.emojiId);
+  const claimIcon = await resolveEmojiMention(guild, config.ticket.controls.claim.emojiId);
+  const pinIcon = await resolveEmojiMention(guild, config.ticket.controls.pin.emojiId);
 
-  const summaryLabel = infoEmoji
-    ? `${infoEmoji} ${config.ticket.summaryTitle}`
-    : config.ticket.summaryTitle;
+  const icons = {
+    ticket: ticketIcon || categoryIcon,
+    category: categoryIcon || infoIcon,
+    info: infoIcon || statsIcon || categoryIcon,
+    epic: epicIcon || categoryIcon,
+    house: houseIcon || categoryIcon,
+    purchase: purchaseIcon || categoryIcon,
+    stats: statsIcon || infoIcon || categoryIcon,
+    user: claimIcon || categoryIcon,
+    number: pinIcon || statsIcon || categoryIcon,
+  };
 
   const embed = new EmbedBuilder()
     .setColor(hexToDecimal(config.bot.embedColor))
-    .setTitle(config.ticket.welcomeTitle)
+    .setTitle(withIcon(icons.ticket, config.ticket.welcomeTitle))
     .setDescription(config.ticket.welcomeDescription)
     .setThumbnail(config.images.thumbnailUrl || null)
     .setImage(config.images.ticketBannerUrl || null)
     .addFields(
-      { name: '\u200b', value: `**${summaryLabel}**` },
-      { name: 'نوع الطلب', value: ticket.category_label, inline: true },
-      { name: 'صاحب التذكرة', value: `<@${ticket.creator_id}>`, inline: true },
-      { name: 'رقم التذكرة', value: `#${paddedNumber}`, inline: true },
+      { name: '\u200b', value: `**${withIcon(icons.info, config.ticket.summaryTitle)}**` },
+      { name: withIcon(icons.category, 'نوع الطلب'), value: ticket.category_label, inline: true },
+      { name: withIcon(icons.user, 'صاحب التذكرة'), value: `<@${ticket.creator_id}>`, inline: true },
+      { name: withIcon(icons.number, 'رقم التذكرة'), value: `#${paddedNumber}`, inline: true },
     )
     .setFooter({
       text: `${config.bot.footerText} • #${paddedNumber}`,
@@ -63,20 +86,11 @@ export async function buildTicketEmbeds(
     })
     .setTimestamp();
 
-  if (ticketIcon) {
-    embed.setAuthor({
-      name: `${ticketIcon.toString()} ${ticket.category_label}`,
-      iconURL: config.images.thumbnailUrl || undefined,
-    });
-  }
-
   if (ticket.answers.length > 0) {
     for (const answer of ticket.answers) {
-      const fieldName = answer.key === 'epic_id' && epicEmoji
-        ? `${epicEmoji} ${answer.label}`
-        : answer.label;
+      const fieldIcon = iconForAnswer(answer.key, icons);
       embed.addFields({
-        name: fieldName,
+        name: withIcon(fieldIcon, answer.label),
         value: truncateText(answer.value, 1024) || '\u200b',
         inline: false,
       });
@@ -109,7 +123,7 @@ export function buildTicketActionRows(config: AppConfig, isClaimed = false): Act
 export function buildAlreadyOpenEmbed(config: AppConfig, channelId: string): EmbedBuilder {
   return new EmbedBuilder()
     .setColor(hexToDecimal(config.bot.errorColor))
-    .setTitle('Open Ticket')
+    .setTitle('تذكرة مفتوحة')
     .setDescription(`${config.ticket.messages.alreadyOpen} <#${channelId}>`)
     .setTimestamp();
 }

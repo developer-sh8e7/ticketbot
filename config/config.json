@@ -92,12 +92,12 @@
         "emojiId": ""
       },
       "add": {
-        "label": "إضافة",
+        "label": "إضأفة شخص",
         "style": "Secondary",
         "emojiId": ""
       },
       "remove": {
-        "label": "إزالة",
+        "label": "إزالة شخص",
         "style": "Secondary",
         "emojiId": ""
       },
