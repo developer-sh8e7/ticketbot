@@ -94,14 +94,22 @@ export class TicketService {
     }));
   }
 
-  private buildTicketChannelName(category: TicketCategoryConfig, ticketNumber: number, tradeAmount?: number | null): string {
+  private buildTicketChannelName(category: TicketCategoryConfig, ticketNumber: number, answers?: TicketAnswer[]): string {
     const paddedTicketNumber = padTicketNumber(ticketNumber, this.config.naming.zeroPadLength);
     const template = category.channelNameTemplate || `${this.config.naming.ticketChannelPrefix}-{ticketNumber}`;
+    
+    let houseColor = '';
+    if (category.key === 'house_unlock' && answers) {
+      const colorAnswer = answers.find((ans) => ans.key === 'house_color')?.value;
+      houseColor = colorAnswer || '';
+    }
+    
     const replaced = replaceTokens(template, {
       ticketNumber,
       paddedTicketNumber,
       categoryKey: category.key,
       categoryLabel: category.label,
+      houseColor,
     });
 
     return normalizeChannelName(replaced, this.config.naming.maxChannelNameLength);
@@ -379,7 +387,7 @@ export class TicketService {
       const tradeAmount = tradeAmountValue ? await parseTradeAmountSmartly(tradeAmountValue) : null;
 
       const ticketNumber = await this.ticketRepository.nextTicketNumber();
-      const channelName = this.buildTicketChannelName(category, ticketNumber, tradeAmount);
+      const channelName = this.buildTicketChannelName(category, ticketNumber, answers);
       const topic = this.buildTicketTopic(ticketNumber, interaction.user.tag, interaction.user.id, category);
 
       const created = await interaction.guild.channels.create({

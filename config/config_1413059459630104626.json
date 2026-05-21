@@ -51,7 +51,7 @@
     ]
   },
   "images": {
-    "panelBannerUrl": "https://placehold.co/1200x400/1a0533/8b5cf6?text=Support+Section",
+    "panelBannerUrl": "https://i.imgur.com/MP8Asr5.png",
     "ticketBannerUrl": "https://placehold.co/1200x400/1a0533/8b5cf6?text=Welcome+Ticket",
     "thumbnailUrl": "https://placehold.co/256x256/1a0533/8b5cf6?text=T"
   },
@@ -188,7 +188,7 @@
       "enabled": true,
       "label": "اللوان البيوت",
       "description": "لطلب خدمة اللوان البيوت، افتح تذكرة هنا.",
-      "channelNameTemplate": "اللوان-البيوت-{ticketNumber}",
+      "channelNameTemplate": "لون-{houseColor}-{ticketNumber}",
       "supportRoleIds": [
         "1483209015961063595"
       ],
@@ -201,6 +201,15 @@
           "required": true,
           "minLength": 3,
           "maxLength": 100
+        },
+        {
+          "key": "house_color",
+          "label": "لون البيت الي تبي تفتحه",
+          "style": "Short",
+          "placeholder": "مثال: دريمي",
+          "required": true,
+          "minLength": 2,
+          "maxLength": 50
         }
       ]
     },
