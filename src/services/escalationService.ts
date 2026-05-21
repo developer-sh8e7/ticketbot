@@ -57,72 +57,8 @@ export class EscalationService {
 
     for (const ticket of eligibleTickets) {
       try {
-        const channelId = ticket.channel_id;
-        if (!channelId) continue;
-        const channel = await guild.channels.fetch(channelId).catch(() => null);
-        if (!channel || channel.type !== ChannelType.GuildText) continue;
-
-        // Extract trade amount from answers
-        const tradeAmountAnswer = ticket.answers.find((ans) => ans.key === 'trade_amount')?.value;
-        if (!tradeAmountAnswer) continue;
-
-        // We import parseTradeAmount locally to avoid circular dependency
-        const { parseTradeAmount } = await import('../utils/text.js');
-        const tradeAmount = parseTradeAmount(tradeAmountAnswer);
-        if (typeof tradeAmount !== 'number') continue;
-
-        const NEW_MM = "1506010346777874472";
-        const MEDIUM_MM = "1506010306407694346";
-        const GUARANTEED_MM = "1506009944053387264";
-
-        let roleToEscalate: string | null = null;
-        let messageText = '';
-
-        if (tradeAmount > 250) {
-          // Guaranteed ticket: Escalate to Medium (allow them to write)
-          roleToEscalate = MEDIUM_MM;
-          messageText = `⚠️ **تنبيه تصعيد التذكرة (مرت ساعتان):**\nمرت ساعتان كاملتان ولم يتم استلام التذكرة من قبل وسطاء مضمونين. تم الآن تفعيل صلاحية الكتابة والمشاركة للوسطاء المتوسطين <@&${MEDIUM_MM}> لتسهيل عملية الاستلام وإتمام التريد!`;
-        } else if (tradeAmount > 50 && tradeAmount <= 250) {
-          // Medium ticket: Escalate to New (allow them to write)
-          roleToEscalate = NEW_MM;
-          messageText = `⚠️ **تنبيه تصعيد التذكرة (مرت ساعتان):**\nمرت ساعتان كاملتان ولم يتم استلام التذكرة من قبل وسطاء متوسطين. تم الآن تفعيل صلاحية الكتابة والمشاركة للوسطاء الجدد <@&${NEW_MM}> لتسهيل عملية الاستلام وإتمام التريد!`;
-        }
-
-        if (roleToEscalate && guild.roles.cache.has(roleToEscalate)) {
-          logger.info(`Escalating ticket #${ticket.ticket_number} (Channel: ${channel.name}) to role: ${roleToEscalate}`);
-
-          // Update permission overwrites to allow SendMessages for the escalated role
-          await channel.permissionOverwrites.edit(roleToEscalate, {
-            ViewChannel: true,
-            SendMessages: true,
-            ReadMessageHistory: true,
-            AttachFiles: true,
-            EmbedLinks: true,
-          });
-
-          // Send notification message with a beautiful embed
-          const embed = new EmbedBuilder()
-            .setColor(0xFFAA00)
-            .setTitle('⚠️ تصعيد التذكرة التلقائي | Ticket Escalation')
-            .setDescription(messageText)
-            .setTimestamp();
-
-          await channel.send({
-            content: `<@&${roleToEscalate}>`,
-            embeds: [embed],
-            allowedMentions: { roles: [roleToEscalate] },
-          });
-
-          // Update metadata in DB to prevent repeated escalation
-          const updatedMetadata = {
-            ...(ticket.metadata || {}),
-            escalated: true,
-            escalatedAt: new Date().toISOString(),
-            escalatedToRole: roleToEscalate,
-          };
-
-          await this.ticketRepository.updateMetadata(channelId, updatedMetadata);
-        }
+        // Escalation is no longer needed for middleman tickets with a single role tier
+        // All support staff have write access by default
       } catch (err) {
         logger.error(`Failed to process escalation for ticket #${ticket.ticket_number}:`, err);
       }

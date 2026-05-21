@@ -129,24 +129,6 @@ export class TicketService {
 
   private buildPermissionOverwrites(guild: Guild, openerId: string, category: TicketCategoryConfig, tradeAmount?: number | null) {
     let supportRoleIdsToAllow = [...category.supportRoleIds];
-    let supportRoleIdsToViewOnly: string[] = [];
-
-    if (category.key === 'middleman' && typeof tradeAmount === 'number') {
-      const NEW_MM = "1506010346777874472";
-      const MEDIUM_MM = "1506010306407694346";
-      const GUARANTEED_MM = "1506009944053387264";
-
-      if (tradeAmount <= 50) {
-        supportRoleIdsToAllow = [NEW_MM, MEDIUM_MM, GUARANTEED_MM];
-      } else if (tradeAmount > 50 && tradeAmount <= 250) {
-        supportRoleIdsToAllow = [MEDIUM_MM, GUARANTEED_MM];
-        supportRoleIdsToViewOnly = [NEW_MM];
-      } else {
-        supportRoleIdsToAllow = [GUARANTEED_MM];
-        supportRoleIdsToViewOnly = [NEW_MM, MEDIUM_MM];
-      }
-    }
-    (this as any)._lastSupportRoleIdsToViewOnly = supportRoleIdsToViewOnly;
 
     const staffRoleIds = uniqueStrings([
       ...this.config.guild.supportRoleIds,
@@ -202,16 +184,6 @@ export class TicketService {
           PermissionFlagsBits.AddReactions,
           PermissionFlagsBits.UseExternalEmojis,
           PermissionFlagsBits.ManageMessages,
-        ],
-      })),
-      ...supportRoleIdsToViewOnly.filter((roleId) => guild.roles.cache.has(roleId)).map((roleId) => ({
-        id: roleId,
-        allow: [
-          PermissionFlagsBits.ViewChannel,
-          PermissionFlagsBits.ReadMessageHistory,
-        ],
-        deny: [
-          PermissionFlagsBits.SendMessages,
         ],
       })),
     ];
@@ -452,18 +424,9 @@ export class TicketService {
       });
 
       let supportRolesToMention = [...category.supportRoleIds];
-      if (category.key === 'middleman' && typeof tradeAmount === 'number') {
-        const NEW_MM = "1506010346777874472";
-        const MEDIUM_MM = "1506010306407694346";
-        const GUARANTEED_MM = "1506009944053387264";
-
-        if (tradeAmount <= 50) {
-          supportRolesToMention = [NEW_MM];
-        } else if (tradeAmount > 50 && tradeAmount <= 250) {
-          supportRolesToMention = [MEDIUM_MM];
-        } else {
-          supportRolesToMention = [GUARANTEED_MM];
-        }
+      if (category.key === 'middleman') {
+        const MIDDLEMAN_ROLE = "1506010306407694346";
+        supportRolesToMention = [MIDDLEMAN_ROLE];
       }
 
       const welcomeEmbeds = await buildTicketEmbeds(interaction.guild, this.config, createdTicket);
@@ -749,19 +712,21 @@ export class TicketService {
 
     const uniqueStaffRoles = uniqueStrings(staffRoleIds);
 
-    if (claimerId) {
-      for (const roleId of uniqueStaffRoles) {
-        await context.channel.permissionOverwrites.edit(roleId, {
-          ViewChannel: true,
-          SendMessages: false,
-          ReadMessageHistory: true,
-          AttachFiles: false,
-          EmbedLinks: false,
-          AddReactions: true,
-          UseExternalEmojis: true,
-        }).catch(() => null);
-      }
+    // Allow both claimer and support staff to write
+    for (const roleId of uniqueStaffRoles) {
+      await context.channel.permissionOverwrites.edit(roleId, {
+        ViewChannel: true,
+        SendMessages: true,
+        ReadMessageHistory: true,
+        AttachFiles: true,
+        EmbedLinks: true,
+        AddReactions: true,
+        UseExternalEmojis: true,
+        ManageMessages: true,
+      }).catch(() => null);
+    }
 
+    if (claimerId) {
       await context.channel.permissionOverwrites.edit(claimerId, {
         ViewChannel: true,
         SendMessages: true,
@@ -772,30 +737,17 @@ export class TicketService {
         UseExternalEmojis: true,
         ManageMessages: true,
       }).catch(() => null);
-
-      await context.channel.permissionOverwrites.edit(context.ticket.creator_id, {
-        ViewChannel: true,
-        SendMessages: true,
-        ReadMessageHistory: true,
-        AttachFiles: true,
-        EmbedLinks: true,
-        AddReactions: true,
-        UseExternalEmojis: true,
-      }).catch(() => null);
-    } else {
-      for (const roleId of uniqueStaffRoles) {
-        await context.channel.permissionOverwrites.edit(roleId, {
-          ViewChannel: true,
-          SendMessages: true,
-          ReadMessageHistory: true,
-          AttachFiles: true,
-          EmbedLinks: true,
-          AddReactions: true,
-          UseExternalEmojis: true,
-          ManageMessages: true,
-        }).catch(() => null);
-      }
     }
+
+    await context.channel.permissionOverwrites.edit(context.ticket.creator_id, {
+      ViewChannel: true,
+      SendMessages: true,
+      ReadMessageHistory: true,
+      AttachFiles: true,
+      EmbedLinks: true,
+      AddReactions: true,
+      UseExternalEmojis: true,
+    }).catch(() => null);
   }
 
   private async handlePinButton(interaction: ButtonInteraction): Promise<void> {

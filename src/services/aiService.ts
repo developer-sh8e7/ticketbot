@@ -457,52 +457,17 @@ You are the bridge between user and human support.`;
                 await this.ticketRepository.updateAnswers(ticket.channel_id, updatedAnswers);
 
                 // 2. Re-calculate permissions & channel names
-                const NEW_MM = "1506010346777874472";
-                const MEDIUM_MM = "1506010306407694346";
-                const GUARANTEED_MM = "1506009944053387264";
+                const MIDDLEMAN_ROLE = "1506010306407694346";
 
                 const padLen = 4;
                 const ticketNumStr = padTicketNumber(ticket.ticket_number, padLen);
 
-                let newName = '';
+                let newName = `وسيط-${ticketNumStr}`;
                 const txtChannel = message.channel as any;
                 if (txtChannel && typeof txtChannel.permissionOverwrites === 'object') {
-                  if (newAmount <= 50) {
-                    newName = `وسيط-جديد-${ticketNumStr}`;
-                    // All allowed to write
-                    if (guild.roles.cache.has(NEW_MM)) {
-                      await txtChannel.permissionOverwrites.edit(NEW_MM, { SendMessages: true, ViewChannel: true, ReadMessageHistory: true }).catch(() => null);
-                    }
-                    if (guild.roles.cache.has(MEDIUM_MM)) {
-                      await txtChannel.permissionOverwrites.edit(MEDIUM_MM, { SendMessages: true, ViewChannel: true, ReadMessageHistory: true }).catch(() => null);
-                    }
-                    if (guild.roles.cache.has(GUARANTEED_MM)) {
-                      await txtChannel.permissionOverwrites.edit(GUARANTEED_MM, { SendMessages: true, ViewChannel: true, ReadMessageHistory: true }).catch(() => null);
-                    }
-                  } else if (newAmount > 50 && newAmount <= 250) {
-                    newName = `وسيط-متوسط-${ticketNumStr}`;
-                    // Medium & Guaranteed write. New MM is view-only
-                    if (guild.roles.cache.has(NEW_MM)) {
-                      await txtChannel.permissionOverwrites.edit(NEW_MM, { SendMessages: false, ViewChannel: true, ReadMessageHistory: true }).catch(() => null);
-                    }
-                    if (guild.roles.cache.has(MEDIUM_MM)) {
-                      await txtChannel.permissionOverwrites.edit(MEDIUM_MM, { SendMessages: true, ViewChannel: true, ReadMessageHistory: true }).catch(() => null);
-                    }
-                    if (guild.roles.cache.has(GUARANTEED_MM)) {
-                      await txtChannel.permissionOverwrites.edit(GUARANTEED_MM, { SendMessages: true, ViewChannel: true, ReadMessageHistory: true }).catch(() => null);
-                    }
-                  } else {
-                    newName = `وسيط-مضمون-${ticketNumStr}`;
-                    // Guaranteed write. New & Medium are view-only
-                    if (guild.roles.cache.has(NEW_MM)) {
-                      await txtChannel.permissionOverwrites.edit(NEW_MM, { SendMessages: false, ViewChannel: true, ReadMessageHistory: true }).catch(() => null);
-                    }
-                    if (guild.roles.cache.has(MEDIUM_MM)) {
-                      await txtChannel.permissionOverwrites.edit(MEDIUM_MM, { SendMessages: false, ViewChannel: true, ReadMessageHistory: true }).catch(() => null);
-                    }
-                    if (guild.roles.cache.has(GUARANTEED_MM)) {
-                      await txtChannel.permissionOverwrites.edit(GUARANTEED_MM, { SendMessages: true, ViewChannel: true, ReadMessageHistory: true }).catch(() => null);
-                    }
+                  // Allow only the middleman role to write
+                  if (guild.roles.cache.has(MIDDLEMAN_ROLE)) {
+                    await txtChannel.permissionOverwrites.edit(MIDDLEMAN_ROLE, { SendMessages: true, ViewChannel: true, ReadMessageHistory: true }).catch(() => null);
                   }
                 }
 

@@ -156,13 +156,11 @@
     {
       "key": "middleman",
       "enabled": true,
-      "label": "وسـيــط مـضـمـون",
+      "label": "وسيط",
       "description": "لضمان عملية التداول بوجود وسيط، افتح تذكرة هنا.",
-      "channelNameTemplate": "وسيط-مضمون-{ticketNumber}",
+      "channelNameTemplate": "وسيط-{ticketNumber}",
       "supportRoleIds": [
-        "1506009944053387264",
-        "1506010306407694346",
-        "1506010346777874472"
+        "1506010306407694346"
       ],
       "questions": [
         {
