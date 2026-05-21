@@ -96,16 +96,7 @@ export class TicketService {
 
   private buildTicketChannelName(category: TicketCategoryConfig, ticketNumber: number, tradeAmount?: number | null): string {
     const paddedTicketNumber = padTicketNumber(ticketNumber, this.config.naming.zeroPadLength);
-    let template = category.channelNameTemplate || `${this.config.naming.ticketChannelPrefix}-{ticketNumber}`;
-    if (category.key === 'middleman' && typeof tradeAmount === 'number') {
-      if (tradeAmount <= 50) {
-        template = "وسيط-جديد-{ticketNumber}";
-      } else if (tradeAmount > 50 && tradeAmount <= 250) {
-        template = "وسيط-متوسط-{ticketNumber}";
-      } else {
-        template = "وسيط-مضمون-{ticketNumber}";
-      }
-    }
+    const template = category.channelNameTemplate || `${this.config.naming.ticketChannelPrefix}-{ticketNumber}`;
     const replaced = replaceTokens(template, {
       ticketNumber,
       paddedTicketNumber,
