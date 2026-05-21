@@ -114,7 +114,7 @@
       "stats": {
         "label": "إحصائيات",
         "style": "Secondary",
-        "emojiId": "1486832130754482328",
+        "emojiId": "",
         "allowedRoleIds": [
           "1483021658003345408",
           "1483209015961063595",
@@ -144,12 +144,12 @@
   "emojis": {
     "panelIcon": "",
     "ticketIcon": "",
-    "infoIcon": "1486832255216386109",
-    "epicIcon": "1486832108990107891",
+    "infoIcon": "",
+    "epicIcon": "",
     "categories": {
-      "middleman": "1486832234299134092",
-      "house_unlock": "1486832226875215987",
-      "purchase": "1486832176677781584"
+      "middleman": "",
+      "house_unlock": "",
+      "purchase": ""
     }
   },
   "categories": [
@@ -158,11 +158,9 @@
       "enabled": true,
       "label": "وسـيــط مـضـمـون",
       "description": "لضمان عملية التداول بوجود وسيط، افتح تذكرة هنا.",
-      "channelNameTemplate": "وسيط-مضمون-{ticketNumber}",
+      "channelNameTemplate": "وســيــط・مضمون・{ticketNumber}",
       "supportRoleIds": [
-        "1506009944053387264",
-        "1506010306407694346",
-        "1506010346777874472"
+        "1506010306407694346"
       ],
       "questions": [
         {

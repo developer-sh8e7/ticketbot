@@ -1,7 +1,6 @@
-import { Message, ChannelType } from 'discord.js';
+import { Message } from 'discord.js';
 import type { TicketRecord } from '../database/types.js';
 import { logger } from '../utils/logger.js';
-import { padTicketNumber } from '../utils/text.js';
 export interface AIServiceConfig {
   apiKey?: string;
   provider: 'gemini' | 'openai';
@@ -284,21 +283,6 @@ MARKET TIMING:
 - Sunday: Community auctions
 
 ---
-⚙️ AGENTIC CAPABILITIES:
-
-You can dynamically update the ticket's trade amount!
-If the user indicates their trade amount is wrong, or says "under 50$" or "it's 150$" or "it's 300$", you must include the action at the very end of your response.
-
-⚠️ STRICT RULES FOR ACTIONS:
-1. The action MUST be wrapped EXACTLY in: ||ACTION:{"action": "update_trade_amount", "amount": <number>}||
-2. The "amount" value MUST be a number, not a string (e.g. 40, 150, 300).
-   - If they say "under 50$" or "تحت 50" or "وسيط جديد", use 40.
-   - If they say "between 50$ and 250$" or "متوسط", use 150.
-   - If they say "above 250$" or "مضمون", use 300.
-3. NEVER output the action as plain text (e.g. do not write "ACTION: {...}"). It must always be wrapped in "||ACTION:..." and "||" without spaces inside the delimiters.
-4. Do not output any other action name. Only "update_trade_amount" is supported.
-
----
 💬 COMMUNICATION STYLE:
 
 Language: Use user's language (Arabic ↔ English detection)
@@ -420,73 +404,8 @@ You are the bridge between user and human support.`;
       if (ok) {
 
         if (aiResponseText) {
-          // Parse Action if present (robust regex matching ||ACTION:{...}|| or ACTION:{...})
-          const actionRegex = /(?:\|\|)?ACTION:(\{[\s\S]*?\})(?:\|\|)?/i;
-          const actionMatch = aiResponseText.match(actionRegex);
-
-          if (actionMatch) {
-            try {
-              const actionObj = JSON.parse(actionMatch[1]);
-              
-              if (actionObj.action === 'update_trade_amount' || actionObj.action === 'update_category' || actionObj.amount !== undefined || actionObj.category !== undefined) {
-                let newAmount = 0;
-                
-                if (typeof actionObj.amount === 'number') {
-                  newAmount = actionObj.amount;
-                } else if (actionObj.amount !== undefined) {
-                  const parsedNum = parseInt(String(actionObj.amount).replace(/[^\d]/g, ''), 10);
-                  newAmount = isNaN(parsedNum) ? 0 : parsedNum;
-                } else if (actionObj.category !== undefined) {
-                  const catStr = String(actionObj.category).toLowerCase();
-                  if (catStr.includes('جديد') || catStr.includes('new')) {
-                    newAmount = 40;
-                  } else if (catStr.includes('متوسط') || catStr.includes('medium')) {
-                    newAmount = 150;
-                  } else {
-                    newAmount = 300;
-                  }
-                }
-
-                // 1. Update the Supabase Database Answers
-                const updatedAnswers = ticket.answers.map((ans) => {
-                  if (ans.key === 'trade_amount') {
-                    return { ...ans, value: String(newAmount) };
-                  }
-                  return ans;
-                });
-                await this.ticketRepository.updateAnswers(ticket.channel_id, updatedAnswers);
-
-                // 2. Re-calculate permissions & channel names
-                const MIDDLEMAN_ROLE = "1506010306407694346";
-
-                const padLen = 4;
-                const ticketNumStr = padTicketNumber(ticket.ticket_number, padLen);
-
-                let newName = `وسيط-${ticketNumStr}`;
-                const txtChannel = message.channel as any;
-                if (txtChannel && typeof txtChannel.permissionOverwrites === 'object') {
-                  // Allow only the middleman role to write
-                  if (guild.roles.cache.has(MIDDLEMAN_ROLE)) {
-                    await txtChannel.permissionOverwrites.edit(MIDDLEMAN_ROLE, { SendMessages: true, ViewChannel: true, ReadMessageHistory: true }).catch(() => null);
-                  }
-                }
-
-                // 3. Rename channel
-                if (message.channel.type === ChannelType.GuildText) {
-                  await message.channel.setName(newName).catch(() => null);
-                }
-
-                // Clean all raw ACTION strings from the AI text globally for the user display
-                const actionGlobalRegex = /(?:\|\|)?ACTION:(\{[\s\S]*?\})(?:\|\|)?/gi;
-                aiResponseText = aiResponseText.replace(actionGlobalRegex, '').trim();
-
-                // Append an elegant confirmation message in Arabic
-                aiResponseText += `\n\n⚙️ **[نظام المساعد الآلي]:** تم تعديل قيمة التريد في النظام إلى **${newAmount}$**، وتغيير صلاحيات الرتب واسم القناة تلقائياً لتناسب الفئة الصحيحة!`;
-              }
-            } catch (jsonErr) {
-              logger.error('Failed to parse dynamic AI action json:', jsonErr);
-            }
-          }
+          const actionGlobalRegex = /(?:\|\|)?ACTION:(\{[\s\S]*?\})(?:\|\|)?/gi;
+          aiResponseText = aiResponseText.replace(actionGlobalRegex, '').trim();
 
           // Send response back
           await message.reply({
@@ -508,4 +427,3 @@ You are the bridge between user and human support.`;
     }
   }
 }
-

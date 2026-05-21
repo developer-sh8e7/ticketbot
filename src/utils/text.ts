@@ -15,10 +15,11 @@ export function replaceTokens(template: string, tokens: Record<string, string | 
 export function normalizeChannelName(input: string, maxLength: number): string {
   const normalized = input
     .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s_-]+/gu, '')
+    .replace(/[^\p{L}\p{N}\s_・-]+/gu, '')
+    .replace(/\s*・\s*/g, '・')
     .replace(/[\s_]+/g, '-')
     .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
+    .replace(/^[・-]+|[・-]+$/g, '');
 
   const safe = normalized || 'ticket';
   return safe.slice(0, maxLength);

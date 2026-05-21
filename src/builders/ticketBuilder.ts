@@ -53,7 +53,7 @@ export async function buildTicketEmbeds(
     .setImage(config.images.ticketBannerUrl || null)
     .addFields(
       { name: '\u200b', value: `**${summaryLabel}**` },
-      { name: 'التصنيف', value: ticket.category_label, inline: true },
+      { name: 'نوع الطلب', value: ticket.category_label, inline: true },
       { name: 'صاحب التذكرة', value: `<@${ticket.creator_id}>`, inline: true },
       { name: 'رقم التذكرة', value: `#${paddedNumber}`, inline: true },
     )
@@ -88,7 +88,7 @@ export async function buildTicketEmbeds(
 
 export function buildTicketActionRows(config: AppConfig, isClaimed = false): ActionRowBuilder<ButtonBuilder>[] {
   const claimConfig: TicketControlConfig = isClaimed
-    ? { ...config.ticket.controls.claim, label: 'انسحاب من الاستلام', style: 'Danger' }
+    ? { ...config.ticket.controls.claim, label: 'إلغاء الاستلام', style: 'Danger' }
     : config.ticket.controls.claim;
 
   const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
