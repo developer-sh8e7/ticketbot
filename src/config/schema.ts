@@ -142,6 +142,13 @@ export const appConfigSchema = z.object({
     excludedRoleId: z.string().min(1),
     syncIntervalMinutes: z.number().int().min(1).max(1440),
   }),
+  roleManagement: z.object({
+    enabled: z.boolean(),
+    ownerId: z.string().min(1),
+    allowedRoleIds: z.array(z.string().min(1)).min(1),
+    dailyLimitedRoleId: z.string().min(1),
+    dailyLimitedRoleLimit: z.number().int().min(1).max(100),
+  }),
 });
 
 export type AppConfigSchema = z.infer<typeof appConfigSchema>;

@@ -24,6 +24,8 @@ import { AIService } from './services/aiService.js';
 import { TranscriptService } from './services/transcriptService.js';
 import { RoleProtectionRepository } from './database/roleProtectionRepository.js';
 import { RoleProtectionService } from './services/roleProtectionService.js';
+import { RoleManagementRepository } from './database/roleManagementRepository.js';
+import { RoleManagementService } from './services/roleManagementService.js';
 import { activityTypeFromName } from './utils/discord.js';
 import { consumeLifecycleErrors, isInteractionLifecycleError, safeDeferReply, safeEditReply, safeReply } from './utils/interaction.js';
 import { logger } from './utils/logger.js';
@@ -39,6 +41,7 @@ initWheelAPI(supabase);
 const ticketRepository = new TicketRepository(supabase);
 const infrastructureRepository = new InfrastructureRepository(supabase);
 const roleProtectionRepository = new RoleProtectionRepository(supabase);
+const roleManagementRepository = new RoleManagementRepository(supabase);
 const transcriptService = new TranscriptService();
 const panelService = new PanelService(configStore);
 const infrastructureService = new InfrastructureService({
@@ -60,6 +63,7 @@ const aiService = new AIService(
   ticketRepository
 );
 let roleProtectionService: RoleProtectionService | null = null;
+const roleManagementService = new RoleManagementService(roleManagementRepository, configStore.current);
 
 const client = new Client({
   intents: [
@@ -338,6 +342,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
 client.on(Events.MessageCreate, async (message) => {
   try {
     if (message.author.bot || !message.inGuild()) return;
+
+    const roleCommandHandled = await roleManagementService.handleMessage(message);
+    if (roleCommandHandled) return;
 
     const channelId = message.channelId;
     const ticket = await ticketRepository.findByChannelId(channelId);

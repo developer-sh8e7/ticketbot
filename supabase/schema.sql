@@ -167,11 +167,55 @@ before update on public.protected_role_members
 for each row
 execute function public.set_protected_role_updated_at();
 
+create table if not exists public.role_management_authorized_users (
+  guild_id text not null,
+  user_id text not null,
+  granted_by text not null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+  primary key (guild_id, user_id)
+);
+
+create table if not exists public.role_management_daily_limits (
+  guild_id text not null,
+  actor_id text not null,
+  role_id text not null,
+  day_key text not null,
+  used_count integer not null default 0,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+  primary key (guild_id, actor_id, role_id, day_key)
+);
+
+create or replace function public.set_role_management_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = timezone('utc', now());
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_role_management_authorized_users_updated_at on public.role_management_authorized_users;
+create trigger trg_role_management_authorized_users_updated_at
+before update on public.role_management_authorized_users
+for each row
+execute function public.set_role_management_updated_at();
+
+drop trigger if exists trg_role_management_daily_limits_updated_at on public.role_management_daily_limits;
+create trigger trg_role_management_daily_limits_updated_at
+before update on public.role_management_daily_limits
+for each row
+execute function public.set_role_management_updated_at();
+
 alter table public.ticket_counters disable row level security;
 alter table public.tickets disable row level security;
 alter table public.bot_infrastructure disable row level security;
 alter table public.protected_role_state disable row level security;
 alter table public.protected_role_members disable row level security;
+alter table public.role_management_authorized_users disable row level security;
+alter table public.role_management_daily_limits disable row level security;
 
 -- ============================================================
 -- Brainrot Spin Wheel Tables
@@ -264,6 +308,8 @@ grant all on table public.tickets to service_role;
 grant all on table public.bot_infrastructure to service_role;
 grant all on table public.protected_role_state to service_role;
 grant all on table public.protected_role_members to service_role;
+grant all on table public.role_management_authorized_users to service_role;
+grant all on table public.role_management_daily_limits to service_role;
 grant all on table public.brainrot_characters to service_role;
 grant all on table public.wheel_users to service_role;
 grant all on table public.wheel_spins to service_role;

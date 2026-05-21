@@ -156,6 +156,14 @@ export interface RoleProtectionConfig {
   syncIntervalMinutes: number;
 }
 
+export interface RoleManagementConfig {
+  enabled: boolean;
+  ownerId: string;
+  allowedRoleIds: string[];
+  dailyLimitedRoleId: string;
+  dailyLimitedRoleLimit: number;
+}
+
 export interface AppConfig {
   bot: BotVisualConfig;
   guild: GuildConfig;
@@ -168,6 +176,7 @@ export interface AppConfig {
   categories: TicketCategoryConfig[];
   commands: CommandConfig;
   roleProtection: RoleProtectionConfig;
+  roleManagement: RoleManagementConfig;
 }
 
 export interface TicketAnswer {
