@@ -7,7 +7,19 @@ export interface ResolvedEmojis {
   buttonEmojis: Record<string, string>;
 }
 
-type IconKind = 'middleman' | 'house' | 'purchase' | 'close' | 'add' | 'remove' | 'claim' | 'pin' | 'stats';
+type IconKind =
+  | 'middleman'
+  | 'house'
+  | 'purchase'
+  | 'close'
+  | 'add'
+  | 'remove'
+  | 'claim'
+  | 'pin'
+  | 'stats'
+  | 'allow'
+  | 'deny'
+  | 'limit';
 
 interface EmojiDesign {
   name: string;
@@ -45,6 +57,12 @@ const BUTTON_DESIGNS: Record<string, EmojiDesign> = {
   pin: { name: 'stb_btn_pin', kind: 'pin', primary: [168, 85, 247], secondary: [243, 232, 255] },
   stats: { name: 'stb_btn_stats', kind: 'stats', primary: [20, 184, 166], secondary: [204, 251, 241] },
 };
+
+const SYSTEM_DESIGNS: EmojiDesign[] = [
+  { name: 'stb_role_allow', kind: 'allow', primary: [34, 197, 94], secondary: [220, 252, 231] },
+  { name: 'stb_role_deny', kind: 'deny', primary: [239, 68, 68], secondary: [254, 226, 226] },
+  { name: 'stb_role_limit', kind: 'limit', primary: [245, 158, 11], secondary: [255, 247, 237] },
+];
 
 function crc32(buffer: Buffer): number {
   let crc = 0xffffffff;
@@ -219,6 +237,22 @@ function drawIcon(canvas: Raster, design: EmojiDesign): void {
       canvas.roundedRect(58, 54, 10, 40, 4, white);
       canvas.roundedRect(78, 38, 10, 56, 4, white);
       break;
+    case 'allow':
+      canvas.roundedRect(36, 52, 56, 42, 8, design.secondary);
+      canvas.line(47, 72, 60, 84, 9, dark);
+      canvas.line(60, 84, 84, 56, 9, dark);
+      break;
+    case 'deny':
+      canvas.roundedRect(35, 35, 58, 58, 10, design.secondary);
+      canvas.line(45, 45, 83, 83, 10, dark);
+      canvas.line(83, 45, 45, 83, 10, dark);
+      break;
+    case 'limit':
+      canvas.circle(64, 64, 31, design.secondary);
+      canvas.line(64, 43, 64, 66, 8, dark);
+      canvas.line(64, 66, 82, 78, 8, dark);
+      canvas.line(50, 32, 78, 32, 7, design.secondary);
+      break;
   }
 }
 
@@ -278,6 +312,10 @@ export async function ensureEmojis(
   for (const [key, design] of Object.entries(BUTTON_DESIGNS)) {
     const id = await findOrCreateEmoji(guild, design, forceRecreate);
     if (id) buttonEmojis[key] = id;
+  }
+
+  for (const design of SYSTEM_DESIGNS) {
+    await findOrCreateEmoji(guild, design, forceRecreate);
   }
 
   return { categoryEmojis, buttonEmojis };
