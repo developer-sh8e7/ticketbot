@@ -22,6 +22,8 @@ import { TicketService } from './services/ticketService.js';
 import { EscalationService } from './services/escalationService.js';
 import { AIService } from './services/aiService.js';
 import { TranscriptService } from './services/transcriptService.js';
+import { RoleProtectionRepository } from './database/roleProtectionRepository.js';
+import { RoleProtectionService } from './services/roleProtectionService.js';
 import { activityTypeFromName } from './utils/discord.js';
 import { consumeLifecycleErrors, isInteractionLifecycleError, safeDeferReply, safeEditReply, safeReply } from './utils/interaction.js';
 import { logger } from './utils/logger.js';
@@ -36,6 +38,7 @@ const supabase = createSupabaseClient(env);
 initWheelAPI(supabase);
 const ticketRepository = new TicketRepository(supabase);
 const infrastructureRepository = new InfrastructureRepository(supabase);
+const roleProtectionRepository = new RoleProtectionRepository(supabase);
 const transcriptService = new TranscriptService();
 const panelService = new PanelService(configStore);
 const infrastructureService = new InfrastructureService({
@@ -56,6 +59,7 @@ const aiService = new AIService(
   },
   ticketRepository
 );
+let roleProtectionService: RoleProtectionService | null = null;
 
 const client = new Client({
   intents: [
@@ -248,6 +252,13 @@ client.once(Events.ClientReady, async (readyClient) => {
   } catch (error) {
     logger.error('Failed to start EscalationService', error instanceof Error ? error.message : error);
   }
+
+  try {
+    roleProtectionService = new RoleProtectionService(readyClient, roleProtectionRepository, config);
+    roleProtectionService.start();
+  } catch (error) {
+    logger.error('Failed to start RoleProtectionService', error instanceof Error ? error.message : error);
+  }
 });
 
 function trackLifecycleHealth(): void {
@@ -359,6 +370,7 @@ process.on('uncaughtException', (error) => {
 
 function gracefulShutdown(signal: string): void {
   logger.info(`[instance=${INSTANCE_ID}] Received ${signal}, shutting down...`);
+  roleProtectionService?.stop();
   healthServer.close();
   client.destroy();
   process.exit(0);

@@ -135,6 +135,13 @@ export const appConfigSchema = z.object({
       ticketStats: z.string().min(1),
     }),
   }),
+  roleProtection: z.object({
+    enabled: z.boolean(),
+    protectedRoleId: z.string().min(1),
+    protectedRoleName: z.string().min(1),
+    excludedRoleId: z.string().min(1),
+    syncIntervalMinutes: z.number().int().min(1).max(1440),
+  }),
 });
 
 export type AppConfigSchema = z.infer<typeof appConfigSchema>;

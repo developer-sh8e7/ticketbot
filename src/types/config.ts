@@ -148,6 +148,14 @@ export interface CommandConfig {
   names: CommandNamesConfig;
 }
 
+export interface RoleProtectionConfig {
+  enabled: boolean;
+  protectedRoleId: string;
+  protectedRoleName: string;
+  excludedRoleId: string;
+  syncIntervalMinutes: number;
+}
+
 export interface AppConfig {
   bot: BotVisualConfig;
   guild: GuildConfig;
@@ -159,6 +167,7 @@ export interface AppConfig {
   emojis: EmojiConfig;
   categories: TicketCategoryConfig[];
   commands: CommandConfig;
+  roleProtection: RoleProtectionConfig;
 }
 
 export interface TicketAnswer {

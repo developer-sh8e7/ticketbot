@@ -253,5 +253,12 @@
       "ticketClose": "ticket-close",
       "ticketStats": "ticket-stats"
     }
+  },
+  "roleProtection": {
+    "enabled": true,
+    "protectedRoleId": "1483237139637469417",
+    "protectedRoleName": "STB | Member",
+    "excludedRoleId": "1483022301908832388",
+    "syncIntervalMinutes": 10
   }
 }

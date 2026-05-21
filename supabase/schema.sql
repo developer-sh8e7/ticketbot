@@ -121,9 +121,57 @@ before update on public.bot_infrastructure
 for each row
 execute function public.set_infra_updated_at();
 
+create table if not exists public.protected_role_state (
+  guild_id text not null,
+  source_role_id text not null,
+  current_role_id text not null,
+  role_name text not null,
+  role_color integer,
+  role_hoist boolean not null default false,
+  role_mentionable boolean not null default false,
+  role_permissions text not null default '0',
+  role_position integer not null default 0,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+  primary key (guild_id, source_role_id)
+);
+
+create table if not exists public.protected_role_members (
+  guild_id text not null,
+  source_role_id text not null,
+  user_id text not null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+  primary key (guild_id, source_role_id, user_id)
+);
+
+create or replace function public.set_protected_role_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = timezone('utc', now());
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_protected_role_state_updated_at on public.protected_role_state;
+create trigger trg_protected_role_state_updated_at
+before update on public.protected_role_state
+for each row
+execute function public.set_protected_role_updated_at();
+
+drop trigger if exists trg_protected_role_members_updated_at on public.protected_role_members;
+create trigger trg_protected_role_members_updated_at
+before update on public.protected_role_members
+for each row
+execute function public.set_protected_role_updated_at();
+
 alter table public.ticket_counters disable row level security;
 alter table public.tickets disable row level security;
 alter table public.bot_infrastructure disable row level security;
+alter table public.protected_role_state disable row level security;
+alter table public.protected_role_members disable row level security;
 
 -- ============================================================
 -- Brainrot Spin Wheel Tables
@@ -214,6 +262,8 @@ grant usage on schema public to service_role;
 grant all on table public.ticket_counters to service_role;
 grant all on table public.tickets to service_role;
 grant all on table public.bot_infrastructure to service_role;
+grant all on table public.protected_role_state to service_role;
+grant all on table public.protected_role_members to service_role;
 grant all on table public.brainrot_characters to service_role;
 grant all on table public.wheel_users to service_role;
 grant all on table public.wheel_spins to service_role;
