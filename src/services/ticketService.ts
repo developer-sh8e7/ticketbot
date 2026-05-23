@@ -72,6 +72,9 @@ export class TicketService {
   private readonly configStore: ConfigStore;
   private readonly ticketRepository: TicketRepository;
   private readonly transcriptService: TranscriptService;
+  private readonly instanceId = Math.random().toString(36).slice(2, 8);
+  private readonly activeCreations = new Set<string>();
+  private readonly activeTransitions = new Set<string>();
 
   public constructor(dependencies: TicketServiceDependencies) {
     this.configStore = dependencies.configStore;
@@ -368,125 +371,140 @@ export class TicketService {
     answers: TicketAnswer[]
   ): Promise<void> {
     if (!interaction.inCachedGuild()) return;
-    if (!(await safeDeferReply(interaction, `open-modal:${category.key}`))) {
+
+    const userId = interaction.user.id;
+    if (this.activeCreations.has(userId)) {
+      logger.info(`[instance=${this.instanceId}] [TICKET_CREATE_REJECTED] Creator ${userId} is already in active creations.`);
+      await safeReply(interaction, [buildErrorEmbed(this.config, '⚠️ يرجى الانتظار، يتم حالياً إنشاء تذكرتك...')]);
       return;
     }
-
-    const existing = await this.findExistingOpenTicket(interaction.guildId, interaction.user.id);
-    if (existing?.channel_id) {
-      const existingChannel = await interaction.guild.channels.fetch(existing.channel_id).catch(() => null);
-      if (!existingChannel) {
-        await this.ticketRepository.closeByChannel(existing.channel_id, {
-          closed_by: interaction.user.id,
-          closed_by_tag: interaction.user.tag,
-          close_reason: 'Auto-closed: channel no longer exists',
-        }).catch(() => null);
-        logger.info(`Auto-closed stale ticket #${existing.ticket_number} (channel deleted)`);
-      } else {
-        await safeEditReply(interaction, [buildAlreadyOpenEmbed(this.config, existing.channel_id)]);
-        return;
-      }
-    }
-
-    let createdChannel: TextChannel | null = null;
-    let createdTicket: TicketRecord | null = null;
+    this.activeCreations.add(userId);
+    logger.info(`[instance=${this.instanceId}] [TICKET_CREATE_START] Creator: ${userId}`);
 
     try {
-      const tradeAmountValue = answers.find((ans) => ans.key === 'trade_amount')?.value;
-      const tradeAmount = tradeAmountValue ? await parseTradeAmountSmartly(tradeAmountValue) : null;
-
-      const ticketNumber = await this.ticketRepository.nextTicketNumber();
-      const channelName = this.buildTicketChannelName(category, ticketNumber, answers);
-      const topic = this.buildTicketTopic(ticketNumber, interaction.user.tag, interaction.user.id, category);
-
-      const created = await interaction.guild.channels.create({
-        name: channelName,
-        type: ChannelType.GuildText,
-        parent: this.config.guild.categoryId,
-        topic,
-        permissionOverwrites: this.buildPermissionOverwrites(interaction.guild, interaction.user.id, category, tradeAmount),
-      });
-
-      if (!isGuildTextChannelType(created) || created.type !== ChannelType.GuildText) {
-        throw new Error('Created channel is not a guild text channel.');
+      if (!(await safeDeferReply(interaction, `open-modal:${category.key}`))) {
+        return;
       }
 
-      createdChannel = created;
-
-      createdTicket = await this.ticketRepository.createTicket({
-        ticket_number: ticketNumber,
-        guild_id: interaction.guildId,
-        channel_id: created.id,
-        channel_name: created.name,
-        creator_id: interaction.user.id,
-        creator_tag: interaction.user.tag,
-        category_key: category.key,
-        category_label: category.label,
-        participant_ids: [],
-        answers,
-        metadata: {
-          panelChannelId: this.config.panel.channelId,
-          questionCount: answers.length,
-          openedByAvatarUrl: interaction.user.displayAvatarURL(),
-        },
-      });
-
-      let supportRolesToMention = [...category.supportRoleIds];
-      if (category.key === 'middleman') {
-        const MIDDLEMAN_ROLE = "1506010306407694346";
-        supportRolesToMention = [MIDDLEMAN_ROLE];
+      const existing = await this.findExistingOpenTicket(interaction.guildId, interaction.user.id);
+      if (existing?.channel_id) {
+        const existingChannel = await interaction.guild.channels.fetch(existing.channel_id).catch(() => null);
+        if (!existingChannel) {
+          await this.ticketRepository.closeByChannel(existing.channel_id, {
+            closed_by: interaction.user.id,
+            closed_by_tag: interaction.user.tag,
+            close_reason: 'Auto-closed: channel no longer exists',
+          }).catch(() => null);
+          logger.info(`Auto-closed stale ticket #${existing.ticket_number} (channel deleted)`);
+        } else {
+          await safeEditReply(interaction, [buildAlreadyOpenEmbed(this.config, existing.channel_id)]);
+          return;
+        }
       }
 
-      const welcomeEmbeds = await buildTicketEmbeds(interaction.guild, this.config, createdTicket);
-      const validMentions = [
-        ...this.config.guild.mentionRolesOnOpen,
-        ...supportRolesToMention,
-      ].filter((roleId) => interaction.guild.roles.cache.has(roleId));
+      let createdChannel: TextChannel | null = null;
+      let createdTicket: TicketRecord | null = null;
 
-      const mentionRoles = formatRoleMentions(validMentions);
+      try {
+        const tradeAmountValue = answers.find((ans) => ans.key === 'trade_amount')?.value;
+        const tradeAmount = tradeAmountValue ? await parseTradeAmountSmartly(tradeAmountValue) : null;
 
-      const sentMessage = await created.send({
-        content: `${interaction.user} ${mentionRoles}`.trim(),
-        embeds: welcomeEmbeds,
-        components: buildTicketActionRows(this.config),
-        allowedMentions: {
-          users: [interaction.user.id],
-          roles: uniqueStrings(validMentions),
-        },
-      });
+        const ticketNumber = await this.ticketRepository.nextTicketNumber();
+        const channelName = this.buildTicketChannelName(category, ticketNumber, answers);
+        const topic = this.buildTicketTopic(ticketNumber, interaction.user.tag, interaction.user.id, category);
 
-      if (this.config.limits.pinSummaryMessageOnCreate) {
-        await sentMessage.pin().catch(() => null);
-      }
+        const created = await interaction.guild.channels.create({
+          name: channelName,
+          type: ChannelType.GuildText,
+          parent: this.config.guild.categoryId,
+          topic,
+          permissionOverwrites: this.buildPermissionOverwrites(interaction.guild, interaction.user.id, category, tradeAmount),
+        });
 
-      await this.sendLog(interaction.guild, this.buildOpenLogEmbed(createdTicket, created.id));
+        if (!isGuildTextChannelType(created) || created.type !== ChannelType.GuildText) {
+          throw new Error('Created channel is not a guild text channel.');
+        }
 
-      await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم إنشاء التذكرة', `${this.config.ticket.messages.created} <#${created.id}>`)]);
-    } catch (error) {
-      logger.error('Failed to open ticket', error instanceof Error ? error.message : error);
+        createdChannel = created;
 
-      if (createdTicket) {
-        await this.ticketRepository.deleteTicketById(createdTicket.id).catch(() => null);
-      }
+        createdTicket = await this.ticketRepository.createTicket({
+          ticket_number: ticketNumber,
+          guild_id: interaction.guildId,
+          channel_id: created.id,
+          channel_name: created.name,
+          creator_id: interaction.user.id,
+          creator_tag: interaction.user.tag,
+          category_key: category.key,
+          category_label: category.label,
+          participant_ids: [],
+          answers,
+          metadata: {
+            panelChannelId: this.config.panel.channelId,
+            questionCount: answers.length,
+            openedByAvatarUrl: interaction.user.displayAvatarURL(),
+          },
+        });
 
-      if (createdChannel) {
-        await createdChannel.delete().catch(() => null);
-      }
+        let supportRolesToMention = [...category.supportRoleIds];
+        if (category.key === 'middleman') {
+          const MIDDLEMAN_ROLE = "1506010306407694346";
+          supportRolesToMention = [MIDDLEMAN_ROLE];
+        }
 
-      if (error instanceof DuplicateOpenTicketError) {
-        const duplicate = await this.ticketRepository.findOpenByCreator(interaction.guildId, interaction.user.id);
-        const existingChannelId = duplicate?.channel_id || interaction.channelId || interaction.channel?.id;
+        const welcomeEmbeds = await buildTicketEmbeds(interaction.guild, this.config, createdTicket);
+        const validMentions = [
+          ...this.config.guild.mentionRolesOnOpen,
+          ...supportRolesToMention,
+        ].filter((roleId) => interaction.guild.roles.cache.has(roleId));
 
-        if (!existingChannelId) {
-          await safeEditReply(interaction, [buildErrorEmbed(this.config, 'تم اكتشاف تذكرة مفتوحة لكن تعذر تحديد القناة الخاصة بها.')]);
+        const mentionRoles = formatRoleMentions(validMentions);
+
+        const sentMessage = await created.send({
+          content: `${interaction.user} ${mentionRoles}`.trim(),
+          embeds: welcomeEmbeds,
+          components: buildTicketActionRows(this.config),
+          allowedMentions: {
+            users: [interaction.user.id],
+            roles: uniqueStrings(validMentions),
+          },
+        });
+
+        if (this.config.limits.pinSummaryMessageOnCreate) {
+          await sentMessage.pin().catch(() => null);
+        }
+
+        await this.sendLog(interaction.guild, this.buildOpenLogEmbed(createdTicket, created.id));
+
+        await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم إنشاء التذكرة', `${this.config.ticket.messages.created} <#${created.id}>`)]);
+      } catch (error) {
+        logger.error('Failed to open ticket', error instanceof Error ? error.message : error);
+
+        if (createdTicket) {
+          await this.ticketRepository.deleteTicketById(createdTicket.id).catch(() => null);
+        }
+
+        if (createdChannel) {
+          await createdChannel.delete().catch(() => null);
+        }
+
+        if (error instanceof DuplicateOpenTicketError) {
+          const duplicate = await this.ticketRepository.findOpenByCreator(interaction.guildId, interaction.user.id);
+          const existingChannelId = duplicate?.channel_id || interaction.channelId || interaction.channel?.id;
+
+          if (!existingChannelId) {
+            await safeEditReply(interaction, [buildErrorEmbed(this.config, 'تم اكتشاف تذكرة مفتوحة لكن تعذر تحديد القناة الخاصة بها.')]);
+            return;
+          }
+
+          await safeEditReply(interaction, [buildAlreadyOpenEmbed(this.config, existingChannelId)]);
           return;
         }
 
-        await safeEditReply(interaction, [buildAlreadyOpenEmbed(this.config, existingChannelId)]);
-        return;
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, 'حدث خطأ أثناء إنشاء التذكرة.')]);
       }
-
-      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'حدث خطأ أثناء إنشاء التذكرة.')]);
+    } finally {
+      this.activeCreations.delete(userId);
+      logger.info(`[instance=${this.instanceId}] [TICKET_CREATE_END] Creator: ${userId}`);
     }
   }
 
@@ -1052,163 +1070,178 @@ export class TicketService {
     category: TicketCategoryConfig
   ): Promise<void> {
     if (!interaction.inCachedGuild()) return;
-    if (!(await safeDeferReply(interaction, `open-wait:${category.key}`))) {
+
+    const userId = interaction.user.id;
+    if (this.activeCreations.has(userId)) {
+      logger.info(`[instance=${this.instanceId}] [WAIT_ROOM_CREATE_REJECTED] Creator ${userId} is already in active creations.`);
+      await safeReply(interaction, [buildErrorEmbed(this.config, '⚠️ يرجى الانتظار، يتم حالياً إنشاء تذكرتك...')]);
       return;
     }
-
-    const existing = await this.findExistingOpenTicket(interaction.guildId, interaction.user.id);
-    if (existing?.channel_id) {
-      const existingChannel = await interaction.guild.channels.fetch(existing.channel_id).catch(() => null);
-      if (!existingChannel) {
-        await this.ticketRepository.closeByChannel(existing.channel_id, {
-          closed_by: interaction.user.id,
-          closed_by_tag: interaction.user.tag,
-          close_reason: 'Auto-closed: channel no longer exists',
-        }).catch(() => null);
-        logger.info(`Auto-closed stale ticket #${existing.ticket_number} (channel deleted)`);
-      } else {
-        await safeEditReply(interaction, [buildAlreadyOpenEmbed(this.config, existing.channel_id)]);
-        return;
-      }
-    }
-
-    let createdChannel: TextChannel | null = null;
-    let createdTicket: TicketRecord | null = null;
+    this.activeCreations.add(userId);
+    logger.info(`[instance=${this.instanceId}] [WAIT_ROOM_CREATE_START] Creator: ${userId}`);
 
     try {
-      const ticketNumber = await this.ticketRepository.nextTicketNumber();
-      const paddedNumber = padTicketNumber(ticketNumber, 3);
-      const channelName = `wait-${paddedNumber}`;
-      
-      const waitCategoryId = '1486147476011352307';
-      
-      const permissionOverwrites = [
-        {
-          id: interaction.guild.roles.everyone.id,
-          deny: [PermissionFlagsBits.ViewChannel],
-        },
-        {
-          id: interaction.user.id,
-          allow: [
-            PermissionFlagsBits.ViewChannel,
-            PermissionFlagsBits.SendMessages,
-            PermissionFlagsBits.ReadMessageHistory,
-            PermissionFlagsBits.AttachFiles,
-            PermissionFlagsBits.EmbedLinks,
-          ],
-        },
-      ];
-      
-      const botMemberId = interaction.guild.members.me?.id;
-      if (botMemberId) {
-        permissionOverwrites.push({
-          id: botMemberId,
-          allow: [
-            PermissionFlagsBits.ViewChannel,
-            PermissionFlagsBits.SendMessages,
-            PermissionFlagsBits.ReadMessageHistory,
-            PermissionFlagsBits.AttachFiles,
-            PermissionFlagsBits.EmbedLinks,
-            PermissionFlagsBits.ManageChannels,
-            PermissionFlagsBits.ManageMessages,
-          ],
-        });
+      if (!(await safeDeferReply(interaction, `open-wait:${category.key}`))) {
+        return;
       }
 
-      const staffRoleIds = uniqueStrings([
-        ...this.config.guild.supportRoleIds,
-        ...this.config.guild.managerRoleIds,
-      ]);
-      for (const roleId of staffRoleIds) {
-        if (interaction.guild.roles.cache.has(roleId)) {
-          permissionOverwrites.push({
-            id: roleId,
+      const existing = await this.findExistingOpenTicket(interaction.guildId, interaction.user.id);
+      if (existing?.channel_id) {
+        const existingChannel = await interaction.guild.channels.fetch(existing.channel_id).catch(() => null);
+        if (!existingChannel) {
+          await this.ticketRepository.closeByChannel(existing.channel_id, {
+            closed_by: interaction.user.id,
+            closed_by_tag: interaction.user.tag,
+            close_reason: 'Auto-closed: channel no longer exists',
+          }).catch(() => null);
+          logger.info(`Auto-closed stale ticket #${existing.ticket_number} (channel deleted)`);
+        } else {
+          await safeEditReply(interaction, [buildAlreadyOpenEmbed(this.config, existing.channel_id)]);
+          return;
+        }
+      }
+
+      let createdChannel: TextChannel | null = null;
+      let createdTicket: TicketRecord | null = null;
+
+      try {
+        const ticketNumber = await this.ticketRepository.nextTicketNumber();
+        const paddedNumber = padTicketNumber(ticketNumber, 3);
+        const channelName = `wait-${paddedNumber}`;
+        
+        const waitCategoryId = '1486147476011352307';
+        
+        const permissionOverwrites = [
+          {
+            id: interaction.guild.roles.everyone.id,
+            deny: [PermissionFlagsBits.ViewChannel],
+          },
+          {
+            id: interaction.user.id,
             allow: [
               PermissionFlagsBits.ViewChannel,
               PermissionFlagsBits.SendMessages,
               PermissionFlagsBits.ReadMessageHistory,
+              PermissionFlagsBits.AttachFiles,
+              PermissionFlagsBits.EmbedLinks,
+            ],
+          },
+        ];
+        
+        const botMemberId = interaction.guild.members.me?.id;
+        if (botMemberId) {
+          permissionOverwrites.push({
+            id: botMemberId,
+            allow: [
+              PermissionFlagsBits.ViewChannel,
+              PermissionFlagsBits.SendMessages,
+              PermissionFlagsBits.ReadMessageHistory,
+              PermissionFlagsBits.AttachFiles,
+              PermissionFlagsBits.EmbedLinks,
+              PermissionFlagsBits.ManageChannels,
+              PermissionFlagsBits.ManageMessages,
             ],
           });
         }
+
+        const staffRoleIds = uniqueStrings([
+          ...this.config.guild.supportRoleIds,
+          ...this.config.guild.managerRoleIds,
+        ]);
+        for (const roleId of staffRoleIds) {
+          if (interaction.guild.roles.cache.has(roleId)) {
+            permissionOverwrites.push({
+              id: roleId,
+              allow: [
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.ReadMessageHistory,
+              ],
+            });
+          }
+        }
+
+        const created = await interaction.guild.channels.create({
+          name: channelName,
+          type: ChannelType.GuildText,
+          parent: waitCategoryId,
+          topic: `Wait Room for Ticket #${ticketNumber} | User: ${interaction.user.tag} (${interaction.user.id})`,
+          permissionOverwrites,
+        });
+
+        if (!isGuildTextChannelType(created) || created.type !== ChannelType.GuildText) {
+          throw new Error('Created wait channel is not a guild text channel.');
+        }
+
+        createdChannel = created;
+
+        createdTicket = await this.ticketRepository.createTicket({
+          ticket_number: ticketNumber,
+          guild_id: interaction.guildId,
+          channel_id: created.id,
+          channel_name: created.name,
+          creator_id: interaction.user.id,
+          creator_tag: interaction.user.tag,
+          category_key: category.key,
+          category_label: category.label,
+          participant_ids: [],
+          answers: [],
+          metadata: {
+            wait_room: true,
+            trade_value: null,
+            agreed: false,
+            openedByAvatarUrl: interaction.user.displayAvatarURL(),
+          },
+        });
+
+        const embed = this.buildWaitRoomEmbed(interaction.member as GuildMember);
+        
+        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
+            .setCustomId('wait:btn:agree')
+            .setLabel('تم قراءة الشروط وموافق على الشروط والأحكام')
+            .setStyle(ButtonStyle.Success),
+          new ButtonBuilder()
+            .setCustomId('wait:btn:trade_value')
+            .setLabel('كتابة التريد في حدود كم دولار $')
+            .setStyle(ButtonStyle.Primary)
+        );
+
+        await created.send({
+          content: `${interaction.user}`,
+          embeds: [embed],
+          components: [row],
+        });
+
+        const logChannelId = '1486132662753034280';
+        const logChannel = await interaction.guild.channels.fetch(logChannelId).catch(() => null);
+        if (isGuildTextChannelType(logChannel)) {
+          const logEmbed = buildSuccessEmbed(this.config, 'Wait Room Created', `تم إنشاء غرفة انتظار جديدة <#${created.id}>.`)
+            .addFields(
+              { name: 'رقم التذكرة', value: `#${ticketNumber}`, inline: true },
+              { name: 'صاحب الطلب', value: `${interaction.user} (${interaction.user.id})`, inline: true },
+              { name: 'نوع الطلب', value: category.label, inline: true }
+            );
+          await logChannel.send({ embeds: [logEmbed] }).catch(() => null);
+        }
+
+        await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم إنشاء غرفة الانتظار', `يرجى التوجه إلى <#${created.id}> لإكمال الخطوات والموافقة على الشروط.`)]);
+      } catch (error) {
+        logger.error('Failed to open wait room', error instanceof Error ? error.message : error);
+
+        if (createdTicket) {
+          await this.ticketRepository.deleteTicketById(createdTicket.id).catch(() => null);
+        }
+
+        if (createdChannel) {
+          await createdChannel.delete().catch(() => null);
+        }
+
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, 'حدث خطأ أثناء إنشاء غرفة الانتظار.')]);
       }
-
-      const created = await interaction.guild.channels.create({
-        name: channelName,
-        type: ChannelType.GuildText,
-        parent: waitCategoryId,
-        topic: `Wait Room for Ticket #${ticketNumber} | User: ${interaction.user.tag} (${interaction.user.id})`,
-        permissionOverwrites,
-      });
-
-      if (!isGuildTextChannelType(created) || created.type !== ChannelType.GuildText) {
-        throw new Error('Created wait channel is not a guild text channel.');
-      }
-
-      createdChannel = created;
-
-      createdTicket = await this.ticketRepository.createTicket({
-        ticket_number: ticketNumber,
-        guild_id: interaction.guildId,
-        channel_id: created.id,
-        channel_name: created.name,
-        creator_id: interaction.user.id,
-        creator_tag: interaction.user.tag,
-        category_key: category.key,
-        category_label: category.label,
-        participant_ids: [],
-        answers: [],
-        metadata: {
-          wait_room: true,
-          trade_value: null,
-          agreed: false,
-          openedByAvatarUrl: interaction.user.displayAvatarURL(),
-        },
-      });
-
-      const embed = this.buildWaitRoomEmbed(interaction.member as GuildMember);
-      
-      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-        new ButtonBuilder()
-          .setCustomId('wait:btn:agree')
-          .setLabel('تم قراءة الشروط وموافق على الشروط والأحكام')
-          .setStyle(ButtonStyle.Success),
-        new ButtonBuilder()
-          .setCustomId('wait:btn:trade_value')
-          .setLabel('كتابة التريد في حدود كم دولار $')
-          .setStyle(ButtonStyle.Primary)
-      );
-
-      await created.send({
-        content: `${interaction.user}`,
-        embeds: [embed],
-        components: [row],
-      });
-
-      const logChannelId = '1486132662753034280';
-      const logChannel = await interaction.guild.channels.fetch(logChannelId).catch(() => null);
-      if (isGuildTextChannelType(logChannel)) {
-        const logEmbed = buildSuccessEmbed(this.config, 'Wait Room Created', `تم إنشاء غرفة انتظار جديدة <#${created.id}>.`)
-          .addFields(
-            { name: 'رقم التذكرة', value: `#${ticketNumber}`, inline: true },
-            { name: 'صاحب الطلب', value: `${interaction.user} (${interaction.user.id})`, inline: true },
-            { name: 'نوع الطلب', value: category.label, inline: true }
-          );
-        await logChannel.send({ embeds: [logEmbed] }).catch(() => null);
-      }
-
-      await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم إنشاء غرفة الانتظار', `يرجى التوجه إلى <#${created.id}> لإكمال الخطوات والموافقة على الشروط.`)]);
-    } catch (error) {
-      logger.error('Failed to open wait room', error instanceof Error ? error.message : error);
-
-      if (createdTicket) {
-        await this.ticketRepository.deleteTicketById(createdTicket.id).catch(() => null);
-      }
-
-      if (createdChannel) {
-        await createdChannel.delete().catch(() => null);
-      }
-
-      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'حدث خطأ أثناء إنشاء غرفة الانتظار.')]);
+    } finally {
+      this.activeCreations.delete(userId);
+      logger.info(`[instance=${this.instanceId}] [WAIT_ROOM_CREATE_END] Creator: ${userId}`);
     }
   }
 
@@ -1217,8 +1250,8 @@ export class TicketService {
 
     const channelId = interaction.channelId;
     const ticket = await this.ticketRepository.findByChannelId(channelId);
-    if (!ticket) {
-      await safeReply(interaction, [buildErrorEmbed(this.config, 'تعذر العثور على بيانات التذكرة.')]);
+    if (!ticket || !(ticket.metadata as any)?.wait_room) {
+      await safeReply(interaction, [buildErrorEmbed(this.config, '❌ تم تفعيل هذه التذكرة أو إغلاقها بالفعل.')]);
       return;
     }
 
@@ -1281,15 +1314,43 @@ export class TicketService {
     }
 
     if (interaction.customId === 'wait:btn:final_confirm') {
-      await safeDeferReply(interaction, 'wait_final_confirm_defer');
-      
       const tradeValue = (ticket.metadata as any)?.trade_value;
       if (tradeValue === undefined || tradeValue === null) {
-        await safeEditReply(interaction, [buildErrorEmbed(this.config, '⚠️ يرجى تحديد قيمة التريد أولاً بالضغط على زر "كتابة التريد في حدود كم دولار $".')]);
+        await safeReply(interaction, [buildErrorEmbed(this.config, '⚠️ يرجى تحديد قيمة التريد أولاً بالضغط على زر "كتابة التريد في حدود كم دولار $".')]);
         return;
       }
 
-      await this.transitionWaitRoomToTicket(interaction, ticket, Number(tradeValue));
+      if (this.activeTransitions.has(ticket.id) || (ticket.metadata as any)?.transitioning) {
+        logger.info(`[instance=${this.instanceId}] [TRANSITION_REJECTED] Ticket ${ticket.id} is already transitioning.`);
+        await safeReply(interaction, [buildErrorEmbed(this.config, '⚠️ جاري معالجة تفعيل التذكرة بالفعل، يرجى الانتظار...')]);
+        return;
+      }
+      this.activeTransitions.add(ticket.id);
+      logger.info(`[instance=${this.instanceId}] [TRANSITION_LOCK_ACQUIRED] Ticket: ${ticket.id}`);
+
+      try {
+        const disabledRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
+            .setCustomId('wait:btn:final_confirm')
+            .setLabel('⏳ جاري التفعيل...')
+            .setStyle(ButtonStyle.Success)
+            .setDisabled(true)
+        );
+        await interaction.message.edit({ components: [disabledRow] }).catch(() => null);
+      } catch (err) {
+        logger.error('Failed to disable final confirm button', err);
+      }
+
+      if (!(await safeDeferReply(interaction, 'wait_final_confirm_defer'))) {
+        this.activeTransitions.delete(ticket.id);
+        return;
+      }
+
+      try {
+        await this.transitionWaitRoomToTicket(interaction, ticket, Number(tradeValue));
+      } finally {
+        this.activeTransitions.delete(ticket.id);
+      }
     }
   }
 
@@ -1342,14 +1403,25 @@ export class TicketService {
     const guild = interaction.guild!;
     const oldChannel = interaction.channel as TextChannel;
     
+    // Acquire database lock first
+    const lockAcquired = await this.ticketRepository.acquireTransitionLock(ticket.id, ticket.metadata);
+    if (!lockAcquired) {
+      logger.info(`[instance=${this.instanceId}] [TRANSITION_DB_LOCK_FAILED] Ticket: ${ticket.id}`);
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, '⚠️ جاري معالجة تفعيل هذه التذكرة بالفعل في نافذة أخرى.')]);
+      return;
+    }
+    logger.info(`[instance=${this.instanceId}] [TRANSITION_DB_LOCK_ACQUIRED] Ticket: ${ticket.id}`);
+
     const isNewMediator = tradeValue <= 40;
     const mediatorRoleId = isNewMediator ? '1507642618157465600' : '1506010306407694346';
     const mediatorRoleName = isNewMediator ? 'وسيط جديد' : 'وسيط مضمون';
     const mediatorLabel = isNewMediator ? 'جديد' : 'مضمون';
     
     const paddedNumber = padTicketNumber(ticket.ticket_number, this.config.naming.zeroPadLength);
-    const channelName = isNewMediator ? `وسيط-جديد-${paddedNumber}` : `وسيط-${paddedNumber}`;
+    const channelName = isNewMediator ? `وسيط-جديد-${paddedNumber}` : `وسيط-مضمون-${paddedNumber}`;
     
+    let createdChannel: TextChannel | null = null;
+
     try {
       const permissionOverwrites = [
         {
@@ -1433,6 +1505,8 @@ export class TicketService {
         throw new Error('Created channel is not a guild text channel.');
       }
 
+      createdChannel = created;
+
       const answers = [
         {
           key: 'trade_amount',
@@ -1448,6 +1522,8 @@ export class TicketService {
         mediator_role_id: mediatorRoleId,
         mediator_role_name: mediatorRoleName,
       };
+      delete (updatedMetadata as any).transitioning;
+      delete (updatedMetadata as any).transitioned_at;
 
       const updatedTicket = await this.ticketRepository.updateChannelInfo(
         ticket.channel_id!,
@@ -1472,13 +1548,28 @@ export class TicketService {
         await sentMessage.pin().catch(() => null);
       }
 
-      await oldChannel.delete().catch(() => null);
+      await oldChannel.send({
+        content: `🔔 **تم إنشاء التذكرة الأساسية بنجاح:** <#${created.id}>\nسيتم حذف هذه القناة المؤقتة تلقائياً خلال 5 ثوانٍ.`
+      }).catch(() => null);
+
+      setTimeout(() => {
+        oldChannel.delete().catch(() => null);
+      }, 5000);
 
       await this.sendCustomOpenLog(guild, updatedTicket, created.id, tradeValue, mediatorRoleName, mediatorLabel);
 
       await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم تفعيل التذكرة', `تم فتح التذكرة بنجاح في القناة: <#${created.id}>`)]);
     } catch (error) {
       logger.error('Failed to transition wait room to ticket', error instanceof Error ? error.message : error);
+      
+      // Cleanup created Discord channel if database update failed
+      if (createdChannel) {
+        await createdChannel.delete().catch(() => null);
+      }
+
+      // Release DB lock so user can try again
+      await this.ticketRepository.releaseTransitionLock(ticket.id, ticket.metadata).catch(() => null);
+
       await safeEditReply(interaction, [buildErrorEmbed(this.config, 'حدث خطأ أثناء تفعيل التذكرة. يرجى مراجعة الإدارة.')]);
     }
   }

@@ -284,6 +284,15 @@ function trackLifecycleHealth(): void {
 }
 
 client.on(Events.InteractionCreate, async (interaction) => {
+  const customId = interaction.isButton() || interaction.isModalSubmit() || interaction.isStringSelectMenu()
+    ? interaction.customId
+    : (interaction.isCommand() ? `/${interaction.commandName}` : 'N/A');
+
+  logger.info(
+    `[instance=${INSTANCE_ID}] [INTERACTION_RECEIVED] ID: ${interaction.id}, Type: ${interaction.type}, ` +
+    `User: ${interaction.user.tag} (${interaction.user.id}), CustomId/Cmd: ${customId}`
+  );
+
   try {
     if (interaction.isChatInputCommand()) {
       await handleCommand(interaction);

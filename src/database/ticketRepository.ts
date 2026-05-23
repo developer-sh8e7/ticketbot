@@ -262,6 +262,46 @@ export class TicketRepository {
     }
   }
 
+  public async acquireTransitionLock(ticketId: string, currentMetadata: Record<string, any>): Promise<boolean> {
+    try {
+      const { data, error } = await this.supabase
+        .from('tickets')
+        .update({
+          metadata: {
+            ...currentMetadata,
+            transitioning: true,
+            transitioned_at: new Date().toISOString(),
+          }
+        })
+        .eq('id', ticketId)
+        .eq('status', 'open')
+        .is('metadata->transitioning', null)
+        .select('id')
+        .maybeSingle();
+
+      if (error) {
+        return false;
+      }
+      return !!data;
+    } catch {
+      return false;
+    }
+  }
+
+  public async releaseTransitionLock(ticketId: string, currentMetadata: Record<string, any>): Promise<void> {
+    try {
+      const cleanedMetadata = { ...currentMetadata };
+      delete (cleanedMetadata as any).transitioning;
+      delete (cleanedMetadata as any).transitioned_at;
+      await this.supabase
+        .from('tickets')
+        .update({ metadata: cleanedMetadata })
+        .eq('id', ticketId);
+    } catch (err) {
+      // ignore
+    }
+  }
+
   public async updateChannelInfo(
     oldChannelId: string,
     newChannelId: string,
