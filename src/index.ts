@@ -309,6 +309,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
         trackLifecycleHealth();
         return;
       }
+
+      if (interaction.customId === 'wait:modal:trade_value') {
+        await ticketService.handleWaitTradeValueModal(interaction);
+        trackLifecycleHealth();
+        return;
+      }
     }
 
     if (interaction.isButton()) {
@@ -316,6 +322,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
       if (ticketButtonIds.includes(interaction.customId as (typeof ticketButtonIds)[number])) {
         await ticketService.handleTicketButton(interaction);
         trackLifecycleHealth();
+        return;
+      }
+
+      if (interaction.customId.startsWith('wait:btn:')) {
+        await ticketService.handleWaitButton(interaction);
+        trackLifecycleHealth();
+        return;
       }
     }
   } catch (error) {

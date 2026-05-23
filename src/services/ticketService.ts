@@ -2,10 +2,14 @@ import {
   ActionRowBuilder,
   AttachmentBuilder,
   ButtonBuilder,
+  ButtonStyle,
   ChannelType,
   EmbedBuilder,
   MessageFlags,
+  ModalBuilder,
   PermissionFlagsBits,
+  TextInputBuilder,
+  TextInputStyle,
   type ButtonInteraction,
   type ChatInputCommandInteraction,
   type Guild,
@@ -314,6 +318,11 @@ export class TicketService {
       return;
     }
 
+    if (category.key === 'middleman') {
+      await this.processWaitRoomCreation(interaction, category);
+      return;
+    }
+
     if (!category.questions || category.questions.length === 0) {
       await this.processTicketCreation(interaction, category, []);
       return;
@@ -610,6 +619,10 @@ export class TicketService {
         close_reason: 'Closed via ticket button',
       });
 
+      await this.sendCustomCloseLog(context.guild, closedTicket, interaction.user.id, context.channel).catch((error) => {
+        logger.error('Failed to send custom close log', error);
+      });
+
       await this.sendTranscript(context.guild, closedTicket, context.channel).catch((error) => {
         logger.warn('Failed to generate transcript', error instanceof Error ? error.message : error);
       });
@@ -659,6 +672,10 @@ export class TicketService {
       );
 
       await this.applyClaimPermissions(context, newClaimerId);
+
+      await this.sendCustomClaimLog(context.guild, updated, newClaimerId).catch((error) => {
+        logger.error('Failed to send custom claim log', error);
+      });
 
       const nowClaimed = newClaimerId !== null;
       const newComponents = buildTicketActionRows(this.config, nowClaimed);
@@ -910,6 +927,10 @@ export class TicketService {
         close_reason: reason,
       });
 
+      await this.sendCustomCloseLog(interaction.guild, closedTicket, interaction.user.id, channel).catch((error) => {
+        logger.error('Failed to send custom close log', error);
+      });
+
       await this.sendTranscript(interaction.guild, closedTicket, channel).catch((error) => {
         logger.warn('Failed to generate transcript', error instanceof Error ? error.message : error);
       });
@@ -967,5 +988,629 @@ export class TicketService {
       logger.error('Failed to fetch stats', error instanceof Error ? error.message : error);
       await safeEditReply(interaction, [buildErrorEmbed(this.config, 'تعذر جلب الإحصائيات.')]);
     }
+  }
+
+  private buildWaitRoomEmbed(member: GuildMember): EmbedBuilder {
+    return new EmbedBuilder()
+      .setColor(hexToDecimal(this.config.bot.embedColor))
+      .setTitle('🛡️ نظام التحقق المسبق والوساطة الآمنة')
+      .setDescription(
+        `أهلاً بك يا ${member} في نظام التحقق والوساطة.\n` +
+        `يرجى قراءة الاتفاقية التالية بعناية واتباع الخطوات المطلوبة لإكمال فتح التذكرة.`
+      )
+      .setThumbnail(this.config.images.thumbnailUrl || null)
+      .addFields(
+        {
+          name: '📜 1. قوانين الوساطة العامة',
+          value:
+            '• يمنع تماماً التعامل مع أي وسيط خارج قنوات التذاكر الرسمية.\n' +
+            '• يمنع إرسال أي روابط أو دعوات سيرفرات أخرى داخل تذكرة الوساطة.\n' +
+            '• يجب احترام الوسيط والالتزام بتعليماته حرفياً لإتمام التبادل بنجاح.'
+        },
+        {
+          name: '💸 2. تفاصيل نظام التعويض والضمان',
+          value:
+            '• **رول التعويض**: <@&1507646852869259325>\n' +
+            '• في حال حدوث سرقة من وسيط جديد، فإن المسؤولين عن التعويض هم فقط:\n' +
+            '  * الأشخاص الذين يحملون رتبة التعويض.\n' +
+            '  * أو الشخص الذي قام بإدخال هذا الوسيط الجديد إلى النظام.\n' +
+            '• **طبيعة التعويض**: التعويض **ليس أموالاً حقيقية نهائياً**، بل يكون غرضاً داخل اللعبة أو غرضاً مشابهاً أو غرضاً أقوى قليلاً.'
+        },
+        {
+          name: '🚫 3. الأشياء غير المشمولة بالتعويض',
+          value:
+            'لا يوجد أي تعويض نهائياً على:\n' +
+            '• الشخصيات (Characters)\n' +
+            '• المابات (Maps)\n' +
+            '• الأغراض النادرة جداً (Very Rare Items)\n' +
+            '• الأغراض التي يصعب تعويضها أو توفيرها.'
+        },
+        {
+          name: '⚠️ 4. مسؤولية العميل وإخلاء المسؤولية (هام جداً)',
+          value:
+            '• العميل مسؤول بشكل كامل عن صحة البيانات وقيمة التريد التي يسجلها.\n' +
+            '• **تحذير صارم**: في حال قام العميل بكتابة قيمة تريد غير صحيحة أو أقل من القيمة الحقيقية وتمت السرقة، فالإدارة غير مسؤولة نهائيًا عن أي خسارة أو تعويض.\n' +
+            '• بمجرد الضغط على زر الموافقة: فهذا يعتبر موافقة كاملة على جميع الشروط والأحكام وتحمل كامل للمسؤولية.'
+        },
+        {
+          name: '⚙️ 5. شرح خطوات إكمال التذكرة',
+          value:
+            '1. اضغط على زر **كتابة التريد في حدود كم دولار $** لإدخال قيمة التريد بالدولار.\n' +
+            '2. اضغط على زر **تم قراءة الشروط وموافق على الشروط والأحكام** لتأكيد موافقتك.\n' +
+            '3. سيظهر لك زر تأكيد نهائي، اضغط عليه ليقوم النظام بتحديد الوسيط المناسب وفتح التذكرة الأساسية تلقائياً.'
+        }
+      )
+      .setFooter({
+        text: 'بوابة الأمان والوساطة المعتمدة',
+        iconURL: this.config.bot.footerIconUrl || undefined
+      })
+      .setTimestamp();
+  }
+
+  private async processWaitRoomCreation(
+    interaction: StringSelectMenuInteraction,
+    category: TicketCategoryConfig
+  ): Promise<void> {
+    if (!interaction.inCachedGuild()) return;
+    if (!(await safeDeferReply(interaction, `open-wait:${category.key}`))) {
+      return;
+    }
+
+    const existing = await this.findExistingOpenTicket(interaction.guildId, interaction.user.id);
+    if (existing?.channel_id) {
+      const existingChannel = await interaction.guild.channels.fetch(existing.channel_id).catch(() => null);
+      if (!existingChannel) {
+        await this.ticketRepository.closeByChannel(existing.channel_id, {
+          closed_by: interaction.user.id,
+          closed_by_tag: interaction.user.tag,
+          close_reason: 'Auto-closed: channel no longer exists',
+        }).catch(() => null);
+        logger.info(`Auto-closed stale ticket #${existing.ticket_number} (channel deleted)`);
+      } else {
+        await safeEditReply(interaction, [buildAlreadyOpenEmbed(this.config, existing.channel_id)]);
+        return;
+      }
+    }
+
+    let createdChannel: TextChannel | null = null;
+    let createdTicket: TicketRecord | null = null;
+
+    try {
+      const ticketNumber = await this.ticketRepository.nextTicketNumber();
+      const paddedNumber = padTicketNumber(ticketNumber, 3);
+      const channelName = `wait-${paddedNumber}`;
+      
+      const waitCategoryId = '1486147476011352307';
+      
+      const permissionOverwrites = [
+        {
+          id: interaction.guild.roles.everyone.id,
+          deny: [PermissionFlagsBits.ViewChannel],
+        },
+        {
+          id: interaction.user.id,
+          allow: [
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.ReadMessageHistory,
+            PermissionFlagsBits.AttachFiles,
+            PermissionFlagsBits.EmbedLinks,
+          ],
+        },
+      ];
+      
+      const botMemberId = interaction.guild.members.me?.id;
+      if (botMemberId) {
+        permissionOverwrites.push({
+          id: botMemberId,
+          allow: [
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.ReadMessageHistory,
+            PermissionFlagsBits.AttachFiles,
+            PermissionFlagsBits.EmbedLinks,
+            PermissionFlagsBits.ManageChannels,
+            PermissionFlagsBits.ManageMessages,
+          ],
+        });
+      }
+
+      const staffRoleIds = uniqueStrings([
+        ...this.config.guild.supportRoleIds,
+        ...this.config.guild.managerRoleIds,
+      ]);
+      for (const roleId of staffRoleIds) {
+        if (interaction.guild.roles.cache.has(roleId)) {
+          permissionOverwrites.push({
+            id: roleId,
+            allow: [
+              PermissionFlagsBits.ViewChannel,
+              PermissionFlagsBits.SendMessages,
+              PermissionFlagsBits.ReadMessageHistory,
+            ],
+          });
+        }
+      }
+
+      const created = await interaction.guild.channels.create({
+        name: channelName,
+        type: ChannelType.GuildText,
+        parent: waitCategoryId,
+        topic: `Wait Room for Ticket #${ticketNumber} | User: ${interaction.user.tag} (${interaction.user.id})`,
+        permissionOverwrites,
+      });
+
+      if (!isGuildTextChannelType(created) || created.type !== ChannelType.GuildText) {
+        throw new Error('Created wait channel is not a guild text channel.');
+      }
+
+      createdChannel = created;
+
+      createdTicket = await this.ticketRepository.createTicket({
+        ticket_number: ticketNumber,
+        guild_id: interaction.guildId,
+        channel_id: created.id,
+        channel_name: created.name,
+        creator_id: interaction.user.id,
+        creator_tag: interaction.user.tag,
+        category_key: category.key,
+        category_label: category.label,
+        participant_ids: [],
+        answers: [],
+        metadata: {
+          wait_room: true,
+          trade_value: null,
+          agreed: false,
+          openedByAvatarUrl: interaction.user.displayAvatarURL(),
+        },
+      });
+
+      const embed = this.buildWaitRoomEmbed(interaction.member as GuildMember);
+      
+      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId('wait:btn:agree')
+          .setLabel('تم قراءة الشروط وموافق على الشروط والأحكام')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('wait:btn:trade_value')
+          .setLabel('كتابة التريد في حدود كم دولار $')
+          .setStyle(ButtonStyle.Primary)
+      );
+
+      await created.send({
+        content: `${interaction.user}`,
+        embeds: [embed],
+        components: [row],
+      });
+
+      const logChannelId = '1486132662753034280';
+      const logChannel = await interaction.guild.channels.fetch(logChannelId).catch(() => null);
+      if (isGuildTextChannelType(logChannel)) {
+        const logEmbed = buildSuccessEmbed(this.config, 'Wait Room Created', `تم إنشاء غرفة انتظار جديدة <#${created.id}>.`)
+          .addFields(
+            { name: 'رقم التذكرة', value: `#${ticketNumber}`, inline: true },
+            { name: 'صاحب الطلب', value: `${interaction.user} (${interaction.user.id})`, inline: true },
+            { name: 'نوع الطلب', value: category.label, inline: true }
+          );
+        await logChannel.send({ embeds: [logEmbed] }).catch(() => null);
+      }
+
+      await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم إنشاء غرفة الانتظار', `يرجى التوجه إلى <#${created.id}> لإكمال الخطوات والموافقة على الشروط.`)]);
+    } catch (error) {
+      logger.error('Failed to open wait room', error instanceof Error ? error.message : error);
+
+      if (createdTicket) {
+        await this.ticketRepository.deleteTicketById(createdTicket.id).catch(() => null);
+      }
+
+      if (createdChannel) {
+        await createdChannel.delete().catch(() => null);
+      }
+
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'حدث خطأ أثناء إنشاء غرفة الانتظار.')]);
+    }
+  }
+
+  public async handleWaitButton(interaction: ButtonInteraction): Promise<void> {
+    if (!interaction.inCachedGuild()) return;
+
+    const channelId = interaction.channelId;
+    const ticket = await this.ticketRepository.findByChannelId(channelId);
+    if (!ticket) {
+      await safeReply(interaction, [buildErrorEmbed(this.config, 'تعذر العثور على بيانات التذكرة.')]);
+      return;
+    }
+
+    if (interaction.user.id !== ticket.creator_id) {
+      await interaction.reply({
+        content: '❌ ليس لديك الصلاحية لاستخدام هذه الأزرار.',
+        flags: MessageFlags.Ephemeral
+      }).catch(() => null);
+      return;
+    }
+
+    if (interaction.customId === 'wait:btn:trade_value') {
+      const modal = new ModalBuilder()
+        .setCustomId('wait:modal:trade_value')
+        .setTitle('تحديد قيمة التريد بالدولار');
+
+      const input = new TextInputBuilder()
+        .setCustomId('trade_value_input')
+        .setLabel('قيمة التريد بالدولار ($)')
+        .setPlaceholder('مثال: 50 (اكتب الرقم فقط بالدولار)')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setMinLength(1)
+        .setMaxLength(10);
+
+      const row = new ActionRowBuilder<TextInputBuilder>().addComponents(input);
+      modal.addComponents(row);
+
+      await safeShowModal(interaction, modal, 'wait:modal:trade_value');
+      return;
+    }
+
+    if (interaction.customId === 'wait:btn:agree') {
+      await safeDeferReply(interaction, 'wait_agree_defer');
+      
+      const confirmEmbed = new EmbedBuilder()
+        .setColor(hexToDecimal(this.config.bot.embedColor))
+        .setTitle('⚠️ تأكيد نهائي لقراءة الشروط والقوانين')
+        .setDescription(
+          `**هل أنت متأكد أنك قرأت جميع الشروط والقوانين وفهمت نظام التعويض بالكامل؟**\n\n` +
+          `*تنبيه: أي خطأ في تحديد قيمة التريد يخلي مسؤولية الإدارة تماماً.*`
+        )
+        .setTimestamp();
+
+      const confirmRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId('wait:btn:final_confirm')
+          .setLabel('✅ تم قراءة الشروط والموافقة عليها')
+          .setStyle(ButtonStyle.Success)
+      );
+
+      await interaction.channel?.send({
+        content: `${interaction.user}`,
+        embeds: [confirmEmbed],
+        components: [confirmRow]
+      }).catch(() => null);
+
+      await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تأكيد الموافقة', 'تم إرسال رسالة التأكيد الإضافية أدناه. يرجى الضغط على زر التأكيد النهائي.')]);
+      return;
+    }
+
+    if (interaction.customId === 'wait:btn:final_confirm') {
+      await safeDeferReply(interaction, 'wait_final_confirm_defer');
+      
+      const tradeValue = (ticket.metadata as any)?.trade_value;
+      if (tradeValue === undefined || tradeValue === null) {
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, '⚠️ يرجى تحديد قيمة التريد أولاً بالضغط على زر "كتابة التريد في حدود كم دولار $".')]);
+        return;
+      }
+
+      await this.transitionWaitRoomToTicket(interaction, ticket, Number(tradeValue));
+    }
+  }
+
+  public async handleWaitTradeValueModal(interaction: ModalSubmitInteraction): Promise<void> {
+    if (!interaction.inCachedGuild()) return;
+    await safeDeferReply(interaction, 'wait_modal_defer');
+
+    const channelId = interaction.channelId;
+    if (!channelId) return;
+
+    const ticket = await this.ticketRepository.findByChannelId(channelId);
+    if (!ticket) {
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'تعذر العثور على بيانات التذكرة.')]);
+      return;
+    }
+
+    if (interaction.user.id !== ticket.creator_id) {
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ ليس لديك الصلاحية لتنفيذ هذا الإجراء.')]);
+      return;
+    }
+
+    const rawInput = interaction.fields.getTextInputValue('trade_value_input');
+    const parsedAmount = await parseTradeAmountSmartly(rawInput);
+
+    if (parsedAmount === null || isNaN(parsedAmount) || parsedAmount <= 0) {
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ يرجى إدخال رقم صحيح ومناسب لقيمة التريد بالدولار (مثال: 50).')]);
+      return;
+    }
+
+    const updatedMetadata = {
+      ...(ticket.metadata as Record<string, any>),
+      trade_value: parsedAmount,
+      trade_value_raw: rawInput,
+    };
+
+    await this.ticketRepository.updateMetadata(ticket.channel_id!, updatedMetadata);
+
+    await interaction.channel?.send({
+      embeds: [buildSuccessEmbed(this.config, 'تم تحديث قيمة التريد', `✅ تم حفظ قيمة التريد بنجاح: **$${parsedAmount}**`)]
+    }).catch(() => null);
+
+    await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم الحفظ', `✅ تم حفظ قيمة التريد بنجاح: **$${parsedAmount}**`)]);
+  }
+
+  private async transitionWaitRoomToTicket(
+    interaction: ButtonInteraction,
+    ticket: TicketRecord,
+    tradeValue: number
+  ): Promise<void> {
+    const guild = interaction.guild!;
+    const oldChannel = interaction.channel as TextChannel;
+    
+    const isNewMediator = tradeValue <= 40;
+    const mediatorRoleId = isNewMediator ? '1507642618157465600' : '1506010306407694346';
+    const mediatorRoleName = isNewMediator ? 'وسيط جديد' : 'وسيط مضمون';
+    const mediatorLabel = isNewMediator ? 'جديد' : 'مضمون';
+    
+    const paddedNumber = padTicketNumber(ticket.ticket_number, this.config.naming.zeroPadLength);
+    const channelName = isNewMediator ? `وسيط-جديد-${paddedNumber}` : `وسيط-${paddedNumber}`;
+    
+    try {
+      const permissionOverwrites = [
+        {
+          id: guild.roles.everyone.id,
+          deny: [PermissionFlagsBits.ViewChannel],
+        },
+        {
+          id: ticket.creator_id,
+          allow: [
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.ReadMessageHistory,
+            PermissionFlagsBits.AttachFiles,
+            PermissionFlagsBits.EmbedLinks,
+            PermissionFlagsBits.AddReactions,
+            PermissionFlagsBits.UseExternalEmojis,
+          ],
+        },
+        {
+          id: mediatorRoleId,
+          allow: [
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.ReadMessageHistory,
+            PermissionFlagsBits.AttachFiles,
+            PermissionFlagsBits.EmbedLinks,
+            PermissionFlagsBits.AddReactions,
+            PermissionFlagsBits.UseExternalEmojis,
+            PermissionFlagsBits.ManageMessages,
+          ],
+        }
+      ];
+      
+      const botMemberId = guild.members.me?.id;
+      if (botMemberId) {
+        permissionOverwrites.push({
+          id: botMemberId,
+          allow: [
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.ReadMessageHistory,
+            PermissionFlagsBits.AttachFiles,
+            PermissionFlagsBits.EmbedLinks,
+            PermissionFlagsBits.AddReactions,
+            PermissionFlagsBits.UseExternalEmojis,
+            PermissionFlagsBits.ManageChannels,
+            PermissionFlagsBits.ManageMessages,
+          ],
+        });
+      }
+
+      const managerRoleIds = this.config.guild.managerRoleIds;
+      for (const roleId of managerRoleIds) {
+        if (guild.roles.cache.has(roleId)) {
+          permissionOverwrites.push({
+            id: roleId,
+            allow: [
+              PermissionFlagsBits.ViewChannel,
+              PermissionFlagsBits.SendMessages,
+              PermissionFlagsBits.ReadMessageHistory,
+              PermissionFlagsBits.AttachFiles,
+              PermissionFlagsBits.EmbedLinks,
+              PermissionFlagsBits.AddReactions,
+              PermissionFlagsBits.UseExternalEmojis,
+              PermissionFlagsBits.ManageMessages,
+            ],
+          });
+        }
+      }
+
+      const mainCategoryId = this.config.guild.categoryId;
+      const created = await guild.channels.create({
+        name: channelName,
+        type: ChannelType.GuildText,
+        parent: mainCategoryId,
+        topic: `Ticket #${ticket.ticket_number} | Mediator: ${mediatorRoleName} | User: ${ticket.creator_tag} (${ticket.creator_id})`,
+        permissionOverwrites,
+      });
+
+      if (!isGuildTextChannelType(created) || created.type !== ChannelType.GuildText) {
+        throw new Error('Created channel is not a guild text channel.');
+      }
+
+      const answers = [
+        {
+          key: 'trade_amount',
+          label: 'قيمة التريد بالدولار ($)',
+          value: `$${tradeValue}`,
+        }
+      ];
+
+      const updatedMetadata = {
+        ...(ticket.metadata as Record<string, any>),
+        wait_room: false,
+        trade_value: tradeValue,
+        mediator_role_id: mediatorRoleId,
+        mediator_role_name: mediatorRoleName,
+      };
+
+      const updatedTicket = await this.ticketRepository.updateChannelInfo(
+        ticket.channel_id!,
+        created.id,
+        created.name,
+        answers,
+        updatedMetadata
+      );
+
+      const welcomeEmbeds = await buildTicketEmbeds(guild, this.config, updatedTicket);
+      const sentMessage = await created.send({
+        content: `<@${ticket.creator_id}> <@&${mediatorRoleId}>`.trim(),
+        embeds: welcomeEmbeds,
+        components: buildTicketActionRows(this.config),
+        allowedMentions: {
+          users: [ticket.creator_id],
+          roles: [mediatorRoleId],
+        },
+      });
+
+      if (this.config.limits.pinSummaryMessageOnCreate) {
+        await sentMessage.pin().catch(() => null);
+      }
+
+      await oldChannel.delete().catch(() => null);
+
+      await this.sendCustomOpenLog(guild, updatedTicket, created.id, tradeValue, mediatorRoleName, mediatorLabel);
+
+      await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم تفعيل التذكرة', `تم فتح التذكرة بنجاح في القناة: <#${created.id}>`)]);
+    } catch (error) {
+      logger.error('Failed to transition wait room to ticket', error instanceof Error ? error.message : error);
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'حدث خطأ أثناء تفعيل التذكرة. يرجى مراجعة الإدارة.')]);
+    }
+  }
+
+  private async sendCustomOpenLog(
+    guild: Guild,
+    ticket: TicketRecord,
+    channelId: string,
+    tradeValue: number,
+    mediatorRoleName: string,
+    mediatorLabel: string
+  ): Promise<void> {
+    const logChannelId = '1486132662753034280';
+    const logChannel = await guild.channels.fetch(logChannelId).catch(() => null);
+    if (!isGuildTextChannelType(logChannel)) return;
+
+    const embed = new EmbedBuilder()
+      .setColor(hexToDecimal(this.config.bot.successColor))
+      .setTitle('📥 تذكرة وساطة جديدة')
+      .addFields(
+        { name: 'اسم التذكرة', value: `#${ticket.channel_name || 'غير معروف'}`, inline: true },
+        { name: 'رقم التذكرة', value: `#${padTicketNumber(ticket.ticket_number, this.config.naming.zeroPadLength)}`, inline: true },
+        { name: 'اسم العميل', value: `<@${ticket.creator_id}>`, inline: true },
+        { name: 'آيدي العميل', value: `\`${ticket.creator_id}\``, inline: true },
+        { name: 'قيمة التريد', value: `**$${tradeValue}**`, inline: true },
+        { name: 'نوع الوسيط المطلوبة', value: mediatorRoleName, inline: true },
+        { name: 'حالة الاستلام', value: '❌ لم تستلم بعد', inline: true },
+        { name: 'هل التريد جديد أو مضمون', value: mediatorLabel, inline: true },
+        { name: 'وقت فتح تذكرة الانتظار', value: `<t:${Math.floor(new Date(ticket.opened_at).getTime() / 1000)}:F>`, inline: false }
+      )
+      .setTimestamp();
+
+    await logChannel.send({ embeds: [embed] }).catch(() => null);
+  }
+
+  private async sendCustomClaimLog(
+    guild: Guild,
+    ticket: TicketRecord,
+    claimerId: string | null,
+  ): Promise<void> {
+    const logChannelId = '1486132662753034280';
+    const logChannel = await guild.channels.fetch(logChannelId).catch(() => null);
+    if (!isGuildTextChannelType(logChannel)) return;
+
+    const tradeValue = (ticket.metadata as any)?.trade_value ?? 'غير محدد';
+    const isNew = typeof tradeValue === 'number' ? (tradeValue <= 40) : null;
+    const mediatorRoleName = isNew === null ? 'غير معروف' : (isNew ? 'وسيط جديد' : 'وسيط مضمون');
+    const mediatorLabel = isNew === null ? 'غير معروف' : (isNew ? 'جديد' : 'مضمون');
+
+    const embed = new EmbedBuilder()
+      .setColor(hexToDecimal(this.config.bot.successColor))
+      .setTitle(claimerId ? '🤝 تم استلام التذكرة' : '🔓 تم إلغاء استلام التذكرة')
+      .addFields(
+        { name: 'اسم التذكرة', value: `#${ticket.channel_name || 'غير معروف'}`, inline: true },
+        { name: 'رقم التذكرة', value: `#${padTicketNumber(ticket.ticket_number, this.config.naming.zeroPadLength)}`, inline: true },
+        { name: 'اسم العميل', value: `<@${ticket.creator_id}>`, inline: true },
+        { name: 'آيدي العميل', value: `\`${ticket.creator_id}\``, inline: true },
+        { name: 'قيمة التريد', value: typeof tradeValue === 'number' ? `**$${tradeValue}**` : String(tradeValue), inline: true },
+        { name: 'نوع الوسيط', value: mediatorRoleName, inline: true },
+        { name: 'من استلم التذكرة', value: claimerId ? `<@${claimerId}>` : 'غير مستلمة', inline: true },
+        { name: 'هل التريد جديد أو مضمون', value: mediatorLabel, inline: true },
+        { name: 'نوع الوسيط المستخدم', value: mediatorRoleName, inline: true },
+        { name: 'وقت فتح التذكرة', value: `<t:${Math.floor(new Date(ticket.opened_at).getTime() / 1000)}:F>`, inline: false }
+      );
+
+    if (claimerId) {
+      embed.addFields({ name: 'وقت الاستلام', value: `<t:${Math.floor(Date.now() / 1000)}:R>`, inline: false });
+    }
+
+    await logChannel.send({ embeds: [embed] }).catch(() => null);
+  }
+
+  private async sendCustomCloseLog(
+    guild: Guild,
+    ticket: TicketRecord,
+    closedById: string,
+    channel: TextChannel
+  ): Promise<void> {
+    const logChannelId = '1486132662753034280';
+    const logChannel = await guild.channels.fetch(logChannelId).catch(() => null);
+    if (!isGuildTextChannelType(logChannel)) return;
+
+    const attachment = await this.transcriptService.buildAttachment(
+      channel,
+      ticket,
+      this.config.naming.zeroPadLength,
+    ).catch(() => null);
+
+    const openedTime = new Date(ticket.opened_at).getTime();
+    const closedTime = Date.now();
+    const durationMs = closedTime - openedTime;
+    
+    const formatDuration = (ms: number): string => {
+      const seconds = Math.floor((ms / 1000) % 60);
+      const minutes = Math.floor((ms / (1000 * 60)) % 60);
+      const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
+      const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+      
+      const parts: string[] = [];
+      if (days > 0) parts.push(`${days} يوم`);
+      if (hours > 0) parts.push(`${hours} ساعة`);
+      if (minutes > 0) parts.push(`${minutes} دقيقة`);
+      if (seconds > 0 || parts.length === 0) parts.push(`${seconds} ثانية`);
+      return parts.join(' و ');
+    };
+
+    const durationText = formatDuration(durationMs);
+    const tradeValue = (ticket.metadata as any)?.trade_value ?? 'غير محدد';
+    const isNew = typeof tradeValue === 'number' ? (tradeValue <= 40) : null;
+    const mediatorRoleName = isNew === null ? 'غير معروف' : (isNew ? 'وسيط جديد' : 'وسيط مضمون');
+
+    const embed = new EmbedBuilder()
+      .setColor(hexToDecimal(this.config.bot.errorColor))
+      .setTitle('🔒 تم إغلاق التذكرة وأرشفة المحادثة')
+      .addFields(
+        { name: 'اسم التذكرة المؤرشفة', value: `#${ticket.channel_name || 'غير معروف'}`, inline: true },
+        { name: 'رقم التذكرة', value: `#${padTicketNumber(ticket.ticket_number, this.config.naming.zeroPadLength)}`, inline: true },
+        { name: 'صاحب التذكرة (العميل)', value: `<@${ticket.creator_id}>`, inline: true },
+        { name: 'آيدي العميل', value: `\`${ticket.creator_id}\``, inline: true },
+        { name: 'من استلم التذكرة', value: ticket.claimed_by ? `<@${ticket.claimed_by}>` : 'لم يتم الاستلام', inline: true },
+        { name: 'من أغلق التذكرة', value: `<@${closedById}>`, inline: true },
+        { name: 'قيمة التريد', value: typeof tradeValue === 'number' ? `**$${tradeValue}**` : String(tradeValue), inline: true },
+        { name: 'نوع الوسيط', value: mediatorRoleName, inline: true },
+        { name: 'وقت الفتح', value: `<t:${Math.floor(openedTime / 1000)}:F>`, inline: false },
+        { name: 'وقت الإغلاق', value: `<t:${Math.floor(closedTime / 1000)}:F>`, inline: false },
+        { name: 'مدة التذكرة', value: durationText, inline: false }
+      )
+      .setTimestamp();
+
+    const files = attachment ? [attachment] : [];
+    await logChannel.send({ embeds: [embed], files }).catch((err) => {
+      logger.error('Failed to send close log to channel', err);
+    });
   }
 }

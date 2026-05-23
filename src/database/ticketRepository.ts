@@ -261,4 +261,30 @@ export class TicketRepository {
       throw new Error(`Failed to set AI status in DB: ${error.message}`);
     }
   }
+
+  public async updateChannelInfo(
+    oldChannelId: string,
+    newChannelId: string,
+    newChannelName: string,
+    answers: any[],
+    metadata: Record<string, any>
+  ): Promise<TicketRecord> {
+    const { data, error } = await this.supabase
+      .from('tickets')
+      .update({
+        channel_id: newChannelId,
+        channel_name: newChannelName,
+        answers,
+        metadata,
+      })
+      .eq('channel_id', oldChannelId)
+      .select('*')
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update channel info: ${error.message}`);
+    }
+
+    return mapTicket(data);
+  }
 }
