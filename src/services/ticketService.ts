@@ -134,6 +134,47 @@ export class TicketService {
   }
 
   private buildPermissionOverwrites(guild: Guild, openerId: string, category: TicketCategoryConfig, tradeAmount?: number | null) {
+    const botMemberId = guild.members.me?.id;
+
+    if (category.key === 'mediator_apply') {
+      return [
+        {
+          id: guild.roles.everyone.id,
+          deny: [PermissionFlagsBits.ViewChannel],
+        },
+        {
+          id: openerId,
+          allow: [
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.ReadMessageHistory,
+            PermissionFlagsBits.AttachFiles,
+            PermissionFlagsBits.EmbedLinks,
+            PermissionFlagsBits.AddReactions,
+            PermissionFlagsBits.UseExternalEmojis,
+          ],
+        },
+        ...(botMemberId
+          ? [
+              {
+                id: botMemberId,
+                allow: [
+                  PermissionFlagsBits.ViewChannel,
+                  PermissionFlagsBits.SendMessages,
+                  PermissionFlagsBits.ReadMessageHistory,
+                  PermissionFlagsBits.AttachFiles,
+                  PermissionFlagsBits.EmbedLinks,
+                  PermissionFlagsBits.AddReactions,
+                  PermissionFlagsBits.UseExternalEmojis,
+                  PermissionFlagsBits.ManageChannels,
+                  PermissionFlagsBits.ManageMessages,
+                ],
+              },
+            ]
+          : []),
+      ];
+    }
+
     let supportRoleIdsToAllow = [...category.supportRoleIds];
 
     const staffRoleIds = uniqueStrings([
@@ -142,7 +183,6 @@ export class TicketService {
       ...supportRoleIdsToAllow,
     ]);
     const filteredStaffRoleIds = staffRoleIds.filter((roleId) => guild.roles.cache.has(roleId));
-    const botMemberId = guild.members.me?.id;
 
     return [
       {
@@ -446,14 +486,18 @@ export class TicketService {
         });
 
         let supportRolesToMention = [...category.supportRoleIds];
+        let mentionRolesOnOpen = [...this.config.guild.mentionRolesOnOpen];
         if (category.key === 'middleman') {
           const MIDDLEMAN_ROLE = "1506010306407694346";
           supportRolesToMention = [MIDDLEMAN_ROLE];
+        } else if (category.key === 'mediator_apply') {
+          supportRolesToMention = [];
+          mentionRolesOnOpen = [];
         }
 
         const welcomeEmbeds = await buildTicketEmbeds(interaction.guild, this.config, createdTicket);
         const validMentions = [
-          ...this.config.guild.mentionRolesOnOpen,
+          ...mentionRolesOnOpen,
           ...supportRolesToMention,
         ].filter((roleId) => interaction.guild.roles.cache.has(roleId));
 
@@ -474,6 +518,38 @@ export class TicketService {
         }
 
         await this.sendLog(interaction.guild, this.buildOpenLogEmbed(createdTicket, created.id));
+
+        if (category.key === 'mediator_apply') {
+          try {
+            const adminUser = await interaction.client.users.fetch('1397364822152315052');
+            if (adminUser) {
+              const dmEmbed = new EmbedBuilder()
+                .setColor(hexToDecimal(this.config.bot.embedColor))
+                .setTitle('🔔 تقديم جديد على الوساطة')
+                .setDescription(
+                  `قام العضو **${interaction.user.tag}** (${interaction.user}) بالتقديم على رتبة الوساطة.\n\n` +
+                  `• **معرف العضو**: \`${interaction.user.id}\`\n` +
+                  `• **رقم التذكرة**: \`#${ticketNumber}\`\n` +
+                  `• **رابط التذكرة**: <#${created.id}>`
+                )
+                .addFields(
+                  {
+                    name: 'الإجابات المقدمة',
+                    value: answers
+                      .map((ans) => `**${ans.label}**:\n${ans.value}`)
+                      .join('\n\n')
+                      .slice(0, 1024) || 'لا توجد إجابات.'
+                  }
+                )
+                .setTimestamp();
+
+              await adminUser.send({ embeds: [dmEmbed] });
+              logger.info(`Successfully sent mediator application DM notification to admin 1397364822152315052`);
+            }
+          } catch (dmError) {
+            logger.error('Failed to send DM notification to admin 1397364822152315052', dmError);
+          }
+        }
 
         await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم إنشاء التذكرة', `${this.config.ticket.messages.created} <#${created.id}>`)]);
       } catch (error) {

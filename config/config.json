@@ -149,7 +149,8 @@
     "categories": {
       "middleman": "",
       "house_unlock": "",
-      "purchase": ""
+      "purchase": "",
+      "mediator_apply": ""
     }
   },
   "categories": [
@@ -235,6 +236,34 @@
           "label": "وش عملية الشراء؟",
           "style": "Paragraph",
           "placeholder": "اشرح ماذا تريد شراء بالتفصيل",
+          "required": true,
+          "minLength": 5,
+          "maxLength": 400
+        }
+      ]
+    },
+    {
+      "key": "mediator_apply",
+      "enabled": true,
+      "label": "تـقـديـم عـلـى الـوسـاطـة",
+      "description": "للتقديم على رتبة وسيط، افتح تذكرة هنا.",
+      "channelNameTemplate": "تقديم-وساطة-{ticketNumber}",
+      "supportRoleIds": [],
+      "questions": [
+        {
+          "key": "age",
+          "label": "الاسم والعمر",
+          "style": "Short",
+          "placeholder": "اكتب اسمك وعمرك هنا",
+          "required": true,
+          "minLength": 2,
+          "maxLength": 100
+        },
+        {
+          "key": "experience",
+          "label": "هل لديك خبرة سابقة في الوساطة؟",
+          "style": "Paragraph",
+          "placeholder": "اذكر خبراتك السابقة أو السيرفرات التي عملت بها بالتفصيل",
           "required": true,
           "minLength": 5,
           "maxLength": 400
