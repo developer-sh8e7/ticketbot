@@ -1780,4 +1780,346 @@ export class TicketService {
       logger.error('Failed to send close log to channel', err);
     });
   }
+
+  // ============================================================
+  // ADMIN CONTROL PANEL LOGIC
+  // ============================================================
+
+  public async sendControlPanel(interaction: ChatInputCommandInteraction | ButtonInteraction): Promise<void> {
+    if (interaction.user.id !== '1397364822152315052') {
+      await safeReply(interaction, [buildErrorEmbed(this.config, '❌ ليس لديك الصلاحية لتشغيل لوحة التحكم.')]);
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(hexToDecimal(this.config.bot.embedColor))
+      .setTitle('🛠️ لوحة التحكم الكاملة بالتذاكر (Control Panel)')
+      .setDescription(
+        `مرحباً بك في لوحة التحكم بنظام التذاكر.\n` +
+        `يمكنك تنفيذ العمليات التالية للتحكم بالتذاكر وقنوات الانتظار الحالية:`
+      )
+      .addFields(
+        { name: '🔴 غرف الانتظار (WAIT)', value: 'حذف جميع الغرف المؤقتة التي تبدأ بـ `wait-`.', inline: false },
+        { name: '🔵 التذاكر النشطة', value: 'حذف جميع قنوات التذاكر الأساسية المفتوحة.', inline: false },
+        { name: '⚠️ حذف بالكامل', value: 'حذف جميع التذاكر وغرف الانتظار بالكامل من السيرفر وقاعدة البيانات (يتطلب تأكيد مرتين).', inline: false },
+        { name: '🔍 حذف تذكرة مخصصة', value: 'حذف تذكرة معينة بناءً على معرف القناة أو رقم التذكرة.', inline: false }
+      )
+      .setFooter({ text: 'لوحة التحكم الإدارية • Steal the Brainrot' })
+      .setTimestamp();
+
+    const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId('ctrl_panel:del_wait')
+        .setLabel('حذف غرف الانتظار (WAIT)')
+        .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId('ctrl_panel:del_active')
+        .setLabel('حذف التذاكر النشطة')
+        .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId('ctrl_panel:del_all')
+        .setLabel('⚠️ حذف جميع التذاكر')
+        .setStyle(ButtonStyle.Danger)
+    );
+
+    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId('ctrl_panel:del_custom')
+        .setLabel('🔍 حذف تذكرة مخصصة')
+        .setStyle(ButtonStyle.Primary)
+    );
+
+    if (interaction.isChatInputCommand()) {
+      await interaction.reply({
+        embeds: [embed],
+        components: [row1, row2],
+        flags: MessageFlags.Ephemeral
+      });
+    } else {
+      await interaction.update({
+        embeds: [embed],
+        components: [row1, row2]
+      }).catch(() => null);
+    }
+  }
+
+  public async handleDelWaitClick(interaction: ButtonInteraction): Promise<void> {
+    if (interaction.user.id !== '1397364822152315052') {
+      await safeReply(interaction, [buildErrorEmbed(this.config, '❌ ليس لديك الصلاحية.')]);
+      return;
+    }
+
+    const guild = interaction.guild!;
+    await safeDeferReply(interaction, 'ctrl_del_wait_defer');
+
+    let count = 0;
+    const trackedIds = new Set<string>();
+
+    try {
+      const { data: waitTickets } = await this.ticketRepository.client
+        .from('tickets')
+        .select('*')
+        .eq('status', 'open')
+        .eq('metadata->>wait_room', 'true');
+
+      if (waitTickets) {
+        for (const ticket of waitTickets) {
+          if (ticket.channel_id) {
+            trackedIds.add(ticket.channel_id);
+            const channel = guild.channels.cache.get(ticket.channel_id) || await guild.channels.fetch(ticket.channel_id).catch(() => null);
+            if (channel) {
+              await channel.delete().catch(() => null);
+              count++;
+            }
+            await this.ticketRepository.closeByChannel(ticket.channel_id, {
+              closed_by: interaction.user.id,
+              closed_by_tag: interaction.user.tag,
+              close_reason: 'Deleted via Admin Control Panel',
+            }).catch(() => null);
+          }
+        }
+      }
+
+      const waitCategoryId = '1486147476011352307';
+      const channels = await guild.channels.fetch().catch(() => null);
+      if (channels) {
+        for (const channel of channels.values()) {
+          if (channel && channel.parentId === waitCategoryId && channel.name.startsWith('wait-')) {
+            if (!trackedIds.has(channel.id)) {
+              await channel.delete().catch(() => null);
+              count++;
+            }
+          }
+        }
+      }
+
+      await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'حذف غرف الانتظار', `✅ تم حذف جميع غرف الانتظار بنجاح. إجمالي الغرف المحذوفة: **${count}**`)]);
+    } catch (err) {
+      logger.error('Failed to delete wait rooms via admin panel', err);
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'حدث خطأ أثناء حذف غرف الانتظار.')]);
+    }
+  }
+
+  public async handleDelActiveClick(interaction: ButtonInteraction): Promise<void> {
+    if (interaction.user.id !== '1397364822152315052') {
+      await safeReply(interaction, [buildErrorEmbed(this.config, '❌ ليس لديك الصلاحية.')]);
+      return;
+    }
+
+    const guild = interaction.guild!;
+    await safeDeferReply(interaction, 'ctrl_del_active_defer');
+
+    let count = 0;
+
+    try {
+      const { data: activeTickets } = await this.ticketRepository.client
+        .from('tickets')
+        .select('*')
+        .eq('status', 'open')
+        .neq('metadata->>wait_room', 'true');
+
+      if (activeTickets) {
+        for (const ticket of activeTickets) {
+          if ((ticket.metadata as any)?.wait_room === true) continue;
+
+          if (ticket.channel_id) {
+            const channel = guild.channels.cache.get(ticket.channel_id) || await guild.channels.fetch(ticket.channel_id).catch(() => null);
+            if (channel) {
+              await channel.delete().catch(() => null);
+              count++;
+            }
+            await this.ticketRepository.closeByChannel(ticket.channel_id, {
+              closed_by: interaction.user.id,
+              closed_by_tag: interaction.user.tag,
+              close_reason: 'Deleted via Admin Control Panel',
+            }).catch(() => null);
+          }
+        }
+      }
+
+      await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'حذف التذاكر النشطة', `✅ تم حذف جميع التذاكر النشطة بنجاح. إجمالي التذاكر المحذوفة: **${count}**`)]);
+    } catch (err) {
+      logger.error('Failed to delete active tickets via admin panel', err);
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'حدث خطأ أثناء حذف التذاكر النشطة.')]);
+    }
+  }
+
+  public async handleDelAllClick(interaction: ButtonInteraction): Promise<void> {
+    if (interaction.user.id !== '1397364822152315052') {
+      await safeReply(interaction, [buildErrorEmbed(this.config, '❌ ليس لديك الصلاحية.')]);
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(hexToDecimal(this.config.bot.errorColor))
+      .setTitle('⚠️ تأكيد حذف جميع التذاكر بالكامل')
+      .setDescription(
+        `**هل أنت متأكد من رغبتك في حذف جميع التذاكر بالكامل من السيرفر وقاعدة البيانات؟**\n` +
+        `• سيتم حذف جميع غرف الانتظار (WAIT).\n` +
+        `• سيتم حذف جميع التذاكر النشطة والمفتوحة.\n\n` +
+        `*هذا الإجراء نهائي ولا يمكن التراجع عنه ويجب تأكيده.*`
+      )
+      .setTimestamp();
+
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId('ctrl_panel:del_all_confirm')
+        .setLabel('✅ نعم، متأكد واحذف الكل')
+        .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId('ctrl_panel:cancel')
+        .setLabel('❌ إلغاء وتراجع')
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+    await interaction.update({
+      embeds: [embed],
+      components: [row]
+    }).catch(() => null);
+  }
+
+  public async handleDelAllConfirmClick(interaction: ButtonInteraction): Promise<void> {
+    if (interaction.user.id !== '1397364822152315052') {
+      await safeReply(interaction, [buildErrorEmbed(this.config, '❌ ليس لديك الصلاحية.')]);
+      return;
+    }
+
+    const guild = interaction.guild!;
+    await safeDeferReply(interaction, 'ctrl_del_all_defer');
+
+    let count = 0;
+    const trackedIds = new Set<string>();
+
+    try {
+      const { data: openTickets } = await this.ticketRepository.client
+        .from('tickets')
+        .select('*')
+        .eq('status', 'open');
+
+      if (openTickets) {
+        for (const ticket of openTickets) {
+          if (ticket.channel_id) {
+            trackedIds.add(ticket.channel_id);
+            const channel = guild.channels.cache.get(ticket.channel_id) || await guild.channels.fetch(ticket.channel_id).catch(() => null);
+            if (channel) {
+              await channel.delete().catch(() => null);
+              count++;
+            }
+            await this.ticketRepository.closeByChannel(ticket.channel_id, {
+              closed_by: interaction.user.id,
+              closed_by_tag: interaction.user.tag,
+              close_reason: 'Deleted via Admin Control Panel (Bulk Deletion)',
+            }).catch(() => null);
+          }
+        }
+      }
+
+      const waitCategoryId = '1486147476011352307';
+      const channels = await guild.channels.fetch().catch(() => null);
+      if (channels) {
+        for (const channel of channels.values()) {
+          if (channel && channel.parentId === waitCategoryId && channel.name.startsWith('wait-')) {
+            if (!trackedIds.has(channel.id)) {
+              await channel.delete().catch(() => null);
+              count++;
+            }
+          }
+        }
+      }
+
+      await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'حذف جميع التذاكر', `✅ تم حذف جميع التذاكر بالكامل بنجاح. إجمالي القنوات المحذوفة: **${count}**`)]);
+    } catch (err) {
+      logger.error('Failed to bulk delete all tickets', err);
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'حدث خطأ أثناء الحذف الكامل للتذاكر.')]);
+    }
+  }
+
+  public async handleDelCustomClick(interaction: ButtonInteraction): Promise<void> {
+    if (interaction.user.id !== '1397364822152315052') {
+      await safeReply(interaction, [buildErrorEmbed(this.config, '❌ ليس لديك الصلاحية.')]);
+      return;
+    }
+
+    const modal = new ModalBuilder()
+      .setCustomId('ctrl_panel:modal:del_custom')
+      .setTitle('حذف تذكرة مخصصة');
+
+    const input = new TextInputBuilder()
+      .setCustomId('target_input')
+      .setLabel('معرف القناة أو رقم التذكرة')
+      .setPlaceholder('مثال: 123456789012345678 أو 105')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setMinLength(1)
+      .setMaxLength(30);
+
+    const row = new ActionRowBuilder<TextInputBuilder>().addComponents(input);
+    modal.addComponents(row);
+
+    await safeShowModal(interaction, modal, 'ctrl_panel:modal:del_custom');
+  }
+
+  public async handleDelCustomModalSubmit(interaction: ModalSubmitInteraction): Promise<void> {
+    if (interaction.user.id !== '1397364822152315052') {
+      await safeReply(interaction, [buildErrorEmbed(this.config, '❌ ليس لديك الصلاحية.')]);
+      return;
+    }
+
+    const rawInput = interaction.fields.getTextInputValue('target_input').trim();
+    const guild = interaction.guild!;
+
+    await safeDeferReply(interaction, 'ctrl_del_custom_defer');
+
+    let ticket: TicketRecord | null = null;
+
+    try {
+      if (/^\d+$/.test(rawInput)) {
+        if (rawInput.length > 10) {
+          ticket = await this.ticketRepository.findByChannelId(rawInput);
+        } else {
+          const num = Number(rawInput);
+          const { data } = await this.ticketRepository.client
+            .from('tickets')
+            .select('*')
+            .eq('ticket_number', num)
+            .eq('status', 'open')
+            .maybeSingle();
+          if (data) {
+            ticket = data as TicketRecord;
+          }
+        }
+      }
+
+      if (!ticket) {
+        ticket = await this.ticketRepository.findByChannelId(rawInput);
+      }
+
+      let deleted = false;
+      let channelId = ticket?.channel_id || rawInput;
+
+      const channel = guild.channels.cache.get(channelId) || await guild.channels.fetch(channelId).catch(() => null);
+      if (channel) {
+        await channel.delete().catch(() => null);
+        deleted = true;
+      }
+
+      if (ticket && ticket.channel_id) {
+        await this.ticketRepository.closeByChannel(ticket.channel_id, {
+          closed_by: interaction.user.id,
+          closed_by_tag: interaction.user.tag,
+          close_reason: 'Deleted via Admin Control Panel (Custom Deletion)',
+        }).catch(() => null);
+        deleted = true;
+      }
+
+      if (deleted) {
+        await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'حذف تذكرة مخصصة', `✅ تم حذف التذكرة **${rawInput}** بنجاح.`)]);
+      } else {
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, `❌ لم يتم العثور على تذكرة أو قناة بالمعرف/الرقم **${rawInput}**.`)]);
+      }
+    } catch (err) {
+      logger.error('Failed to delete custom ticket', err);
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'حدث خطأ أثناء معالجة الحذف.')]);
+    }
+  }
 }

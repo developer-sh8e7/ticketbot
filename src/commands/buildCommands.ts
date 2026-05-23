@@ -82,5 +82,17 @@ export function buildCommandDefinitions(config: AppConfig) {
       ) as unknown as SlashCommandBuilder
   );
 
+  // Ticket Control Panel commands
+  commands.push(
+    new SlashCommandBuilder()
+      .setName('panel')
+      .setDescription('فتح لوحة التحكم الكاملة بالتذاكر (للأدمن فقط)') as SlashCommandBuilder
+  );
+  commands.push(
+    new SlashCommandBuilder()
+      .setName('panle')
+      .setDescription('فتح لوحة التحكم الكاملة بالتذاكر (للأدمن فقط) - كتابة بديلة') as SlashCommandBuilder
+  );
+
   return commands;
 }

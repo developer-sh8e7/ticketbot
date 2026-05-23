@@ -27,6 +27,10 @@ export class DuplicateOpenTicketError extends Error {
 export class TicketRepository {
   public constructor(private readonly supabase: SupabaseClient) {}
 
+  public get client(): SupabaseClient {
+    return this.supabase;
+  }
+
   public async nextTicketNumber(): Promise<number> {
     const { data, error } = await this.supabase.rpc('next_ticket_number');
 

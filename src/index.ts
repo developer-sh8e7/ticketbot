@@ -220,6 +220,11 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
     }
     return;
   }
+
+  if (interaction.commandName === 'panel' || interaction.commandName === 'panle') {
+    await ticketService.sendControlPanel(interaction);
+    return;
+  }
 }
 
 client.once(Events.ClientReady, async (readyClient) => {
@@ -324,6 +329,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
         trackLifecycleHealth();
         return;
       }
+
+      if (interaction.customId === 'ctrl_panel:modal:del_custom') {
+        if (interaction.user.id !== '1397364822152315052') {
+          await safeReply(interaction, [buildErrorEmbed(configStore.current, '❌ ليس لديك الصلاحية لاستخدام لوحة التحكم.')]);
+          return;
+        }
+        await ticketService.handleDelCustomModalSubmit(interaction);
+        trackLifecycleHealth();
+        return;
+      }
     }
 
     if (interaction.isButton()) {
@@ -336,6 +351,37 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       if (interaction.customId.startsWith('wait:btn:')) {
         await ticketService.handleWaitButton(interaction);
+        trackLifecycleHealth();
+        return;
+      }
+
+      if (interaction.customId.startsWith('ctrl_panel:')) {
+        if (interaction.user.id !== '1397364822152315052') {
+          await safeReply(interaction, [buildErrorEmbed(configStore.current, '❌ ليس لديك الصلاحية لاستخدام لوحة التحكم.')]);
+          return;
+        }
+        
+        switch (interaction.customId) {
+          case 'ctrl_panel:del_wait':
+            await ticketService.handleDelWaitClick(interaction);
+            break;
+          case 'ctrl_panel:del_active':
+            await ticketService.handleDelActiveClick(interaction);
+            break;
+          case 'ctrl_panel:del_all':
+            await ticketService.handleDelAllClick(interaction);
+            break;
+          case 'ctrl_panel:del_all_confirm':
+            await ticketService.handleDelAllConfirmClick(interaction);
+            break;
+          case 'ctrl_panel:cancel':
+            await ticketService.sendControlPanel(interaction);
+            break;
+          case 'ctrl_panel:del_custom':
+            await ticketService.handleDelCustomClick(interaction);
+            break;
+        }
+        
         trackLifecycleHealth();
         return;
       }
