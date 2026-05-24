@@ -11,6 +11,12 @@ import {
   type TextChannel,
 } from 'discord.js';
 import { buildErrorEmbed, buildSuccessEmbed } from '../builders/ticketBuilder.js';
+import {
+  ARABIC_SEVERE_PROFANITY_PHRASES,
+  ARABIC_SEVERE_PROFANITY_TERMS,
+  ENGLISH_SEVERE_PROFANITY_PHRASES,
+  ENGLISH_SEVERE_PROFANITY_TERMS,
+} from '../data/moderationWordLists.js';
 import type { AppConfig } from '../types/config.js';
 import { hexToDecimal } from '../utils/color.js';
 import { logger } from '../utils/logger.js';
@@ -30,14 +36,8 @@ const IMAGE_HOSTS = new Set([
 const INVITE_HINT_WORDS = ['اختصار الدس', 'اختصار دس', 'اختصار دسكورد', 'الدسكورد', 'دسكورد', 'discord'];
 const INVITE_CODE_PATTERN = /(?:^|[^a-z0-9])([a-z0-9-]{5,32})(?=$|[^a-z0-9])/i;
 const SPAM_MENTION_PATTERN = /(?:@everyone|@here).*(?:@everyone|@here)/is;
-const SEVERE_PROFANITY_PATTERNS = [
-  /(?:^|[^\p{L}\p{N}])(?:كسمك|كسمكم|كس\s*امك|كس\s*امكم|كس\s*اختك|كس\s*اختكم|كس\s*ابوك|كس\s*ابوكم|كس\s*اهلك|زب\s*امك|زب\s*اختك|نيك\s*امك|انيك\s*امك)(?=$|[^\p{L}\p{N}])/iu,
-  /(?:^|[^\p{L}\p{N}])(?:قحبه|قحبة|شرموط|شرموطه|شرموطة|منيوك|منيوكه|منيوكة)(?=$|[^\p{L}\p{N}])/iu,
-  /\b(?:motherfucker|fuck\s*you|bitch|slut|whore|nigg(?:a|er)?|pussy|asshole)\b/i,
-];
-const COMPACT_SEVERE_PROFANITY_PATTERNS = [
-  /(?:كسمك|كسمكم|كسامك|كسامكم|كساختك|كساختكم|كسابوك|كسابوكم|كساهلك|زبامك|زباختك|نيكامك|انيكامك)/i,
-];
+const TOKEN_SEPARATOR_PATTERN = '[\\s\\S]{0,24}?';
+const WORD_BOUNDARY_PATTERN = '[^\\p{L}\\p{N}]';
 
 type SecurityViolation = {
   reason: 'link' | 'invite' | 'profanity' | 'mention-spam';
@@ -272,9 +272,63 @@ export class SecurityService {
 
   private hasSevereProfanity(normalized: string, compact: string): boolean {
     return (
-      SEVERE_PROFANITY_PATTERNS.some((pattern) => pattern.test(normalized)) ||
-      COMPACT_SEVERE_PROFANITY_PATTERNS.some((pattern) => pattern.test(compact))
+      this.hasArabicProfanity(normalized, compact) ||
+      this.hasEnglishProfanity(normalized)
     );
+  }
+
+  private hasArabicProfanity(normalized: string, compact: string): boolean {
+    for (const term of ARABIC_SEVERE_PROFANITY_TERMS) {
+      const normalizedTerm = this.normalizeContent(term);
+      if (this.hasStandaloneTerm(normalized, normalizedTerm)) {
+        return true;
+      }
+    }
+
+    for (const phrase of ARABIC_SEVERE_PROFANITY_PHRASES) {
+      const normalizedPhrase = this.normalizeContent(phrase);
+      if (this.hasFlexiblePhrase(normalized, normalizedPhrase) || compact.includes(normalizedPhrase.replace(/\s+/g, ''))) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private hasEnglishProfanity(normalized: string): boolean {
+    for (const term of ENGLISH_SEVERE_PROFANITY_TERMS) {
+      if (this.hasStandaloneTerm(normalized, term.toLowerCase())) {
+        return true;
+      }
+    }
+
+    for (const phrase of ENGLISH_SEVERE_PROFANITY_PHRASES) {
+      if (this.hasFlexiblePhrase(normalized, phrase.toLowerCase())) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private hasStandaloneTerm(content: string, term: string): boolean {
+    const pattern = new RegExp(`(?:^|${WORD_BOUNDARY_PATTERN})${this.escapeRegExp(term)}(?=$|${WORD_BOUNDARY_PATTERN})`, 'iu');
+    return pattern.test(content);
+  }
+
+  private hasFlexiblePhrase(content: string, phrase: string): boolean {
+    const tokens = phrase.split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) return false;
+
+    const pattern = new RegExp(
+      `(?:^|${WORD_BOUNDARY_PATTERN})${tokens.map((token) => this.escapeRegExp(token)).join(TOKEN_SEPARATOR_PATTERN)}(?=$|${WORD_BOUNDARY_PATTERN})`,
+      'iu',
+    );
+    return pattern.test(content);
+  }
+
+  private escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   private securityReasonLabel(reason: SecurityViolation['reason']): string {
