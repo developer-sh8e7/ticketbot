@@ -46,6 +46,12 @@ type SecurityViolation = {
   title: string;
 };
 
+type SecurityLogField = {
+  name: string;
+  value: string;
+  inline?: boolean;
+};
+
 type ProfanityI18nModule = {
   filter(input: string): string;
   contains(...input: string[]): boolean;
@@ -99,11 +105,16 @@ const CLEAR_DELETE_CHUNK_SIZE = 100;
 const CLEAR_OLD_DELETE_CONCURRENCY = 5;
 const CLEAR_SAMPLE_LIMIT = 8;
 const CLEAR_CHANNEL_CONCURRENCY = 4;
-const SECURITY_BYPASS_USER_IDS = new Set([
+const PROFANITY_TIMEOUT_MS = 5 * 60 * 1000;
+const SECURITY_LINK_BYPASS_USER_IDS = new Set([
   '959896496113844254',
   '1397364822152315052',
   '1148258174474928249',
+  '1479484174686486680',
 ]);
+const PROFANITY_I18N_FALSE_POSITIVES = [
+  'ال',
+];
 const CUSTOM_PROFANITY_DICTIONARY = [
   ...ARABIC_SEVERE_PROFANITY_TERMS,
   ...ARABIC_SEVERE_PROFANITY_PHRASES,
@@ -114,6 +125,7 @@ const CUSTOM_PROFANITY_DICTIONARY = [
 const require = createRequire(import.meta.url);
 const profanityI18n = require('profanity-i18n') as ProfanityI18nModule;
 profanityI18n.add(CUSTOM_PROFANITY_DICTIONARY);
+profanityI18n.remove(PROFANITY_I18N_FALSE_POSITIVES);
 
 export class SecurityService {
   public constructor(
@@ -123,12 +135,19 @@ export class SecurityService {
 
   public async handleMessage(message: Message): Promise<boolean> {
     if (!message.inGuild() || message.author.bot) return false;
-    if (SECURITY_BYPASS_USER_IDS.has(message.author.id)) return false;
 
     const violation = this.detectViolation(message.content);
     if (!violation) return false;
+    if (this.canBypassViolation(message.author.id, violation)) return false;
 
-    await message.delete().catch(() => null);
+    let messageDeleted = false;
+    let deleteError: string | null = null;
+    await message.delete().then(() => {
+      messageDeleted = true;
+    }).catch((error) => {
+      deleteError = error instanceof Error ? error.message : 'تعذر حذف الرسالة.';
+      logger.warn('Failed to delete security message', error instanceof Error ? error.message : error);
+    });
 
     const member = message.member;
     let timeoutApplied = false;
@@ -145,15 +164,20 @@ export class SecurityService {
     }
 
     const action = this.securityActionLabel(violation, timeoutApplied, timeoutError);
-    const fields = [
+    const fields: SecurityLogField[] = [
       { name: 'العضو', value: `<@${message.author.id}>\n${message.author.tag}\nID: ${message.author.id}`, inline: true },
       { name: 'الروم', value: `<#${message.channelId}>`, inline: true },
       { name: 'السبب', value: this.securityReasonLabel(violation.reason), inline: true },
       { name: 'الإجراء', value: action, inline: true },
+      { name: 'حالة الحذف', value: messageDeleted ? 'تم حذف الرسالة' : 'تعذر حذف الرسالة', inline: true },
       { name: 'مدة التايم أوت', value: this.formatDuration(violation.timeoutMs), inline: true },
       { name: 'آيدي الرسالة', value: message.id, inline: true },
       { name: 'المحتوى', value: this.trimEmbedValue(message.content || 'بدون محتوى') },
     ];
+
+    if (deleteError) {
+      fields.push({ name: 'ملاحظة الحذف', value: this.trimEmbedValue(deleteError), inline: false });
+    }
 
     if (timeoutError) {
       fields.push({ name: 'ملاحظة التايم أوت', value: this.trimEmbedValue(timeoutError), inline: false });
@@ -237,23 +261,27 @@ export class SecurityService {
     const compact = normalized.replace(/[^\p{L}\p{N}]+/gu, '');
 
     if (this.hasDiscordInvite(normalized, compact) || this.hasInviteHint(normalized)) {
-      return { reason: 'invite', timeoutMs: 60 * 60 * 1000, title: 'حذف اختصار دسكورد' };
+      return { reason: 'invite', timeoutMs: 0, title: 'حذف اختصار دسكورد' };
     }
 
     const blockedLinks = this.findBlockedLinks(content);
     if (blockedLinks.length > 0) {
-      return { reason: 'link', timeoutMs: 60 * 60 * 1000, title: 'حذف رابط ممنوع' };
+      return { reason: 'link', timeoutMs: 0, title: 'حذف رابط ممنوع' };
     }
 
     if (SPAM_MENTION_PATTERN.test(normalized)) {
-      return { reason: 'mention-spam', timeoutMs: 30 * 60 * 1000, title: 'حذف منشن سبام' };
+      return { reason: 'mention-spam', timeoutMs: 0, title: 'حذف منشن سبام' };
     }
 
     if (this.hasSevereProfanity(normalized, compact)) {
-      return { reason: 'profanity', timeoutMs: 10 * 60 * 1000, title: 'حذف سب صريح' };
+      return { reason: 'profanity', timeoutMs: PROFANITY_TIMEOUT_MS, title: 'حذف سب صريح' };
     }
 
     return null;
+  }
+
+  private canBypassViolation(userId: string, violation: SecurityViolation): boolean {
+    return SECURITY_LINK_BYPASS_USER_IDS.has(userId) && (violation.reason === 'link' || violation.reason === 'invite');
   }
 
   private hasDiscordInvite(normalized: string, compact: string): boolean {
