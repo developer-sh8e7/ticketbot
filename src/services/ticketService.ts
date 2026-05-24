@@ -525,9 +525,9 @@ export class TicketService {
             if (adminUser) {
               const dmEmbed = new EmbedBuilder()
                 .setColor(hexToDecimal(this.config.bot.embedColor))
-                .setTitle('🔔 تقديم جديد على الوساطة')
+                .setTitle('🔔 تقديم جديد على رتبة وسيط')
                 .setDescription(
-                  `قام العضو **${interaction.user.tag}** (${interaction.user}) بالتقديم على رتبة الوساطة.\n\n` +
+                  `قام العضو **${interaction.user.tag}** (${interaction.user}) بالتقديم على رتبة وسيط.\n\n` +
                   `• **معرف العضو**: \`${interaction.user.id}\`\n` +
                   `• **رقم التذكرة**: \`#${ticketNumber}\`\n` +
                   `• **رابط التذكرة**: <#${created.id}>`

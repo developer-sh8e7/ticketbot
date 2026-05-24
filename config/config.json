@@ -245,9 +245,9 @@
     {
       "key": "mediator_apply",
       "enabled": true,
-      "label": "تـقـديـم عـلـى الـوسـاطـة",
+      "label": "الـتـقـديـم عـلـى رتـبـة وسـيـط",
       "description": "للتقديم على رتبة وسيط، افتح تذكرة هنا.",
-      "channelNameTemplate": "تقديم-وساطة-{ticketNumber}",
+      "channelNameTemplate": "تقديم-على-رتبة-وسيط-{ticketNumber}",
       "supportRoleIds": [],
       "questions": [
         {
