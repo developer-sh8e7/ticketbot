@@ -32,7 +32,7 @@ import { RoleProtectionService } from './services/roleProtectionService.js';
 import { RoleManagementRepository } from './database/roleManagementRepository.js';
 import { RoleManagementService } from './services/roleManagementService.js';
 import { InstanceLockRepository } from './database/instanceLockRepository.js';
-import { InstanceGuardService } from './services/instanceGuardService.js';
+import { INSTANCE_LOCK_TTL_MS, InstanceGuardService } from './services/instanceGuardService.js';
 import { ServerLogService } from './services/serverLogService.js';
 import { SecurityService } from './services/securityService.js';
 import { MediatorRepository } from './database/mediatorRepository.js';
@@ -82,6 +82,7 @@ const aiService = new AIService(
 let roleProtectionService: RoleProtectionService | null = null;
 const roleManagementService = new RoleManagementService(roleManagementRepository, configStore.current);
 let instanceGuardService: InstanceGuardService | null = null;
+let runtimeState: 'starting' | 'standby' | 'online' | 'offline' = 'starting';
 
 const client = new Client({
   intents: [
@@ -308,6 +309,7 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
 
 client.once(Events.ClientReady, async (readyClient) => {
   const config = configStore.current;
+  runtimeState = 'online';
 
   readyClient.user.setPresence({
     status: config.bot.presence.status,
@@ -323,7 +325,11 @@ client.once(Events.ClientReady, async (readyClient) => {
 
   try {
     instanceGuardService = new InstanceGuardService(readyClient, instanceLockRepository, config.guild.id, INSTANCE_ID);
-    await instanceGuardService.start();
+    const guardStarted = await instanceGuardService.start();
+    if (!guardStarted) {
+      runtimeState = 'standby';
+      return;
+    }
   } catch (error) {
     logger.warn('Could not start instance guard. Duplicate protection depends on Supabase schema.', error instanceof Error ? error.message : error);
   }
@@ -373,8 +379,8 @@ function trackLifecycleHealth(): void {
         'another bot instance is likely running with the same token. ' +
         'This instance will destroy its gateway connection.',
       );
+      runtimeState = 'offline';
       client.destroy();
-      process.exit(1);
     }
   } else {
     consecutiveInteractionFailures = 0;
@@ -775,6 +781,7 @@ process.on('uncaughtException', (error) => {
 
 function gracefulShutdown(signal: string): void {
   logger.info(`[instance=${INSTANCE_ID}] Received ${signal}, shutting down...`);
+  runtimeState = 'offline';
   roleProtectionService?.stop();
   void instanceGuardService?.stop();
   healthServer.close();
@@ -787,6 +794,7 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 const HEALTH_PORT = Number(process.env.PORT) || 8080;
 const startedAt = Date.now();
+const STARTUP_LOCK_RETRY_MS = 15_000;
 
 function formatUptime(seconds: number): string {
   const d = Math.floor(seconds / 86400);
@@ -799,6 +807,41 @@ function formatUptime(seconds: number): string {
   if (m > 0) parts.push(`${m}m`);
   parts.push(`${s}s`);
   return parts.join(' ');
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForStartupInstanceLock(): Promise<void> {
+  const guildId = configStore.current.guild.id;
+
+  while (true) {
+    try {
+      const current = await instanceLockRepository.find(guildId);
+      const currentUpdatedAt = current ? new Date(current.updated_at).getTime() : 0;
+      const currentFresh = current ? Date.now() - currentUpdatedAt < INSTANCE_LOCK_TTL_MS : false;
+
+      if (current && current.instance_id !== INSTANCE_ID && currentFresh) {
+        runtimeState = 'standby';
+        logger.warn(
+          `Another active bot instance owns the lock: ${current.instance_id}. ` +
+          `${INSTANCE_ID} is waiting instead of restarting.`,
+        );
+        await sleep(STARTUP_LOCK_RETRY_MS);
+        continue;
+      }
+
+      runtimeState = 'starting';
+      await instanceLockRepository.upsert(guildId, INSTANCE_ID);
+      logger.info(`Startup instance lock reserved for guild ${guildId} by ${INSTANCE_ID}.`);
+      return;
+    } catch (error) {
+      runtimeState = 'standby';
+      logger.warn('Startup instance lock check failed; retrying.', error instanceof Error ? error.message : error);
+      await sleep(STARTUP_LOCK_RETRY_MS);
+    }
+  }
 }
 
 const healthServer = createServer(async (req, res) => {
@@ -825,6 +868,7 @@ const healthServer = createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       status: botUser ? 'online' : 'starting',
+      runtimeState,
       instance: INSTANCE_ID,
       uptime,
       bot: botUser?.tag ?? null,
@@ -837,9 +881,9 @@ const healthServer = createServer(async (req, res) => {
   const uptime = Math.floor((Date.now() - startedAt) / 1000);
   const botUser = client.user;
   const isOnline = !!botUser;
-  const statusText = isOnline ? 'Online' : 'Starting...';
-  const statusColor = isOnline ? '#22c55e' : '#eab308';
-  const statusDot = isOnline ? '#22c55e' : '#eab308';
+  const statusText = isOnline ? 'Online' : (runtimeState === 'standby' ? 'Standby' : 'Starting...');
+  const statusColor = isOnline ? '#22c55e' : (runtimeState === 'standby' ? '#38bdf8' : '#eab308');
+  const statusDot = isOnline ? '#22c55e' : (runtimeState === 'standby' ? '#38bdf8' : '#eab308');
   const ping = client.ws.ping;
   const pingColor = ping < 200 ? '#22c55e' : ping < 500 ? '#eab308' : '#ef4444';
   const guilds = client.guilds.cache.size;
@@ -997,7 +1041,12 @@ healthServer.listen(HEALTH_PORT, () => {
   logger.info(`Health check server listening on port ${HEALTH_PORT}`);
 });
 
-client.login(env.DISCORD_TOKEN).catch((error) => {
-  logger.error('Failed to login', error instanceof Error ? error.message : error);
-  process.exitCode = 1;
+async function startDiscordClient(): Promise<void> {
+  await waitForStartupInstanceLock();
+  await client.login(env.DISCORD_TOKEN);
+}
+
+startDiscordClient().catch((error) => {
+  runtimeState = 'offline';
+  logger.error('Failed to start Discord client', error instanceof Error ? error.message : error);
 });

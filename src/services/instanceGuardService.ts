@@ -2,7 +2,7 @@ import type { Client } from 'discord.js';
 import { InstanceLockRepository } from '../database/instanceLockRepository.js';
 import { logger } from '../utils/logger.js';
 
-const LOCK_TTL_MS = 90_000;
+export const INSTANCE_LOCK_TTL_MS = 90_000;
 const HEARTBEAT_MS = 30_000;
 
 export class InstanceGuardService {
@@ -18,12 +18,11 @@ export class InstanceGuardService {
   public async start(): Promise<boolean> {
     const current = await this.repository.find(this.guildId);
     const currentUpdatedAt = current ? new Date(current.updated_at).getTime() : 0;
-    const currentFresh = current ? Date.now() - currentUpdatedAt < LOCK_TTL_MS : false;
+    const currentFresh = current ? Date.now() - currentUpdatedAt < INSTANCE_LOCK_TTL_MS : false;
 
     if (current && current.instance_id !== this.instanceId && currentFresh) {
-      logger.error(`Another active bot instance owns the lock: ${current.instance_id}. Shutting down ${this.instanceId}.`);
+      logger.warn(`Another active bot instance owns the lock: ${current.instance_id}. ${this.instanceId} will stay offline.`);
       this.client.destroy();
-      process.exit(1);
       return false;
     }
 
@@ -48,12 +47,15 @@ export class InstanceGuardService {
     try {
       const current = await this.repository.find(this.guildId);
       const currentUpdatedAt = current ? new Date(current.updated_at).getTime() : 0;
-      const currentFresh = current ? Date.now() - currentUpdatedAt < LOCK_TTL_MS : false;
+      const currentFresh = current ? Date.now() - currentUpdatedAt < INSTANCE_LOCK_TTL_MS : false;
 
       if (current && current.instance_id !== this.instanceId && currentFresh) {
-        logger.error(`Instance lock stolen by ${current.instance_id}. Shutting down duplicate ${this.instanceId}.`);
+        logger.error(`Instance lock stolen by ${current.instance_id}. Disconnecting duplicate ${this.instanceId}.`);
+        if (this.heartbeat) {
+          clearInterval(this.heartbeat);
+          this.heartbeat = null;
+        }
         this.client.destroy();
-        process.exit(1);
         return;
       }
 

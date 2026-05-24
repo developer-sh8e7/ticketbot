@@ -29,6 +29,7 @@ export class InstanceLockRepository {
       .upsert({
         guild_id: guildId,
         instance_id: instanceId,
+        updated_at: new Date().toISOString(),
       }, { onConflict: 'guild_id' });
 
     if (error) {
