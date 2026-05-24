@@ -89,6 +89,7 @@ const CLEAR_PROGRESS_INTERVAL_MS = 2500;
 const CLEAR_DELETE_CHUNK_SIZE = 100;
 const CLEAR_OLD_DELETE_CONCURRENCY = 5;
 const CLEAR_SAMPLE_LIMIT = 8;
+const CLEAR_CHANNEL_CONCURRENCY = 4;
 
 export class SecurityService {
   public constructor(
@@ -335,8 +336,9 @@ export class SecurityService {
     }
 
     const newestBulkDeleteTime = Date.now() - RECENT_BULK_DELETE_LIMIT_MS;
+    let nextChannelIndex = 0;
 
-    for (const channel of textChannels) {
+    const scanChannel = async (channel: ClearableTextChannel): Promise<void> => {
       const channelName = channel.name ?? channel.id;
       const permissions = channel.permissionsFor(botMember);
       const canClear =
@@ -347,22 +349,13 @@ export class SecurityService {
       if (!canClear) {
         result.skippedChannels++;
         result.noPermissionChannels.push({ channelId: channel.id, channelName, reason: 'البوت يحتاج View Channel + Read Message History + Manage Messages.' });
-        continue;
+        return;
       }
 
       result.channels++;
       let before: string | undefined;
-      const recentMatches = new Collection<string, Message>();
-      const oldMatches: Message[] = [];
 
-      await onProgress?.({
-        phase: 'scanning',
-        channelName,
-        channelsScanned: result.channels,
-        totalChannels: result.totalChannels,
-        deleted: result.deleted,
-        matched: result.matched,
-      });
+      await this.reportClearProgress(result, channelName, 'scanning', onProgress);
 
       while (true) {
         const batch = await channel.messages.fetch({ limit: 100, before }).catch((error: unknown) => {
@@ -379,18 +372,14 @@ export class SecurityService {
         result.scannedMessages += batch.size;
         before = batch.last()?.id;
 
+        const recentMatches = new Collection<string, Message>();
+        const oldMatches: Message[] = [];
+
         for (const message of batch.values()) {
           if (message.author.id !== userId) continue;
 
           result.matched++;
-          if (result.samples.length < CLEAR_SAMPLE_LIMIT) {
-            result.samples.push({
-              channelId: channel.id,
-              channelName,
-              content: this.describeClearMessage(message),
-              createdAt: message.createdTimestamp,
-            });
-          }
+          this.addClearSample(result, channel, message);
 
           if (message.createdTimestamp > newestBulkDeleteTime) {
             recentMatches.set(message.id, message);
@@ -399,57 +388,102 @@ export class SecurityService {
           }
         }
 
+        if (recentMatches.size > 0 || oldMatches.length > 0) {
+          await this.reportClearProgress(result, channelName, 'deleting', onProgress);
+          await this.deleteClearMatches(channel, channelName, recentMatches, oldMatches, result);
+        }
+
+        await this.reportClearProgress(result, channelName, 'scanning', onProgress);
+
         if (batch.size < 100) break;
       }
+    };
 
-      await onProgress?.({
-        phase: 'deleting',
-        channelName,
-        channelsScanned: result.channels,
-        totalChannels: result.totalChannels,
-        deleted: result.deleted,
-        matched: result.matched,
-      });
-
-      const recentMessages = [...recentMatches.values()];
-      for (let index = 0; index < recentMessages.length; index += CLEAR_DELETE_CHUNK_SIZE) {
-        const chunk = new Collection<string, Message>();
-        for (const message of recentMessages.slice(index, index + CLEAR_DELETE_CHUNK_SIZE)) {
-          chunk.set(message.id, message);
-        }
-
-        const deleted = await channel.bulkDelete(chunk, true).catch((error: unknown) => {
-          result.failed += chunk.size;
-          result.failedChannels.push({
-            channelId: channel.id,
-            channelName,
-            reason: error instanceof Error ? error.message : 'فشل الحذف الجماعي.',
-          });
-          return null;
-        });
-
-        if (deleted) {
-          result.deleted += deleted.size;
-          result.deletedRecent += deleted.size;
-          result.failed += Math.max(0, chunk.size - deleted.size);
-        }
-      }
-
-      for (let index = 0; index < oldMatches.length; index += CLEAR_OLD_DELETE_CONCURRENCY) {
-        const chunk = oldMatches.slice(index, index + CLEAR_OLD_DELETE_CONCURRENCY);
-        const settled = await Promise.allSettled(chunk.map((message) => message.delete()));
-        for (const item of settled) {
-          if (item.status === 'fulfilled') {
-            result.deleted++;
-            result.deletedOld++;
-          } else {
-            result.failed++;
+    const workerCount = Math.min(CLEAR_CHANNEL_CONCURRENCY, textChannels.length);
+    await Promise.all(
+      Array.from({ length: workerCount }, async () => {
+        while (nextChannelIndex < textChannels.length) {
+          const channel = textChannels[nextChannelIndex++];
+          if (channel) {
+            await scanChannel(channel);
           }
         }
+      }),
+    );
+
+    return result;
+  }
+
+  private async reportClearProgress(
+    result: ClearResult,
+    channelName: string,
+    phase: ClearProgress['phase'],
+    onProgress?: (progress: ClearProgress) => Promise<void>,
+  ): Promise<void> {
+    await onProgress?.({
+      phase,
+      channelName,
+      channelsScanned: Math.min(result.channels + result.skippedChannels, result.totalChannels),
+      totalChannels: result.totalChannels,
+      deleted: result.deleted,
+      matched: result.matched,
+    });
+  }
+
+  private addClearSample(result: ClearResult, channel: ClearableTextChannel, message: Message): void {
+    if (result.samples.length >= CLEAR_SAMPLE_LIMIT) return;
+
+    result.samples.push({
+      channelId: channel.id,
+      channelName: channel.name ?? channel.id,
+      content: this.describeClearMessage(message),
+      createdAt: message.createdTimestamp,
+    });
+  }
+
+  private async deleteClearMatches(
+    channel: ClearableTextChannel,
+    channelName: string,
+    recentMatches: Collection<string, Message>,
+    oldMatches: Message[],
+    result: ClearResult,
+  ): Promise<void> {
+    const recentMessages = [...recentMatches.values()];
+    for (let index = 0; index < recentMessages.length; index += CLEAR_DELETE_CHUNK_SIZE) {
+      const chunk = new Collection<string, Message>();
+      for (const message of recentMessages.slice(index, index + CLEAR_DELETE_CHUNK_SIZE)) {
+        chunk.set(message.id, message);
+      }
+
+      const deleted = await channel.bulkDelete(chunk, true).catch((error: unknown) => {
+        result.failed += chunk.size;
+        result.failedChannels.push({
+          channelId: channel.id,
+          channelName,
+          reason: error instanceof Error ? error.message : 'فشل الحذف الجماعي.',
+        });
+        return null;
+      });
+
+      if (deleted) {
+        result.deleted += deleted.size;
+        result.deletedRecent += deleted.size;
+        result.failed += Math.max(0, chunk.size - deleted.size);
       }
     }
 
-    return result;
+    for (let index = 0; index < oldMatches.length; index += CLEAR_OLD_DELETE_CONCURRENCY) {
+      const chunk = oldMatches.slice(index, index + CLEAR_OLD_DELETE_CONCURRENCY);
+      const settled = await Promise.allSettled(chunk.map((message) => message.delete()));
+      for (const item of settled) {
+        if (item.status === 'fulfilled') {
+          result.deleted++;
+          result.deletedOld++;
+        } else {
+          result.failed++;
+        }
+      }
+    }
   }
 
   private buildClearStatusEmbed(
