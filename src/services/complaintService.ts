@@ -624,7 +624,14 @@ export class ComplaintService {
         finalEmbed.addFields({ name: '📸 الأدلة المرفقة', value: evidenceText, inline: false });
       }
 
-      await dashboardMsg.edit({ embeds: [finalEmbed], components: [] }).catch((err) => {
+      const cancelRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`complaint:btn:cancel_submit:${complaint.complaint_id}`)
+          .setLabel('❌ إلغاء الشكوى')
+          .setStyle(ButtonStyle.Danger)
+      );
+
+      await dashboardMsg.edit({ embeds: [finalEmbed], components: [cancelRow] }).catch((err) => {
         logger.error('Failed to edit dashboard message to final state', err);
       });
 
@@ -684,9 +691,10 @@ export class ComplaintService {
       return;
     }
 
-    // Verify only the complainant can cancel
-    if (interaction.user.id !== complaint.user_id) {
-      await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ لا يمكنك إلغاء الشكوى لأنك لست صاحب الشكوى.')]);
+    // Verify only the complainant or the main admin (1397364822152315052) can cancel
+    const isMainAdmin = interaction.user.id === '1397364822152315052';
+    if (interaction.user.id !== complaint.user_id && !isMainAdmin) {
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ لا يمكنك إلغاء الشكوى لأنك لست صاحب الشكوى أو الإداري المسؤول.')]);
       return;
     }
 
