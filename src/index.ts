@@ -667,6 +667,59 @@ client.on(Events.GuildRoleUpdate, async (oldRole, newRole) => {
   }
 });
 
+function trimLogValue(value: string, max = 1000): string {
+  return value.length > max ? `${value.slice(0, max - 3)}...` : value;
+}
+
+function normalizeLogLine(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+client.on(Events.MessageDelete, async (message) => {
+  try {
+    const guild = message.guild;
+    if (!guild || guild.id !== configStore.current.guild.id) return;
+
+    const author = message.author ? `${message.author.tag} (${message.author.id})` : 'غير معروف';
+    const executor = await serverLogService.fetchExecutor(guild, AuditLogEvent.MessageDelete, message.author?.id);
+    const text = message.partial ? 'غير متوفر (الرسالة لم تكن محفوظة عند البوت).' : message.content?.trim() || 'بدون محتوى نصي.';
+    const attachments = message.partial ? [] : message.attachments.map((attachment) => attachment.url).slice(0, 3);
+    const content = trimLogValue([text, attachments.length > 0 ? `المرفقات:\n${attachments.join('\n')}` : ''].filter(Boolean).join('\n\n'));
+
+    await serverLogService.send('messages', 'حذف رسالة', `تم حذف رسالة في <#${message.channelId}>.`, [
+      { name: 'بواسطة', value: executor, inline: true },
+      { name: 'صاحب الرسالة', value: author, inline: true },
+      { name: 'الروم', value: `<#${message.channelId}>`, inline: true },
+      { name: 'آيدي الرسالة', value: message.id, inline: true },
+      { name: 'المحتوى', value: content },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log message delete', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.MessageBulkDelete, async (messages, channel) => {
+  try {
+    if (!('guild' in channel) || !channel.guild || channel.guild.id !== configStore.current.guild.id) return;
+
+    const executor = await serverLogService.fetchExecutor(channel.guild, AuditLogEvent.MessageBulkDelete, channel.id);
+    const samples = [...messages.values()].slice(0, 8).map((deletedMessage, index) => {
+      const author = deletedMessage.author ? deletedMessage.author.tag : 'غير معروف';
+      const text = deletedMessage.partial ? 'غير محفوظة عند البوت' : normalizeLogLine(deletedMessage.content || 'بدون محتوى نصي.');
+      return `${index + 1}. ${author}: ${trimLogValue(text, 120)}`;
+    });
+
+    await serverLogService.send('messages', 'حذف رسائل جماعي', `تم حذف ${messages.size} رسالة في <#${channel.id}>.`, [
+      { name: 'بواسطة', value: executor, inline: true },
+      { name: 'الروم', value: `<#${channel.id}>`, inline: true },
+      { name: 'عدد الرسائل', value: `${messages.size}`, inline: true },
+      { name: 'عينات محفوظة', value: trimLogValue(samples.join('\n') || 'لا توجد رسائل محفوظة عند البوت.') },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log message bulk delete', error instanceof Error ? error.message : error);
+  }
+});
+
 client.on(Events.MessageCreate, async (message) => {
   try {
     if (message.author.bot || !message.inGuild()) return;

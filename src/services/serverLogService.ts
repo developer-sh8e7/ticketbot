@@ -9,7 +9,7 @@ import {
 } from 'discord.js';
 import { logger } from '../utils/logger.js';
 
-type LogChannelKey = 'security' | 'roles' | 'channels' | 'permissions';
+type LogChannelKey = 'security' | 'roles' | 'channels' | 'permissions' | 'messages';
 
 const LOG_CATEGORY_NAME = 'bot-logs';
 const LOG_CATEGORY_ID = '1483569375456792576';
@@ -18,6 +18,7 @@ const LOG_CHANNEL_NAMES: Record<LogChannelKey, string> = {
   roles: 'role-logs',
   channels: 'channel-logs',
   permissions: 'permission-logs',
+  messages: 'message-logs',
 };
 
 const LOG_CHANNEL_DESCRIPTIONS: Record<LogChannelKey, string> = {
@@ -25,6 +26,7 @@ const LOG_CHANNEL_DESCRIPTIONS: Record<LogChannelKey, string> = {
   roles: 'يسجل إعطاء وإزالة الرتب، ويعرض العضو والرتبة ومن نفذ التعديل.',
   channels: 'يسجل إنشاء وحذف وتعديل الرومات داخل السيرفر.',
   permissions: 'يسجل تغييرات برمشن الرومات وبرمشن الرتب المهمة.',
+  messages: 'يسجل حذف الرسائل الفردي والجماعي مع الروم وصاحب الرسالة ومن حذفها إذا توفر.',
 };
 
 export class ServerLogService {
@@ -72,14 +74,33 @@ export class ServerLogService {
   }
 
   public async fetchExecutor(guild: Guild, type: AuditLogEvent, targetId?: string): Promise<string> {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const executor = await this.findRecentExecutor(guild, type, targetId);
+      if (executor) return executor;
+
+      if (attempt < 2) {
+        await this.wait(750);
+      }
+    }
+
+    return 'غير معروف';
+  }
+
+  private async findRecentExecutor(guild: Guild, type: AuditLogEvent, targetId?: string): Promise<string | null> {
     const logs = await guild.fetchAuditLogs({ type, limit: 5 }).catch(() => null);
     const entry = logs?.entries.find((item) => {
-      const recent = Date.now() - item.createdTimestamp < 10_000;
+      const recent = Date.now() - item.createdTimestamp < 12_000;
       const sameTarget = targetId ? item.targetId === targetId : true;
       return recent && sameTarget;
     });
 
-    return entry?.executor ? `${entry.executor.tag} (${entry.executor.id})` : 'غير معروف';
+    return entry?.executor ? `${entry.executor.tag} (${entry.executor.id})` : null;
+  }
+
+  private async wait(ms: number): Promise<void> {
+    await new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
   }
 
   private async resolveCategory(guild: Guild) {
