@@ -1280,7 +1280,11 @@ export class TicketService {
           new ButtonBuilder()
             .setCustomId('wait:btn:trade_value')
             .setLabel('كتابة التريد في حدود كم دولار $')
-            .setStyle(ButtonStyle.Primary)
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId('wait:btn:close')
+            .setLabel('🔒 إغلاق التذكرة')
+            .setStyle(ButtonStyle.Danger)
         );
 
         await created.send({
@@ -1331,11 +1335,30 @@ export class TicketService {
       return;
     }
 
-    if (interaction.user.id !== ticket.creator_id) {
+    const isManager = canManageTicket(interaction.member as GuildMember, this.config);
+    const isCreator = interaction.user.id === ticket.creator_id;
+
+    if (!isCreator && !isManager) {
       await interaction.reply({
         content: '❌ ليس لديك الصلاحية لاستخدام هذه الأزرار.',
         flags: MessageFlags.Ephemeral
       }).catch(() => null);
+      return;
+    }
+
+    if (interaction.customId !== 'wait:btn:close' && !isCreator) {
+      await interaction.reply({
+        content: '❌ هذا الإجراء مخصص فقط لصاحب التذكرة.',
+        flags: MessageFlags.Ephemeral
+      }).catch(() => null);
+      return;
+    }
+
+    if (interaction.customId === 'wait:btn:close') {
+      if (!(await safeDeferReply(interaction, 'wait_close_defer'))) {
+        return;
+      }
+      await this.handleCloseTicket(interaction);
       return;
     }
 
