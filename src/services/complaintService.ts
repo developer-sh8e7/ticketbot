@@ -30,9 +30,12 @@ import { buildErrorEmbed, buildSuccessEmbed } from '../builders/ticketBuilder.js
 
 const ROLE_COMPENSATION = '1507646852869259325';
 const COMPLAINT_CHANNEL_ID = '1507929693687644301';
+const COMPLAINT_CATEGORY_ID = '1507928422100504576';
 const LOG_CHANNEL_ID = '1486132662753034280';
 
 export class ComplaintService {
+  private readonly creatingUsers = new Set<string>();
+
   public constructor(
     private readonly configStore: ConfigStore,
     private readonly complaintRepository: ComplaintRepository,
@@ -236,256 +239,246 @@ export class ComplaintService {
 
     const userId = interaction.user.id;
 
-    // Double-check rate limit on modal submit (prevent direct modal triggers or quick spam)
-    const rateLimited = await this.complaintRepository.checkUserRateLimit(userId, 5).catch(() => false);
-    if (rateLimited) {
-      await safeEditReply(interaction, [buildErrorEmbed(this.config, '⏱️ يرجى الانتظار قليلاً قبل تقديم شكوى أخرى (يمكنك تقديم شكوى واحدة كل 5 دقائق).')]);
+    // Concurrency Lock: prevent same user from submitting multiple creation requests simultaneously
+    if (this.creatingUsers.has(userId)) {
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, '🔄 جاري إنشاء تذكرة الشكوى الخاصة بك بالفعل. يرجى الانتظار.')]);
       return;
     }
+    this.creatingUsers.add(userId);
 
-    // Double-check active complaints check on modal submit
-    const activeExists = await this.complaintRepository.checkActiveComplaintExistsForUser(userId).catch(() => false);
-    if (activeExists) {
-      await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ لديك شكوى نشطة بالفعل قيد المراجعة. يرجى الانتظار حتى يتم حلها قبل فتح شكوى جديدة.')]);
-      return;
-    }
-
-    const ticketInput = interaction.fields.getTextInputValue('ticket_number') || null;
-    let linkedTicketRecord: any = null;
-
-    if (ticketInput) {
-      const parsedNum = parseInt(ticketInput.replace(/\D/g, ''), 10);
-      if (!isNaN(parsedNum)) {
-        const records = await this.ticketRepository.listAll().catch(() => []);
-        linkedTicketRecord = records.find((r: any) => r.ticket_number === parsedNum) || null;
-      }
-
-      if (!linkedTicketRecord) {
-        await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ رقم التذكرة المرتبطة غير صحيح أو غير موجود بالنظام. يرجى إدخال رقم تذكرة صحيح (مثال: 0015).')]);
+    try {
+      // Double-check rate limit on modal submit (prevent direct modal triggers or quick spam)
+      const rateLimited = await this.complaintRepository.checkUserRateLimit(userId, 5).catch(() => false);
+      if (rateLimited) {
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, '⏱️ يرجى الانتظار قليلاً قبل تقديم شكوى أخرى (يمكنك تقديم شكوى واحدة كل 5 دقائق).')]);
         return;
       }
 
-      // Duplicate Protection: check if there's already an active complaint on this ticket
-      const ticketId = linkedTicketRecord.channel_id || linkedTicketRecord.id;
-      const altId = linkedTicketRecord.id || linkedTicketRecord.channel_id;
-      const dupExists = await this.complaintRepository.checkActiveComplaintExistsForTicket(ticketId, altId);
-      if (dupExists) {
-        await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ يوجد بالفعل شكوى نشطة ومفتوحة مرتبطة بهذه التذكرة. يمنع تكرار الشكاوى على نفس التذكرة.')]);
-        return;
-      }
-    } else {
-      // ticketInput is null. If this is a general complaint, it is strictly required!
-      if (customId === 'complaint:modal:general') {
-        await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ يجب إدخال رقم التذكرة المرتبطة للشكاوى العامة.')]);
-        return;
-      }
-    }
-
-    let complaintRecord: ComplaintRecord | null = null;
-    let complaintChannelName = '';
-    let accusedMediatorId: string | null = null;
-    let category = '';
-    let tradeValue: string | null = null;
-    let description = '';
-    let complaintType: 'mediator' | 'general' = 'general';
-
-    if (customId === 'complaint:modal:mediator') {
-      complaintType = 'mediator';
-      const rawMediatorId = interaction.fields.getTextInputValue('mediator_id');
-      accusedMediatorId = this.parseUserId(rawMediatorId);
-      category = interaction.fields.getTextInputValue('category');
-      tradeValue = interaction.fields.getTextInputValue('trade_value') || null;
-      description = interaction.fields.getTextInputValue('description');
-
-      if (!accusedMediatorId) {
-        await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ معرف الوسيط غير صحيح. يرجى إدخال آيدي الوسيط بشكل سليم (أرقام فقط).')]);
+      // Double-check active complaints check on modal submit
+      const activeExists = await this.complaintRepository.checkActiveComplaintExistsForUser(userId).catch(() => false);
+      if (activeExists) {
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ لديك شكوى نشطة بالفعل قيد المراجعة. يرجى الانتظار حتى يتم حلها قبل فتح شكوى جديدة.')]);
         return;
       }
 
-      // Verify mediator exists in server
-      const targetUser = await interaction.client.users.fetch(accusedMediatorId).catch(() => null);
-      if (!targetUser) {
-        await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ تعذر العثور على مستخدم بهذا الآيدي في ديسكورد.')]);
-        return;
-      }
+      const ticketInput = interaction.fields.getTextInputValue('ticket_number') || null;
+      let linkedTicketRecord: any = null;
 
-      // Determine mediator type (trial/trusted) if they are registered mediators
-      const mediatorReg = await this.mediatorRepository.getMediator(accusedMediatorId).catch(() => null);
-      const mediatorType = mediatorReg ? (mediatorReg.status === 'trusted' ? 'trusted' : 'new') : 'unknown';
-
-      // Create complaint draft in DB (status: open by default, updated later)
-      complaintRecord = await this.complaintRepository.createComplaint({
-        user_id: interaction.user.id,
-        mediator_id: accusedMediatorId,
-        ticket_id: linkedTicketRecord ? (linkedTicketRecord.channel_id || linkedTicketRecord.id) : ticketInput,
-        trade_value: tradeValue || (linkedTicketRecord?.metadata?.trade_value ? `$${linkedTicketRecord.metadata.trade_value}` : null),
-        mediator_type: mediatorType,
-        complaint_type: 'mediator',
-        category,
-        description,
-        channel_id: null
-      });
-
-      complaintChannelName = `شكوى-وسيط-${complaintRecord.complaint_id}`;
-    } else if (customId === 'complaint:modal:general') {
-      complaintType = 'general';
-      category = interaction.fields.getTextInputValue('title');
-      description = interaction.fields.getTextInputValue('description');
-
-      complaintRecord = await this.complaintRepository.createComplaint({
-        user_id: interaction.user.id,
-        mediator_id: null,
-        ticket_id: linkedTicketRecord ? (linkedTicketRecord.channel_id || linkedTicketRecord.id) : ticketInput,
-        trade_value: null,
-        mediator_type: null,
-        complaint_type: 'general',
-        category,
-        description,
-        channel_id: null
-      });
-
-      complaintChannelName = `شكوى-عامة-${complaintRecord.complaint_id}`;
-    }
-
-    if (!complaintRecord) {
-      await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ حدث خطأ أثناء إنشاء سجل الشكوى.')]);
-      return;
-    }
-
-    // Create private ticket channel for the complaint
-    const complaintsCenterChannel = guild.channels.cache.get(COMPLAINT_CHANNEL_ID);
-    const parentId = complaintsCenterChannel?.parentId || undefined;
-
-    const channel = await guild.channels.create({
-      name: complaintChannelName,
-      type: 0, // GuildText
-      parent: parentId,
-      permissionOverwrites: [
-        {
-          id: guild.id,
-          deny: [PermissionFlagsBits.ViewChannel]
-        },
-        {
-          id: interaction.user.id,
-          allow: [
-            PermissionFlagsBits.ViewChannel,
-            PermissionFlagsBits.SendMessages,
-            PermissionFlagsBits.AttachFiles,
-            PermissionFlagsBits.EmbedLinks
-          ]
-        },
-        {
-          id: ROLE_COMPENSATION,
-          allow: [
-            PermissionFlagsBits.ViewChannel,
-            PermissionFlagsBits.SendMessages,
-            PermissionFlagsBits.AttachFiles,
-            PermissionFlagsBits.EmbedLinks
-          ]
-        },
-        {
-          id: guild.members.me!.id,
-          allow: [
-            PermissionFlagsBits.ViewChannel,
-            PermissionFlagsBits.SendMessages,
-            PermissionFlagsBits.AttachFiles,
-            PermissionFlagsBits.EmbedLinks
-          ]
+      if (ticketInput) {
+        const parsedNum = parseInt(ticketInput.replace(/\D/g, ''), 10);
+        if (!isNaN(parsedNum)) {
+          const records = await this.ticketRepository.listAll().catch(() => []);
+          linkedTicketRecord = records.find((r: any) => r.ticket_number === parsedNum) || null;
         }
-      ]
-    }).catch((err) => {
-      logger.error('Failed to create complaint channel', err);
-      return null;
-    });
 
-    if (!channel) {
-      await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ فشل إنشاء قنوات الشكاوى بالسيرفر، يرجى مراجعة صلاحيات البوت.')]);
-      return;
-    }
+        if (!linkedTicketRecord) {
+          await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ رقم التذكرة المرتبطة غير صحيح أو غير موجود بالنظام. يرجى إدخال رقم تذكرة صحيح (مثال: 0015).')]);
+          return;
+        }
 
-    // Update complaint record with channel ID
-    await this.complaintRepository.updateComplaint(complaintRecord.complaint_id, {
-      channel_id: channel.id
-    }).catch(() => null);
-
-    // Send Welcome Embed and instructions inside the complaint channel
-    const rulesEmbed = new EmbedBuilder()
-      .setColor(hexToDecimal(this.config.bot.embedColor))
-      .setTitle(`📜 شروط وقوانين تذكرة الشكوى رقم #${complaintRecord.complaint_id}`)
-      .setDescription(
-        'مرحباً بك في تذكرة الشكوى الخاصة بك. يرجى اتباع التعليمات لإنهاء شكواك:\n\n' +
-        '⚠️ **تعليمات تقديم الأدلة:**\n' +
-        '• يرجى رفع أي أدلة (صور، مقاطع فيديو، ملفات، أو روابط خارجية) تدعم شكواك في هذه القناة الآن.\n' +
-        '• بعد انتهائك من رفع الأدلة، اضغط على زر **"✅ تأكيد وإرسال الشكوى"** بالأسفل ليتم حفظها رسمياً وإرسالها للمراجعة.\n' +
-        '• **لن تظهر الشكوى لفريق المراجعة حتى تضغط على زر التأكيد.**\n' +
-        '• بعد التأكيد، سيتم تعطيل إمكانية الكتابة مؤقتاً لحين رد الإدارة.'
-      );
-
-    const detailsEmbed = new EmbedBuilder()
-      .setColor(hexToDecimal(this.config.bot.embedColor))
-      .setTitle(complaintType === 'mediator' ? '👤 تفاصيل الشكوى على الوسيط' : '📝 تفاصيل الشكوى العامة')
-      .addFields(
-        { name: 'رقم الشكوى', value: `#${complaintRecord.complaint_id}`, inline: true },
-        { name: 'صاحب الشكوى (المشتكي)', value: `<@${interaction.user.id}>`, inline: true },
-        { name: 'تاريخ الفتح', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
-      );
-
-    if (complaintType === 'mediator' && accusedMediatorId) {
-      detailsEmbed.addFields(
-        { name: 'الوسيط المتهم', value: `<@${accusedMediatorId}>`, inline: true },
-        { name: 'آيدي الوسيط', value: `\`${accusedMediatorId}\``, inline: true },
-        { name: 'نوع المشكلة / التصنيف', value: category, inline: true }
-      );
-
-      if (tradeValue) {
-        detailsEmbed.addFields({ name: 'قيمة التريد / المفقودات', value: tradeValue, inline: true });
+        // Duplicate Protection: check if there's already an active complaint on this ticket
+        const ticketId = linkedTicketRecord.channel_id || linkedTicketRecord.id;
+        const altId = linkedTicketRecord.id || linkedTicketRecord.channel_id;
+        const dupExists = await this.complaintRepository.checkActiveComplaintExistsForTicket(ticketId, altId);
+        if (dupExists) {
+          await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ يوجد بالفعل شكوى نشطة ومفتوحة مرتبطة بهذه التذكرة. يمنع تكرار الشكاوى على نفس التذكرة.')]);
+          return;
+        }
+      } else {
+        // ticketInput is null. If this is a general complaint, it is strictly required!
+        if (customId === 'complaint:modal:general') {
+          await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ يجب إدخال رقم التذكرة المرتبطة للشكاوى العامة.')]);
+          return;
+        }
       }
-    } else {
-      detailsEmbed.addFields({ name: 'عنوان الشكوى', value: category, inline: true });
-    }
 
-    detailsEmbed.addFields({ name: 'تفاصيل ووصف المشكلة', value: description, inline: false });
+      let complaintRecord: ComplaintRecord | null = null;
+      let complaintChannelName = '';
+      let accusedMediatorId: string | null = null;
+      let category = '';
+      let tradeValue: string | null = null;
+      let description = '';
+      let complaintType: 'mediator' | 'general' = 'general';
 
-    // Link Ticket details automatically if found
-    if (linkedTicketRecord) {
-      const ticketEmbed = new EmbedBuilder()
-        .setColor(hexToDecimal(this.config.bot.successColor))
-        .setTitle('🔗 تذكرة وساطة مرتبطة تلقائياً')
+      if (customId === 'complaint:modal:mediator') {
+        complaintType = 'mediator';
+        const rawMediatorId = interaction.fields.getTextInputValue('mediator_id');
+        accusedMediatorId = this.parseUserId(rawMediatorId);
+        category = interaction.fields.getTextInputValue('category');
+        tradeValue = interaction.fields.getTextInputValue('trade_value') || null;
+        description = interaction.fields.getTextInputValue('description');
+
+        if (!accusedMediatorId) {
+          await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ معرف الوسيط غير صحيح. يرجى إدخال آيدي الوسيط بشكل سليم (أرقام فقط).')]);
+          return;
+        }
+
+        // Verify mediator exists in server
+        const targetUser = await interaction.client.users.fetch(accusedMediatorId).catch(() => null);
+        if (!targetUser) {
+          await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ تعذر العثور على مستخدم بهذا الآيدي في ديسكورد.')]);
+          return;
+        }
+
+        // Determine mediator type (trial/trusted) if they are registered mediators
+        const mediatorReg = await this.mediatorRepository.getMediator(accusedMediatorId).catch(() => null);
+        const mediatorType = mediatorReg ? (mediatorReg.status === 'trusted' ? 'trusted' : 'new') : 'unknown';
+
+        // Create complaint draft in DB (status: open by default, updated later)
+        complaintRecord = await this.complaintRepository.createComplaint({
+          user_id: interaction.user.id,
+          mediator_id: accusedMediatorId,
+          ticket_id: linkedTicketRecord ? (linkedTicketRecord.channel_id || linkedTicketRecord.id) : ticketInput,
+          trade_value: tradeValue || (linkedTicketRecord?.metadata?.trade_value ? `$${linkedTicketRecord.metadata.trade_value}` : null),
+          mediator_type: mediatorType,
+          complaint_type: 'mediator',
+          category,
+          description,
+          channel_id: null
+        });
+
+        complaintChannelName = `شكوى-وسيط-${complaintRecord.complaint_id}`;
+      } else if (customId === 'complaint:modal:general') {
+        complaintType = 'general';
+        category = interaction.fields.getTextInputValue('title');
+        description = interaction.fields.getTextInputValue('description');
+
+        complaintRecord = await this.complaintRepository.createComplaint({
+          user_id: interaction.user.id,
+          mediator_id: null,
+          ticket_id: linkedTicketRecord ? (linkedTicketRecord.channel_id || linkedTicketRecord.id) : ticketInput,
+          trade_value: null,
+          mediator_type: null,
+          complaint_type: 'general',
+          category,
+          description,
+          channel_id: null
+        });
+
+        complaintChannelName = `شكوى-عامة-${complaintRecord.complaint_id}`;
+      }
+
+      if (!complaintRecord) {
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ حدث خطأ أثناء إنشاء سجل الشكوى.')]);
+        return;
+      }
+
+      // Create private ticket channel for the complaint inside the category 1507928422100504576
+      const channel = await guild.channels.create({
+        name: complaintChannelName,
+        type: 0, // GuildText
+        parent: COMPLAINT_CATEGORY_ID,
+        permissionOverwrites: [
+          {
+            id: guild.id,
+            deny: [PermissionFlagsBits.ViewChannel]
+          },
+          {
+            id: interaction.user.id,
+            allow: [
+              PermissionFlagsBits.ViewChannel,
+              PermissionFlagsBits.SendMessages,
+              PermissionFlagsBits.AttachFiles,
+              PermissionFlagsBits.EmbedLinks
+            ]
+          },
+          {
+            id: ROLE_COMPENSATION,
+            allow: [
+              PermissionFlagsBits.ViewChannel,
+              PermissionFlagsBits.SendMessages,
+              PermissionFlagsBits.AttachFiles,
+              PermissionFlagsBits.EmbedLinks
+            ]
+          },
+          {
+            id: guild.members.me!.id,
+            allow: [
+              PermissionFlagsBits.ViewChannel,
+              PermissionFlagsBits.SendMessages,
+              PermissionFlagsBits.AttachFiles,
+              PermissionFlagsBits.EmbedLinks
+            ]
+          }
+        ]
+      }).catch((err) => {
+        logger.error('Failed to create complaint channel', err);
+        return null;
+      });
+
+      if (!channel) {
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ فشل إنشاء قنوات الشكاوى بالسيرفر، يرجى مراجعة صلاحيات البوت.')]);
+        return;
+      }
+
+      // Update complaint record with channel ID
+      await this.complaintRepository.updateComplaint(complaintRecord.complaint_id, {
+        channel_id: channel.id
+      }).catch(() => null);
+
+      // Construct a single, premium, cohesive dashboard embed
+      const dashboardEmbed = new EmbedBuilder()
+        .setColor(hexToDecimal(this.config.bot.embedColor))
+        .setTitle(`📢 تذكرة شكوى جديدة | #${complaintRecord.complaint_id}`)
+        .setDescription(
+          'مرحباً بك في تذكرة الشكوى الخاصة بك. يرجى اتباع التعليمات التالية لإتمام الشكوى:\n\n' +
+          '⚠️ **خطوات إرفاق الأدلة وتأكيد الشكوى:**\n' +
+          '1. قم برفع أي صور أو مقاطع فيديو أو روابط محادثات تدعم شكواك في هذه القناة.\n' +
+          '2. بعد الانتهاء، اضغط على زر **"✅ تأكيد وإرسال الشكوى"** بالأسفل لحفظ الأدلة وإرسالها للمراجعة.\n\n' +
+          '• **تنبيه:** لن يتم النظر في الشكوى حتى تقوم بالضغط على زر التأكيد.\n' +
+          '• بعد التأكيد، سيتم تعطيل إمكانية الكتابة مؤقتاً لحين رد الإدارة.'
+        )
         .addFields(
-          { name: 'اسم التذكرة', value: `#${linkedTicketRecord.channel_name || 'غير معروف'}`, inline: true },
-          { name: 'رقم التذكرة', value: `#${padTicketNumber(linkedTicketRecord.ticket_number, this.config.naming.zeroPadLength)}`, inline: true },
-          { name: 'الوسيط المستلم', value: linkedTicketRecord.claimed_by ? `<@${linkedTicketRecord.claimed_by}>` : 'لم يتم الاستلام', inline: true },
-          { name: 'وقت الفتح', value: `<t:${Math.floor(new Date(linkedTicketRecord.opened_at).getTime() / 1000)}:F>`, inline: false }
+          { name: '👤 صاحب الشكوى (المشتكي)', value: `<@${interaction.user.id}> (\`${interaction.user.id}\`)`, inline: true },
+          { name: '📁 نوع الشكوى', value: complaintType === 'mediator' ? '👤 على وسيط' : '📝 عامة / إدارية', inline: true },
+          { name: 'رقم الشكوى', value: `#${complaintRecord.complaint_id}`, inline: true }
         );
 
-      if (linkedTicketRecord.closed_at) {
-        ticketEmbed.addFields(
-          { name: 'وقت الإغلاق', value: `<t:${Math.floor(new Date(linkedTicketRecord.closed_at).getTime() / 1000)}:F>`, inline: true },
-          { name: 'سبب الإغلاق', value: linkedTicketRecord.close_reason || 'غير محدد', inline: true }
+      if (complaintType === 'mediator' && accusedMediatorId) {
+        dashboardEmbed.addFields(
+          { name: 'الوسيط المتهم', value: `<@${accusedMediatorId}>`, inline: true },
+          { name: 'آيدي الوسيط', value: `\`${accusedMediatorId}\``, inline: true },
+          { name: 'تصنيف المشكلة', value: category, inline: true }
         );
+        if (tradeValue) {
+          dashboardEmbed.addFields({ name: 'قيمة التريد / المفقودات', value: tradeValue, inline: true });
+        }
+      } else {
+        dashboardEmbed.addFields({ name: 'عنوان الشكوى', value: category, inline: true });
       }
 
-      // Add permanent transcript link if available
-      const transcriptUrl = linkedTicketRecord.metadata?.transcript_url || null;
-      if (transcriptUrl) {
-        ticketEmbed.addFields({ name: 'أرشيف المحادثة (Transcript)', value: `[اضغط هنا لعرض أرشيف التذكرة](${transcriptUrl})`, inline: false });
+      if (linkedTicketRecord) {
+        dashboardEmbed.addFields(
+          { name: '🔗 التذكرة المرتبطة', value: `#${linkedTicketRecord.channel_name || 'غير معروف'} (\`#${padTicketNumber(linkedTicketRecord.ticket_number, this.config.naming.zeroPadLength)}\`)`, inline: true },
+          { name: 'الوسيط المستلم للتذكرة', value: linkedTicketRecord.claimed_by ? `<@${linkedTicketRecord.claimed_by}>` : 'لم يتم الاستلام', inline: true }
+        );
+
+        const transcriptUrl = linkedTicketRecord.metadata?.transcript_url || null;
+        if (transcriptUrl) {
+          dashboardEmbed.addFields({ name: 'أرشيف المحادثة (Transcript)', value: `[اضغط هنا لعرض أرشيف التذكرة](${transcriptUrl})`, inline: false });
+        }
       }
 
-      await channel.send({ embeds: [rulesEmbed, detailsEmbed, ticketEmbed] });
-    } else {
-      await channel.send({ embeds: [rulesEmbed, detailsEmbed] });
+      dashboardEmbed.addFields({ name: '📝 تفاصيل المشكلة', value: description, inline: false })
+        .setTimestamp();
+
+      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`complaint:btn:confirm_submit:${complaintRecord.complaint_id}`)
+          .setLabel('✅ تأكيد وإرسال الشكوى النهائية')
+          .setStyle(ButtonStyle.Success)
+      );
+
+      // Send the embed and components together as one single message in the ticket
+      await channel.send({ embeds: [dashboardEmbed], components: [row] });
+
+      await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم إنشاء تذكرة الشكوى', `✅ تم إنشاء تذكرة الشكوى بنجاح: <#${channel.id}>\nيرجى التوجه إليها لرفع الأدلة وتأكيد الشكوى.`)]);
+    } catch (err: any) {
+      logger.error('Failed to create complaint channel/record', err);
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, `❌ فشل إنشاء تذكرة الشكوى: ${err.message}`)]);
+    } finally {
+      this.creatingUsers.delete(userId);
     }
-
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`complaint:btn:confirm_submit:${complaintRecord.complaint_id}`)
-        .setLabel('✅ تأكيد وإرسال الشكوى النهائية')
-        .setStyle(ButtonStyle.Success)
-    );
-
-    await channel.send({ components: [row] });
-
-    await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم إنشاء تذكرة الشكوى', `✅ تم إنشاء تذكرة الشكوى بنجاح: <#${channel.id}>\nيرجى التوجه إليها لرفع الأدلة وتأكيد الشكوى.`)]);
   }
 
   /**
@@ -541,9 +534,10 @@ export class ComplaintService {
       return;
     }
 
-    const processingMsg = await channel.send({
-      embeds: [buildSuccessEmbed(this.config, '🔄 جاري حفظ الأدلة', 'جاري معالجة وإعادة رفع الأدلة إلى الأرشيف الدائم...')]
-    });
+    // Ephemeral processing update instead of channel.send
+    await safeEditReply(interaction, [
+      buildSuccessEmbed(this.config, '🔄 جاري حفظ الأدلة', 'جاري معالجة وإعادة رفع الأدلة إلى الأرشيف الدائم...')
+    ]);
 
     try {
       const logChannel = await guild.channels.fetch(LOG_CHANNEL_ID).catch(() => null);
@@ -600,29 +594,34 @@ export class ComplaintService {
         }
       }
 
-      // Remove "Confirm" button from the Welcome Row
-      if (interaction.message) {
-        await interaction.message.edit({ components: [] }).catch(() => null);
-      }
-
       // Lock channel for Complainant messages (prevent spam after finalization)
       await channel.permissionOverwrites.edit(complaint.user_id, {
-        SendMessages: false
+        SendMessages: false,
+        AttachFiles: false,
+        EmbedLinks: false
       }).catch(() => null);
 
-      await processingMsg.delete().catch(() => null);
+      // Edit original message in place (No new message is sent)
+      const dashboardMsg = interaction.message;
+      const originalEmbed = dashboardMsg.embeds[0];
+      const finalEmbed = new EmbedBuilder()
+        .setColor(hexToDecimal(this.config.bot.successColor))
+        .setTitle('✅ تم إرسال وتأكيد الشكوى بنجاح')
+        .setDescription(
+          'تم تسجيل وتوثيق الشكوى والأدلة بنجاح.\n' +
+          'تم تحويل الملف كاملاً إلى **فريق المراجعة والتعويضات** وسيتم دراسة الشكوى والتواصل معك في هذه القناة قريباً.\n\n' +
+          '🔒 **تم إغلاق صلاحية الكتابة لك لحين رد الإدارة.**'
+        )
+        .addFields(originalEmbed.fields)
+        .setTimestamp();
 
-      // Confirm success in complaint channel
-      await channel.send({
-        embeds: [
-          buildSuccessEmbed(
-            this.config,
-            '✅ تم إرسال وتأكيد الشكوى بنجاح',
-            'تم تسجيل وتوثيق الشكوى والأدلة بنجاح.\n' +
-            'تم تحويل الملف كاملاً إلى **فريق المراجعة والتعويضات** وسيتم دراسة الشكوى والتواصل معك في هذه القناة قريباً.\n\n' +
-            '🔒 **تم إغلاق صلاحية الكتابة لك لحين رد الإدارة.**'
-          )
-        ]
+      if (evidenceList.length > 0) {
+        const evidenceText = evidenceList.map((att: any, index: number) => `• [أدلة ملف ${index + 1}](${att.permanent_url}) (${att.name || 'بدون اسم'})`).join('\n');
+        finalEmbed.addFields({ name: '📸 الأدلة المرفقة', value: evidenceText, inline: false });
+      }
+
+      await dashboardMsg.edit({ embeds: [finalEmbed], components: [] }).catch((err) => {
+        logger.error('Failed to edit dashboard message to final state', err);
       });
 
       // Send Notification to logs and ping Compensation role
@@ -655,7 +654,6 @@ export class ComplaintService {
       await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم إرسال الشكوى', '✅ تم تأكيد الشكوى بنجاح.')]);
     } catch (err: any) {
       logger.error('Failed to confirm complaint', err);
-      await processingMsg.delete().catch(() => null);
       await safeEditReply(interaction, [buildErrorEmbed(this.config, `❌ فشل تأكيد الشكوى: ${err.message}`)]);
     }
   }

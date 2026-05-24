@@ -319,7 +319,20 @@ function trackLifecycleHealth(): void {
   }
 }
 
+const processedInteractions = new Set<string>();
+
 client.on(Events.InteractionCreate, async (interaction) => {
+  // Global duplicate interaction ID lock to prevent double event handling
+  if (processedInteractions.has(interaction.id)) {
+    logger.warn(`[instance=${INSTANCE_ID}] Interaction ${interaction.id} already processed. Ignoring duplicate event.`);
+    return;
+  }
+  processedInteractions.add(interaction.id);
+  if (processedInteractions.size > 2000) {
+    const firstItem = processedInteractions.values().next().value;
+    if (firstItem !== undefined) processedInteractions.delete(firstItem);
+  }
+
   const customId = interaction.isButton() || interaction.isModalSubmit() || interaction.isStringSelectMenu()
     ? interaction.customId
     : (interaction.isCommand() ? `/${interaction.commandName}` : 'N/A');
