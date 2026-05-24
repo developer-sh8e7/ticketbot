@@ -29,7 +29,7 @@ import { logger } from '../utils/logger.js';
 import { buildErrorEmbed, buildSuccessEmbed } from '../builders/ticketBuilder.js';
 
 const ROLE_COMPENSATION = '1507646852869259325';
-const COMPLAINT_CHANNEL_ID = '1507928422100504576';
+const COMPLAINT_CHANNEL_ID = '1507929693687644301';
 const LOG_CHANNEL_ID = '1486132662753034280';
 
 export class ComplaintService {
@@ -46,7 +46,7 @@ export class ComplaintService {
 
   /**
    * Setup complaints panel command.
-   * Sends the complaints selection panel to 1507928422100504576.
+   * Sends the complaints selection panel to 1507929693687644301.
    */
   public async sendComplaintsPanelCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     if (!interaction.inCachedGuild()) return;
