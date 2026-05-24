@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import {
   ChannelType,
   Collection,
@@ -45,6 +46,14 @@ type SecurityViolation = {
   title: string;
 };
 
+type ProfanityI18nModule = {
+  filter(input: string): string;
+  contains(...input: string[]): boolean;
+  list(input: string[]): string[];
+  add(input: string[]): void;
+  remove(input: string[]): void;
+};
+
 type ClearChannelIssue = {
   channelId: string;
   channelName: string;
@@ -90,6 +99,16 @@ const CLEAR_DELETE_CHUNK_SIZE = 100;
 const CLEAR_OLD_DELETE_CONCURRENCY = 5;
 const CLEAR_SAMPLE_LIMIT = 8;
 const CLEAR_CHANNEL_CONCURRENCY = 4;
+const CUSTOM_PROFANITY_DICTIONARY = [
+  ...ARABIC_SEVERE_PROFANITY_TERMS,
+  ...ARABIC_SEVERE_PROFANITY_PHRASES,
+  ...ENGLISH_SEVERE_PROFANITY_TERMS,
+  ...ENGLISH_SEVERE_PROFANITY_PHRASES,
+];
+
+const require = createRequire(import.meta.url);
+const profanityI18n = require('profanity-i18n') as ProfanityI18nModule;
+profanityI18n.add(CUSTOM_PROFANITY_DICTIONARY);
 
 export class SecurityService {
   public constructor(
@@ -272,9 +291,15 @@ export class SecurityService {
 
   private hasSevereProfanity(normalized: string, compact: string): boolean {
     return (
+      this.hasLibraryProfanity(normalized) ||
       this.hasArabicProfanity(normalized, compact) ||
       this.hasEnglishProfanity(normalized)
     );
+  }
+
+  private hasLibraryProfanity(normalized: string): boolean {
+    const words = normalized.split(/\s+/).filter(Boolean);
+    return words.length > 0 && profanityI18n.contains(...words);
   }
 
   private hasArabicProfanity(normalized: string, compact: string): boolean {
