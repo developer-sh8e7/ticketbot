@@ -32,6 +32,7 @@ import {
   REMOVE_MEMBER_MODAL_ID,
   TICKET_BUTTON_IDS,
   extractOpenTicketCategoryKey,
+  isAuthorizedAdmin,
 } from '../constants/customIds.js';
 import { DuplicateOpenTicketError, TicketRepository } from '../database/ticketRepository.js';
 import { MediatorRepository } from '../database/mediatorRepository.js';
@@ -691,6 +692,9 @@ export class TicketService {
       case TICKET_BUTTON_IDS.stats:
         await this.handleStatsButton(interaction);
         return;
+      case TICKET_BUTTON_IDS.proof:
+        await this.handleProofButton(interaction);
+        return;
       default:
         return;
     }
@@ -999,6 +1003,150 @@ export class TicketService {
       logger.error('Failed to fetch stats via button', error instanceof Error ? error.message : error);
       await safeEditReply(interaction, [buildErrorEmbed(this.config, 'تعذر جلب الإحصائيات.')]);
     }
+  }
+
+  private async handleProofButton(interaction: ButtonInteraction): Promise<void> {
+    const context = await this.ensureManagerAccess(interaction);
+    if (!context) {
+      return;
+    }
+
+    const ticket = await this.ticketRepository.findByChannelId(context.channel.id);
+    if (!ticket) {
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ تعذر العثور على بيانات التذكرة في قاعدة البيانات.')]);
+      return;
+    }
+
+    await safeEditReply(interaction, [
+      buildSuccessEmbed(
+        this.config,
+        '📤 رفع دليل التسليم',
+        'يرجى إرسال ملف دليل التسليم (صورة، فيديو، أو ملف) في هذه القناة الآن.\nسيقوم النظام بحفظ الدليل بشكل دائم ومستمر.\n\n⏱️ **لديك 60 ثانية لرفع الملف.**'
+      )
+    ]);
+
+    const filter = (m: any) => m.author.id === interaction.user.id && m.attachments.size > 0;
+    const collector = context.channel.createMessageCollector({
+      filter,
+      max: 1,
+      time: 60000,
+    });
+
+    let collected = false;
+
+    collector.on('collect', async (msg) => {
+      collected = true;
+
+      const processingMsg = await context.channel.send({
+        embeds: [buildSuccessEmbed(this.config, '🔄 جاري المعالجة', 'جاري حفظ دليل التسليم وإرساله للأرشيف...')]
+      });
+
+      try {
+        const attachments = Array.from(msg.attachments.values());
+        
+        const logChannelId = '1486132662753034280';
+        const logChannel = await context.guild.channels.fetch(logChannelId).catch(() => null);
+        
+        let permanentUrls: string[] = [];
+
+        if (isGuildTextChannelType(logChannel)) {
+          const logEmbed = new EmbedBuilder()
+            .setColor(hexToDecimal(this.config.bot.successColor))
+            .setTitle('📦 دليل تسليم جديد (Proof of Delivery)')
+            .addFields(
+              { name: 'التذكرة', value: `#${ticket.channel_name || 'غير معروف'}`, inline: true },
+              { name: 'رقم التذكرة', value: `#${padTicketNumber(ticket.ticket_number, this.config.naming.zeroPadLength)}`, inline: true },
+              { name: 'الوسيط', value: `<@${interaction.user.id}> (\`${interaction.user.id}\`)`, inline: true },
+              { name: 'العميل', value: `<@${ticket.creator_id}> (\`${ticket.creator_id}\`)`, inline: true },
+              { name: 'وقت الرفع', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
+            )
+            .setTimestamp();
+
+          const logMsg = await logChannel.send({
+            embeds: [logEmbed],
+            files: attachments.map(att => att.url)
+          });
+          permanentUrls = logMsg.attachments.map(att => att.url);
+        } else {
+          logger.error('Proof of Delivery log channel 1486132662753034280 not found.');
+          permanentUrls = attachments.map(att => att.url);
+        }
+
+        const mediatorLogChannelId = this.config.guild.mediatorLogChannelId;
+        if (mediatorLogChannelId && mediatorLogChannelId !== logChannelId) {
+          const medLogChannel = await context.guild.channels.fetch(mediatorLogChannelId).catch(() => null);
+          if (isGuildTextChannelType(medLogChannel)) {
+            const medLogEmbed = new EmbedBuilder()
+              .setColor(hexToDecimal(this.config.bot.successColor))
+              .setTitle('📦 دليل تسليم وسيط')
+              .addFields(
+                { name: 'التذكرة', value: `#${ticket.channel_name || 'غير معروف'}`, inline: true },
+                { name: 'الوسيط', value: `<@${interaction.user.id}>`, inline: true },
+                { name: 'العميل', value: `<@${ticket.creator_id}>`, inline: true }
+              )
+              .setTimestamp();
+
+            await medLogChannel.send({
+              embeds: [medLogEmbed],
+              files: attachments.map(att => att.url)
+            }).catch(() => null);
+          }
+        }
+
+        await msg.delete().catch(() => null);
+
+        const currentMetadata = (ticket.metadata as Record<string, any>) || {};
+        const deliveryProofs = currentMetadata.delivery_proofs || [];
+
+        const newProof = {
+          uploaded_by: interaction.user.id,
+          uploaded_by_tag: interaction.user.tag,
+          uploaded_at: new Date().toISOString(),
+          original_message_id: msg.id,
+          files: attachments.map((att, index) => ({
+            name: att.name,
+            original_url: att.url,
+            permanent_url: permanentUrls[index] || att.url,
+            size: att.size,
+            contentType: att.contentType
+          }))
+        };
+
+        deliveryProofs.push(newProof);
+
+        await this.ticketRepository.updateMetadata(ticket.channel_id!, {
+          ...currentMetadata,
+          delivery_proofs: deliveryProofs
+        });
+
+        await processingMsg.delete().catch(() => null);
+
+        await context.channel.send({
+          embeds: [
+            buildSuccessEmbed(
+              this.config,
+              '✅ تم حفظ دليل التسليم بنجاح',
+              `تم حفظ وأرشفة ملف دليل التسليم المقدم من الوسيط <@${interaction.user.id}> بشكل دائم في السجلات وقاعدة البيانات.`
+            )
+          ]
+        });
+
+      } catch (err: any) {
+        logger.error('Error processing proof of delivery', err);
+        await processingMsg.delete().catch(() => null);
+        await context.channel.send({
+          embeds: [buildErrorEmbed(this.config, `❌ تعذر حفظ دليل التسليم: ${err.message}`)]
+        }).catch(() => null);
+      }
+    });
+
+    collector.on('end', async (_, reason) => {
+      if (!collected && reason !== 'messageDelete') {
+        await context.channel.send({
+          content: `<@${interaction.user.id}> ⚠️ انتهى الوقت المخصص لرفع دليل التسليم (60 ثانية) دون إرفاق أي ملف.`
+        }).catch(() => null);
+      }
+    });
   }
 
   public async handleSlashClose(interaction: ChatInputCommandInteraction, reason: string): Promise<void> {
@@ -1830,7 +1978,7 @@ export class TicketService {
   // ============================================================
 
   public async sendControlPanel(interaction: ChatInputCommandInteraction | ButtonInteraction): Promise<void> {
-    if (interaction.user.id !== '1397364822152315052') {
+    if (!isAuthorizedAdmin(interaction.user.id)) {
       await safeReply(interaction, [buildErrorEmbed(this.config, '❌ ليس لديك الصلاحية لتشغيل لوحة التحكم.')]);
       return;
     }
@@ -1888,7 +2036,7 @@ export class TicketService {
   }
 
   public async handleDelWaitClick(interaction: ButtonInteraction): Promise<void> {
-    if (interaction.user.id !== '1397364822152315052') {
+    if (!isAuthorizedAdmin(interaction.user.id)) {
       await safeReply(interaction, [buildErrorEmbed(this.config, '❌ ليس لديك الصلاحية.')]);
       return;
     }
@@ -1945,7 +2093,7 @@ export class TicketService {
   }
 
   public async handleDelActiveClick(interaction: ButtonInteraction): Promise<void> {
-    if (interaction.user.id !== '1397364822152315052') {
+    if (!isAuthorizedAdmin(interaction.user.id)) {
       await safeReply(interaction, [buildErrorEmbed(this.config, '❌ ليس لديك الصلاحية.')]);
       return;
     }
@@ -1989,7 +2137,7 @@ export class TicketService {
   }
 
   public async handleDelAllClick(interaction: ButtonInteraction): Promise<void> {
-    if (interaction.user.id !== '1397364822152315052') {
+    if (!isAuthorizedAdmin(interaction.user.id)) {
       await safeReply(interaction, [buildErrorEmbed(this.config, '❌ ليس لديك الصلاحية.')]);
       return;
     }
@@ -2023,7 +2171,7 @@ export class TicketService {
   }
 
   public async handleDelAllConfirmClick(interaction: ButtonInteraction): Promise<void> {
-    if (interaction.user.id !== '1397364822152315052') {
+    if (!isAuthorizedAdmin(interaction.user.id)) {
       await safeReply(interaction, [buildErrorEmbed(this.config, '❌ ليس لديك الصلاحية.')]);
       return;
     }
@@ -2079,7 +2227,7 @@ export class TicketService {
   }
 
   public async handleDelCustomClick(interaction: ButtonInteraction): Promise<void> {
-    if (interaction.user.id !== '1397364822152315052') {
+    if (!isAuthorizedAdmin(interaction.user.id)) {
       await safeReply(interaction, [buildErrorEmbed(this.config, '❌ ليس لديك الصلاحية.')]);
       return;
     }
@@ -2104,7 +2252,7 @@ export class TicketService {
   }
 
   public async handleDelCustomModalSubmit(interaction: ModalSubmitInteraction): Promise<void> {
-    if (interaction.user.id !== '1397364822152315052') {
+    if (!isAuthorizedAdmin(interaction.user.id)) {
       await safeReply(interaction, [buildErrorEmbed(this.config, '❌ ليس لديك الصلاحية.')]);
       return;
     }

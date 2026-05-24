@@ -9,16 +9,18 @@ import {
   type ChatInputCommandInteraction,
 } from 'discord.js';
 import { registerCommands } from './commands/registerCommands.js';
-import { ADD_MEMBER_MODAL_ID, REMOVE_MEMBER_MODAL_ID, TICKET_BUTTON_IDS, isOpenTicketModal } from './constants/customIds.js';
+import { ADD_MEMBER_MODAL_ID, REMOVE_MEMBER_MODAL_ID, TICKET_BUTTON_IDS, isOpenTicketModal, isAuthorizedAdmin } from './constants/customIds.js';
 import { createSupabaseClient } from './database/supabase.js';
 import { InfrastructureRepository } from './database/infrastructureRepository.js';
 import { TicketRepository } from './database/ticketRepository.js';
+import { ComplaintRepository } from './database/complaintRepository.js';
 import { loadEnv } from './env.js';
 import { ConfigStore } from './services/configStore.js';
 import { InfrastructureService } from './services/infrastructureService.js';
 import { PanelService } from './services/panelService.js';
 import { canManagePanels } from './services/permissionService.js';
 import { TicketService } from './services/ticketService.js';
+import { ComplaintService } from './services/complaintService.js';
 import { EscalationService } from './services/escalationService.js';
 import { AIService } from './services/aiService.js';
 import { TranscriptService } from './services/transcriptService.js';
@@ -45,6 +47,7 @@ const infrastructureRepository = new InfrastructureRepository(supabase);
 const roleProtectionRepository = new RoleProtectionRepository(supabase);
 const roleManagementRepository = new RoleManagementRepository(supabase);
 const mediatorRepository = new MediatorRepository(supabase);
+const complaintRepository = new ComplaintRepository(supabase);
 const transcriptService = new TranscriptService();
 const panelService = new PanelService(configStore);
 const infrastructureService = new InfrastructureService({
@@ -57,7 +60,8 @@ const ticketService = new TicketService({
   transcriptService,
   mediatorRepository,
 });
-const mediatorService = new MediatorService(configStore, mediatorRepository);
+const mediatorService = new MediatorService(configStore, mediatorRepository, complaintRepository);
+const complaintService = new ComplaintService(configStore, complaintRepository, ticketRepository, mediatorRepository);
 const aiService = new AIService(
   {
     apiKey: env.GEMINI_API_KEY,
@@ -227,12 +231,29 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
   }
 
   if (interaction.commandName === 'panel' || interaction.commandName === 'panle') {
+    if (!isAuthorizedAdmin(interaction.user.id)) {
+      await safeReply(interaction, [buildErrorEmbed(configStore.current, '❌ ليس لديك الصلاحية لاستخدام هذا الأمر.')]);
+      return;
+    }
     await ticketService.sendControlPanel(interaction);
     return;
   }
 
   if (interaction.commandName === 'panel-mm') {
+    if (!isAuthorizedAdmin(interaction.user.id)) {
+      await safeReply(interaction, [buildErrorEmbed(configStore.current, '❌ ليس لديك الصلاحية لاستخدام هذا الأمر.')]);
+      return;
+    }
     await mediatorService.sendControlPanel(interaction);
+    return;
+  }
+
+  if (interaction.commandName === 'panel-complaints-send') {
+    if (!isAuthorizedAdmin(interaction.user.id)) {
+      await safeReply(interaction, [buildErrorEmbed(configStore.current, '❌ ليس لديك الصلاحية لاستخدام هذا الأمر.')]);
+      return;
+    }
+    await complaintService.sendComplaintsPanelCommand(interaction);
     return;
   }
 }
@@ -341,7 +362,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
 
       if (interaction.customId === 'ctrl_panel:modal:del_custom') {
-        if (interaction.user.id !== '1397364822152315052') {
+        if (!isAuthorizedAdmin(interaction.user.id)) {
           await safeReply(interaction, [buildErrorEmbed(configStore.current, '❌ ليس لديك الصلاحية لاستخدام لوحة التحكم.')]);
           return;
         }
@@ -351,7 +372,17 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
 
       if (interaction.customId.startsWith('mm:modal:')) {
+        if (!isAuthorizedAdmin(interaction.user.id)) {
+          await safeReply(interaction, [buildErrorEmbed(configStore.current, '❌ ليس لديك الصلاحية لاستخدام هذه اللوحة.')]);
+          return;
+        }
         await mediatorService.handleModalSubmit(interaction);
+        trackLifecycleHealth();
+        return;
+      }
+
+      if (interaction.customId.startsWith('complaint:modal:')) {
+        await complaintService.handleComplaintModalSubmit(interaction);
         trackLifecycleHealth();
         return;
       }
@@ -372,13 +403,30 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
 
       if (interaction.customId.startsWith('mm:btn:')) {
+        if (!isAuthorizedAdmin(interaction.user.id)) {
+          await safeReply(interaction, [buildErrorEmbed(configStore.current, '❌ ليس لديك الصلاحية لاستخدام هذه اللوحة.')]);
+          return;
+        }
         await mediatorService.handleButton(interaction);
         trackLifecycleHealth();
         return;
       }
 
+      if (interaction.customId.startsWith('complaint:btn:confirm_submit:')) {
+        const complaintId = parseInt(interaction.customId.split(':')[3], 10);
+        await complaintService.handleConfirmSubmit(interaction, complaintId);
+        trackLifecycleHealth();
+        return;
+      }
+
+      if (interaction.customId.startsWith('complaint:btn:')) {
+        await complaintService.handleComplaintButton(interaction);
+        trackLifecycleHealth();
+        return;
+      }
+
       if (interaction.customId.startsWith('ctrl_panel:')) {
-        if (interaction.user.id !== '1397364822152315052') {
+        if (!isAuthorizedAdmin(interaction.user.id)) {
           await safeReply(interaction, [buildErrorEmbed(configStore.current, '❌ ليس لديك الصلاحية لاستخدام لوحة التحكم.')]);
           return;
         }

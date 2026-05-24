@@ -100,5 +100,11 @@ export function buildCommandDefinitions(config: AppConfig) {
       .setDescription('فتح لوحة التحكم الكاملة بالوسطاء (للإدارة فقط)') as SlashCommandBuilder
   );
 
+  commands.push(
+    new SlashCommandBuilder()
+      .setName('panel-complaints-send')
+      .setDescription('ارسال لوحة الشكاوي والاعتراضات لمركز الشكاوي (للأدمن فقط)') as SlashCommandBuilder
+  );
+
   return commands;
 }

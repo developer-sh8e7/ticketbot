@@ -9,6 +9,7 @@ export const TICKET_BUTTON_IDS = {
   claim: 'ticket:btn:claim',
   pin: 'ticket:btn:pin',
   stats: 'ticket:btn:stats',
+  proof: 'ticket:btn:proof',
 } as const;
 
 export const MEMBER_MODAL_FIELD_ID = 'member_input';
@@ -23,4 +24,14 @@ export function extractOpenTicketCategoryKey(customId: string): string | null {
   }
 
   return customId.slice(OPEN_TICKET_MODAL_PREFIX.length) || null;
+}
+
+export const ALLOWED_ADMIN_IDS = [
+  '959896496113844254',
+  '1148258174474928249',
+  '1397364822152315052'
+] as const;
+
+export function isAuthorizedAdmin(userId: string): boolean {
+  return ALLOWED_ADMIN_IDS.includes(userId as any);
 }

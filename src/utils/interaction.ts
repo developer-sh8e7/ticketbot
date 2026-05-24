@@ -88,13 +88,14 @@ export async function safeDeferReply(
 export async function safeReply(
   interaction: AnyRepliableInteraction,
   embeds: EmbedBuilder[],
+  components?: any[],
 ): Promise<boolean> {
   if (interaction.deferred || interaction.replied) {
-    return safeEditReply(interaction, embeds);
+    return safeEditReply(interaction, embeds, components);
   }
 
   try {
-    await interaction.reply({ flags: MessageFlags.Ephemeral, embeds });
+    await interaction.reply({ flags: MessageFlags.Ephemeral, embeds, components });
     return true;
   } catch (error) {
     if (isInteractionLifecycleError(error)) {
@@ -109,9 +110,10 @@ export async function safeReply(
 export async function safeEditReply(
   interaction: AnyRepliableInteraction,
   embeds: EmbedBuilder[],
+  components?: any[],
 ): Promise<boolean> {
   try {
-    await interaction.editReply({ embeds });
+    await interaction.editReply({ embeds, components });
     return true;
   } catch (error) {
     if (isInteractionLifecycleError(error)) {

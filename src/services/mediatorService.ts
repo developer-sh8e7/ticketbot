@@ -17,8 +17,12 @@ import {
 } from 'discord.js';
 import type { ConfigStore } from './configStore.js';
 import { MediatorRepository, type MediatorRecord } from '../database/mediatorRepository.js';
+import { ComplaintRepository } from '../database/complaintRepository.js';
+import { isAuthorizedAdmin } from '../constants/customIds.js';
 import { logger } from '../utils/logger.js';
 import { hexToDecimal } from '../utils/color.js';
+import { isGuildTextChannelType } from '../utils/discord.js';
+import { buildErrorEmbed, buildSuccessEmbed } from '../builders/ticketBuilder.js';
 import { safeReply, safeEditReply, safeDeferReply, safeShowModal } from '../utils/interaction.js';
 
 // Mediator System constants
@@ -30,7 +34,8 @@ const OWNER_ADMIN_ID = '1397364822152315052';       // Authorized Admin ID
 export class MediatorService {
   public constructor(
     private readonly configStore: ConfigStore,
-    private readonly mediatorRepository: MediatorRepository
+    private readonly mediatorRepository: MediatorRepository,
+    private readonly complaintRepository: ComplaintRepository
   ) {}
 
   private get config() {
@@ -41,8 +46,7 @@ export class MediatorService {
    * Check if a member has administrative permissions or is the authorized owner.
    */
   public isAdmin(member: GuildMember): boolean {
-    if (member.id === OWNER_ADMIN_ID) return true;
-    return member.permissions.has(PermissionFlagsBits.Administrator);
+    return isAuthorizedAdmin(member.id);
   }
 
   /**
@@ -59,17 +63,19 @@ export class MediatorService {
   /**
    * Sends the mediator management dashboard.
    */
-  public async sendControlPanel(interaction: ChatInputCommandInteraction): Promise<void> {
+  public async sendControlPanel(interaction: ChatInputCommandInteraction | ButtonInteraction): Promise<void> {
     if (!interaction.inCachedGuild()) return;
     const member = interaction.member as GuildMember;
 
     if (!this.isAdmin(member)) {
-      await safeReply(interaction, [
-        new EmbedBuilder()
-          .setColor(hexToDecimal(this.config.bot.errorColor))
-          .setTitle('❌ خطأ في الصلاحيات')
-          .setDescription('عذراً، هذا الأمر مخصص للإدارة وأصحاب الصلاحيات العليا فقط.')
-      ]);
+      if (interaction.isRepliable()) {
+        await safeReply(interaction, [
+          new EmbedBuilder()
+            .setColor(hexToDecimal(this.config.bot.errorColor))
+            .setTitle('❌ خطأ في الصلاحيات')
+            .setDescription('عذراً، هذا الأمر مخصص للإدارة وأصحاب الصلاحيات العليا فقط.')
+        ]);
+      }
       return;
     }
 
@@ -125,11 +131,31 @@ export class MediatorService {
         .setStyle(ButtonStyle.Secondary)
     );
 
-    await interaction.reply({
-      embeds: [embed],
-      components: [row1, row2],
-      flags: MessageFlags.Ephemeral
-    }).catch(() => null);
+    const row3 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId('mm:btn:complaints')
+        .setLabel('🚨 الشكاوي على الوسطاء')
+        .setStyle(ButtonStyle.Danger)
+    );
+
+    if (interaction.isButton()) {
+      await interaction.update({
+        embeds: [embed],
+        components: [row1, row2, row3],
+      }).catch(async () => {
+        if (interaction.deferred || interaction.replied) {
+          await interaction.editReply({ embeds: [embed], components: [row1, row2, row3] }).catch(() => null);
+        } else {
+          await interaction.reply({ embeds: [embed], components: [row1, row2, row3], flags: MessageFlags.Ephemeral }).catch(() => null);
+        }
+      });
+    } else {
+      await interaction.reply({
+        embeds: [embed],
+        components: [row1, row2, row3],
+        flags: MessageFlags.Ephemeral
+      }).catch(() => null);
+    }
   }
 
   /**
@@ -357,6 +383,157 @@ export class MediatorService {
       }
 
       await safeEditReply(interaction, [embed]);
+      return;
+    }
+
+    if (customId === 'mm:btn:complaints') {
+      await safeDeferReply(interaction, 'mm_complaints_defer');
+      const list = await this.mediatorRepository.listMediators();
+      const active = list.filter(m => m.status !== 'removed');
+      const complaints = await this.complaintRepository.listComplaints();
+      const openComplaints = complaints.filter(c => c.status !== 'solved');
+
+      let riskText = '';
+      for (const med of active) {
+        const medComplaints = complaints.filter(c => c.mediator_id === med.user_id && c.status !== 'solved');
+        const count = medComplaints.length;
+        const statusIcon = count === 0 ? '🟢 نظيف' : count < 3 ? '🟡 عليه شكاوي' : '🔴 خطر';
+        riskText += `• <@${med.user_id}> (\`${med.user_id}\`) - الشكاوى النشطة: \`${count}\` [${statusIcon}]\n`;
+      }
+      if (active.length === 0) riskText = '❌ لا يوجد وسطاء مسجلون حالياً.';
+
+      const embed = new EmbedBuilder()
+        .setColor(hexToDecimal(this.config.bot.errorColor))
+        .setTitle('🚨 مركز الشكاوي على الوسطاء')
+        .setDescription('مرحباً بك في لوحة متابعة الشكاوى المقدمة ضد وسطاء السيرفر.')
+        .addFields(
+          { name: '📊 إحصائيات عامة', value: `• الشكاوى المفتوحة/المعلقة: **${openComplaints.length}**\n• إجمالي الشكاوى المسجلة: **${complaints.length}**`, inline: false },
+          { name: '⚖️ تصنيف حالة الوسطاء الحاليين', value: riskText, inline: false }
+        )
+        .setTimestamp();
+
+      const recentOpen = openComplaints.slice(0, 5);
+      if (recentOpen.length > 0) {
+        const recentText = recentOpen.map(c => `• **#${c.complaint_id}** | المشتكي: <@${c.user_id}> - ضد: ${c.mediator_id ? `<@${c.mediator_id}>` : 'شكوى عامة'} [حالة: \`${c.status}\`]`).join('\n');
+        embed.addFields({ name: '📋 آخر 5 شكاوى مفتوحة', value: recentText, inline: false });
+      } else {
+        embed.addFields({ name: '📋 آخر 5 شكاوى مفتوحة', value: '🟢 لا توجد شكاوى مفتوحة حالياً.', inline: false });
+      }
+
+      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId('mm:btn:complaints_list')
+          .setLabel('عرض جميع الشكاوى')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('mm:btn:complaints_view')
+          .setLabel('🔍 تفاصيل شكوى')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('mm:btn:complaints_resolve')
+          .setLabel('✅ حل / تحديث شكوى')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('mm:btn:complaints_back')
+          .setLabel('↩️ العودة للرئيسية')
+          .setStyle(ButtonStyle.Danger)
+      );
+
+      await safeEditReply(interaction, [embed], [row]);
+      return;
+    }
+
+    if (customId === 'mm:btn:complaints_back') {
+      await this.sendControlPanel(interaction);
+      return;
+    }
+
+    if (customId === 'mm:btn:complaints_list') {
+      await safeDeferReply(interaction, 'mm_complaints_list_defer');
+      const complaints = await this.complaintRepository.listComplaints();
+      const embed = new EmbedBuilder()
+        .setColor(hexToDecimal(this.config.bot.embedColor))
+        .setTitle('📋 سجل الشكاوى الكامل بالسيرفر')
+        .setDescription(complaints.length === 0 ? '❌ لا توجد شكاوى مسجلة.' : `إجمالي الشكاوى: **${complaints.length}**`)
+        .setTimestamp();
+
+      const chunks = complaints.slice(0, 10);
+      for (const c of chunks) {
+        const typeText = c.complaint_type === 'mediator' ? `👤 على وسيط: <@${c.mediator_id}>` : '📝 شكوى عامة / إدارية';
+        embed.addFields({
+          name: `🚨 شكوى #${c.complaint_id} [حالة: ${c.status}]`,
+          value:
+            `• **المشتكي**: <@${c.user_id}>\n` +
+            `• **النوع**: ${typeText}\n` +
+            `• **الموضوع / التصنيف**: \`${c.category || 'غير محدد'}\`\n` +
+            `• **التاريخ**: <t:${Math.floor(new Date(c.created_at).getTime() / 1000)}:R>`
+        });
+      }
+
+      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId('mm:btn:complaints')
+          .setLabel('↩️ العودة للوحة الشكاوى')
+          .setStyle(ButtonStyle.Danger)
+      );
+
+      await safeEditReply(interaction, [embed], [row]);
+      return;
+    }
+
+    if (customId === 'mm:btn:complaints_view') {
+      const modal = new ModalBuilder()
+        .setCustomId('mm:modal:complaints_view')
+        .setTitle('عرض تفاصيل شكوى');
+
+      modal.addComponents(
+        new ActionRowBuilder<TextInputBuilder>().addComponents(
+          new TextInputBuilder()
+            .setCustomId('complaint_id')
+            .setLabel('رقم الشكوى (Complaint ID)')
+            .setPlaceholder('مثال: 1')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true)
+        )
+      );
+
+      await safeShowModal(interaction, modal, 'mm_complaints_view');
+      return;
+    }
+
+    if (customId === 'mm:btn:complaints_resolve') {
+      const modal = new ModalBuilder()
+        .setCustomId('mm:modal:complaints_resolve')
+        .setTitle('تحديث حالة الشكوى وحلها');
+
+      modal.addComponents(
+        new ActionRowBuilder<TextInputBuilder>().addComponents(
+          new TextInputBuilder()
+            .setCustomId('complaint_id')
+            .setLabel('رقم الشكوى (Complaint ID)')
+            .setPlaceholder('مثال: 1')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true)
+        ),
+        new ActionRowBuilder<TextInputBuilder>().addComponents(
+          new TextInputBuilder()
+            .setCustomId('status')
+            .setLabel('الحالة الجديدة (open / reviewing / solved)')
+            .setPlaceholder('اكتب أحد الخيارات الثلاثة بدقة بالإنجليزية')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true)
+        ),
+        new ActionRowBuilder<TextInputBuilder>().addComponents(
+          new TextInputBuilder()
+            .setCustomId('notes')
+            .setLabel('ملاحظات الحل أو الإجراء الإداري المتخذ')
+            .setPlaceholder('اكتب تفاصيل الإجراء المتخذ هنا')
+            .setStyle(TextInputStyle.Paragraph)
+            .setRequired(false)
+        )
+      );
+
+      await safeShowModal(interaction, modal, 'mm_complaints_resolve');
       return;
     }
   }
@@ -721,6 +898,135 @@ export class MediatorService {
           .setColor(hexToDecimal(this.config.bot.successColor))
           .setTitle('✅ تم التحديث بنجاح')
           .setDescription(`تم تحديث ملاحظات الوسيط <@${userId}> بنجاح بقاعدة البيانات.`)
+      ]);
+      return;
+    }
+
+    // 6. View Complaint Details
+    if (customId === 'mm:modal:complaints_view') {
+      const complaintIdStr = interaction.fields.getTextInputValue('complaint_id');
+      const complaintId = parseInt(complaintIdStr, 10);
+
+      if (isNaN(complaintId)) {
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ رقم الشكوى غير صحيح. يرجى كتابة رقم صحيح (مثال: 1).')]);
+        return;
+      }
+
+      const c = await this.complaintRepository.getComplaint(complaintId);
+      if (!c) {
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, `❌ تعذر العثور على الشكوى رقم #${complaintId} في قاعدة البيانات.`)]);
+        return;
+      }
+
+      let evidenceText = '❌ لا توجد أدلة مرفوعة.';
+      if (c.evidence && c.evidence.length > 0) {
+        evidenceText = c.evidence.map((att: any, index: number) => `• [أدلة ملف ${index + 1}](${att.permanent_url}) (${att.name || 'بدون اسم'})`).join('\n');
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor(hexToDecimal(c.status === 'solved' ? this.config.bot.successColor : this.config.bot.errorColor))
+        .setTitle(`🚨 تفاصيل الشكوى رقم #${c.complaint_id}`)
+        .addFields(
+          { name: 'حالة الشكوى', value: c.status === 'solved' ? '✅ تم الحل' : c.status === 'reviewing' ? '🔄 قيد المراجعة' : '🚨 مفتوحة', inline: true },
+          { name: 'المشتكي', value: `<@${c.user_id}> (\`${c.user_id}\`)`, inline: true },
+          { name: 'نوع الشكوى', value: c.complaint_type === 'mediator' ? '👤 على وسيط' : '📝 عامة / إدارية', inline: true }
+        )
+        .setTimestamp();
+
+      if (c.complaint_type === 'mediator' && c.mediator_id) {
+        embed.addFields(
+          { name: 'الوسيط المتهم', value: `<@${c.mediator_id}> (\`${c.mediator_id}\`)`, inline: true },
+          { name: 'رتبته', value: c.mediator_type === 'trusted' ? 'وسيط مضمون' : 'وسيط جديد', inline: true },
+          { name: 'التصنيف / المشكلة', value: c.category || 'غير محدد', inline: true }
+        );
+        if (c.trade_value) {
+          embed.addFields({ name: 'قيمة التريد / المفقودات', value: c.trade_value, inline: true });
+        }
+      } else {
+        embed.addFields({ name: 'عنوان الشكوى', value: c.category || 'بدون عنوان', inline: true });
+      }
+
+      embed.addFields(
+        { name: 'وصف المشكلة وتفاصيلها', value: c.description, inline: false },
+        { name: '📸 الأدلة والإثباتات المرفقة', value: evidenceText, inline: false },
+        { name: 'تاريخ الإنشاء', value: `<t:${Math.floor(new Date(c.created_at).getTime() / 1000)}:F>`, inline: false }
+      );
+
+      if (c.handled_by) {
+        embed.addFields({ name: 'المسؤول المعالج', value: `<@${c.handled_by}>`, inline: true });
+      }
+      if (c.resolution_notes) {
+        embed.addFields({ name: 'ملاحظات الإجراء الإداري / الحل', value: c.resolution_notes, inline: false });
+      }
+
+      await safeEditReply(interaction, [embed]);
+      return;
+    }
+
+    // 7. Resolve Complaint
+    if (customId === 'mm:modal:complaints_resolve') {
+      const complaintIdStr = interaction.fields.getTextInputValue('complaint_id');
+      const complaintId = parseInt(complaintIdStr, 10);
+      const rawStatus = interaction.fields.getTextInputValue('status').trim().toLowerCase();
+      const notes = interaction.fields.getTextInputValue('notes') || '';
+
+      if (isNaN(complaintId)) {
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ رقم الشكوى غير صحيح.')]);
+        return;
+      }
+
+      if (rawStatus !== 'open' && rawStatus !== 'reviewing' && rawStatus !== 'solved') {
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ حالة غير صحيحة. يرجى كتابة أحد الخيارات الثلاثة بدقة: open أو reviewing أو solved.')]);
+        return;
+      }
+
+      const c = await this.complaintRepository.getComplaint(complaintId);
+      if (!c) {
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, `❌ تعذر العثور على الشكوى رقم #${complaintId}.`)]);
+        return;
+      }
+
+      const statusMap = {
+        open: '🚨 مفتوحة (Open)',
+        reviewing: '🔄 قيد المراجعة (Reviewing)',
+        solved: '✅ تم الحل (Solved)'
+      };
+
+      const updated = await this.complaintRepository.updateComplaint(complaintId, {
+        status: rawStatus as any,
+        handled_by: interaction.user.id,
+        resolution_notes: notes || null
+      });
+
+      // Update state in complaint channel if it exists
+      if (c.channel_id) {
+        const complChannel = await guild.channels.fetch(c.channel_id).catch(() => null);
+        if (complChannel && isGuildTextChannelType(complChannel)) {
+          const stateEmbed = new EmbedBuilder()
+            .setColor(hexToDecimal(rawStatus === 'solved' ? this.config.bot.successColor : this.config.bot.embedColor))
+            .setTitle('📢 تحديث حالة الشكوى من الإدارة')
+            .addFields(
+              { name: 'رقم الشكوى', value: `#${c.complaint_id}`, inline: true },
+              { name: 'الحالة الجديدة', value: statusMap[rawStatus], inline: true },
+              { name: 'المسؤول المعالج', value: `<@${interaction.user.id}>`, inline: true },
+              { name: 'ملاحظات الإجراء الإداري المتخذ', value: notes || 'لم يتم إضافة أي ملاحظات.', inline: false }
+            )
+            .setTimestamp();
+
+          await complChannel.send({ embeds: [stateEmbed] }).catch(() => null);
+
+          if (rawStatus === 'solved') {
+            await complChannel.send({ content: '🔒 **لقد تم حل الشكوى رسمياً بواسطة الإدارة، سيتم أرشفة هذه القناة لاحقاً.**' }).catch(() => null);
+          }
+        }
+      }
+
+      await safeEditReply(interaction, [
+        buildSuccessEmbed(
+          this.config,
+          '✅ تم تحديث الشكوى بنجاح',
+          `تم تحديث حالة الشكوى رقم **#${complaintId}** بنجاح إلى: **${statusMap[rawStatus]}** بقاعدة البيانات.`
+        )
       ]);
       return;
     }

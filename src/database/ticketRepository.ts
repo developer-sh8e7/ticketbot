@@ -80,6 +80,18 @@ export class TicketRepository {
     }
   }
 
+  public async listAll(): Promise<TicketRecord[]> {
+    const { data, error } = await this.supabase
+      .from('tickets')
+      .select('*');
+
+    if (error) {
+      throw new Error(`Failed to list all tickets: ${error.message}`);
+    }
+
+    return (data || []).map(mapTicket);
+  }
+
   public async findOpenByCreator(guildId: string, creatorId: string): Promise<TicketRecord | null> {
     const { data, error } = await this.supabase
       .from('tickets')
