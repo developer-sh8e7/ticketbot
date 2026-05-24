@@ -99,6 +99,11 @@ const CLEAR_DELETE_CHUNK_SIZE = 100;
 const CLEAR_OLD_DELETE_CONCURRENCY = 5;
 const CLEAR_SAMPLE_LIMIT = 8;
 const CLEAR_CHANNEL_CONCURRENCY = 4;
+const SECURITY_BYPASS_USER_IDS = new Set([
+  '959896496113844254',
+  '1397364822152315052',
+  '1148258174474928249',
+]);
 const CUSTOM_PROFANITY_DICTIONARY = [
   ...ARABIC_SEVERE_PROFANITY_TERMS,
   ...ARABIC_SEVERE_PROFANITY_PHRASES,
@@ -118,6 +123,7 @@ export class SecurityService {
 
   public async handleMessage(message: Message): Promise<boolean> {
     if (!message.inGuild() || message.author.bot) return false;
+    if (SECURITY_BYPASS_USER_IDS.has(message.author.id)) return false;
 
     const violation = this.detectViolation(message.content);
     if (!violation) return false;
@@ -125,18 +131,35 @@ export class SecurityService {
     await message.delete().catch(() => null);
 
     const member = message.member;
+    let timeoutApplied = false;
+    let timeoutError: string | null = null;
     if (member?.moderatable && violation.timeoutMs > 0) {
-      await member.timeout(violation.timeoutMs, `Security protection: ${violation.reason}`).catch((error) => {
+      await member.timeout(violation.timeoutMs, `Security protection: ${violation.reason}`).then(() => {
+        timeoutApplied = true;
+      }).catch((error) => {
+        timeoutError = error instanceof Error ? error.message : 'تعذر تطبيق التايم أوت.';
         logger.warn('Failed to timeout security user', error instanceof Error ? error.message : error);
       });
+    } else if (violation.timeoutMs > 0) {
+      timeoutError = 'البوت لا يملك صلاحية تايم أوت على هذا العضو أو رتبة العضو أعلى من البوت.';
     }
 
-    await this.logs.send('security', violation.title, `تم حذف رسالة من <@${message.author.id}>${violation.timeoutMs > 0 ? ' وإعطاؤه تايم أوت.' : '.'}`, [
+    const action = this.securityActionLabel(violation, timeoutApplied, timeoutError);
+    const fields = [
       { name: 'العضو', value: `<@${message.author.id}>\n${message.author.tag}\nID: ${message.author.id}`, inline: true },
       { name: 'الروم', value: `<#${message.channelId}>`, inline: true },
       { name: 'السبب', value: this.securityReasonLabel(violation.reason), inline: true },
+      { name: 'الإجراء', value: action, inline: true },
+      { name: 'مدة التايم أوت', value: this.formatDuration(violation.timeoutMs), inline: true },
+      { name: 'آيدي الرسالة', value: message.id, inline: true },
       { name: 'المحتوى', value: this.trimEmbedValue(message.content || 'بدون محتوى') },
-    ]);
+    ];
+
+    if (timeoutError) {
+      fields.push({ name: 'ملاحظة التايم أوت', value: this.trimEmbedValue(timeoutError), inline: false });
+    }
+
+    await this.logs.send('security', violation.title, `تم تنفيذ نظام الحماية على رسالة من <@${message.author.id}>.`, fields);
 
     return true;
   }
@@ -369,6 +392,23 @@ export class SecurityService {
       default:
         return reason;
     }
+  }
+
+  private securityActionLabel(violation: SecurityViolation, timeoutApplied: boolean, timeoutError: string | null): string {
+    if (violation.timeoutMs <= 0) return 'حذف الرسالة فقط';
+    if (timeoutApplied) return 'حذف الرسالة + تايم أوت';
+    if (timeoutError) return 'حذف الرسالة فقط - تعذر التايم أوت';
+    return 'حذف الرسالة فقط';
+  }
+
+  private formatDuration(ms: number): string {
+    if (ms <= 0) return 'لا يوجد';
+
+    const minutes = Math.round(ms / 60_000);
+    if (minutes < 60) return `${minutes} دقيقة`;
+
+    const hours = minutes / 60;
+    return Number.isInteger(hours) ? `${hours} ساعة` : `${minutes} دقيقة`;
   }
 
   private normalizeContent(content: string): string {

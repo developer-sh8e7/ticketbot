@@ -36,6 +36,12 @@ export const ARABIC_SEVERE_PROFANITY_TERMS = [
   'زانية',
   'زنوه',
   'زنوة',
+  'محنة',
+  'محنه',
+  'ممحون',
+  'منكوح',
+  'منكوحه',
+  'منكوحة',
   'صثبخن',
   'كلب',
   'كلبه',
@@ -102,6 +108,10 @@ export const ARABIC_SEVERE_PROFANITY_PHRASES = [
   'يا زاني',
   'يا زنوة',
   'يا زنوه',
+  'يا محنة',
+  'يا محنه',
+  'يا ممحون',
+  'يا منكوح',
 ] as const;
 
 export const ENGLISH_SEVERE_PROFANITY_TERMS = [
