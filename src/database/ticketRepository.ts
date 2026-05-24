@@ -9,6 +9,19 @@ function mapTicket(row: unknown): TicketRecord {
   return row as TicketRecord;
 }
 
+function mapLatestTicket(rows: unknown[] | null, operation: string): TicketRecord {
+  const records = (rows || []).map(mapTicket);
+  if (records.length === 0) {
+    throw new Error(`${operation}: no matching ticket record was updated`);
+  }
+
+  return records.sort((a, b) => {
+    const aTime = new Date(a.opened_at ?? 0).getTime();
+    const bTime = new Date(b.opened_at ?? 0).getTime();
+    return bTime - aTime;
+  })[0];
+}
+
 function isDuplicateOpenTicketError(error: { code?: string; message?: string } | null): boolean {
   if (!error) {
     return false;
@@ -138,14 +151,13 @@ export class TicketRepository {
         claimed_by_tag: claimedByTag,
       })
       .eq('channel_id', channelId)
-      .select('*')
-      .single();
+      .select('*');
 
     if (error) {
       throw new Error(`Failed to update claim state: ${error.message}`);
     }
 
-    return mapTicket(data);
+    return mapLatestTicket(data, 'Failed to update claim state');
   }
 
   public async replaceParticipants(channelId: string, participantIds: string[]): Promise<TicketRecord> {
@@ -155,14 +167,13 @@ export class TicketRepository {
         participant_ids: participantIds,
       })
       .eq('channel_id', channelId)
-      .select('*')
-      .single();
+      .select('*');
 
     if (error) {
       throw new Error(`Failed to update participants: ${error.message}`);
     }
 
-    return mapTicket(data);
+    return mapLatestTicket(data, 'Failed to update participants');
   }
 
   public async updateAnswers(channelId: string, answers: any[]): Promise<TicketRecord> {
@@ -170,14 +181,13 @@ export class TicketRepository {
       .from('tickets')
       .update({ answers })
       .eq('channel_id', channelId)
-      .select('*')
-      .single();
+      .select('*');
 
     if (error) {
       throw new Error(`Failed to update answers: ${error.message}`);
     }
 
-    return mapTicket(data);
+    return mapLatestTicket(data, 'Failed to update answers');
   }
 
   public async updateMetadata(channelId: string, metadata: Record<string, any>): Promise<TicketRecord> {
@@ -185,14 +195,13 @@ export class TicketRepository {
       .from('tickets')
       .update({ metadata })
       .eq('channel_id', channelId)
-      .select('*')
-      .single();
+      .select('*');
 
     if (error) {
       throw new Error(`Failed to update metadata: ${error.message}`);
     }
 
-    return mapTicket(data);
+    return mapLatestTicket(data, 'Failed to update metadata');
   }
 
   public async getStats(guildId: string): Promise<{ open: number; closed: number; total: number }> {
@@ -225,14 +234,18 @@ export class TicketRepository {
       })
       .eq('channel_id', channelId)
       .eq('status', 'open')
-      .select('*')
-      .single();
+      .select('*');
 
     if (error) {
       throw new Error(`Failed to close ticket: ${error.message}`);
     }
 
-    return mapTicket(data);
+    if (!data || data.length === 0) {
+      const existing = await this.findByChannelId(channelId);
+      if (existing) return existing;
+    }
+
+    return mapLatestTicket(data, 'Failed to close ticket');
   }
 
   public async findOpenTickets(guildId: string): Promise<TicketRecord[]> {
@@ -334,13 +347,12 @@ export class TicketRepository {
         metadata,
       })
       .eq('channel_id', oldChannelId)
-      .select('*')
-      .single();
+      .select('*');
 
     if (error) {
       throw new Error(`Failed to update channel info: ${error.message}`);
     }
 
-    return mapTicket(data);
+    return mapLatestTicket(data, 'Failed to update channel info');
   }
 }
