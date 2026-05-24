@@ -703,4 +703,94 @@ export class ComplaintService {
       channel.delete().catch((err) => logger.error('Failed to delete complaint channel on cancellation', err));
     }, 3000);
   }
+
+  /**
+   * Handle the "إلغاء / إغلاق شكوى" button click from control panel.
+   */
+  public async handleCloseComplaintClick(interaction: ButtonInteraction): Promise<void> {
+    const modal = new ModalBuilder()
+      .setCustomId('ctrl_panel:modal:close_complaint')
+      .setTitle('إلغاء أو إغلاق شكوى نشطة');
+
+    modal.addComponents(
+      new ActionRowBuilder<TextInputBuilder>().addComponents(
+        new TextInputBuilder()
+          .setCustomId('complaint_id')
+          .setLabel('رقم الشكوى (Complaint ID)')
+          .setPlaceholder('مثال: 12')
+          .setStyle(TextInputStyle.Short)
+          .setRequired(true)
+      ),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(
+        new TextInputBuilder()
+          .setCustomId('notes')
+          .setLabel('سبب الإلغاء أو ملاحظات الإجراء المتخذ')
+          .setPlaceholder('اكتب تفاصيل الإجراء أو سبب الإغلاق هنا')
+          .setStyle(TextInputStyle.Paragraph)
+          .setRequired(true)
+      )
+    );
+
+    await safeShowModal(interaction, modal, 'ctrl_panel_close_complaint_modal');
+  }
+
+  /**
+   * Handle the close complaint modal submit.
+   */
+  public async handleCloseComplaintModalSubmit(interaction: ModalSubmitInteraction): Promise<void> {
+    if (!interaction.inCachedGuild()) return;
+    const guild = interaction.guild!;
+
+    await safeDeferReply(interaction, 'ctrl_panel_close_complaint_submit');
+
+    const complaintIdStr = interaction.fields.getTextInputValue('complaint_id');
+    const complaintId = parseInt(complaintIdStr, 10);
+    const notes = interaction.fields.getTextInputValue('notes') || '';
+
+    if (isNaN(complaintId)) {
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ رقم الشكوى غير صحيح. يرجى إدخال رقم صحيح (أرقام فقط).')]);
+      return;
+    }
+
+    const complaint = await this.complaintRepository.getComplaint(complaintId);
+    if (!complaint) {
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, `❌ تعذر العثور على الشكوى رقم #${complaintId} بقاعدة البيانات.`)]);
+      return;
+    }
+
+    // Update status to solved in DB/cache
+    await this.complaintRepository.updateComplaint(complaint.complaint_id, {
+      status: 'solved',
+      resolution_notes: notes || 'تم الإغلاق بواسطة الإدارة عبر لوحة التحكم.',
+      handled_by: interaction.user.id
+    }).catch((err) => logger.error('Failed to update complaint on admin close', err));
+
+    // Update state in complaint channel if it exists
+    if (complaint.channel_id) {
+      const complChannel = await guild.channels.fetch(complaint.channel_id).catch(() => null);
+      if (complChannel && isGuildTextChannelType(complChannel)) {
+        const textChannel = complChannel as TextChannel;
+        const closeEmbed = new EmbedBuilder()
+          .setColor(hexToDecimal(this.config.bot.successColor))
+          .setTitle('🚨 تم إغلاق / إلغاء الشكوى من الإدارة')
+          .addFields(
+            { name: 'رقم الشكوى', value: `#${complaint.complaint_id}`, inline: true },
+            { name: 'الإجراء المتخذ', value: '✅ تم الإغلاق والحل (Closed / Solved)', inline: true },
+            { name: 'المسؤول المعالج', value: `<@${interaction.user.id}>`, inline: true },
+            { name: 'ملاحظات الإجراء الإداري', value: notes || 'لم يتم إضافة ملاحظات.', inline: false }
+          )
+          .setTimestamp();
+
+        await textChannel.send({ embeds: [closeEmbed] }).catch(() => null);
+        await textChannel.send({ content: '🔒 **تم إغلاق التذكرة رسمياً، وسيتم حذف هذه القناة خلال ثوانٍ...**' }).catch(() => null);
+
+        // Delete channel after 5 seconds
+        setTimeout(() => {
+          textChannel.delete().catch((err) => logger.error('Failed to delete complaint channel on admin close', err));
+        }, 5000);
+      }
+    }
+
+    await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم إغلاق الشكوى بنجاح', `✅ تم إغلاق الشكوى رقم #${complaint.complaint_id} بنجاح وتحديث حالتها في النظام.`)]);
+  }
 }

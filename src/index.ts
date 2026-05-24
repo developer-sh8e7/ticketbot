@@ -384,6 +384,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
         return;
       }
 
+      if (interaction.customId === 'ctrl_panel:modal:close_complaint') {
+        if (!isAuthorizedAdmin(interaction.user.id)) {
+          await safeReply(interaction, [buildErrorEmbed(configStore.current, '❌ ليس لديك الصلاحية لاستخدام لوحة التحكم.')]);
+          return;
+        }
+        await complaintService.handleCloseComplaintModalSubmit(interaction);
+        trackLifecycleHealth();
+        return;
+      }
+
       if (interaction.customId.startsWith('mm:modal:')) {
         if (!isAuthorizedAdmin(interaction.user.id)) {
           await safeReply(interaction, [buildErrorEmbed(configStore.current, '❌ ليس لديك الصلاحية لاستخدام هذه اللوحة.')]);
@@ -469,6 +479,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
             break;
           case 'ctrl_panel:del_custom':
             await ticketService.handleDelCustomClick(interaction);
+            break;
+          case 'ctrl_panel:close_complaint':
+            await complaintService.handleCloseComplaintClick(interaction);
             break;
         }
         

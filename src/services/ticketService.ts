@@ -1994,7 +1994,8 @@ export class TicketService {
         { name: '🔴 غرف الانتظار (اكمال الشروط)', value: 'حذف جميع الغرف المؤقتة التي تبدأ بـ `wait-` أو `اكمال-الشروط-`.', inline: false },
         { name: '🔵 التذاكر النشطة', value: 'حذف جميع قنوات التذاكر الأساسية المفتوحة.', inline: false },
         { name: '⚠️ حذف بالكامل', value: 'حذف جميع التذاكر وغرف الانتظار بالكامل من السيرفر وقاعدة البيانات (يتطلب تأكيد مرتين).', inline: false },
-        { name: '🔍 حذف تذكرة مخصصة', value: 'حذف تذكرة معينة بناءً على معرف القناة أو رقم التذكرة.', inline: false }
+        { name: '🔍 حذف تذكرة مخصصة', value: 'حذف تذكرة معينة بناءً على معرف القناة أو رقم التذكرة.', inline: false },
+        { name: '🚨 إلغاء أو إغلاق شكوى', value: 'إغلاق شكوى نشطة وحذف قناتها مع تحديث حالتها في قاعدة البيانات.', inline: false }
       )
       .setFooter({ text: 'لوحة التحكم الإدارية • Steal the Brainrot' })
       .setTimestamp();
@@ -2018,6 +2019,10 @@ export class TicketService {
       new ButtonBuilder()
         .setCustomId('ctrl_panel:del_custom')
         .setLabel('🔍 حذف تذكرة مخصصة')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('ctrl_panel:close_complaint')
+        .setLabel('🚨 إلغاء / إغلاق شكوى')
         .setStyle(ButtonStyle.Primary)
     );
 
