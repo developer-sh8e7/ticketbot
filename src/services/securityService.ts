@@ -1,4 +1,3 @@
-import { createRequire } from 'node:module';
 import {
   ChannelType,
   Collection,
@@ -13,10 +12,8 @@ import {
 } from 'discord.js';
 import { buildErrorEmbed, buildSuccessEmbed } from '../builders/ticketBuilder.js';
 import {
-  ARABIC_SEVERE_PROFANITY_PHRASES,
-  ARABIC_SEVERE_PROFANITY_TERMS,
-  ENGLISH_SEVERE_PROFANITY_PHRASES,
-  ENGLISH_SEVERE_PROFANITY_TERMS,
+  ARABIC_PROFANITY_PHRASES,
+  ARABIC_PROFANITY_TERMS,
 } from '../data/moderationWordLists.js';
 import type { AppConfig } from '../types/config.js';
 import { hexToDecimal } from '../utils/color.js';
@@ -24,24 +21,11 @@ import { logger } from '../utils/logger.js';
 import { safeEditReply } from '../utils/interaction.js';
 import { ServerLogService } from './serverLogService.js';
 
-const DISCORD_INVITE_PATTERN = /(?:discord\.gg|discord(?:app)?\.com\/invite|discord\.com\/invites)\/[a-z0-9-]+/i;
-const URL_EXTRACT_PATTERN = /(?:https?:\/\/|www\.|(?:[a-z0-9-]+\.)+(?:com|net|org|gg|io|xyz|me|app|dev|shop|store|site|link|ly|co|tv|to|cc)\b)\S*/gi;
-const IMAGE_EXTENSION_PATTERN = /\.(?:png|jpe?g|gif|webp|bmp|avif)(?:[?#].*)?$/i;
-const IMAGE_HOSTS = new Set([
-  'cdn.discordapp.com',
-  'media.discordapp.net',
-  'i.imgur.com',
-  'images-ext-1.discordapp.net',
-  'images-ext-2.discordapp.net',
-]);
-const INVITE_HINT_WORDS = ['اختصار الدس', 'اختصار دس', 'اختصار دسكورد', 'الدسكورد', 'دسكورد', 'discord'];
-const INVITE_CODE_PATTERN = /(?:^|[^a-z0-9])([a-z0-9-]{5,32})(?=$|[^a-z0-9])/i;
-const SPAM_MENTION_PATTERN = /(?:@everyone|@here).*(?:@everyone|@here)/is;
 const TOKEN_SEPARATOR_PATTERN = '[\\s\\S]{0,24}?';
 const WORD_BOUNDARY_PATTERN = '[^\\p{L}\\p{N}]';
 
 type SecurityViolation = {
-  reason: 'link' | 'invite' | 'profanity' | 'mention-spam';
+  reason: 'profanity' | 'spam';
   timeoutMs: number;
   title: string;
 };
@@ -50,14 +34,6 @@ type SecurityLogField = {
   name: string;
   value: string;
   inline?: boolean;
-};
-
-type ProfanityI18nModule = {
-  filter(input: string): string;
-  contains(...input: string[]): boolean;
-  list(input: string[]): string[];
-  add(input: string[]): void;
-  remove(input: string[]): void;
 };
 
 type ClearChannelIssue = {
@@ -106,28 +82,14 @@ const CLEAR_OLD_DELETE_CONCURRENCY = 5;
 const CLEAR_SAMPLE_LIMIT = 8;
 const CLEAR_CHANNEL_CONCURRENCY = 4;
 const PROFANITY_TIMEOUT_MS = 5 * 60 * 1000;
-const SECURITY_LINK_BYPASS_USER_IDS = new Set([
-  '959896496113844254',
-  '1397364822152315052',
-  '1148258174474928249',
-  '1479484174686486680',
-]);
-const PROFANITY_I18N_FALSE_POSITIVES = [
-  'ال',
-];
-const CUSTOM_PROFANITY_DICTIONARY = [
-  ...ARABIC_SEVERE_PROFANITY_TERMS,
-  ...ARABIC_SEVERE_PROFANITY_PHRASES,
-  ...ENGLISH_SEVERE_PROFANITY_TERMS,
-  ...ENGLISH_SEVERE_PROFANITY_PHRASES,
-];
-
-const require = createRequire(import.meta.url);
-const profanityI18n = require('profanity-i18n') as ProfanityI18nModule;
-profanityI18n.add(CUSTOM_PROFANITY_DICTIONARY);
-profanityI18n.remove(PROFANITY_I18N_FALSE_POSITIVES);
+const SPAM_TIMEOUT_MS = 5 * 60 * 1000;
+const SPAM_WINDOW_MS = 20 * 1000;
+const SPAM_MESSAGE_LIMIT = 15;
 
 export class SecurityService {
+  private readonly spamMessageTimes = new Map<string, number[]>();
+  private readonly spamCooldownUntil = new Map<string, number>();
+
   public constructor(
     private readonly config: AppConfig,
     private readonly logs: ServerLogService,
@@ -136,18 +98,19 @@ export class SecurityService {
   public async handleMessage(message: Message): Promise<boolean> {
     if (!message.inGuild() || message.author.bot) return false;
 
-    const violation = this.detectViolation(message.content);
+    const violation = this.detectViolation(message.content) ?? this.detectSpam(message);
     if (!violation) return false;
-    if (this.canBypassViolation(message.author.id, violation)) return false;
 
     let messageDeleted = false;
     let deleteError: string | null = null;
-    await message.delete().then(() => {
-      messageDeleted = true;
-    }).catch((error) => {
-      deleteError = error instanceof Error ? error.message : 'تعذر حذف الرسالة.';
-      logger.warn('Failed to delete security message', error instanceof Error ? error.message : error);
-    });
+    if (violation.reason === 'profanity') {
+      await message.delete().then(() => {
+        messageDeleted = true;
+      }).catch((error) => {
+        deleteError = error instanceof Error ? error.message : 'تعذر حذف الرسالة.';
+        logger.warn('Failed to delete security message', error instanceof Error ? error.message : error);
+      });
+    }
 
     const member = message.member;
     let timeoutApplied = false;
@@ -169,7 +132,7 @@ export class SecurityService {
       { name: 'الروم', value: `<#${message.channelId}>`, inline: true },
       { name: 'السبب', value: this.securityReasonLabel(violation.reason), inline: true },
       { name: 'الإجراء', value: action, inline: true },
-      { name: 'حالة الحذف', value: messageDeleted ? 'تم حذف الرسالة' : 'تعذر حذف الرسالة', inline: true },
+      { name: 'حالة الحذف', value: violation.reason === 'profanity' ? (messageDeleted ? 'تم حذف الرسالة' : 'تعذر حذف الرسالة') : 'لا يوجد حذف', inline: true },
       { name: 'مدة التايم أوت', value: this.formatDuration(violation.timeoutMs), inline: true },
       { name: 'آيدي الرسالة', value: message.id, inline: true },
       { name: 'المحتوى', value: this.trimEmbedValue(message.content || 'بدون محتوى') },
@@ -260,126 +223,44 @@ export class SecurityService {
     const normalized = this.normalizeContent(content);
     const compact = normalized.replace(/[^\p{L}\p{N}]+/gu, '');
 
-    if (this.hasDiscordInvite(normalized, compact) || this.hasInviteHint(normalized)) {
-      return { reason: 'invite', timeoutMs: 0, title: 'حذف اختصار دسكورد' };
-    }
-
-    const blockedLinks = this.findBlockedLinks(content);
-    if (blockedLinks.length > 0) {
-      return { reason: 'link', timeoutMs: 0, title: 'حذف رابط ممنوع' };
-    }
-
-    if (SPAM_MENTION_PATTERN.test(normalized)) {
-      return { reason: 'mention-spam', timeoutMs: 0, title: 'حذف منشن سبام' };
-    }
-
     if (this.hasSevereProfanity(normalized, compact)) {
-      return { reason: 'profanity', timeoutMs: PROFANITY_TIMEOUT_MS, title: 'حذف سب صريح' };
+      return { reason: 'profanity', timeoutMs: PROFANITY_TIMEOUT_MS, title: 'حذف قذف صريح' };
     }
 
     return null;
   }
 
-  private canBypassViolation(userId: string, violation: SecurityViolation): boolean {
-    return SECURITY_LINK_BYPASS_USER_IDS.has(userId) && (violation.reason === 'link' || violation.reason === 'invite');
-  }
+  private detectSpam(message: Message): SecurityViolation | null {
+    const now = Date.now();
+    const cooldownUntil = this.spamCooldownUntil.get(message.author.id) ?? 0;
+    if (cooldownUntil > now) return null;
 
-  private hasDiscordInvite(normalized: string, compact: string): boolean {
-    return (
-      DISCORD_INVITE_PATTERN.test(normalized) ||
-      compact.includes('discordgg') ||
-      compact.includes('discordcominvite') ||
-      compact.includes('discordcominvites') ||
-      compact.includes('discordappcominvite')
-    );
-  }
+    const recentTimes = (this.spamMessageTimes.get(message.author.id) ?? []).filter((time) => now - time <= SPAM_WINDOW_MS);
+    recentTimes.push(now);
+    this.spamMessageTimes.set(message.author.id, recentTimes);
 
-  private hasInviteHint(normalized: string): boolean {
-    return INVITE_HINT_WORDS.some((word) => {
-      const hintIndex = normalized.indexOf(word);
-      if (hintIndex === -1) return false;
+    if (recentTimes.length < SPAM_MESSAGE_LIMIT) return null;
 
-      const afterHint = normalized.slice(hintIndex + word.length, hintIndex + word.length + 80);
-      return INVITE_CODE_PATTERN.test(afterHint);
-    });
-  }
-
-  private findBlockedLinks(content: string): string[] {
-    const urls = this.extractUrls(content);
-    return urls.filter((url) => !this.isAllowedImageUrl(url));
-  }
-
-  private extractUrls(content: string): string[] {
-    return [...content.matchAll(URL_EXTRACT_PATTERN)].map((match) => this.cleanUrl(match[0]));
-  }
-
-  private cleanUrl(url: string): string {
-    return url.replace(/[)\].,!?،؛]+$/g, '');
-  }
-
-  private isAllowedImageUrl(rawUrl: string): boolean {
-    const parsed = this.parseUrl(rawUrl);
-    if (!parsed) return false;
-
-    const host = parsed.hostname.toLowerCase();
-    const path = parsed.pathname.toLowerCase();
-    if (IMAGE_HOSTS.has(host) && (IMAGE_EXTENSION_PATTERN.test(path) || path.length > 1)) return true;
-    if (IMAGE_EXTENSION_PATTERN.test(path)) return true;
-    if (host.endsWith('tenor.com') && path.includes('/view/')) return true;
-    if (host.endsWith('giphy.com') && path.includes('/gifs/')) return true;
-
-    return false;
-  }
-
-  private parseUrl(rawUrl: string): URL | null {
-    const normalized = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
-    try {
-      return new URL(normalized);
-    } catch {
-      return null;
-    }
+    this.spamMessageTimes.set(message.author.id, []);
+    this.spamCooldownUntil.set(message.author.id, now + SPAM_TIMEOUT_MS);
+    return { reason: 'spam', timeoutMs: SPAM_TIMEOUT_MS, title: 'حماية السبام' };
   }
 
   private hasSevereProfanity(normalized: string, compact: string): boolean {
-    return (
-      this.hasLibraryProfanity(normalized) ||
-      this.hasArabicProfanity(normalized, compact) ||
-      this.hasEnglishProfanity(normalized)
-    );
-  }
-
-  private hasLibraryProfanity(normalized: string): boolean {
-    const words = normalized.split(/\s+/).filter(Boolean);
-    return words.length > 0 && profanityI18n.contains(...words);
+    return this.hasArabicProfanity(normalized, compact);
   }
 
   private hasArabicProfanity(normalized: string, compact: string): boolean {
-    for (const term of ARABIC_SEVERE_PROFANITY_TERMS) {
+    for (const term of ARABIC_PROFANITY_TERMS) {
       const normalizedTerm = this.normalizeContent(term);
       if (this.hasStandaloneTerm(normalized, normalizedTerm)) {
         return true;
       }
     }
 
-    for (const phrase of ARABIC_SEVERE_PROFANITY_PHRASES) {
+    for (const phrase of ARABIC_PROFANITY_PHRASES) {
       const normalizedPhrase = this.normalizeContent(phrase);
       if (this.hasFlexiblePhrase(normalized, normalizedPhrase) || compact.includes(normalizedPhrase.replace(/\s+/g, ''))) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  private hasEnglishProfanity(normalized: string): boolean {
-    for (const term of ENGLISH_SEVERE_PROFANITY_TERMS) {
-      if (this.hasStandaloneTerm(normalized, term.toLowerCase())) {
-        return true;
-      }
-    }
-
-    for (const phrase of ENGLISH_SEVERE_PROFANITY_PHRASES) {
-      if (this.hasFlexiblePhrase(normalized, phrase.toLowerCase())) {
         return true;
       }
     }
@@ -409,20 +290,22 @@ export class SecurityService {
 
   private securityReasonLabel(reason: SecurityViolation['reason']): string {
     switch (reason) {
-      case 'invite':
-        return 'دعوة أو اختصار دسكورد';
-      case 'link':
-        return 'رابط غير مسموح';
-      case 'mention-spam':
-        return 'منشن سبام';
       case 'profanity':
-        return 'سب صريح';
+        return 'قذف صريح';
+      case 'spam':
+        return 'سبام رسائل';
       default:
         return reason;
     }
   }
 
   private securityActionLabel(violation: SecurityViolation, timeoutApplied: boolean, timeoutError: string | null): string {
+    if (violation.reason === 'spam') {
+      if (timeoutApplied) return 'تايم أوت فقط';
+      if (timeoutError) return 'تعذر تطبيق تايم أوت السبام';
+      return 'رصد سبام';
+    }
+
     if (violation.timeoutMs <= 0) return 'حذف الرسالة فقط';
     if (timeoutApplied) return 'حذف الرسالة + تايم أوت';
     if (timeoutError) return 'حذف الرسالة فقط - تعذر التايم أوت';

@@ -22,7 +22,7 @@ const LOG_CHANNEL_NAMES: Record<LogChannelKey, string> = {
 };
 
 const LOG_CHANNEL_DESCRIPTIONS: Record<LogChannelKey, string> = {
-  security: 'يسجل حذف الروابط، اختصارات الدسكورد، السب، أو أوامر التنظيف والحماية.',
+  security: 'يسجل القذف الصريح، سبام الرسائل، وأوامر التنظيف والحماية.',
   roles: 'يسجل إعطاء وإزالة الرتب، ويعرض العضو والرتبة ومن نفذ التعديل.',
   channels: 'يسجل إنشاء وحذف وتعديل الرومات داخل السيرفر.',
   permissions: 'يسجل تغييرات برمشن الرومات وبرمشن الرتب المهمة.',
