@@ -8,6 +8,8 @@ import {
   Partials,
   AuditLogEvent,
   type ChatInputCommandInteraction,
+  type GuildMember,
+  type Role,
 } from 'discord.js';
 import { registerCommands } from './commands/registerCommands.js';
 import { ADD_MEMBER_MODAL_ID, REMOVE_MEMBER_MODAL_ID, TICKET_BUTTON_IDS, isOpenTicketModal, isAuthorizedAdmin } from './constants/customIds.js';
@@ -570,6 +572,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
+function formatMemberLogValue(member: GuildMember): string {
+  return `<@${member.id}>\n${member.user.tag}\nID: ${member.id}`;
+}
+
+function formatRoleLogValue(role: Role): string {
+  return `<@&${role.id}>\n${role.name}\nID: ${role.id}\nPosition: ${role.position}`;
+}
+
 client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
   try {
     if (newMember.guild.id !== configStore.current.guild.id) return;
@@ -581,15 +591,19 @@ client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
     const executor = await serverLogService.fetchExecutor(newMember.guild, AuditLogEvent.MemberRoleUpdate, newMember.id);
     for (const role of addedRoles.values()) {
       await serverLogService.send('roles', 'إعطاء رتبة', `تم إعطاء <@&${role.id}> إلى <@${newMember.id}>.`, [
-        { name: 'بواسطة', value: executor, inline: true },
-        { name: 'العضو', value: `${newMember.user.tag} (${newMember.id})`, inline: true },
+        { name: 'المنفذ', value: executor, inline: true },
+        { name: 'العضو', value: formatMemberLogValue(newMember), inline: true },
+        { name: 'الرتبة', value: formatRoleLogValue(role), inline: true },
+        { name: 'نوع العملية', value: 'إضافة رتبة', inline: true },
       ]);
     }
 
     for (const role of removedRoles.values()) {
       await serverLogService.send('roles', 'إزالة رتبة', `تمت إزالة <@&${role.id}> من <@${newMember.id}>.`, [
-        { name: 'بواسطة', value: executor, inline: true },
-        { name: 'العضو', value: `${newMember.user.tag} (${newMember.id})`, inline: true },
+        { name: 'المنفذ', value: executor, inline: true },
+        { name: 'العضو', value: formatMemberLogValue(newMember), inline: true },
+        { name: 'الرتبة', value: formatRoleLogValue(role), inline: true },
+        { name: 'نوع العملية', value: 'إزالة رتبة', inline: true },
       ]);
     }
   } catch (error) {

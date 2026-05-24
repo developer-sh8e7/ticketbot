@@ -94,7 +94,7 @@ export class ServerLogService {
       return recent && sameTarget;
     });
 
-    return entry?.executor ? `${entry.executor.tag} (${entry.executor.id})` : null;
+    return entry?.executor ? `<@${entry.executor.id}>\n${entry.executor.tag}\nID: ${entry.executor.id}` : null;
   }
 
   private async wait(ms: number): Promise<void> {
