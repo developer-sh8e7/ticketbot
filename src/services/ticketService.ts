@@ -1089,8 +1089,12 @@ export class TicketService {
       .setColor(hexToDecimal(this.config.bot.embedColor))
       .setTitle('🛡️ اتفاقية الاستخدام ونظام الوساطة الآمنة')
       .setDescription(
-        `أهلاً بك يا ${member} في نظام التحقق والوساطة المعتمد.\n` +
-        `يرجى قراءة التفاصيل أدناه لفهم كيفية عمل النظام وحماية حقوقك بالكامل.`
+        `أهلاً بك يا ${member} في نظام التحقق والوساطة المعتمد.\n\n` +
+        `⚠️ **تنبيه هام جداً**:\n` +
+        `**تذكرتك الآن في وضع الانتظار المؤقت (غير نشطة ولا يراها الوسطاء).** لكي يتم تفعيل تذكرتك ونقلها إلى الوسيط المناسب، يجب عليك إكمال الخطوات التالية بالضغط على الأزرار الموضحة في الأسفل:\n\n` +
+        `1️⃣ اضغط أولاً على زر **كتابة التريد في حدود كم دولار $** لتحديد قيمة الصفقة بدقة.\n` +
+        `2️⃣ بعد حفظ قيمة التريد بنجاح، اضغط على زر **تم قراءة الشروط وموافق على الشروط والأحكام**.\n` +
+        `3️⃣ اضغط على زر **التأكيد النهائي** الذي سيظهر لك، وسيتم تفعيل التذكرة فوراً ونقلها للوسيط المناسب وحذف هذه الغرفة المؤقتة.`
       )
       .setThumbnail(this.config.images.thumbnailUrl || null)
       .addFields(
@@ -1183,7 +1187,7 @@ export class TicketService {
       try {
         const ticketNumber = await this.ticketRepository.nextTicketNumber();
         const paddedNumber = padTicketNumber(ticketNumber, 3);
-        const channelName = `wait-${paddedNumber}`;
+        const channelName = `اكمال-الشروط-${paddedNumber}`;
         
         const waitCategoryId = '1486147476011352307';
         
@@ -1822,7 +1826,7 @@ export class TicketService {
         `يمكنك تنفيذ العمليات التالية للتحكم بالتذاكر وقنوات الانتظار الحالية:`
       )
       .addFields(
-        { name: '🔴 غرف الانتظار (WAIT)', value: 'حذف جميع الغرف المؤقتة التي تبدأ بـ `wait-`.', inline: false },
+        { name: '🔴 غرف الانتظار (اكمال الشروط)', value: 'حذف جميع الغرف المؤقتة التي تبدأ بـ `wait-` أو `اكمال-الشروط-`.', inline: false },
         { name: '🔵 التذاكر النشطة', value: 'حذف جميع قنوات التذاكر الأساسية المفتوحة.', inline: false },
         { name: '⚠️ حذف بالكامل', value: 'حذف جميع التذاكر وغرف الانتظار بالكامل من السيرفر وقاعدة البيانات (يتطلب تأكيد مرتين).', inline: false },
         { name: '🔍 حذف تذكرة مخصصة', value: 'حذف تذكرة معينة بناءً على معرف القناة أو رقم التذكرة.', inline: false }
@@ -1833,7 +1837,7 @@ export class TicketService {
     const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId('ctrl_panel:del_wait')
-        .setLabel('حذف غرف الانتظار (WAIT)')
+        .setLabel('حذف غرف الانتظار (اكمال الشروط)')
         .setStyle(ButtonStyle.Danger),
       new ButtonBuilder()
         .setCustomId('ctrl_panel:del_active')
@@ -1907,7 +1911,7 @@ export class TicketService {
       const channels = await guild.channels.fetch().catch(() => null);
       if (channels) {
         for (const channel of channels.values()) {
-          if (channel && channel.parentId === waitCategoryId && channel.name.startsWith('wait-')) {
+          if (channel && channel.parentId === waitCategoryId && (channel.name.startsWith('wait-') || channel.name.startsWith('اكمال-الشروط-'))) {
             if (!trackedIds.has(channel.id)) {
               await channel.delete().catch(() => null);
               count++;
@@ -2041,7 +2045,7 @@ export class TicketService {
       const channels = await guild.channels.fetch().catch(() => null);
       if (channels) {
         for (const channel of channels.values()) {
-          if (channel && channel.parentId === waitCategoryId && channel.name.startsWith('wait-')) {
+          if (channel && channel.parentId === waitCategoryId && (channel.name.startsWith('wait-') || channel.name.startsWith('اكمال-الشروط-'))) {
             if (!trackedIds.has(channel.id)) {
               await channel.delete().catch(() => null);
               count++;
