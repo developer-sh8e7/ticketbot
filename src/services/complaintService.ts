@@ -32,6 +32,7 @@ const ROLE_COMPENSATION = '1507646852869259325';
 const COMPLAINT_CHANNEL_ID = '1507929693687644301';
 const COMPLAINT_CATEGORY_ID = '1507928422100504576';
 const LOG_CHANNEL_ID = '1486132662753034280';
+const COMPLAINT_PANEL_IMAGE_URL = 'https://i.imgur.com/AJ6qbEM.jpeg';
 
 export class ComplaintService {
   private readonly creatingUsers = new Set<string>();
@@ -70,19 +71,7 @@ export class ComplaintService {
 
     const embed = new EmbedBuilder()
       .setColor(hexToDecimal(this.config.bot.embedColor))
-      .setTitle('📢 مركز الشكاوي والاعتراضات | Steal the Brainrot')
-      .setDescription(
-        'مرحباً بك في مركز تقديم الشكاوى والاعتراضات الرسمي.\n' +
-        'يرجى قراءة الشروط والتعليمات التالية بعناية قبل رفع أي شكوى:\n\n' +
-        '⚖️ **شروط وقوانين تقديم الشكوى:**\n' +
-        '• يمنع رفع شكوى كاذبة أو كيدية (قد يؤدي ذلك إلى حظرك من السيرفر).\n' +
-        '• يجب إدخال آيدي الوسيط أو رقم التذكرة بشكل صحيح وتفصيلي.\n' +
-        '• يلزم إرفاق أدلة وإثباتات واضحة (صور / فيديو / روابط محادثات) لرفع الشكوى.\n' +
-        '• أي شكوى تفتقر للأدلة أو المعلومات الكافية سيتم رفضها فوراً.\n\n' +
-        'يرجى اختيار نوع الشكوى من الخيارات أدناه لفتح تذكرة خاصة بمشكلتك:'
-      )
-      .setFooter({ text: 'نظام إدارة الشكاوى والتعويضات' })
-      .setTimestamp();
+      .setImage(COMPLAINT_PANEL_IMAGE_URL);
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
