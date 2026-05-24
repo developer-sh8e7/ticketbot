@@ -234,6 +234,28 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
     return;
   }
 
+  if (interaction.commandName === 'logs') {
+    if (!interaction.inCachedGuild()) {
+      await safeReply(interaction, [buildErrorEmbed(configStore.current, 'هذا الأمر يعمل داخل السيرفر فقط.')]);
+      return;
+    }
+
+    if (!(await ensurePanelManager(interaction))) {
+      return;
+    }
+
+    if (!(await safeDeferReply(interaction, interaction.commandName))) {
+      return;
+    }
+
+    const channels = await serverLogService.ensure(true);
+    const summary = channels.map((channel) => `<#${channel.id}> - ${channel.description}`).join('\n');
+    await safeEditReply(interaction, [
+      buildSuccessEmbed(configStore.current, 'تم تجهيز اللوقات', summary || 'تم تجهيز رومات اللوق.'),
+    ]);
+    return;
+  }
+
   if (interaction.commandName === 'ai') {
     if (!(await ensurePanelManager(interaction))) {
       return;

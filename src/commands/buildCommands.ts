@@ -77,6 +77,12 @@ export function buildCommandDefinitions(config: AppConfig) {
       ) as unknown as SlashCommandBuilder,
   );
 
+  commands.push(
+    new SlashCommandBuilder()
+      .setName('logs')
+      .setDescription('Respawn all bot log channels and post what each log is for.') as SlashCommandBuilder,
+  );
+
   // AI Toggle command
   commands.push(
     new SlashCommandBuilder()
