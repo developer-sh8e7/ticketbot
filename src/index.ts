@@ -432,6 +432,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
         return;
       }
 
+      if (interaction.customId.startsWith('complaint:btn:cancel_submit:')) {
+        const complaintId = parseInt(interaction.customId.split(':')[3], 10);
+        await complaintService.handleCancelSubmit(interaction, complaintId);
+        trackLifecycleHealth();
+        return;
+      }
+
       if (interaction.customId.startsWith('complaint:btn:')) {
         await complaintService.handleComplaintButton(interaction);
         trackLifecycleHealth();

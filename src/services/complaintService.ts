@@ -466,7 +466,11 @@ export class ComplaintService {
         new ButtonBuilder()
           .setCustomId(`complaint:btn:confirm_submit:${complaintRecord.complaint_id}`)
           .setLabel('✅ تأكيد وإرسال الشكوى النهائية')
-          .setStyle(ButtonStyle.Success)
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId(`complaint:btn:cancel_submit:${complaintRecord.complaint_id}`)
+          .setLabel('❌ إلغاء الشكوى')
+          .setStyle(ButtonStyle.Danger)
       );
 
       // Send the embed and components together as one single message in the ticket
@@ -656,5 +660,47 @@ export class ComplaintService {
       logger.error('Failed to confirm complaint', err);
       await safeEditReply(interaction, [buildErrorEmbed(this.config, `❌ فشل تأكيد الشكوى: ${err.message}`)]);
     }
+  }
+
+  /**
+   * Handle the complaint cancellation click.
+   */
+  public async handleCancelSubmit(interaction: ButtonInteraction, complaintId: number): Promise<void> {
+    if (!interaction.inCachedGuild()) return;
+    const guild = interaction.guild!;
+    const channel = interaction.channel as TextChannel;
+
+    if (!(await safeDeferReply(interaction, `complaint_cancel:${complaintId}`))) {
+      return;
+    }
+
+    let complaint = await this.complaintRepository.getComplaint(complaintId);
+    if (!complaint) {
+      complaint = await this.complaintRepository.getComplaintByChannelId(channel.id);
+    }
+
+    if (!complaint) {
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ تعذر العثور على سجل الشكوى.')]);
+      return;
+    }
+
+    // Verify only the complainant can cancel
+    if (interaction.user.id !== complaint.user_id) {
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ لا يمكنك إلغاء الشكوى لأنك لست صاحب الشكوى.')]);
+      return;
+    }
+
+    // Update status to solved (cancelled) in DB/cache so it is not active anymore
+    await this.complaintRepository.updateComplaint(complaint.complaint_id, {
+      status: 'solved',
+      resolution_notes: 'تم إلغاء الشكوى من قبل المشتكي قبل التأكيد.'
+    }).catch((err) => logger.error('Failed to update complaint on cancellation', err));
+
+    await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم إلغاء الشكوى', '✅ جاري إغلاق وحذف القناة خلال ثوانٍ...')]);
+
+    // Schedule channel deletion after 3 seconds
+    setTimeout(() => {
+      channel.delete().catch((err) => logger.error('Failed to delete complaint channel on cancellation', err));
+    }, 3000);
   }
 }
