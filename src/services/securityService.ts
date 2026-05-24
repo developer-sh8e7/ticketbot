@@ -81,8 +81,7 @@ const CLEAR_DELETE_CHUNK_SIZE = 100;
 const CLEAR_OLD_DELETE_CONCURRENCY = 5;
 const CLEAR_SAMPLE_LIMIT = 8;
 const CLEAR_CHANNEL_CONCURRENCY = 4;
-const PROFANITY_TIMEOUT_MS = 5 * 60 * 1000;
-const SPAM_TIMEOUT_MS = 5 * 60 * 1000;
+const SECURITY_TIMEOUT_MS = 0;
 const SPAM_WINDOW_MS = 20 * 1000;
 const SPAM_MESSAGE_LIMIT = 15;
 
@@ -103,14 +102,12 @@ export class SecurityService {
 
     let messageDeleted = false;
     let deleteError: string | null = null;
-    if (violation.reason === 'profanity') {
-      await message.delete().then(() => {
-        messageDeleted = true;
-      }).catch((error) => {
-        deleteError = error instanceof Error ? error.message : 'تعذر حذف الرسالة.';
-        logger.warn('Failed to delete security message', error instanceof Error ? error.message : error);
-      });
-    }
+    await message.delete().then(() => {
+      messageDeleted = true;
+    }).catch((error) => {
+      deleteError = error instanceof Error ? error.message : 'تعذر حذف الرسالة.';
+      logger.warn('Failed to delete security message', error instanceof Error ? error.message : error);
+    });
 
     const member = message.member;
     let timeoutApplied = false;
@@ -132,7 +129,7 @@ export class SecurityService {
       { name: 'الروم', value: `<#${message.channelId}>`, inline: true },
       { name: 'السبب', value: this.securityReasonLabel(violation.reason), inline: true },
       { name: 'الإجراء', value: action, inline: true },
-      { name: 'حالة الحذف', value: violation.reason === 'profanity' ? (messageDeleted ? 'تم حذف الرسالة' : 'تعذر حذف الرسالة') : 'لا يوجد حذف', inline: true },
+      { name: 'حالة الحذف', value: messageDeleted ? 'تم حذف الرسالة' : 'تعذر حذف الرسالة', inline: true },
       { name: 'مدة التايم أوت', value: this.formatDuration(violation.timeoutMs), inline: true },
       { name: 'آيدي الرسالة', value: message.id, inline: true },
       { name: 'المحتوى', value: this.trimEmbedValue(message.content || 'بدون محتوى') },
@@ -224,7 +221,7 @@ export class SecurityService {
     const compact = normalized.replace(/[^\p{L}\p{N}]+/gu, '');
 
     if (this.hasSevereProfanity(normalized, compact)) {
-      return { reason: 'profanity', timeoutMs: PROFANITY_TIMEOUT_MS, title: 'حذف قذف صريح' };
+      return { reason: 'profanity', timeoutMs: SECURITY_TIMEOUT_MS, title: 'حذف قذف صريح' };
     }
 
     return null;
@@ -242,8 +239,8 @@ export class SecurityService {
     if (recentTimes.length < SPAM_MESSAGE_LIMIT) return null;
 
     this.spamMessageTimes.set(message.author.id, []);
-    this.spamCooldownUntil.set(message.author.id, now + SPAM_TIMEOUT_MS);
-    return { reason: 'spam', timeoutMs: SPAM_TIMEOUT_MS, title: 'حماية السبام' };
+    this.spamCooldownUntil.set(message.author.id, now + SPAM_WINDOW_MS);
+    return { reason: 'spam', timeoutMs: SECURITY_TIMEOUT_MS, title: 'حماية السبام' };
   }
 
   private hasSevereProfanity(normalized: string, compact: string): boolean {
@@ -301,9 +298,7 @@ export class SecurityService {
 
   private securityActionLabel(violation: SecurityViolation, timeoutApplied: boolean, timeoutError: string | null): string {
     if (violation.reason === 'spam') {
-      if (timeoutApplied) return 'تايم أوت فقط';
-      if (timeoutError) return 'تعذر تطبيق تايم أوت السبام';
-      return 'رصد سبام';
+      return 'حذف الرسالة فقط';
     }
 
     if (violation.timeoutMs <= 0) return 'حذف الرسالة فقط';
