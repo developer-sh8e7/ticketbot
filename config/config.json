@@ -19,6 +19,7 @@
     "archiveCategoryId": "",
     "logChannelId": "",
     "transcriptChannelId": "",
+    "mediatorLogChannelId": "",
     "supportRoleIds": [
       "1483021658003345408",
       "1483209015961063595",

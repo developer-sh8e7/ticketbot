@@ -94,5 +94,11 @@ export function buildCommandDefinitions(config: AppConfig) {
       .setDescription('فتح لوحة التحكم الكاملة بالتذاكر (للأدمن فقط) - كتابة بديلة') as SlashCommandBuilder
   );
 
+  commands.push(
+    new SlashCommandBuilder()
+      .setName('panel-mm')
+      .setDescription('فتح لوحة التحكم الكاملة بالوسطاء (للإدارة فقط)') as SlashCommandBuilder
+  );
+
   return commands;
 }

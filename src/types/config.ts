@@ -26,6 +26,7 @@ export interface GuildConfig {
   archiveCategoryId: string;
   logChannelId: string;
   transcriptChannelId: string;
+  mediatorLogChannelId?: string;
   supportRoleIds: string[];
   managerRoleIds: string[];
   mentionRolesOnOpen: string[];

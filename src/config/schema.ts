@@ -56,6 +56,7 @@ export const appConfigSchema = z.object({
     archiveCategoryId: z.string(),
     logChannelId: z.string(),
     transcriptChannelId: z.string(),
+    mediatorLogChannelId: z.string().optional(),
     supportRoleIds: z.array(z.string()),
     managerRoleIds: z.array(z.string()),
     mentionRolesOnOpen: z.array(z.string()),

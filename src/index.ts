@@ -26,6 +26,8 @@ import { RoleProtectionRepository } from './database/roleProtectionRepository.js
 import { RoleProtectionService } from './services/roleProtectionService.js';
 import { RoleManagementRepository } from './database/roleManagementRepository.js';
 import { RoleManagementService } from './services/roleManagementService.js';
+import { MediatorRepository } from './database/mediatorRepository.js';
+import { MediatorService } from './services/mediatorService.js';
 import { activityTypeFromName } from './utils/discord.js';
 import { consumeLifecycleErrors, isInteractionLifecycleError, safeDeferReply, safeEditReply, safeReply } from './utils/interaction.js';
 import { logger } from './utils/logger.js';
@@ -42,6 +44,7 @@ const ticketRepository = new TicketRepository(supabase);
 const infrastructureRepository = new InfrastructureRepository(supabase);
 const roleProtectionRepository = new RoleProtectionRepository(supabase);
 const roleManagementRepository = new RoleManagementRepository(supabase);
+const mediatorRepository = new MediatorRepository(supabase);
 const transcriptService = new TranscriptService();
 const panelService = new PanelService(configStore);
 const infrastructureService = new InfrastructureService({
@@ -52,7 +55,9 @@ const ticketService = new TicketService({
   configStore,
   ticketRepository,
   transcriptService,
+  mediatorRepository,
 });
+const mediatorService = new MediatorService(configStore, mediatorRepository);
 const aiService = new AIService(
   {
     apiKey: env.GEMINI_API_KEY,
@@ -225,6 +230,11 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
     await ticketService.sendControlPanel(interaction);
     return;
   }
+
+  if (interaction.commandName === 'panel-mm') {
+    await mediatorService.sendControlPanel(interaction);
+    return;
+  }
 }
 
 client.once(Events.ClientReady, async (readyClient) => {
@@ -339,6 +349,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
         trackLifecycleHealth();
         return;
       }
+
+      if (interaction.customId.startsWith('mm:modal:')) {
+        await mediatorService.handleModalSubmit(interaction);
+        trackLifecycleHealth();
+        return;
+      }
     }
 
     if (interaction.isButton()) {
@@ -351,6 +367,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       if (interaction.customId.startsWith('wait:btn:')) {
         await ticketService.handleWaitButton(interaction);
+        trackLifecycleHealth();
+        return;
+      }
+
+      if (interaction.customId.startsWith('mm:btn:')) {
+        await mediatorService.handleButton(interaction);
         trackLifecycleHealth();
         return;
       }

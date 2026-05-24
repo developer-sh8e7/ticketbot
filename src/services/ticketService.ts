@@ -34,6 +34,7 @@ import {
   extractOpenTicketCategoryKey,
 } from '../constants/customIds.js';
 import { DuplicateOpenTicketError, TicketRepository } from '../database/ticketRepository.js';
+import { MediatorRepository } from '../database/mediatorRepository.js';
 import type { TicketRecord } from '../database/types.js';
 import type { AppConfig, TicketAnswer, TicketCategoryConfig } from '../types/config.js';
 import { hexToDecimal } from '../utils/color.js';
@@ -58,6 +59,7 @@ interface TicketServiceDependencies {
   configStore: ConfigStore;
   ticketRepository: TicketRepository;
   transcriptService: TranscriptService;
+  mediatorRepository: MediatorRepository;
 }
 
 interface ResolvedTicketContext {
@@ -72,6 +74,7 @@ export class TicketService {
   private readonly configStore: ConfigStore;
   private readonly ticketRepository: TicketRepository;
   private readonly transcriptService: TranscriptService;
+  private readonly mediatorRepository: MediatorRepository;
   private readonly instanceId = Math.random().toString(36).slice(2, 8);
   private readonly activeCreations = new Set<string>();
   private readonly activeTransitions = new Set<string>();
@@ -80,6 +83,7 @@ export class TicketService {
     this.configStore = dependencies.configStore;
     this.ticketRepository = dependencies.ticketRepository;
     this.transcriptService = dependencies.transcriptService;
+    this.mediatorRepository = dependencies.mediatorRepository;
   }
 
   private get config(): AppConfig {
@@ -713,6 +717,8 @@ export class TicketService {
         close_reason: 'Closed via ticket button',
       });
 
+      await this.incrementCompletedTicket(closedTicket).catch(() => null);
+
       await this.sendCustomCloseLog(context.guild, closedTicket, interaction.user.id, context.channel).catch((error) => {
         logger.error('Failed to send custom close log', error);
       });
@@ -766,6 +772,15 @@ export class TicketService {
       );
 
       await this.applyClaimPermissions(context, newClaimerId);
+
+      if (newClaimerId) {
+        const mediator = await this.mediatorRepository.getMediator(newClaimerId).catch(() => null);
+        if (mediator) {
+          await this.mediatorRepository.updateMediator(newClaimerId, {
+            tickets_claimed: (mediator.tickets_claimed || 0) + 1
+          }).catch((err) => logger.error('Failed to increment mediator claimed tickets', err));
+        }
+      }
 
       await this.sendCustomClaimLog(context.guild, updated, newClaimerId).catch((error) => {
         logger.error('Failed to send custom claim log', error);
@@ -1020,6 +1035,8 @@ export class TicketService {
         closed_by_tag: interaction.user.tag,
         close_reason: reason,
       });
+
+      await this.incrementCompletedTicket(closedTicket).catch(() => null);
 
       await this.sendCustomCloseLog(interaction.guild, closedTicket, interaction.user.id, channel).catch((error) => {
         logger.error('Failed to send custom close log', error);
@@ -2131,11 +2148,14 @@ export class TicketService {
       }
 
       if (ticket && ticket.channel_id) {
-        await this.ticketRepository.closeByChannel(ticket.channel_id, {
+        const closedTicket = await this.ticketRepository.closeByChannel(ticket.channel_id, {
           closed_by: interaction.user.id,
           closed_by_tag: interaction.user.tag,
           close_reason: 'Deleted via Admin Control Panel (Custom Deletion)',
         }).catch(() => null);
+        if (closedTicket) {
+          await this.incrementCompletedTicket(closedTicket).catch(() => null);
+        }
         deleted = true;
       }
 
@@ -2147,6 +2167,21 @@ export class TicketService {
     } catch (err) {
       logger.error('Failed to delete custom ticket', err);
       await safeEditReply(interaction, [buildErrorEmbed(this.config, 'حدث خطأ أثناء معالجة الحذف.')]);
+    }
+  }
+
+  private async incrementCompletedTicket(ticket: TicketRecord): Promise<void> {
+    if (ticket.claimed_by) {
+      try {
+        const mediator = await this.mediatorRepository.getMediator(ticket.claimed_by).catch(() => null);
+        if (mediator) {
+          await this.mediatorRepository.updateMediator(ticket.claimed_by, {
+            tickets_completed: (mediator.tickets_completed || 0) + 1
+          });
+        }
+      } catch (err) {
+        logger.error('Failed to increment completed tickets for mediator', err);
+      }
     }
   }
 }
