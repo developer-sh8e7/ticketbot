@@ -209,6 +209,29 @@ before update on public.role_management_daily_limits
 for each row
 execute function public.set_role_management_updated_at();
 
+create table if not exists public.bot_instance_locks (
+  guild_id text primary key,
+  instance_id text not null,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create or replace function public.set_instance_lock_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = timezone('utc', now());
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_instance_locks_updated_at on public.bot_instance_locks;
+create trigger trg_instance_locks_updated_at
+before update on public.bot_instance_locks
+for each row
+execute function public.set_instance_lock_updated_at();
+
 alter table public.ticket_counters disable row level security;
 alter table public.tickets disable row level security;
 alter table public.bot_infrastructure disable row level security;
@@ -216,6 +239,7 @@ alter table public.protected_role_state disable row level security;
 alter table public.protected_role_members disable row level security;
 alter table public.role_management_authorized_users disable row level security;
 alter table public.role_management_daily_limits disable row level security;
+alter table public.bot_instance_locks disable row level security;
 
 -- ============================================================
 -- Brainrot Spin Wheel Tables
@@ -310,6 +334,7 @@ grant all on table public.protected_role_state to service_role;
 grant all on table public.protected_role_members to service_role;
 grant all on table public.role_management_authorized_users to service_role;
 grant all on table public.role_management_daily_limits to service_role;
+grant all on table public.bot_instance_locks to service_role;
 grant all on table public.brainrot_characters to service_role;
 grant all on table public.wheel_users to service_role;
 grant all on table public.wheel_spins to service_role;

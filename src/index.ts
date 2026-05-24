@@ -6,6 +6,7 @@ import {
   GatewayIntentBits,
   MessageFlags,
   Partials,
+  AuditLogEvent,
   type ChatInputCommandInteraction,
 } from 'discord.js';
 import { registerCommands } from './commands/registerCommands.js';
@@ -28,6 +29,10 @@ import { RoleProtectionRepository } from './database/roleProtectionRepository.js
 import { RoleProtectionService } from './services/roleProtectionService.js';
 import { RoleManagementRepository } from './database/roleManagementRepository.js';
 import { RoleManagementService } from './services/roleManagementService.js';
+import { InstanceLockRepository } from './database/instanceLockRepository.js';
+import { InstanceGuardService } from './services/instanceGuardService.js';
+import { ServerLogService } from './services/serverLogService.js';
+import { SecurityService } from './services/securityService.js';
 import { MediatorRepository } from './database/mediatorRepository.js';
 import { MediatorService } from './services/mediatorService.js';
 import { activityTypeFromName } from './utils/discord.js';
@@ -46,6 +51,7 @@ const ticketRepository = new TicketRepository(supabase);
 const infrastructureRepository = new InfrastructureRepository(supabase);
 const roleProtectionRepository = new RoleProtectionRepository(supabase);
 const roleManagementRepository = new RoleManagementRepository(supabase);
+const instanceLockRepository = new InstanceLockRepository(supabase);
 const mediatorRepository = new MediatorRepository(supabase);
 const complaintRepository = new ComplaintRepository(supabase);
 const transcriptService = new TranscriptService();
@@ -73,6 +79,7 @@ const aiService = new AIService(
 );
 let roleProtectionService: RoleProtectionService | null = null;
 const roleManagementService = new RoleManagementService(roleManagementRepository, configStore.current);
+let instanceGuardService: InstanceGuardService | null = null;
 
 const client = new Client({
   intents: [
@@ -83,6 +90,9 @@ const client = new Client({
   ],
   partials: [Partials.Channel, Partials.Message],
 });
+
+const serverLogService = new ServerLogService(client, configStore.current.guild.id);
+const securityService = new SecurityService(configStore.current, serverLogService);
 
 async function syncCommands(): Promise<void> {
   const config = configStore.current;
@@ -210,6 +220,20 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
     return;
   }
 
+  if (interaction.commandName === 'clear') {
+    if (!interaction.inCachedGuild()) {
+      await safeReply(interaction, [buildErrorEmbed(configStore.current, 'هذا الأمر يعمل داخل السيرفر فقط.')]);
+      return;
+    }
+
+    if (!(await safeDeferReply(interaction, interaction.commandName))) {
+      return;
+    }
+
+    await securityService.clearUserMessages(interaction);
+    return;
+  }
+
   if (interaction.commandName === 'ai') {
     if (!(await ensurePanelManager(interaction))) {
       return;
@@ -274,6 +298,13 @@ client.once(Events.ClientReady, async (readyClient) => {
   logger.info(`Logged in as ${readyClient.user.tag} [instance=${INSTANCE_ID}, pid=${process.pid}]`);
 
   try {
+    instanceGuardService = new InstanceGuardService(readyClient, instanceLockRepository, config.guild.id, INSTANCE_ID);
+    await instanceGuardService.start();
+  } catch (error) {
+    logger.warn('Could not start instance guard. Duplicate protection depends on Supabase schema.', error instanceof Error ? error.message : error);
+  }
+
+  try {
     await infrastructureService.ensureInfrastructure(readyClient);
     logger.info('Infrastructure verified / created successfully.');
   } catch (error) {
@@ -298,6 +329,13 @@ client.once(Events.ClientReady, async (readyClient) => {
     roleProtectionService.start();
   } catch (error) {
     logger.error('Failed to start RoleProtectionService', error instanceof Error ? error.message : error);
+  }
+
+  try {
+    await serverLogService.ensure();
+    logger.info('Server logs verified / created successfully.');
+  } catch (error) {
+    logger.error('Failed to setup server logs', error instanceof Error ? error.message : error);
   }
 });
 
@@ -510,9 +548,109 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
+client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
+  try {
+    if (newMember.guild.id !== configStore.current.guild.id) return;
+
+    const addedRoles = newMember.roles.cache.filter((role) => !oldMember.roles.cache.has(role.id));
+    const removedRoles = oldMember.roles.cache.filter((role) => !newMember.roles.cache.has(role.id));
+    if (addedRoles.size === 0 && removedRoles.size === 0) return;
+
+    const executor = await serverLogService.fetchExecutor(newMember.guild, AuditLogEvent.MemberRoleUpdate, newMember.id);
+    for (const role of addedRoles.values()) {
+      await serverLogService.send('roles', 'إعطاء رتبة', `تم إعطاء <@&${role.id}> إلى <@${newMember.id}>.`, [
+        { name: 'بواسطة', value: executor, inline: true },
+        { name: 'العضو', value: `${newMember.user.tag} (${newMember.id})`, inline: true },
+      ]);
+    }
+
+    for (const role of removedRoles.values()) {
+      await serverLogService.send('roles', 'إزالة رتبة', `تمت إزالة <@&${role.id}> من <@${newMember.id}>.`, [
+        { name: 'بواسطة', value: executor, inline: true },
+        { name: 'العضو', value: `${newMember.user.tag} (${newMember.id})`, inline: true },
+      ]);
+    }
+  } catch (error) {
+    logger.warn('Failed to log member role update', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.ChannelCreate, async (channel) => {
+  try {
+    if (!('guild' in channel) || channel.guild.id !== configStore.current.guild.id) return;
+    const executor = await serverLogService.fetchExecutor(channel.guild, AuditLogEvent.ChannelCreate, channel.id);
+    await serverLogService.send('channels', 'إنشاء روم', `تم إنشاء الروم <#${channel.id}>.`, [
+      { name: 'بواسطة', value: executor, inline: true },
+      { name: 'الاسم', value: channel.name ?? channel.id, inline: true },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log channel create', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.ChannelDelete, async (channel) => {
+  try {
+    if (!('guild' in channel) || channel.guild.id !== configStore.current.guild.id) return;
+    const executor = await serverLogService.fetchExecutor(channel.guild, AuditLogEvent.ChannelDelete, channel.id);
+    await serverLogService.send('channels', 'حذف روم', `تم حذف روم من السيرفر.`, [
+      { name: 'بواسطة', value: executor, inline: true },
+      { name: 'الاسم', value: channel.name ?? channel.id, inline: true },
+      { name: 'آيدي الروم', value: channel.id, inline: true },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log channel delete', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.ChannelUpdate, async (oldChannel, newChannel) => {
+  try {
+    if (!('guild' in newChannel) || newChannel.guild.id !== configStore.current.guild.id) return;
+
+    const nameChanged = 'name' in oldChannel && 'name' in newChannel && oldChannel.name !== newChannel.name;
+    const overwritesChanged =
+      'permissionOverwrites' in oldChannel &&
+      'permissionOverwrites' in newChannel &&
+      oldChannel.permissionOverwrites.cache.size !== newChannel.permissionOverwrites.cache.size;
+
+    if (!nameChanged && !overwritesChanged) return;
+
+    const executor = await serverLogService.fetchExecutor(newChannel.guild, AuditLogEvent.ChannelUpdate, newChannel.id);
+    const oldName = (oldChannel as { name?: string }).name ?? newChannel.id;
+    const newName = (newChannel as { name?: string }).name ?? newChannel.id;
+    await serverLogService.send(overwritesChanged ? 'permissions' : 'channels', overwritesChanged ? 'تعديل برمشن روم' : 'تعديل روم', `<#${newChannel.id}>`, [
+      { name: 'بواسطة', value: executor, inline: true },
+      { name: 'قبل', value: oldName, inline: true },
+      { name: 'بعد', value: newName, inline: true },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log channel update', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.GuildRoleUpdate, async (oldRole, newRole) => {
+  try {
+    if (newRole.guild.id !== configStore.current.guild.id) return;
+    const permissionChanged = oldRole.permissions.bitfield !== newRole.permissions.bitfield;
+    const nameChanged = oldRole.name !== newRole.name;
+    if (!permissionChanged && !nameChanged) return;
+
+    const executor = await serverLogService.fetchExecutor(newRole.guild, AuditLogEvent.RoleUpdate, newRole.id);
+    await serverLogService.send(permissionChanged ? 'permissions' : 'roles', permissionChanged ? 'تعديل برمشن رتبة' : 'تعديل رتبة', `<@&${newRole.id}>`, [
+      { name: 'بواسطة', value: executor, inline: true },
+      { name: 'قبل', value: oldRole.name, inline: true },
+      { name: 'بعد', value: newRole.name, inline: true },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log role update', error instanceof Error ? error.message : error);
+  }
+});
+
 client.on(Events.MessageCreate, async (message) => {
   try {
     if (message.author.bot || !message.inGuild()) return;
+
+    const securityHandled = await securityService.handleMessage(message);
+    if (securityHandled) return;
 
     const roleCommandHandled = await roleManagementService.handleMessage(message);
     if (roleCommandHandled) return;
@@ -549,6 +687,7 @@ process.on('uncaughtException', (error) => {
 function gracefulShutdown(signal: string): void {
   logger.info(`[instance=${INSTANCE_ID}] Received ${signal}, shutting down...`);
   roleProtectionService?.stop();
+  void instanceGuardService?.stop();
   healthServer.close();
   client.destroy();
   process.exit(0);

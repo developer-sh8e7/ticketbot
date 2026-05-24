@@ -65,6 +65,18 @@ export function buildCommandDefinitions(config: AppConfig) {
     );
   }
 
+  commands.push(
+    new SlashCommandBuilder()
+      .setName('clear')
+      .setDescription('Delete all messages sent by a specific user id across the server.')
+      .addStringOption((option) =>
+        option
+          .setName('user-id')
+          .setDescription('Copy ID of the user whose messages should be deleted.')
+          .setRequired(true),
+      ) as unknown as SlashCommandBuilder,
+  );
+
   // AI Toggle command
   commands.push(
     new SlashCommandBuilder()
