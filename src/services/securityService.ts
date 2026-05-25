@@ -21,7 +21,6 @@ import { logger } from '../utils/logger.js';
 import { safeEditReply } from '../utils/interaction.js';
 import { ServerLogService } from './serverLogService.js';
 
-const TOKEN_SEPARATOR_PATTERN = '[\\s\\S]{0,24}?';
 const WORD_BOUNDARY_PATTERN = '[^\\p{L}\\p{N}]';
 
 type SecurityViolation = {
@@ -218,9 +217,8 @@ export class SecurityService {
 
   private detectViolation(content: string): SecurityViolation | null {
     const normalized = this.normalizeContent(content);
-    const compact = normalized.replace(/[^\p{L}\p{N}]+/gu, '');
 
-    if (this.hasSevereProfanity(normalized, compact)) {
+    if (this.hasSevereProfanity(normalized)) {
       return { reason: 'profanity', timeoutMs: SECURITY_TIMEOUT_MS, title: 'حذف قذف صريح' };
     }
 
@@ -243,11 +241,11 @@ export class SecurityService {
     return { reason: 'spam', timeoutMs: SECURITY_TIMEOUT_MS, title: 'حماية السبام' };
   }
 
-  private hasSevereProfanity(normalized: string, compact: string): boolean {
-    return this.hasArabicProfanity(normalized, compact);
+  private hasSevereProfanity(normalized: string): boolean {
+    return this.hasArabicProfanity(normalized);
   }
 
-  private hasArabicProfanity(normalized: string, compact: string): boolean {
+  private hasArabicProfanity(normalized: string): boolean {
     for (const term of ARABIC_PROFANITY_TERMS) {
       const normalizedTerm = this.normalizeContent(term);
       if (this.hasStandaloneTerm(normalized, normalizedTerm)) {
@@ -257,7 +255,7 @@ export class SecurityService {
 
     for (const phrase of ARABIC_PROFANITY_PHRASES) {
       const normalizedPhrase = this.normalizeContent(phrase);
-      if (this.hasFlexiblePhrase(normalized, normalizedPhrase) || compact.includes(normalizedPhrase.replace(/\s+/g, ''))) {
+      if (this.hasExactPhrase(normalized, normalizedPhrase)) {
         return true;
       }
     }
@@ -270,14 +268,8 @@ export class SecurityService {
     return pattern.test(content);
   }
 
-  private hasFlexiblePhrase(content: string, phrase: string): boolean {
-    const tokens = phrase.split(/\s+/).filter(Boolean);
-    if (tokens.length === 0) return false;
-
-    const pattern = new RegExp(
-      `(?:^|${WORD_BOUNDARY_PATTERN})${tokens.map((token) => this.escapeRegExp(token)).join(TOKEN_SEPARATOR_PATTERN)}(?=$|${WORD_BOUNDARY_PATTERN})`,
-      'iu',
-    );
+  private hasExactPhrase(content: string, phrase: string): boolean {
+    const pattern = new RegExp(`(?:^|${WORD_BOUNDARY_PATTERN})${this.escapeRegExp(phrase)}(?=$|${WORD_BOUNDARY_PATTERN})`, 'iu');
     return pattern.test(content);
   }
 
