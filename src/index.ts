@@ -33,8 +33,6 @@ import { RoleProtectionRepository } from './database/roleProtectionRepository.js
 import { RoleProtectionService } from './services/roleProtectionService.js';
 import { RoleManagementRepository } from './database/roleManagementRepository.js';
 import { RoleManagementService } from './services/roleManagementService.js';
-import { InstanceLockRepository } from './database/instanceLockRepository.js';
-import { INSTANCE_LOCK_TTL_MS, InstanceGuardService } from './services/instanceGuardService.js';
 import { ServerLogService } from './services/serverLogService.js';
 import { SecurityService } from './services/securityService.js';
 import { WelcomeService } from './services/welcomeService.js';
@@ -56,7 +54,6 @@ const ticketRepository = new TicketRepository(supabase);
 const infrastructureRepository = new InfrastructureRepository(supabase);
 const roleProtectionRepository = new RoleProtectionRepository(supabase);
 const roleManagementRepository = new RoleManagementRepository(supabase);
-const instanceLockRepository = new InstanceLockRepository(supabase);
 const mediatorRepository = new MediatorRepository(supabase);
 const complaintRepository = new ComplaintRepository(supabase);
 const transcriptService = new TranscriptService();
@@ -84,8 +81,7 @@ const aiService = new AIService(
 );
 let roleProtectionService: RoleProtectionService | null = null;
 const roleManagementService = new RoleManagementService(roleManagementRepository, configStore.current);
-let instanceGuardService: InstanceGuardService | null = null;
-let runtimeState: 'starting' | 'standby' | 'online' | 'offline' = 'starting';
+let runtimeState: 'starting' | 'online' | 'offline' = 'starting';
 
 const client = new Client({
   intents: [
@@ -331,17 +327,6 @@ client.once(Events.ClientReady, async (readyClient) => {
   });
 
   logger.info(`Logged in as ${readyClient.user.tag} [instance=${INSTANCE_ID}, pid=${process.pid}]`);
-
-  try {
-    instanceGuardService = new InstanceGuardService(readyClient, instanceLockRepository, config.guild.id, INSTANCE_ID);
-    const guardStarted = await instanceGuardService.start();
-    if (!guardStarted) {
-      runtimeState = 'standby';
-      return;
-    }
-  } catch (error) {
-    logger.warn('Could not start instance guard. Duplicate protection depends on Supabase schema.', error instanceof Error ? error.message : error);
-  }
 
   try {
     await infrastructureService.ensureInfrastructure(readyClient);
@@ -1265,7 +1250,6 @@ function gracefulShutdown(signal: string): void {
   logger.info(`[instance=${INSTANCE_ID}] Received ${signal}, shutting down...`);
   runtimeState = 'offline';
   roleProtectionService?.stop();
-  void instanceGuardService?.stop();
   healthServer.close();
   client.destroy();
   process.exit(0);
@@ -1276,8 +1260,6 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 const HEALTH_PORT = Number(process.env.PORT) || 8080;
 const startedAt = Date.now();
-const STARTUP_LOCK_RETRY_MS = 15_000;
-const STARTUP_LOCK_LOG_INTERVAL_MS = 60_000;
 
 function formatUptime(seconds: number): string {
   const d = Math.floor(seconds / 86400);
@@ -1290,50 +1272,6 @@ function formatUptime(seconds: number): string {
   if (m > 0) parts.push(`${m}m`);
   parts.push(`${s}s`);
   return parts.join(' ');
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function waitForStartupInstanceLock(): Promise<void> {
-  const guildId = configStore.current.guild.id;
-  let lastBlockedLogAt = 0;
-
-  while (true) {
-    try {
-      const current = await instanceLockRepository.find(guildId);
-      const currentUpdatedAt = current ? new Date(current.updated_at).getTime() : 0;
-      const currentFresh = current ? Date.now() - currentUpdatedAt < INSTANCE_LOCK_TTL_MS : false;
-
-      if (current && current.instance_id !== INSTANCE_ID && currentFresh) {
-        runtimeState = 'standby';
-        const now = Date.now();
-        if (now - lastBlockedLogAt >= STARTUP_LOCK_LOG_INTERVAL_MS) {
-          lastBlockedLogAt = now;
-          logger.warn(
-            `Another active bot instance owns the lock: ${current.instance_id}. ` +
-            `${INSTANCE_ID} is staying on standby until that instance stops.`,
-          );
-        }
-        await sleep(STARTUP_LOCK_RETRY_MS);
-        continue;
-      }
-
-      if (current && current.instance_id !== INSTANCE_ID && !currentFresh) {
-        logger.warn(`Taking over stale deployment lock from ${current.instance_id}.`);
-      }
-
-      runtimeState = 'starting';
-      await instanceLockRepository.upsert(guildId, INSTANCE_ID);
-      logger.info(`Startup instance lock reserved for guild ${guildId} by ${INSTANCE_ID}.`);
-      return;
-    } catch (error) {
-      runtimeState = 'standby';
-      logger.warn('Startup instance lock check failed; retrying.', error instanceof Error ? error.message : error);
-      await sleep(STARTUP_LOCK_RETRY_MS);
-    }
-  }
 }
 
 const healthServer = createServer(async (req, res) => {
@@ -1373,9 +1311,9 @@ const healthServer = createServer(async (req, res) => {
   const uptime = Math.floor((Date.now() - startedAt) / 1000);
   const botUser = client.user;
   const isOnline = !!botUser;
-  const statusText = isOnline ? 'Online' : (runtimeState === 'standby' ? 'Standby' : 'Starting...');
-  const statusColor = isOnline ? '#22c55e' : (runtimeState === 'standby' ? '#38bdf8' : '#eab308');
-  const statusDot = isOnline ? '#22c55e' : (runtimeState === 'standby' ? '#38bdf8' : '#eab308');
+  const statusText = isOnline ? 'Online' : 'Starting...';
+  const statusColor = isOnline ? '#22c55e' : '#eab308';
+  const statusDot = isOnline ? '#22c55e' : '#eab308';
   const ping = client.ws.ping;
   const pingColor = ping < 200 ? '#22c55e' : ping < 500 ? '#eab308' : '#ef4444';
   const guilds = client.guilds.cache.size;
@@ -1534,7 +1472,7 @@ healthServer.listen(HEALTH_PORT, () => {
 });
 
 async function startDiscordClient(): Promise<void> {
-  await waitForStartupInstanceLock();
+  runtimeState = 'starting';
   await client.login(env.DISCORD_TOKEN);
 }
 
