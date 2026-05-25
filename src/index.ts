@@ -35,6 +35,7 @@ import { InstanceLockRepository } from './database/instanceLockRepository.js';
 import { INSTANCE_LOCK_TTL_MS, InstanceGuardService } from './services/instanceGuardService.js';
 import { ServerLogService } from './services/serverLogService.js';
 import { SecurityService } from './services/securityService.js';
+import { WelcomeService } from './services/welcomeService.js';
 import { MediatorRepository } from './database/mediatorRepository.js';
 import { MediatorService } from './services/mediatorService.js';
 import { activityTypeFromName } from './utils/discord.js';
@@ -96,6 +97,7 @@ const client = new Client({
 
 const serverLogService = new ServerLogService(client, configStore.current.guild.id);
 const securityService = new SecurityService(configStore.current, serverLogService);
+const welcomeService = new WelcomeService();
 
 async function syncCommands(): Promise<void> {
   const config = configStore.current;
@@ -614,6 +616,15 @@ client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
     }
   } catch (error) {
     logger.warn('Failed to log member role update', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.GuildMemberAdd, async (member) => {
+  try {
+    if (member.guild.id !== configStore.current.guild.id) return;
+    await welcomeService.handleMemberAdd(member);
+  } catch (error) {
+    logger.warn('Failed to handle welcome member add', error instanceof Error ? error.message : error);
   }
 });
 
