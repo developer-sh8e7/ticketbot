@@ -9,7 +9,7 @@ import {
 } from 'discord.js';
 import { logger } from '../utils/logger.js';
 
-type LogChannelKey = 'security' | 'roles' | 'channels' | 'permissions' | 'messages';
+type LogChannelKey = 'security' | 'roles' | 'channels' | 'permissions' | 'messages' | 'members' | 'voice' | 'moderation' | 'server';
 
 const LOG_CATEGORY_NAME = 'bot-logs';
 const LOG_CATEGORY_ID = '1483569375456792576';
@@ -19,6 +19,10 @@ const LOG_CHANNEL_NAMES: Record<LogChannelKey, string> = {
   channels: 'channel-logs',
   permissions: 'permission-logs',
   messages: 'message-logs',
+  members: 'member-logs',
+  voice: 'voice-logs',
+  moderation: 'moderation-logs',
+  server: 'server-logs',
 };
 
 const LOG_CHANNEL_DESCRIPTIONS: Record<LogChannelKey, string> = {
@@ -27,6 +31,10 @@ const LOG_CHANNEL_DESCRIPTIONS: Record<LogChannelKey, string> = {
   channels: 'يسجل إنشاء وحذف وتعديل الرومات داخل السيرفر.',
   permissions: 'يسجل تغييرات برمشن الرومات وبرمشن الرتب المهمة.',
   messages: 'يسجل حذف الرسائل الفردي والجماعي مع الروم وصاحب الرسالة ومن حذفها إذا توفر.',
+  members: 'يسجل دخول وخروج الأعضاء وتغيير النكات والمعلومات المهمة.',
+  voice: 'يسجل دخول وخروج الفويس، نقل الأعضاء بين الرومات، والسحب والميوت والديفن.',
+  moderation: 'يسجل الباند وفك الباند والطرد وأحداث الإدارة المهمة.',
+  server: 'يسجل تغييرات السيرفر العامة مثل الاسم والإعدادات والإيموجي والستكر والدعوات.',
 };
 
 export class ServerLogService {

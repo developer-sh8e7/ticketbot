@@ -8,8 +8,10 @@ import {
   Partials,
   AuditLogEvent,
   type ChatInputCommandInteraction,
+  type Guild,
   type GuildMember,
   type Role,
+  type VoiceState,
 } from 'discord.js';
 import { registerCommands } from './commands/registerCommands.js';
 import { ADD_MEMBER_MODAL_ID, REMOVE_MEMBER_MODAL_ID, TICKET_BUTTON_IDS, isOpenTicketModal, isAuthorizedAdmin } from './constants/customIds.js';
@@ -88,6 +90,11 @@ let runtimeState: 'starting' | 'standby' | 'online' | 'offline' = 'starting';
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildModeration,
+    GatewayIntentBits.GuildExpressions,
+    GatewayIntentBits.GuildInvites,
+    GatewayIntentBits.GuildWebhooks,
+    GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.MessageContent,
@@ -588,13 +595,70 @@ function formatRoleLogValue(role: Role): string {
   return `<@&${role.id}>\n${role.name}\nID: ${role.id}\nPosition: ${role.position}`;
 }
 
+function formatUserLogValue(user: { id: string; tag?: string | null; username?: string | null }): string {
+  return `<@${user.id}>\n${user.tag ?? user.username ?? 'غير معروف'}\nID: ${user.id}`;
+}
+
+function formatMaybeChannel(channelId: string | null | undefined): string {
+  return channelId ? `<#${channelId}>\nID: ${channelId}` : 'لا يوجد';
+}
+
+function formatMaybeValue(value: unknown): string {
+  if (value === null || value === undefined || value === '') return 'لا يوجد';
+  if (typeof value === 'boolean') return value ? 'نعم' : 'لا';
+  return String(value);
+}
+
+function formatChannelLogValue(channel: { id: string; name?: string | null; type?: number; parentId?: string | null; position?: number | null; rawPosition?: number | null }): string {
+  return `${channel.name ?? 'غير معروف'}\nID: ${channel.id}\nType: ${channel.type ?? 'unknown'}\nParent: ${channel.parentId ?? 'none'}\nPosition: ${channel.rawPosition ?? channel.position ?? 'unknown'}`;
+}
+
+function addChange(fields: { name: string; value: string; inline?: boolean }[], name: string, before: unknown, after: unknown): void {
+  if (before === after) return;
+  fields.push({
+    name,
+    value: `قبل: ${formatMaybeValue(before)}\nبعد: ${formatMaybeValue(after)}`,
+    inline: true,
+  });
+}
+
+function permissionOverwriteSnapshot(channel: unknown): string {
+  const overwrites = (channel as { permissionOverwrites?: { cache?: Map<string, { id: string; type: number; allow: { bitfield: bigint | number | string }; deny: { bitfield: bigint | number | string } }> } }).permissionOverwrites?.cache;
+  if (!overwrites) return '';
+
+  return [...overwrites.values()]
+    .map((overwrite) => `${overwrite.id}:${overwrite.type}:${overwrite.allow.bitfield.toString()}:${overwrite.deny.bitfield.toString()}`)
+    .sort()
+    .join('|');
+}
+
+function trimRolePermissions(role: Role): string {
+  return trimLogValue(role.permissions.toArray().join(', ') || 'لا يوجد', 900);
+}
+
+function voiceStateMemberValue(state: VoiceState): string {
+  const user = state.member?.user;
+  return user ? formatUserLogValue(user) : `<@${state.id}>\nID: ${state.id}`;
+}
+
+async function fetchAnyExecutor(guild: Guild, types: AuditLogEvent[], targetId?: string): Promise<string> {
+  for (const type of types) {
+    const executor = await serverLogService.fetchExecutor(guild, type, targetId);
+    if (executor !== 'غير معروف') return executor;
+  }
+
+  return 'غير معروف';
+}
+
 client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
   try {
     if (newMember.guild.id !== configStore.current.guild.id) return;
 
     const addedRoles = newMember.roles.cache.filter((role) => !oldMember.roles.cache.has(role.id));
     const removedRoles = oldMember.roles.cache.filter((role) => !newMember.roles.cache.has(role.id));
-    if (addedRoles.size === 0 && removedRoles.size === 0) return;
+    const nicknameChanged = oldMember.nickname !== newMember.nickname;
+    const timeoutChanged = oldMember.communicationDisabledUntilTimestamp !== newMember.communicationDisabledUntilTimestamp;
+    if (addedRoles.size === 0 && removedRoles.size === 0 && !nicknameChanged && !timeoutChanged) return;
 
     const executor = await serverLogService.fetchExecutor(newMember.guild, AuditLogEvent.MemberRoleUpdate, newMember.id);
     for (const role of addedRoles.values()) {
@@ -614,6 +678,26 @@ client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
         { name: 'نوع العملية', value: 'إزالة رتبة', inline: true },
       ]);
     }
+
+    if (nicknameChanged) {
+      const nickExecutor = await serverLogService.fetchExecutor(newMember.guild, AuditLogEvent.MemberUpdate, newMember.id);
+      await serverLogService.send('members', 'تعديل نك عضو', `تم تعديل نك <@${newMember.id}>.`, [
+        { name: 'بواسطة', value: nickExecutor, inline: true },
+        { name: 'العضو', value: formatMemberLogValue(newMember), inline: true },
+        { name: 'قبل', value: oldMember.nickname ?? newMember.user.username, inline: true },
+        { name: 'بعد', value: newMember.nickname ?? newMember.user.username, inline: true },
+      ]);
+    }
+
+    if (timeoutChanged) {
+      const timeoutExecutor = await serverLogService.fetchExecutor(newMember.guild, AuditLogEvent.MemberUpdate, newMember.id);
+      await serverLogService.send('moderation', newMember.communicationDisabledUntilTimestamp ? 'إعطاء تايم أوت' : 'إزالة تايم أوت', `تم تعديل حالة التايم أوت على <@${newMember.id}>.`, [
+        { name: 'بواسطة', value: timeoutExecutor, inline: true },
+        { name: 'العضو', value: formatMemberLogValue(newMember), inline: true },
+        { name: 'قبل', value: oldMember.communicationDisabledUntilTimestamp ? `<t:${Math.floor(oldMember.communicationDisabledUntilTimestamp / 1000)}:F>` : 'لا يوجد', inline: true },
+        { name: 'بعد', value: newMember.communicationDisabledUntilTimestamp ? `<t:${Math.floor(newMember.communicationDisabledUntilTimestamp / 1000)}:F>` : 'لا يوجد', inline: true },
+      ]);
+    }
   } catch (error) {
     logger.warn('Failed to log member role update', error instanceof Error ? error.message : error);
   }
@@ -623,8 +707,29 @@ client.on(Events.GuildMemberAdd, async (member) => {
   try {
     if (member.guild.id !== configStore.current.guild.id) return;
     await welcomeService.handleMemberAdd(member);
+    await serverLogService.send('members', 'دخول عضو', `دخل <@${member.id}> إلى السيرفر.`, [
+      { name: 'العضو', value: formatMemberLogValue(member), inline: true },
+      { name: 'تاريخ إنشاء الحساب', value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:F>`, inline: true },
+      { name: 'عدد الأعضاء', value: `${member.guild.memberCount}`, inline: true },
+    ]);
   } catch (error) {
     logger.warn('Failed to handle welcome member add', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.GuildMemberRemove, async (member) => {
+  try {
+    if (member.guild.id !== configStore.current.guild.id) return;
+
+    const executor = await serverLogService.fetchExecutor(member.guild, AuditLogEvent.MemberKick, member.id);
+    const kicked = executor !== 'غير معروف';
+    await serverLogService.send(kicked ? 'moderation' : 'members', kicked ? 'طرد عضو' : 'خروج عضو', kicked ? `تم طرد <@${member.id}> من السيرفر.` : `خرج <@${member.id}> من السيرفر.`, [
+      { name: 'العضو', value: formatUserLogValue(member.user), inline: true },
+      { name: kicked ? 'بواسطة' : 'الحالة', value: kicked ? executor : 'خروج عادي أو غير معروف', inline: true },
+      { name: 'عدد الأعضاء', value: `${member.guild.memberCount}`, inline: true },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log member remove', error instanceof Error ? error.message : error);
   }
 });
 
@@ -634,7 +739,8 @@ client.on(Events.ChannelCreate, async (channel) => {
     const executor = await serverLogService.fetchExecutor(channel.guild, AuditLogEvent.ChannelCreate, channel.id);
     await serverLogService.send('channels', 'إنشاء روم', `تم إنشاء الروم <#${channel.id}>.`, [
       { name: 'بواسطة', value: executor, inline: true },
-      { name: 'الاسم', value: channel.name ?? channel.id, inline: true },
+      { name: 'الروم', value: formatChannelLogValue(channel), inline: true },
+      { name: 'التصنيف', value: formatMaybeChannel(channel.parentId), inline: true },
     ]);
   } catch (error) {
     logger.warn('Failed to log channel create', error instanceof Error ? error.message : error);
@@ -647,8 +753,8 @@ client.on(Events.ChannelDelete, async (channel) => {
     const executor = await serverLogService.fetchExecutor(channel.guild, AuditLogEvent.ChannelDelete, channel.id);
     await serverLogService.send('channels', 'حذف روم', `تم حذف روم من السيرفر.`, [
       { name: 'بواسطة', value: executor, inline: true },
-      { name: 'الاسم', value: channel.name ?? channel.id, inline: true },
-      { name: 'آيدي الروم', value: channel.id, inline: true },
+      { name: 'الروم', value: formatChannelLogValue(channel), inline: true },
+      { name: 'التصنيف', value: formatMaybeChannel(channel.parentId), inline: true },
     ]);
   } catch (error) {
     logger.warn('Failed to log channel delete', error instanceof Error ? error.message : error);
@@ -660,23 +766,85 @@ client.on(Events.ChannelUpdate, async (oldChannel, newChannel) => {
     if (!('guild' in newChannel) || newChannel.guild.id !== configStore.current.guild.id) return;
 
     const nameChanged = 'name' in oldChannel && 'name' in newChannel && oldChannel.name !== newChannel.name;
+    const parentChanged = 'parentId' in oldChannel && 'parentId' in newChannel && oldChannel.parentId !== newChannel.parentId;
+    const positionChanged = 'rawPosition' in oldChannel && 'rawPosition' in newChannel && oldChannel.rawPosition !== newChannel.rawPosition;
     const overwritesChanged =
       'permissionOverwrites' in oldChannel &&
       'permissionOverwrites' in newChannel &&
-      oldChannel.permissionOverwrites.cache.size !== newChannel.permissionOverwrites.cache.size;
+      permissionOverwriteSnapshot(oldChannel) !== permissionOverwriteSnapshot(newChannel);
 
-    if (!nameChanged && !overwritesChanged) return;
+    const fields: { name: string; value: string; inline?: boolean }[] = [
+      { name: 'الروم', value: `<#${newChannel.id}>\nID: ${newChannel.id}`, inline: true },
+    ];
+    addChange(fields, 'الاسم', 'name' in oldChannel ? oldChannel.name : null, 'name' in newChannel ? newChannel.name : null);
+    addChange(fields, 'التصنيف', 'parentId' in oldChannel ? oldChannel.parentId : null, 'parentId' in newChannel ? newChannel.parentId : null);
+    addChange(fields, 'المكان', 'rawPosition' in oldChannel ? oldChannel.rawPosition : null, 'rawPosition' in newChannel ? newChannel.rawPosition : null);
+    addChange(fields, 'التوبيك', 'topic' in oldChannel ? oldChannel.topic : null, 'topic' in newChannel ? newChannel.topic : null);
+    addChange(fields, 'NSFW', 'nsfw' in oldChannel ? oldChannel.nsfw : null, 'nsfw' in newChannel ? newChannel.nsfw : null);
+    addChange(fields, 'التهدئة', 'rateLimitPerUser' in oldChannel ? oldChannel.rateLimitPerUser : null, 'rateLimitPerUser' in newChannel ? newChannel.rateLimitPerUser : null);
+    addChange(fields, 'Bitrate', 'bitrate' in oldChannel ? oldChannel.bitrate : null, 'bitrate' in newChannel ? newChannel.bitrate : null);
+    addChange(fields, 'حد الأعضاء', 'userLimit' in oldChannel ? oldChannel.userLimit : null, 'userLimit' in newChannel ? newChannel.userLimit : null);
+    if (overwritesChanged) {
+      fields.push({ name: 'البرمشن', value: 'تم تغيير صلاحيات الروم أو صلاحيات رتبة/عضو داخله.', inline: false });
+    }
 
-    const executor = await serverLogService.fetchExecutor(newChannel.guild, AuditLogEvent.ChannelUpdate, newChannel.id);
-    const oldName = (oldChannel as { name?: string }).name ?? newChannel.id;
-    const newName = (newChannel as { name?: string }).name ?? newChannel.id;
-    await serverLogService.send(overwritesChanged ? 'permissions' : 'channels', overwritesChanged ? 'تعديل برمشن روم' : 'تعديل روم', `<#${newChannel.id}>`, [
-      { name: 'بواسطة', value: executor, inline: true },
-      { name: 'قبل', value: oldName, inline: true },
-      { name: 'بعد', value: newName, inline: true },
-    ]);
+    if (!nameChanged && !parentChanged && !positionChanged && !overwritesChanged && fields.length === 1) return;
+
+    const executor = overwritesChanged
+      ? await fetchAnyExecutor(newChannel.guild, [AuditLogEvent.ChannelOverwriteUpdate, AuditLogEvent.ChannelOverwriteCreate, AuditLogEvent.ChannelOverwriteDelete, AuditLogEvent.ChannelUpdate], newChannel.id)
+      : await serverLogService.fetchExecutor(newChannel.guild, AuditLogEvent.ChannelUpdate, newChannel.id);
+    fields.unshift({ name: 'بواسطة', value: executor, inline: true });
+    await serverLogService.send(overwritesChanged ? 'permissions' : 'channels', overwritesChanged ? 'تعديل برمشن روم' : 'تعديل روم', `<#${newChannel.id}>`, fields);
   } catch (error) {
     logger.warn('Failed to log channel update', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.ThreadCreate, async (thread) => {
+  try {
+    if (thread.guild.id !== configStore.current.guild.id) return;
+    const executor = await serverLogService.fetchExecutor(thread.guild, AuditLogEvent.ThreadCreate, thread.id);
+    await serverLogService.send('channels', 'إنشاء ثريد', `تم إنشاء الثريد <#${thread.id}>.`, [
+      { name: 'بواسطة', value: executor, inline: true },
+      { name: 'الثريد', value: formatChannelLogValue(thread), inline: true },
+      { name: 'الروم الأساسي', value: formatMaybeChannel(thread.parentId), inline: true },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log thread create', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.ThreadUpdate, async (oldThread, newThread) => {
+  try {
+    if (newThread.guild.id !== configStore.current.guild.id) return;
+    const fields: { name: string; value: string; inline?: boolean }[] = [
+      { name: 'الثريد', value: `<#${newThread.id}>\nID: ${newThread.id}`, inline: true },
+    ];
+    addChange(fields, 'الاسم', oldThread.name, newThread.name);
+    addChange(fields, 'مقفل', oldThread.locked, newThread.locked);
+    addChange(fields, 'مؤرشف', oldThread.archived, newThread.archived);
+    addChange(fields, 'مدة الأرشفة', oldThread.autoArchiveDuration, newThread.autoArchiveDuration);
+    if (fields.length === 1) return;
+
+    const executor = await serverLogService.fetchExecutor(newThread.guild, AuditLogEvent.ThreadUpdate, newThread.id);
+    fields.unshift({ name: 'بواسطة', value: executor, inline: true });
+    await serverLogService.send('channels', 'تعديل ثريد', `تم تعديل الثريد <#${newThread.id}>.`, fields);
+  } catch (error) {
+    logger.warn('Failed to log thread update', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.ThreadDelete, async (thread) => {
+  try {
+    if (thread.guild.id !== configStore.current.guild.id) return;
+    const executor = await serverLogService.fetchExecutor(thread.guild, AuditLogEvent.ThreadDelete, thread.id);
+    await serverLogService.send('channels', 'حذف ثريد', 'تم حذف ثريد من السيرفر.', [
+      { name: 'بواسطة', value: executor, inline: true },
+      { name: 'الثريد', value: `${thread.name}\nID: ${thread.id}`, inline: true },
+      { name: 'الروم الأساسي', value: formatMaybeChannel(thread.parentId), inline: true },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log thread delete', error instanceof Error ? error.message : error);
   }
 });
 
@@ -685,16 +853,304 @@ client.on(Events.GuildRoleUpdate, async (oldRole, newRole) => {
     if (newRole.guild.id !== configStore.current.guild.id) return;
     const permissionChanged = oldRole.permissions.bitfield !== newRole.permissions.bitfield;
     const nameChanged = oldRole.name !== newRole.name;
-    if (!permissionChanged && !nameChanged) return;
+    const colorChanged = oldRole.hexColor !== newRole.hexColor;
+    const hoistChanged = oldRole.hoist !== newRole.hoist;
+    const mentionableChanged = oldRole.mentionable !== newRole.mentionable;
+    const positionChanged = oldRole.position !== newRole.position;
+    if (!permissionChanged && !nameChanged && !colorChanged && !hoistChanged && !mentionableChanged && !positionChanged) return;
 
     const executor = await serverLogService.fetchExecutor(newRole.guild, AuditLogEvent.RoleUpdate, newRole.id);
-    await serverLogService.send(permissionChanged ? 'permissions' : 'roles', permissionChanged ? 'تعديل برمشن رتبة' : 'تعديل رتبة', `<@&${newRole.id}>`, [
+    const fields = [
       { name: 'بواسطة', value: executor, inline: true },
-      { name: 'قبل', value: oldRole.name, inline: true },
-      { name: 'بعد', value: newRole.name, inline: true },
-    ]);
+      { name: 'الرتبة', value: formatRoleLogValue(newRole), inline: true },
+    ];
+    addChange(fields, 'الاسم', oldRole.name, newRole.name);
+    addChange(fields, 'اللون', oldRole.hexColor, newRole.hexColor);
+    addChange(fields, 'المكان', oldRole.position, newRole.position);
+    addChange(fields, 'إظهار منفصل', oldRole.hoist, newRole.hoist);
+    addChange(fields, 'قابلة للمنشن', oldRole.mentionable, newRole.mentionable);
+    if (permissionChanged) {
+      fields.push({
+        name: 'البرمشن',
+        value: `قبل: ${trimRolePermissions(oldRole)}\nبعد: ${trimRolePermissions(newRole)}`,
+        inline: false,
+      });
+    }
+
+    await serverLogService.send(permissionChanged ? 'permissions' : 'roles', permissionChanged ? 'تعديل برمشن رتبة' : 'تعديل رتبة', `<@&${newRole.id}>`, fields);
   } catch (error) {
     logger.warn('Failed to log role update', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.GuildRoleCreate, async (role) => {
+  try {
+    if (role.guild.id !== configStore.current.guild.id) return;
+    const executor = await serverLogService.fetchExecutor(role.guild, AuditLogEvent.RoleCreate, role.id);
+    await serverLogService.send('roles', 'إنشاء رتبة', `تم إنشاء <@&${role.id}>.`, [
+      { name: 'بواسطة', value: executor, inline: true },
+      { name: 'الرتبة', value: formatRoleLogValue(role), inline: true },
+      { name: 'اللون', value: role.hexColor, inline: true },
+      { name: 'البرمشن', value: trimRolePermissions(role), inline: false },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log role create', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.GuildRoleDelete, async (role) => {
+  try {
+    if (role.guild.id !== configStore.current.guild.id) return;
+    const executor = await serverLogService.fetchExecutor(role.guild, AuditLogEvent.RoleDelete, role.id);
+    await serverLogService.send('roles', 'حذف رتبة', `تم حذف رتبة من السيرفر.`, [
+      { name: 'بواسطة', value: executor, inline: true },
+      { name: 'الرتبة', value: `${role.name}\nID: ${role.id}\nPosition: ${role.position}`, inline: true },
+      { name: 'اللون', value: role.hexColor, inline: true },
+      { name: 'البرمشن', value: trimRolePermissions(role), inline: false },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log role delete', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
+  try {
+    const guild = newState.guild ?? oldState.guild;
+    if (guild.id !== configStore.current.guild.id) return;
+
+    const member = newState.member ?? oldState.member;
+    const memberValue = member ? formatUserLogValue(member.user) : voiceStateMemberValue(newState);
+
+    if (oldState.channelId !== newState.channelId) {
+      const moved = !!oldState.channelId && !!newState.channelId;
+      const joined = !oldState.channelId && !!newState.channelId;
+      const left = !!oldState.channelId && !newState.channelId;
+      const executor = moved
+        ? await serverLogService.fetchExecutor(guild, AuditLogEvent.MemberMove, newState.id)
+        : left
+          ? await serverLogService.fetchExecutor(guild, AuditLogEvent.MemberDisconnect, newState.id)
+          : 'العضو نفسه أو غير معروف';
+      const pulled = moved && executor !== 'غير معروف';
+      const title = pulled ? 'سحب عضو لفويس' : moved ? 'نقل عضو بين الفويس' : joined ? 'دخول فويس' : 'خروج فويس';
+      const description = pulled
+        ? `تم سحب <@${newState.id}> من <#${oldState.channelId}> إلى <#${newState.channelId}>.`
+        : moved
+          ? `انتقل <@${newState.id}> من <#${oldState.channelId}> إلى <#${newState.channelId}>.`
+          : joined
+            ? `دخل <@${newState.id}> إلى <#${newState.channelId}>.`
+            : `خرج <@${newState.id}> من <#${oldState.channelId}>.`;
+
+      await serverLogService.send('voice', title, description, [
+        { name: 'العضو', value: memberValue, inline: true },
+        { name: 'من', value: formatMaybeChannel(oldState.channelId), inline: true },
+        { name: 'إلى', value: formatMaybeChannel(newState.channelId), inline: true },
+        { name: 'بواسطة', value: executor, inline: true },
+      ]);
+    }
+
+    const voiceChanges: { name: string; value: string; inline?: boolean }[] = [
+      { name: 'العضو', value: memberValue, inline: true },
+      { name: 'الروم', value: formatMaybeChannel(newState.channelId ?? oldState.channelId), inline: true },
+    ];
+    addChange(voiceChanges, 'Server Mute', oldState.serverMute, newState.serverMute);
+    addChange(voiceChanges, 'Server Deaf', oldState.serverDeaf, newState.serverDeaf);
+    addChange(voiceChanges, 'Self Mute', oldState.selfMute, newState.selfMute);
+    addChange(voiceChanges, 'Self Deaf', oldState.selfDeaf, newState.selfDeaf);
+    addChange(voiceChanges, 'كاميرا', oldState.selfVideo, newState.selfVideo);
+    addChange(voiceChanges, 'ستريم', oldState.streaming, newState.streaming);
+
+    if (voiceChanges.length > 2) {
+      const executor = oldState.serverMute !== newState.serverMute || oldState.serverDeaf !== newState.serverDeaf
+        ? await serverLogService.fetchExecutor(guild, AuditLogEvent.MemberUpdate, newState.id)
+        : 'العضو نفسه';
+      voiceChanges.unshift({ name: 'بواسطة', value: executor, inline: true });
+      await serverLogService.send('voice', 'تحديث حالة فويس', `تم تغيير حالة فويس <@${newState.id}>.`, voiceChanges);
+    }
+  } catch (error) {
+    logger.warn('Failed to log voice state update', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.GuildBanAdd, async (ban) => {
+  try {
+    if (ban.guild.id !== configStore.current.guild.id) return;
+    const executor = await serverLogService.fetchExecutor(ban.guild, AuditLogEvent.MemberBanAdd, ban.user.id);
+    await serverLogService.send('moderation', 'باند عضو', `تم حظر <@${ban.user.id}> من السيرفر.`, [
+      { name: 'بواسطة', value: executor, inline: true },
+      { name: 'العضو', value: formatUserLogValue(ban.user), inline: true },
+      { name: 'السبب', value: ban.reason ?? 'غير معروف', inline: false },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log ban add', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.GuildBanRemove, async (ban) => {
+  try {
+    if (ban.guild.id !== configStore.current.guild.id) return;
+    const executor = await serverLogService.fetchExecutor(ban.guild, AuditLogEvent.MemberBanRemove, ban.user.id);
+    await serverLogService.send('moderation', 'فك باند عضو', `تم فك الحظر عن <@${ban.user.id}>.`, [
+      { name: 'بواسطة', value: executor, inline: true },
+      { name: 'العضو', value: formatUserLogValue(ban.user), inline: true },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log ban remove', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.GuildUpdate, async (oldGuild, newGuild) => {
+  try {
+    if (newGuild.id !== configStore.current.guild.id) return;
+
+    const fields: { name: string; value: string; inline?: boolean }[] = [];
+    addChange(fields, 'الاسم', oldGuild.name, newGuild.name);
+    addChange(fields, 'المالك', oldGuild.ownerId, newGuild.ownerId);
+    addChange(fields, 'لغة السيرفر', oldGuild.preferredLocale, newGuild.preferredLocale);
+    addChange(fields, 'مستوى التحقق', oldGuild.verificationLevel, newGuild.verificationLevel);
+    addChange(fields, 'فلتر المحتوى', oldGuild.explicitContentFilter, newGuild.explicitContentFilter);
+    addChange(fields, 'إشعارات الرسائل', oldGuild.defaultMessageNotifications, newGuild.defaultMessageNotifications);
+    addChange(fields, 'روم AFK', oldGuild.afkChannelId, newGuild.afkChannelId);
+    addChange(fields, 'وقت AFK', oldGuild.afkTimeout, newGuild.afkTimeout);
+    addChange(fields, 'روم النظام', oldGuild.systemChannelId, newGuild.systemChannelId);
+    addChange(fields, 'روم القوانين', oldGuild.rulesChannelId, newGuild.rulesChannelId);
+    addChange(fields, 'رابط الفانيتي', oldGuild.vanityURLCode, newGuild.vanityURLCode);
+    if (fields.length === 0) return;
+
+    const executor = await serverLogService.fetchExecutor(newGuild, AuditLogEvent.GuildUpdate, newGuild.id);
+    fields.unshift({ name: 'بواسطة', value: executor, inline: true });
+    await serverLogService.send('server', 'تعديل السيرفر', 'تم تعديل إعدادات السيرفر.', fields);
+  } catch (error) {
+    logger.warn('Failed to log guild update', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.GuildEmojiCreate, async (emoji) => {
+  try {
+    if (emoji.guild.id !== configStore.current.guild.id) return;
+    const executor = await serverLogService.fetchExecutor(emoji.guild, AuditLogEvent.EmojiCreate, emoji.id);
+    await serverLogService.send('server', 'إضافة إيموجي', `تمت إضافة إيموجي ${emoji}.`, [
+      { name: 'بواسطة', value: executor, inline: true },
+      { name: 'الإيموجي', value: `${emoji.name}\nID: ${emoji.id}`, inline: true },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log emoji create', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.GuildEmojiUpdate, async (oldEmoji, newEmoji) => {
+  try {
+    if (newEmoji.guild.id !== configStore.current.guild.id) return;
+    if (oldEmoji.name === newEmoji.name) return;
+    const executor = await serverLogService.fetchExecutor(newEmoji.guild, AuditLogEvent.EmojiUpdate, newEmoji.id);
+    await serverLogService.send('server', 'تعديل إيموجي', `تم تعديل إيموجي ${newEmoji}.`, [
+      { name: 'بواسطة', value: executor, inline: true },
+      { name: 'قبل', value: oldEmoji.name ?? 'غير معروف', inline: true },
+      { name: 'بعد', value: newEmoji.name ?? 'غير معروف', inline: true },
+      { name: 'آيدي', value: newEmoji.id, inline: true },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log emoji update', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.GuildEmojiDelete, async (emoji) => {
+  try {
+    if (emoji.guild.id !== configStore.current.guild.id) return;
+    const executor = await serverLogService.fetchExecutor(emoji.guild, AuditLogEvent.EmojiDelete, emoji.id);
+    await serverLogService.send('server', 'حذف إيموجي', 'تم حذف إيموجي من السيرفر.', [
+      { name: 'بواسطة', value: executor, inline: true },
+      { name: 'الإيموجي', value: `${emoji.name}\nID: ${emoji.id}`, inline: true },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log emoji delete', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.GuildStickerCreate, async (sticker) => {
+  try {
+    if (sticker.guild?.id !== configStore.current.guild.id) return;
+    const executor = await serverLogService.fetchExecutor(sticker.guild, AuditLogEvent.StickerCreate, sticker.id);
+    await serverLogService.send('server', 'إضافة ستيكر', 'تمت إضافة ستيكر.', [
+      { name: 'بواسطة', value: executor, inline: true },
+      { name: 'الستيكر', value: `${sticker.name}\nID: ${sticker.id}`, inline: true },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log sticker create', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.GuildStickerUpdate, async (oldSticker, newSticker) => {
+  try {
+    if (newSticker.guild?.id !== configStore.current.guild.id) return;
+    const fields: { name: string; value: string; inline?: boolean }[] = [];
+    addChange(fields, 'الاسم', oldSticker.name, newSticker.name);
+    addChange(fields, 'الوصف', oldSticker.description, newSticker.description);
+    if (fields.length === 0) return;
+    const executor = await serverLogService.fetchExecutor(newSticker.guild, AuditLogEvent.StickerUpdate, newSticker.id);
+    fields.unshift({ name: 'بواسطة', value: executor, inline: true });
+    fields.push({ name: 'آيدي', value: newSticker.id, inline: true });
+    await serverLogService.send('server', 'تعديل ستيكر', 'تم تعديل ستيكر.', fields);
+  } catch (error) {
+    logger.warn('Failed to log sticker update', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.GuildStickerDelete, async (sticker) => {
+  try {
+    if (sticker.guild?.id !== configStore.current.guild.id) return;
+    const executor = await serverLogService.fetchExecutor(sticker.guild, AuditLogEvent.StickerDelete, sticker.id);
+    await serverLogService.send('server', 'حذف ستيكر', 'تم حذف ستيكر من السيرفر.', [
+      { name: 'بواسطة', value: executor, inline: true },
+      { name: 'الستيكر', value: `${sticker.name}\nID: ${sticker.id}`, inline: true },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log sticker delete', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.InviteCreate, async (invite) => {
+  try {
+    if (invite.guild?.id !== configStore.current.guild.id) return;
+    const guild = client.guilds.cache.get(invite.guild.id) ?? await client.guilds.fetch(invite.guild.id).catch(() => null);
+    if (!guild) return;
+    const executor = await serverLogService.fetchExecutor(guild, AuditLogEvent.InviteCreate, invite.code);
+    await serverLogService.send('server', 'إنشاء دعوة', 'تم إنشاء دعوة للسيرفر.', [
+      { name: 'بواسطة', value: executor, inline: true },
+      { name: 'الكود', value: invite.code, inline: true },
+      { name: 'الروم', value: formatMaybeChannel(invite.channelId), inline: true },
+      { name: 'الاستخدامات', value: `${invite.uses ?? 0}/${invite.maxUses ?? 'غير محدود'}`, inline: true },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log invite create', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.InviteDelete, async (invite) => {
+  try {
+    if (invite.guild?.id !== configStore.current.guild.id) return;
+    const guild = client.guilds.cache.get(invite.guild.id) ?? await client.guilds.fetch(invite.guild.id).catch(() => null);
+    if (!guild) return;
+    const executor = await serverLogService.fetchExecutor(guild, AuditLogEvent.InviteDelete, invite.code);
+    await serverLogService.send('server', 'حذف دعوة', 'تم حذف دعوة من السيرفر.', [
+      { name: 'بواسطة', value: executor, inline: true },
+      { name: 'الكود', value: invite.code, inline: true },
+      { name: 'الروم', value: formatMaybeChannel(invite.channelId), inline: true },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log invite delete', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.WebhooksUpdate, async (channel) => {
+  try {
+    if (!('guild' in channel) || channel.guild.id !== configStore.current.guild.id) return;
+    const executor = await fetchAnyExecutor(channel.guild, [AuditLogEvent.WebhookCreate, AuditLogEvent.WebhookUpdate, AuditLogEvent.WebhookDelete], channel.id);
+    await serverLogService.send('server', 'تحديث ويب هوك', `تم تحديث ويب هوك داخل <#${channel.id}>.`, [
+      { name: 'بواسطة', value: executor, inline: true },
+      { name: 'الروم', value: formatMaybeChannel(channel.id), inline: true },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log webhooks update', error instanceof Error ? error.message : error);
   }
 });
 
@@ -748,6 +1204,26 @@ client.on(Events.MessageBulkDelete, async (messages, channel) => {
     ]);
   } catch (error) {
     logger.warn('Failed to log message bulk delete', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
+  try {
+    const guild = newMessage.guild;
+    if (!guild || guild.id !== configStore.current.guild.id) return;
+    if (newMessage.author?.bot) return;
+    if (oldMessage.partial || newMessage.partial) return;
+    if (oldMessage.content === newMessage.content) return;
+
+    await serverLogService.send('messages', 'تعديل رسالة', `تم تعديل رسالة في <#${newMessage.channelId}>.`, [
+      { name: 'صاحب الرسالة', value: newMessage.author ? formatUserLogValue(newMessage.author) : 'غير معروف', inline: true },
+      { name: 'الروم', value: `<#${newMessage.channelId}>`, inline: true },
+      { name: 'آيدي الرسالة', value: newMessage.id, inline: true },
+      { name: 'قبل', value: trimLogValue(oldMessage.content || 'بدون محتوى نصي.') },
+      { name: 'بعد', value: trimLogValue(newMessage.content || 'بدون محتوى نصي.') },
+    ]);
+  } catch (error) {
+    logger.warn('Failed to log message update', error instanceof Error ? error.message : error);
   }
 });
 
