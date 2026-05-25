@@ -925,9 +925,9 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
       const moved = !!oldState.channelId && !!newState.channelId;
       const left = !!oldState.channelId && !newState.channelId;
       const executor = moved
-        ? await serverLogService.fetchExecutor(guild, AuditLogEvent.MemberMove, newState.id)
+        ? await serverLogService.fetchExecutor(guild, AuditLogEvent.MemberMove)
         : left
-          ? await serverLogService.fetchExecutor(guild, AuditLogEvent.MemberDisconnect, newState.id)
+          ? await serverLogService.fetchExecutor(guild, AuditLogEvent.MemberDisconnect)
           : 'العضو نفسه أو غير معروف';
       const staffAction = executor !== 'غير معروف' && executor !== 'العضو نفسه أو غير معروف';
 
