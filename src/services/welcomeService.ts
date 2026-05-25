@@ -6,7 +6,8 @@ const WELCOME_CHANNEL_ID = '1483606109284470844';
 const WELCOME_OWNER_ID = '959896496113844254';
 const WELCOME_BACKGROUND_URL = 'https://i.imgur.com/RXveNTb.png';
 const AVATAR_SIZE = 330;
-const AVATAR_TOP_RATIO = 0.456;
+const AVATAR_CENTER_X_RATIO = 0.5;
+const AVATAR_CENTER_Y_RATIO = 552 / 941;
 
 export class WelcomeService {
   private background: Buffer | null = null;
@@ -37,8 +38,8 @@ export class WelcomeService {
     const metadata = await sharp(background).metadata();
     const width = metadata.width ?? 1672;
     const height = metadata.height ?? 941;
-    const left = Math.round((width - AVATAR_SIZE) / 2);
-    const top = Math.round(height * AVATAR_TOP_RATIO);
+    const left = Math.round((width * AVATAR_CENTER_X_RATIO) - (AVATAR_SIZE / 2));
+    const top = Math.round((height * AVATAR_CENTER_Y_RATIO) - (AVATAR_SIZE / 2));
 
     return sharp(background)
       .composite([{ input: avatar, left, top }])
