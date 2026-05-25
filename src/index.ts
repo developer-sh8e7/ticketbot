@@ -923,29 +923,27 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
 
     if (oldState.channelId !== newState.channelId) {
       const moved = !!oldState.channelId && !!newState.channelId;
-      const joined = !oldState.channelId && !!newState.channelId;
       const left = !!oldState.channelId && !newState.channelId;
       const executor = moved
         ? await serverLogService.fetchExecutor(guild, AuditLogEvent.MemberMove, newState.id)
         : left
           ? await serverLogService.fetchExecutor(guild, AuditLogEvent.MemberDisconnect, newState.id)
           : 'العضو نفسه أو غير معروف';
-      const pulled = moved && executor !== 'غير معروف';
-      const title = pulled ? 'سحب عضو لفويس' : moved ? 'نقل عضو بين الفويس' : joined ? 'دخول فويس' : 'خروج فويس';
-      const description = pulled
-        ? `تم سحب <@${newState.id}> من <#${oldState.channelId}> إلى <#${newState.channelId}>.`
-        : moved
-          ? `انتقل <@${newState.id}> من <#${oldState.channelId}> إلى <#${newState.channelId}>.`
-          : joined
-            ? `دخل <@${newState.id}> إلى <#${newState.channelId}>.`
-            : `خرج <@${newState.id}> من <#${oldState.channelId}>.`;
+      const staffAction = executor !== 'غير معروف';
 
-      await serverLogService.send('voice', title, description, [
-        { name: 'العضو', value: memberValue, inline: true },
-        { name: 'من', value: formatMaybeChannel(oldState.channelId), inline: true },
-        { name: 'إلى', value: formatMaybeChannel(newState.channelId), inline: true },
-        { name: 'بواسطة', value: executor, inline: true },
-      ]);
+      if (staffAction) {
+        const title = moved ? 'سحب عضو لفويس' : 'فصل عضو من فويس';
+        const description = moved
+          ? `تم سحب <@${newState.id}> من <#${oldState.channelId}> إلى <#${newState.channelId}>.`
+          : `تم فصل <@${newState.id}> من <#${oldState.channelId}>.`;
+
+        await serverLogService.send('voice', title, description, [
+          { name: 'العضو', value: memberValue, inline: true },
+          { name: 'من', value: formatMaybeChannel(oldState.channelId), inline: true },
+          { name: 'إلى', value: formatMaybeChannel(newState.channelId), inline: true },
+          { name: 'بواسطة', value: executor, inline: true },
+        ]);
+      }
     }
 
     const voiceChanges: { name: string; value: string; inline?: boolean }[] = [
