@@ -71,6 +71,10 @@ interface ResolvedTicketContext {
   channel: TextChannel;
 }
 
+const MIDDLEMAN_ROLE_ID = '1506010306407694346';
+const MIDDLEMAN_ROLE_NAME = 'وسيط مضمون';
+const MIDDLEMAN_LABEL = 'مضمون';
+
 export class TicketService {
   private readonly configStore: ConfigStore;
   private readonly ticketRepository: TicketRepository;
@@ -108,6 +112,11 @@ export class TicketService {
 
   private buildTicketChannelName(category: TicketCategoryConfig, ticketNumber: number, answers?: TicketAnswer[]): string {
     const paddedTicketNumber = padTicketNumber(ticketNumber, this.config.naming.zeroPadLength);
+
+    if (category.key === 'middleman') {
+      return normalizeChannelName(`وسيط-مضمون-${paddedTicketNumber}`, this.config.naming.maxChannelNameLength);
+    }
+
     const template = category.channelNameTemplate || `${this.config.naming.ticketChannelPrefix}-{ticketNumber}`;
     
     let houseColor = '';
@@ -138,7 +147,7 @@ export class TicketService {
     });
   }
 
-  private buildPermissionOverwrites(guild: Guild, openerId: string, category: TicketCategoryConfig, tradeAmount?: number | null) {
+  private buildPermissionOverwrites(guild: Guild, openerId: string, category: TicketCategoryConfig) {
     const botMemberId = guild.members.me?.id;
 
     if (category.key === 'mediator_apply') {
@@ -180,7 +189,7 @@ export class TicketService {
       ];
     }
 
-    let supportRoleIdsToAllow = [...category.supportRoleIds];
+    const supportRoleIdsToAllow = category.key === 'middleman' ? [MIDDLEMAN_ROLE_ID] : [...category.supportRoleIds];
 
     const staffRoleIds = uniqueStrings([
       ...this.config.guild.supportRoleIds,
@@ -366,11 +375,6 @@ export class TicketService {
       return;
     }
 
-    if (category.key === 'middleman') {
-      await this.processWaitRoomCreation(interaction, category);
-      return;
-    }
-
     if (!category.questions || category.questions.length === 0) {
       await this.processTicketCreation(interaction, category, []);
       return;
@@ -463,7 +467,7 @@ export class TicketService {
           type: ChannelType.GuildText,
           parent: this.config.guild.categoryId,
           topic,
-          permissionOverwrites: this.buildPermissionOverwrites(interaction.guild, interaction.user.id, category, tradeAmount),
+          permissionOverwrites: this.buildPermissionOverwrites(interaction.guild, interaction.user.id, category),
         });
 
         if (!isGuildTextChannelType(created) || created.type !== ChannelType.GuildText) {
@@ -487,14 +491,20 @@ export class TicketService {
             panelChannelId: this.config.panel.channelId,
             questionCount: answers.length,
             openedByAvatarUrl: interaction.user.displayAvatarURL(),
+            ...(category.key === 'middleman'
+              ? {
+                  trade_value: tradeAmount,
+                  mediator_role_id: MIDDLEMAN_ROLE_ID,
+                  mediator_role_name: MIDDLEMAN_ROLE_NAME,
+                }
+              : {}),
           },
         });
 
         let supportRolesToMention = [...category.supportRoleIds];
         let mentionRolesOnOpen = [...this.config.guild.mentionRolesOnOpen];
         if (category.key === 'middleman') {
-          const MIDDLEMAN_ROLE = "1506010306407694346";
-          supportRolesToMention = [MIDDLEMAN_ROLE];
+          supportRolesToMention = [MIDDLEMAN_ROLE_ID];
         } else if (category.key === 'mediator_apply') {
           supportRolesToMention = [];
           mentionRolesOnOpen = [];
@@ -1680,13 +1690,12 @@ export class TicketService {
     }
     logger.info(`[instance=${this.instanceId}] [TRANSITION_DB_LOCK_ACQUIRED] Ticket: ${ticket.id}`);
 
-    const isNewMediator = tradeValue <= 40;
-    const mediatorRoleId = isNewMediator ? '1507642618157465600' : '1506010306407694346';
-    const mediatorRoleName = isNewMediator ? 'وسيط جديد' : 'وسيط مضمون';
-    const mediatorLabel = isNewMediator ? 'جديد' : 'مضمون';
+    const mediatorRoleId = MIDDLEMAN_ROLE_ID;
+    const mediatorRoleName = MIDDLEMAN_ROLE_NAME;
+    const mediatorLabel = MIDDLEMAN_LABEL;
     
     const paddedNumber = padTicketNumber(ticket.ticket_number, this.config.naming.zeroPadLength);
-    const channelName = isNewMediator ? `وسيط-جديد-${paddedNumber}` : `وسيط-مضمون-${paddedNumber}`;
+    const channelName = `وسيط-مضمون-${paddedNumber}`;
     
     let createdChannel: TextChannel | null = null;
 
@@ -1883,9 +1892,8 @@ export class TicketService {
     if (!isGuildTextChannelType(logChannel)) return;
 
     const tradeValue = (ticket.metadata as any)?.trade_value ?? 'غير محدد';
-    const isNew = typeof tradeValue === 'number' ? (tradeValue <= 40) : null;
-    const mediatorRoleName = isNew === null ? 'غير معروف' : (isNew ? 'وسيط جديد' : 'وسيط مضمون');
-    const mediatorLabel = isNew === null ? 'غير معروف' : (isNew ? 'جديد' : 'مضمون');
+    const mediatorRoleName = (ticket.metadata as any)?.mediator_role_name ?? MIDDLEMAN_ROLE_NAME;
+    const mediatorLabel = MIDDLEMAN_LABEL;
 
     const embed = new EmbedBuilder()
       .setColor(hexToDecimal(this.config.bot.successColor))
@@ -1946,8 +1954,7 @@ export class TicketService {
 
     const durationText = formatDuration(durationMs);
     const tradeValue = (ticket.metadata as any)?.trade_value ?? 'غير محدد';
-    const isNew = typeof tradeValue === 'number' ? (tradeValue <= 40) : null;
-    const mediatorRoleName = isNew === null ? 'غير معروف' : (isNew ? 'وسيط جديد' : 'وسيط مضمون');
+    const mediatorRoleName = (ticket.metadata as any)?.mediator_role_name ?? MIDDLEMAN_ROLE_NAME;
 
     const embed = new EmbedBuilder()
       .setColor(hexToDecimal(this.config.bot.errorColor))
@@ -1991,7 +1998,7 @@ export class TicketService {
         `يمكنك تنفيذ العمليات التالية للتحكم بالتذاكر وقنوات الانتظار الحالية:`
       )
       .addFields(
-        { name: '🔴 غرف الانتظار (اكمال الشروط)', value: 'حذف جميع الغرف المؤقتة التي تبدأ بـ `wait-` أو `اكمال-الشروط-`.', inline: false },
+        { name: '🔴 غرف الانتظار القديمة', value: 'حذف جميع الغرف المؤقتة القديمة التي تبدأ بـ `wait-` أو `اكمال-الشروط-`.', inline: false },
         { name: '🔵 التذاكر النشطة', value: 'حذف جميع قنوات التذاكر الأساسية المفتوحة.', inline: false },
         { name: '⚠️ حذف بالكامل', value: 'حذف جميع التذاكر وغرف الانتظار بالكامل من السيرفر وقاعدة البيانات (يتطلب تأكيد مرتين).', inline: false },
         { name: '🔍 حذف تذكرة مخصصة', value: 'حذف تذكرة معينة بناءً على معرف القناة أو رقم التذكرة.', inline: false },
@@ -2003,7 +2010,7 @@ export class TicketService {
     const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId('ctrl_panel:del_wait')
-        .setLabel('حذف غرف الانتظار (اكمال الشروط)')
+        .setLabel('حذف غرف الانتظار القديمة')
         .setStyle(ButtonStyle.Danger),
       new ButtonBuilder()
         .setCustomId('ctrl_panel:del_active')

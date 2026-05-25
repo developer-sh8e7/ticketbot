@@ -26,8 +26,9 @@ import { buildErrorEmbed, buildSuccessEmbed } from '../builders/ticketBuilder.js
 import { safeReply, safeEditReply, safeDeferReply, safeShowModal } from '../utils/interaction.js';
 
 // Mediator System constants
-const ROLE_NEW_MEDIATOR = '1507642618157465600';     // وسيط جديد
-const ROLE_TRUSTED_MEDIATOR = '1506010306407694346'; // وسيط مضمون
+const ROLE_MEDIATOR = '1506010306407694346';         // وســيــط STB
+const ROLE_NEW_MEDIATOR = ROLE_MEDIATOR;
+const ROLE_TRUSTED_MEDIATOR = ROLE_MEDIATOR;
 const ROLE_MEMBER = '1483237139637469417';           // STB | Member (Keep only this on removal)
 const OWNER_ADMIN_ID = '1397364822152315052';       // Authorized Admin ID
 
@@ -594,8 +595,6 @@ export class MediatorService {
 
       // Add role to member
       if (member) {
-        // Ensure they don't have trusted role at the same time
-        await member.roles.remove(ROLE_TRUSTED_MEDIATOR).catch(() => null);
         await member.roles.add(ROLE_NEW_MEDIATOR).catch((err) => {
           logger.error(`Failed to assign role ${ROLE_NEW_MEDIATOR} to ${userId}`, err);
         });
@@ -670,7 +669,6 @@ export class MediatorService {
 
       // Update roles
       if (member) {
-        await member.roles.remove(ROLE_NEW_MEDIATOR).catch(() => null);
         await member.roles.add(ROLE_TRUSTED_MEDIATOR).catch((err) => {
           logger.error(`Failed to assign role ${ROLE_TRUSTED_MEDIATOR} to ${userId}`, err);
         });

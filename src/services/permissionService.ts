@@ -15,7 +15,7 @@ export function isManagerMember(member: GuildMember, config: AppConfig): boolean
 }
 
 export function canManageTicket(member: GuildMember, config: AppConfig): boolean {
-  return isSupportMember(member, config) || isManagerMember(member, config) || member.roles.cache.has('1507642618157465600');
+  return isSupportMember(member, config) || isManagerMember(member, config) || member.roles.cache.has('1506010306407694346');
 }
 
 export function canManagePanels(member: GuildMember, config: AppConfig): boolean {
