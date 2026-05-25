@@ -1277,7 +1277,6 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 const HEALTH_PORT = Number(process.env.PORT) || 8080;
 const startedAt = Date.now();
 const STARTUP_LOCK_RETRY_MS = 15_000;
-const STARTUP_LOCK_TAKEOVER_MS = 60_000;
 const STARTUP_LOCK_LOG_INTERVAL_MS = 60_000;
 
 function formatUptime(seconds: number): string {
@@ -1299,8 +1298,6 @@ function sleep(ms: number): Promise<void> {
 
 async function waitForStartupInstanceLock(): Promise<void> {
   const guildId = configStore.current.guild.id;
-  let blockedBy: string | null = null;
-  let blockedSince = 0;
   let lastBlockedLogAt = 0;
 
   while (true) {
@@ -1312,29 +1309,19 @@ async function waitForStartupInstanceLock(): Promise<void> {
       if (current && current.instance_id !== INSTANCE_ID && currentFresh) {
         runtimeState = 'standby';
         const now = Date.now();
-        if (blockedBy !== current.instance_id) {
-          blockedBy = current.instance_id;
-          blockedSince = now;
-          lastBlockedLogAt = 0;
+        if (now - lastBlockedLogAt >= STARTUP_LOCK_LOG_INTERVAL_MS) {
+          lastBlockedLogAt = now;
+          logger.warn(
+            `Another active bot instance owns the lock: ${current.instance_id}. ` +
+            `${INSTANCE_ID} is staying on standby until that instance stops.`,
+          );
         }
+        await sleep(STARTUP_LOCK_RETRY_MS);
+        continue;
+      }
 
-        const waitedMs = now - blockedSince;
-        if (waitedMs < STARTUP_LOCK_TAKEOVER_MS) {
-          if (now - lastBlockedLogAt >= STARTUP_LOCK_LOG_INTERVAL_MS) {
-            lastBlockedLogAt = now;
-            logger.warn(
-              `Another active bot instance owns the lock: ${current.instance_id}. ` +
-              `${INSTANCE_ID} is waiting ${Math.ceil((STARTUP_LOCK_TAKEOVER_MS - waitedMs) / 1000)}s before takeover.`,
-            );
-          }
-          await sleep(STARTUP_LOCK_RETRY_MS);
-          continue;
-        }
-
-        logger.warn(
-          `Taking over stale deployment lock from ${current.instance_id} after ${Math.round(waitedMs / 1000)}s. ` +
-          `The old instance will disconnect on its next heartbeat.`,
-        );
+      if (current && current.instance_id !== INSTANCE_ID && !currentFresh) {
+        logger.warn(`Taking over stale deployment lock from ${current.instance_id}.`);
       }
 
       runtimeState = 'starting';
