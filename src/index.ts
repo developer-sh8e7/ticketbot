@@ -929,7 +929,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
         : left
           ? await serverLogService.fetchExecutor(guild, AuditLogEvent.MemberDisconnect, newState.id)
           : 'العضو نفسه أو غير معروف';
-      const staffAction = executor !== 'غير معروف';
+      const staffAction = executor !== 'غير معروف' && executor !== 'العضو نفسه أو غير معروف';
 
       if (staffAction) {
         const title = moved ? 'سحب عضو لفويس' : 'فصل عضو من فويس';
@@ -946,23 +946,20 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
       }
     }
 
-    const voiceChanges: { name: string; value: string; inline?: boolean }[] = [
-      { name: 'العضو', value: memberValue, inline: true },
-      { name: 'الروم', value: formatMaybeChannel(newState.channelId ?? oldState.channelId), inline: true },
-    ];
-    addChange(voiceChanges, 'Server Mute', oldState.serverMute, newState.serverMute);
-    addChange(voiceChanges, 'Server Deaf', oldState.serverDeaf, newState.serverDeaf);
-    addChange(voiceChanges, 'Self Mute', oldState.selfMute, newState.selfMute);
-    addChange(voiceChanges, 'Self Deaf', oldState.selfDeaf, newState.selfDeaf);
-    addChange(voiceChanges, 'كاميرا', oldState.selfVideo, newState.selfVideo);
-    addChange(voiceChanges, 'ستريم', oldState.streaming, newState.streaming);
-
-    if (voiceChanges.length > 2) {
-      const executor = oldState.serverMute !== newState.serverMute || oldState.serverDeaf !== newState.serverDeaf
-        ? await serverLogService.fetchExecutor(guild, AuditLogEvent.MemberUpdate, newState.id)
-        : 'العضو نفسه';
-      voiceChanges.unshift({ name: 'بواسطة', value: executor, inline: true });
-      await serverLogService.send('voice', 'تحديث حالة فويس', `تم تغيير حالة فويس <@${newState.id}>.`, voiceChanges);
+    const serverMuteChanged = oldState.serverMute !== newState.serverMute;
+    const serverDeafChanged = oldState.serverDeaf !== newState.serverDeaf;
+    if (serverMuteChanged || serverDeafChanged) {
+      const executor = await serverLogService.fetchExecutor(guild, AuditLogEvent.MemberUpdate, newState.id);
+      if (executor !== 'غير معروف') {
+        const voiceChanges: { name: string; value: string; inline?: boolean }[] = [
+          { name: 'بواسطة', value: executor, inline: true },
+          { name: 'العضو', value: memberValue, inline: true },
+          { name: 'الروم', value: formatMaybeChannel(newState.channelId ?? oldState.channelId), inline: true },
+        ];
+        addChange(voiceChanges, 'Server Mute', oldState.serverMute, newState.serverMute);
+        addChange(voiceChanges, 'Server Deaf', oldState.serverDeaf, newState.serverDeaf);
+        await serverLogService.send('voice', 'تحديث إداري للفويس', `تم تغيير حالة فويس <@${newState.id}> بواسطة الإدارة.`, voiceChanges);
+      }
     }
   } catch (error) {
     logger.warn('Failed to log voice state update', error instanceof Error ? error.message : error);
