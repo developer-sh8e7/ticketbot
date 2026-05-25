@@ -39,6 +39,14 @@ export const SAUDI_QADHF_EVASIONS = [
   'ش*رموطة',
   'د_ي_و_ث',
   'ق_و_ا_د',
+  'ازغبك',
+  'لازغبك',
+  'مزغوب',
+  'زاغبك',
+  'زاغب',
+  'زاغبب',
+  'ازغبكك',
+  'لا ازغبكك',
 ] as const;
 
 export const SAUDI_QADHF_TERMS = [
