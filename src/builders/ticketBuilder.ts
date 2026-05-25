@@ -115,10 +115,6 @@ export function buildTicketActionRows(config: AppConfig, isClaimed = false): Act
 
   const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
     buildButton(TICKET_BUTTON_IDS.stats, config.ticket.controls.stats),
-    new ButtonBuilder()
-      .setCustomId(TICKET_BUTTON_IDS.proof)
-      .setLabel('📦 دليل التسليم')
-      .setStyle(ButtonStyle.Success)
   );
 
   return [row1, row2];

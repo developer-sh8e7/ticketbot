@@ -173,15 +173,6 @@
           "required": true,
           "minLength": 3,
           "maxLength": 100
-        },
-        {
-          "key": "trade_amount",
-          "label": "التريد في حدود كم؟ ($)",
-          "style": "Short",
-          "placeholder": "مثال: 150 (يجب كتابة رقم فقط)",
-          "required": true,
-          "minLength": 1,
-          "maxLength": 100
         }
       ]
     },
