@@ -347,4 +347,6 @@ Health Check URL:
 https://YOUR-APP.onrender.com/health
 ```
 
+The app also responds to `/healthz` with the same lightweight `ok` response if your Render service already uses that path.
+
 After deployment, use UptimeRobot or cron-job.org to ping the `/health` URL every 5 minutes. Render Free Web Services sleep after 15 minutes without inbound HTTP traffic, and this health route is intentionally lightweight: it only returns `ok`.

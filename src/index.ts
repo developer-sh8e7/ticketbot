@@ -1276,7 +1276,7 @@ function formatUptime(seconds: number): string {
 
 const app = express();
 
-app.get('/health', (_req, res) => {
+app.get(['/health', '/healthz'], (_req, res) => {
   res.status(200).type('text/plain').send('ok');
 });
 
