@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: ticket-bot
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health

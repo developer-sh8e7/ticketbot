@@ -1,4 +1,4 @@
-import { createServer } from 'node:http';
+import express from 'express';
 import { initWheelAPI, handleWheelRequest } from './wheel/api.js';
 import {
   Client,
@@ -1258,7 +1258,7 @@ function gracefulShutdown(signal: string): void {
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-const HEALTH_PORT = Number(process.env.PORT) || 8080;
+const HEALTH_PORT = Number(process.env.PORT) || 3000;
 const startedAt = Date.now();
 
 function formatUptime(seconds: number): string {
@@ -1274,201 +1274,49 @@ function formatUptime(seconds: number): string {
   return parts.join(' ');
 }
 
-const healthServer = createServer(async (req, res) => {
-  const url = new URL(req.url || '/', `http://${req.headers.host}`);
+const app = express();
 
-  if (url.pathname.startsWith('/wheel') || url.pathname.startsWith('/api/wheel')) {
-    try {
-      const chunks: Buffer[] = [];
-      for await (const chunk of req) chunks.push(chunk);
-      const body = Buffer.concat(chunks).toString('utf-8') || undefined;
-      const result = await handleWheelRequest(url, req.method || 'GET', body, req.headers as Record<string, string | string[] | undefined>);
-      res.writeHead(result.status, result.headers);
-      res.end(result.body);
-    } catch (err: any) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: err.message }));
-    }
-    return;
-  }
-
-  if (req.url === '/api') {
-    const uptime = Math.floor((Date.now() - startedAt) / 1000);
-    const botUser = client.user;
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      status: botUser ? 'online' : 'starting',
-      runtimeState,
-      instance: INSTANCE_ID,
-      uptime,
-      bot: botUser?.tag ?? null,
-      guilds: client.guilds.cache.size,
-      ping: client.ws.ping,
-    }));
-    return;
-  }
-
-  const uptime = Math.floor((Date.now() - startedAt) / 1000);
-  const botUser = client.user;
-  const isOnline = !!botUser;
-  const statusText = isOnline ? 'Online' : 'Starting...';
-  const statusColor = isOnline ? '#22c55e' : '#eab308';
-  const statusDot = isOnline ? '#22c55e' : '#eab308';
-  const ping = client.ws.ping;
-  const pingColor = ping < 200 ? '#22c55e' : ping < 500 ? '#eab308' : '#ef4444';
-  const guilds = client.guilds.cache.size;
-  const members = client.guilds.cache.reduce((acc, g) => acc + g.memberCount, 0);
-
-  const html = `<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bot Status</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Segoe UI', Tahoma, sans-serif;
-      background: #0a0a0f;
-      color: #e2e8f0;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .container {
-      width: 100%;
-      max-width: 480px;
-    }
-    .card {
-      background: linear-gradient(145deg, #13131f, #1a1a2e);
-      border: 1px solid #2a2a3e;
-      border-radius: 16px;
-      padding: 32px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-    }
-    .header {
-      text-align: center;
-      margin-bottom: 28px;
-    }
-    .avatar {
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 12px;
-      font-size: 28px;
-      font-weight: 700;
-      color: #fff;
-    }
-    .bot-name {
-      font-size: 20px;
-      font-weight: 700;
-      color: #f1f5f9;
-    }
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      margin-top: 8px;
-      padding: 4px 14px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 600;
-      background: ${statusColor}18;
-      color: ${statusColor};
-      border: 1px solid ${statusColor}40;
-    }
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: ${statusDot};
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-    .stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 24px;
-    }
-    .stat {
-      background: #0f0f1a;
-      border: 1px solid #1e1e32;
-      border-radius: 12px;
-      padding: 16px;
-      text-align: center;
-    }
-    .stat-value {
-      font-size: 22px;
-      font-weight: 700;
-      color: #c4b5fd;
-    }
-    .stat-label {
-      font-size: 12px;
-      color: #64748b;
-      margin-top: 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .ping-value { color: ${pingColor}; }
-    .footer {
-      text-align: center;
-      margin-top: 20px;
-      font-size: 11px;
-      color: #475569;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="card">
-      <div class="header">
-        <div class="avatar">${botUser?.username?.charAt(0)?.toUpperCase() ?? 'B'}</div>
-        <div class="bot-name">${botUser?.tag ?? 'Bot'}</div>
-        <div class="status-badge">
-          <span class="status-dot"></span>
-          ${statusText}
-        </div>
-      </div>
-      <div class="stats">
-        <div class="stat">
-          <div class="stat-value">${formatUptime(uptime)}</div>
-          <div class="stat-label">Uptime</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value ping-value">${ping}ms</div>
-          <div class="stat-label">Ping</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value">${guilds}</div>
-          <div class="stat-label">Servers</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value">${members}</div>
-          <div class="stat-label">Members</div>
-        </div>
-      </div>
-      <div class="footer">Instance ${INSTANCE_ID} &bull; PID ${process.pid}</div>
-    </div>
-  </div>
-</body>
-</html>`;
-
-  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-  res.end(html);
+app.get('/health', (_req, res) => {
+  res.status(200).type('text/plain').send('ok');
 });
 
-healthServer.listen(HEALTH_PORT, () => {
-  logger.info(`Health check server listening on port ${HEALTH_PORT}`);
+app.get('/', (_req, res) => {
+  res.status(200).type('text/plain').send('Ticket bot is running');
+});
+
+app.use(['/wheel', '/api/wheel'], express.raw({ type: '*/*', limit: '10mb' }), async (req, res) => {
+  const url = new URL(req.originalUrl, `${req.protocol}://${req.get('host') ?? 'localhost'}`);
+
+  try {
+    const body = Buffer.isBuffer(req.body) && req.body.length > 0 ? req.body.toString('utf-8') : undefined;
+    const result = await handleWheelRequest(url, req.method, body, req.headers as Record<string, string | string[] | undefined>);
+    res.status(result.status);
+    for (const [header, value] of Object.entries(result.headers)) {
+      res.setHeader(header, value);
+    }
+    res.send(result.body);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api', (_req, res) => {
+  const uptime = Math.floor((Date.now() - startedAt) / 1000);
+  const botUser = client.user;
+  res.status(200).json({
+    status: botUser ? 'online' : 'starting',
+    runtimeState,
+    instance: INSTANCE_ID,
+    uptime,
+    uptimeText: formatUptime(uptime),
+    bot: botUser?.tag ?? null,
+    guilds: client.guilds.cache.size,
+    ping: client.ws.ping,
+  });
+});
+
+const healthServer = app.listen(HEALTH_PORT, () => {
+  logger.info(`Express health server listening on port ${HEALTH_PORT}`);
 });
 
 async function startDiscordClient(): Promise<void> {

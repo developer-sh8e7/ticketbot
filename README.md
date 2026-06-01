@@ -302,3 +302,49 @@ npm run dev
 # TicketBot
 # TicketBot
 # TicketBot
+
+---
+
+## Render Deployment
+
+Render Service Type: Web Service
+
+Build Command:
+
+```bash
+npm install && npm run build
+```
+
+Start Command:
+
+```bash
+npm start
+```
+
+Required Environment Variables:
+
+| Variable | Value |
+| --- | --- |
+| `DISCORD_TOKEN` | Discord bot token |
+| `DISCORD_CLIENT_ID` | Discord application client ID |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key |
+| `CONFIG_PATH` | `./config/config.json` |
+
+Optional Environment Variables:
+
+| Variable | Default |
+| --- | --- |
+| `GEMINI_API_KEY` | empty |
+| `AI_PROVIDER` | `openai` |
+| `AI_BASE_URL` | `https://opencode.ai/zen/v1` |
+| `AI_MODEL` | `deepseek-v4-flash-free` |
+| `DISCORD_CLIENT_SECRET` | empty |
+
+Health Check URL:
+
+```text
+https://YOUR-APP.onrender.com/health
+```
+
+After deployment, use UptimeRobot or cron-job.org to ping the `/health` URL every 5 minutes. Render Free Web Services sleep after 15 minutes without inbound HTTP traffic, and this health route is intentionally lightweight: it only returns `ok`.
