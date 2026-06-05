@@ -1,0 +1,20 @@
+.git
+.env
+.env.*
+!.env.example
+.vercel
+build
+dist
+node_modules
+developer-web
+BotGames
+discord-bot
+SystemBot Opus
+config
+supabase
+coverage
+*.log
+railway.json
+render.yaml
+discloud.config
+.discloudignore
