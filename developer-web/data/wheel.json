@@ -1,0 +1,54 @@
+{
+  "meta": {
+    "title": "Wheel Rates",
+    "lastUpdated": "2026-05-17",
+    "lastUpdatedIso": "2026-05-17",
+    "lastUpdatedLabel": "May 17, 2026"
+  },
+  "image": "/assets/images/Wheel/Magical_Wheel.png",
+  "pointer": "/assets/images/Wheel/Wheel_Arrow.png",
+  "spinOffsetDeg": 0,
+  "wheelSegments": 8,
+  "rates": [
+    {
+      "name": "500M cash",
+      "rate": 49.5,
+      "segment": 5
+    },
+    {
+      "name": "Money mult (2x)",
+      "rate": 32,
+      "segment": 1
+    },
+    {
+      "name": "Base color (24h)",
+      "rate": 5,
+      "segment": 0
+    },
+    {
+      "name": "Luck 4x",
+      "rate": 5,
+      "segment": 6
+    },
+    {
+      "name": "Forest Event (5m)",
+      "rate": 4,
+      "segment": 2
+    },
+    {
+      "name": "Wave Event (5m)",
+      "rate": "3",
+      "segment": 4
+    },
+    {
+      "name": "LA GRANDE COMBINACION",
+      "rate": "0.5",
+      "segment": 7
+    },
+    {
+      "name": "Magical Grande Rot",
+      "rate": "1",
+      "segment": 3
+    }
+  ]
+}

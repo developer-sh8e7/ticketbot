@@ -2,9 +2,13 @@ import type { Guild, Message } from 'discord.js';
 import { buildPanelComponents, buildPanelEmbeds } from '../builders/panelBuilder.js';
 import { isGuildTextChannelType } from '../utils/discord.js';
 import { ConfigStore } from './configStore.js';
+import type { MediatorRepository } from '../database/mediatorRepository.js';
 
 export class PanelService {
-  public constructor(private readonly configStore: ConfigStore) {}
+  public constructor(
+    private readonly configStore: ConfigStore,
+    private readonly mediatorRepository: MediatorRepository,
+  ) {}
 
   private async resolvePanelChannel(guild: Guild) {
     const channelId = this.configStore.current.panel.channelId;
@@ -24,11 +28,12 @@ export class PanelService {
 
   private async buildPayload(guild: Guild) {
     const config = this.configStore.current;
+    const mediatorConfig = await this.mediatorRepository.getMediatorConfig();
 
     return {
       content: config.panel.defaultMention.trim() || undefined,
       embeds: await buildPanelEmbeds(config, guild),
-      components: buildPanelComponents(config),
+      components: buildPanelComponents(config, mediatorConfig),
       allowedMentions: {
         parse: ['everyone', 'roles', 'users'] as const,
       },

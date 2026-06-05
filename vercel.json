@@ -6,15 +6,63 @@
       "use": "@vercel/node",
       "config": {
         "includeFiles": [
-          "src/web/public/index.html"
+          "src/web/public/**"
         ]
       }
+    },
+    {
+      "src": "developer-web/api/index.py",
+      "use": "@vercel/python",
+      "config": {
+        "includeFiles": [
+          "developer-web/index.html",
+          "developer-web/main.py",
+          "developer-web/requirements.txt",
+          "developer-web/data/**"
+        ]
+      }
+    },
+    {
+      "src": "developer-web/assets/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "developer-web/css/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "developer-web/js/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/(.*)",
+      "src": "/(verify|verify\\.css|verify\\.js|health|auth/discord|auth/discord/callback)",
       "dest": "src/web/server.ts"
+    },
+    {
+      "src": "/api/(countries|mediator/config|csrf-token|send-otp|verify-otp|status)",
+      "dest": "src/web/server.ts"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "developer-web/api/index.py"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "/developer-web/assets/$1"
+    },
+    {
+      "src": "/css/(.*)",
+      "dest": "/developer-web/css/$1"
+    },
+    {
+      "src": "/js/(.*)",
+      "dest": "/developer-web/js/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "developer-web/api/index.py"
     }
   ]
 }

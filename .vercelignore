@@ -6,7 +6,6 @@
 build
 dist
 node_modules
-developer-web
 BotGames
 discord-bot
 SystemBot Opus
@@ -18,3 +17,17 @@ railway.json
 render.yaml
 discloud.config
 .discloudignore
+developer-web/.vercel
+developer-web/.vercel-local-bin
+developer-web/__pycache__
+developer-web/api/__pycache__
+developer-web/artifacts
+developer-web/netlify
+developer-web/netlify-deploy
+developer-web/stb-arab-netlify.zip
+developer-web/*.log
+developer-web/*.out
+developer-web/*.err
+developer-web/run.bat
+developer-web/run.ps1
+developer-web/verification-eternal-machine.png

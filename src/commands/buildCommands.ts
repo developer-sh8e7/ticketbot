@@ -120,6 +120,35 @@ export function buildCommandDefinitions(config: AppConfig) {
 
   commands.push(
     new SlashCommandBuilder()
+      .setName('mediator-config')
+      .setDescription('إدارة حالة التقديم على رتبة وسيط')
+      .addSubcommand((subcommand) =>
+        subcommand
+          .setName('open')
+          .setDescription('فتح التقديم على رتبة وسيط'),
+      )
+      .addSubcommand((subcommand) =>
+        subcommand
+          .setName('close')
+          .setDescription('إغلاق التقديم على رتبة وسيط'),
+      )
+      .addSubcommand((subcommand) =>
+        subcommand
+          .setName('set-max')
+          .setDescription('تحديد العدد الأقصى للوسطاء')
+          .addIntegerOption((option) =>
+            option
+              .setName('number')
+              .setDescription('العدد الأقصى')
+              .setMinValue(1)
+              .setMaxValue(100)
+              .setRequired(true),
+          ),
+      ) as unknown as SlashCommandBuilder,
+  );
+
+  commands.push(
+    new SlashCommandBuilder()
       .setName('panel-complaints-send')
       .setDescription('ارسال لوحة الشكاوي والاعتراضات لمركز الشكاوي (للأدمن فقط)') as SlashCommandBuilder
   );

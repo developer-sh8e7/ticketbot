@@ -1,0 +1,20 @@
+{
+  "/api/admin-machine/live": "api__admin-machine__live__97859c4853.json",
+  "/api/auth/discord": "api__auth__discord__30c42d6a43.json",
+  "/api/auth/logout": "api__auth__logout__f6fcebb688.json",
+  "/api/blog": "api__blog__31bf33168a.json",
+  "/api/boxrots": "api__boxrots__d84e7c78ef.json",
+  "/api/brainrot-ratings": "api__brainrot-ratings__b2ed1ca508.json",
+  "/api/codes": "api__codes__0d1f71290d.json",
+  "/api/collection": "api__collection__805dc59d45.json",
+  "/api/events": "api__events__fb64de8049.json",
+  "/api/fn360-map": "api__fn360-map__6c5a78b10e.json",
+  "/api/llamarots": "api__llamarots__f3a83726dc.json",
+  "/api/luckyrots": "api__luckyrots__566569beab.json",
+  "/api/me": "api__me__4f8cc3f306.json",
+  "/api/realtime-events/schedule": "api__realtime-events__schedule__4b8e8fe37f.json",
+  "/api/rebirth": "api__rebirth__d66ed16236.json",
+  "/api/site-users/ping": "api__site-users__ping__50fe6da690.json",
+  "/api/traits": "api__traits__a55efb5f21.json",
+  "/api/wheel": "api__wheel__f42c568459.json"
+}

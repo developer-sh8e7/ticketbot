@@ -74,7 +74,6 @@ interface ResolvedTicketContext {
 const MIDDLEMAN_ROLE_ID = '1506010306407694346';
 const MIDDLEMAN_ROLE_NAME = 'وسيط مضمون';
 const MIDDLEMAN_LABEL = 'مضمون';
-const MEDIATOR_APPLICATION_CONTACT_ID = '1397364822152315052';
 
 export class TicketService {
   private readonly configStore: ConfigStore;
@@ -362,19 +361,6 @@ export class TicketService {
     return this.ticketRepository.findOpenByCreator(guildId, userId);
   }
 
-  private buildMediatorApplicationsClosedEmbed(): EmbedBuilder {
-    return new EmbedBuilder()
-      .setColor(hexToDecimal(this.config.bot.errorColor))
-      .setTitle('التقديم مقفل')
-      .setDescription(`في حال معك مدفع كريسمس وأكثر تواصل مع <@${MEDIATOR_APPLICATION_CONTACT_ID}> في الخاص.`)
-      .addFields(
-        { name: 'عدد الوسطاء', value: '**6/6**', inline: true },
-        { name: 'الحالة', value: '**مقفل**', inline: true },
-      )
-      .setFooter({ text: '6 من 6' })
-      .setTimestamp();
-  }
-
   public async handleOpenSelect(interaction: StringSelectMenuInteraction): Promise<void> {
     if (!interaction.inCachedGuild()) {
       await safeReply(interaction, [buildErrorEmbed(this.config, 'This action only works inside the guild.')]);
@@ -391,9 +377,13 @@ export class TicketService {
 
     if (category.key === 'mediator_apply') {
       await interaction.reply({
-        embeds: [this.buildMediatorApplicationsClosedEmbed()],
+        embeds: [
+          buildErrorEmbed(
+            this.config,
+            'تم تحديث نظام التقديم. استخدم زر التقديم على رتبة وسيط الموجود أسفل لوحة التذاكر.',
+          ),
+        ],
         flags: MessageFlags.Ephemeral,
-        allowedMentions: { users: [MEDIATOR_APPLICATION_CONTACT_ID] },
       });
       return;
     }
@@ -435,9 +425,13 @@ export class TicketService {
 
     if (category.key === 'mediator_apply') {
       await interaction.reply({
-        embeds: [this.buildMediatorApplicationsClosedEmbed()],
+        embeds: [
+          buildErrorEmbed(
+            this.config,
+            'تم تحديث نظام التقديم. استخدم زر التقديم على رتبة وسيط الموجود أسفل لوحة التذاكر.',
+          ),
+        ],
         flags: MessageFlags.Ephemeral,
-        allowedMentions: { users: [MEDIATOR_APPLICATION_CONTACT_ID] },
       });
       return;
     }

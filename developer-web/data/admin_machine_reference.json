@@ -1,0 +1,244 @@
+{
+  "meta": {
+    "discordInvite": "https://discord.gg/stbhub",
+    "discordLabel": "discord.gg/stbhub",
+    "intro": "Join our Discord server to know the Admin Machine's content up to 12 hours in advance!",
+    "lastUpdated": "2026-05-30",
+    "lastUpdatedLabel": "May 30, 2026",
+    "lastUpdatedIso": "2026-05-30"
+  },
+  "brainrots": [
+    {
+      "name": "67",
+      "rate": "6"
+    },
+    {
+      "name": "Los Esok Sekolitos",
+      "rate": "6"
+    },
+    {
+      "name": "Coccoblade",
+      "rate": "6"
+    },
+    {
+      "name": "Chicleteira Bicicleteira",
+      "rate": "6"
+    },
+    {
+      "name": "Chop Chop Chop Sahur",
+      "rate": 6
+    },
+    {
+      "name": "Dilly Pickle",
+      "rate": 6
+    },
+    {
+      "name": "Ketupat Kepat Prekupat",
+      "rate": 6
+    },
+    {
+      "name": "Coccobladina",
+      "rate": "6"
+    },
+    {
+      "name": "Catino Timeno",
+      "rate": "6"
+    },
+    {
+      "name": "Dul Dul Dul",
+      "rate": "6"
+    },
+    {
+      "name": "Rang Rang Kelerang",
+      "rate": 5
+    },
+    {
+      "name": "W or L",
+      "rate": "5"
+    },
+    {
+      "name": "Cobracadabra",
+      "rate": "5"
+    },
+    {
+      "name": "Krr Krr Kataking",
+      "rate": "5"
+    },
+    {
+      "name": "Aquanaut",
+      "rate": "4"
+    },
+    {
+      "name": "Re Delle Carte",
+      "rate": "4"
+    },
+    {
+      "name": "McPenne Dougal",
+      "rate": "4"
+    },
+    {
+      "name": "La Esok Sekolah",
+      "rate": "3"
+    },
+    {
+      "name": "Pitiata Baem",
+      "rate": "2"
+    },
+    {
+      "name": "Bau Wang Wolf Monarca",
+      "rate": "1"
+    },
+    {
+      "name": "Tralalero Kingala",
+      "rate": 1
+    },
+    {
+      "name": "Giga Bonito Cannoinito",
+      "rate": "1"
+    }
+  ],
+  "events": [
+    {
+      "name": "Heaven",
+      "rate": "10"
+    },
+    {
+      "name": "Void",
+      "rate": "10"
+    },
+    {
+      "name": "Lucky Rot",
+      "rate": "13"
+    },
+    {
+      "name": "Love",
+      "rate": "10"
+    },
+    {
+      "name": "Darkness",
+      "rate": "10"
+    },
+    {
+      "name": "Aqua",
+      "rate": "10"
+    },
+    {
+      "name": "Tokyo",
+      "rate": "10"
+    },
+    {
+      "name": "Chocolate",
+      "rate": "9"
+    },
+    {
+      "name": "Crystal",
+      "rate": "9"
+    },
+    {
+      "name": "Magical",
+      "rate": "9"
+    }
+  ],
+  "boosts": [
+    {
+      "name": "2x Luck",
+      "rate": 20
+    },
+    {
+      "name": "BoxRot",
+      "rate": 25
+    },
+    {
+      "name": "Llama Rot",
+      "rate": 30
+    },
+    {
+      "name": "Easter Egg",
+      "rate": 0
+    },
+    {
+      "name": "4x Luck",
+      "rate": 15
+    },
+    {
+      "name": "10x Luck",
+      "rate": 10
+    },
+    {
+      "name": "Carp",
+      "rate": 0
+    }
+  ],
+  "traitCounts": [
+    {
+      "count": 0,
+      "rate": 0
+    },
+    {
+      "count": 1,
+      "rate": 0
+    },
+    {
+      "count": 2,
+      "rate": 40
+    },
+    {
+      "count": 3,
+      "rate": 39
+    },
+    {
+      "count": 4,
+      "rate": 16.8
+    },
+    {
+      "count": 5,
+      "rate": 4.2
+    }
+  ],
+  "traits": [
+    {
+      "name": "Lightning",
+      "rate": "17"
+    },
+    {
+      "name": "Fireworks",
+      "rate": "17"
+    },
+    {
+      "name": "Glitch",
+      "rate": "13"
+    },
+    {
+      "name": "Frozen",
+      "rate": "13"
+    },
+    {
+      "name": "Cupid",
+      "rate": 10
+    },
+    {
+      "name": "Tung",
+      "rate": 10
+    },
+    {
+      "name": "Wave",
+      "rate": 5
+    },
+    {
+      "name": "Pumpkin",
+      "rate": 3
+    },
+    {
+      "name": "Skibidi",
+      "rate": 2
+    },
+    {
+      "name": "Carps",
+      "rate": 0
+    },
+    {
+      "name": "Forest",
+      "rate": "10"
+    }
+  ]
+}

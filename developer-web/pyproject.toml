@@ -1,0 +1,11 @@
+[project]
+name = "stb-arab"
+version = "1.0.0"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi==0.115.12",
+  "uvicorn[standard]==0.34.2"
+]
+
+[tool.vercel]
+entrypoint = "api/index.py"

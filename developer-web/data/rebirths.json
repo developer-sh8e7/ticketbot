@@ -1,0 +1,314 @@
+{
+  "meta": {
+    "title": "Rebirth levels",
+    "lastUpdated": "2026-05-17",
+    "lastUpdatedIso": "2026-05-17",
+    "lastUpdatedLabel": "May 17, 2026"
+  },
+  "levels": [
+    {
+      "level": 0,
+      "money": null,
+      "brainrots": [],
+      "initialBalance": "100",
+      "moneyMult": "1",
+      "lockTime": null,
+      "slots": null,
+      "gadgets": [
+        "Slap",
+        "Speed",
+        "Trap",
+        "Respawn",
+        "Index"
+      ]
+    },
+    {
+      "level": 1,
+      "money": "1M",
+      "brainrots": [
+        "Trippi Troppi",
+        "Tung Tung Tung Sahur"
+      ],
+      "initialBalance": "5K",
+      "moneyMult": "+0.5",
+      "lockTime": "+10",
+      "slots": null,
+      "gadgets": [
+        "Common Slap",
+        "Gravity Jump"
+      ]
+    },
+    {
+      "level": 2,
+      "money": "3M",
+      "brainrots": [
+        "Boneca Ambalabu",
+        "Brr Brr Patapim"
+      ],
+      "initialBalance": "10K",
+      "moneyMult": "+0.5",
+      "lockTime": "+10",
+      "slots": "+1",
+      "gadgets": [
+        "Gold Slap",
+        "Speed Jump"
+      ]
+    },
+    {
+      "level": 3,
+      "money": "12.5M",
+      "brainrots": [
+        "Trulimero Trulicina",
+        "Chimpanzini Bananini"
+      ],
+      "initialBalance": "25K",
+      "moneyMult": "+1",
+      "lockTime": "+10",
+      "slots": "+1",
+      "gadgets": [
+        "Diamond Slap",
+        "FakeRot"
+      ]
+    },
+    {
+      "level": 4,
+      "money": "35M",
+      "brainrots": [
+        "Chef Crabracadabra",
+        "Glorbo Fruttodillo"
+      ],
+      "initialBalance": "50K",
+      "moneyMult": "+1",
+      "lockTime": "+10",
+      "slots": "+1",
+      "gadgets": [
+        "Crystal Slap",
+        "Ghost"
+      ]
+    },
+    {
+      "level": 5,
+      "money": "100M",
+      "brainrots": [
+        "Frigo Camelo",
+        "Orangutini Ananassini"
+      ],
+      "initialBalance": "100K",
+      "moneyMult": "+1",
+      "lockTime": "+10",
+      "slots": "+1",
+      "gadgets": [
+        "Crimson Slap",
+        "Freeze"
+      ]
+    },
+    {
+      "level": 6,
+      "money": "250M",
+      "brainrots": [
+        "Bombardiro Crocodilo",
+        "Bombombini Gusini"
+      ],
+      "initialBalance": "250K",
+      "moneyMult": "+1",
+      "lockTime": "+10",
+      "slots": "+1",
+      "gadgets": [
+        "Void Slap",
+        "Slot Changer"
+      ]
+    },
+    {
+      "level": 7,
+      "money": "1B",
+      "brainrots": [
+        "Cocofanto Elefanto"
+      ],
+      "initialBalance": "500K",
+      "moneyMult": "+1",
+      "lockTime": "+10",
+      "slots": "+1",
+      "gadgets": [
+        "Fire Slap",
+        "Bouncer",
+        "X-Ray"
+      ]
+    },
+    {
+      "level": 8,
+      "money": "5B",
+      "brainrots": [
+        "Tralalero Tralala"
+      ],
+      "initialBalance": "1M",
+      "moneyMult": "+1",
+      "lockTime": "+10",
+      "slots": "+1",
+      "gadgets": [
+        "Toxic Slap",
+        "Tennis Turret",
+        "Brainrot Caller"
+      ]
+    },
+    {
+      "level": 9,
+      "money": "25B",
+      "brainrots": [
+        "Odin Din Din Dun"
+      ],
+      "initialBalance": "5M",
+      "moneyMult": "+1",
+      "lockTime": "+10",
+      "slots": "+1",
+      "gadgets": [
+        "Galactic Slap",
+        "Cash Collector",
+        "Duplicator"
+      ]
+    },
+    {
+      "level": 10,
+      "money": "200B",
+      "brainrots": [
+        "La Vaca Saturno Saturnita"
+      ],
+      "initialBalance": "10M",
+      "moneyMult": "+1",
+      "lockTime": "+10",
+      "slots": "+1",
+      "gadgets": [
+        "Electric Slap",
+        "Swap"
+      ]
+    },
+    {
+      "level": 11,
+      "money": "1T",
+      "brainrots": [
+        "Torrtuginni Dragonfrutinni"
+      ],
+      "initialBalance": "50M",
+      "moneyMult": "+1",
+      "lockTime": "+10",
+      "slots": "+1",
+      "gadgets": [
+        "Explosive Slap",
+        "Sticky Trap"
+      ]
+    },
+    {
+      "level": 12,
+      "money": "10T",
+      "brainrots": [
+        "Trenostruzzo Turbo 3000"
+      ],
+      "initialBalance": "500M",
+      "moneyMult": "+1",
+      "lockTime": "+10",
+      "slots": "+2",
+      "gadgets": [
+        "Apocalypse Slap"
+      ]
+    },
+    {
+      "level": 13,
+      "money": "50T",
+      "brainrots": [
+        "Orcalero Orcala"
+      ],
+      "initialBalance": "2B",
+      "moneyMult": "+1",
+      "lockTime": "+10",
+      "slots": "+2",
+      "gadgets": [
+        "Dreamy Slap",
+        "Punch Gun"
+      ]
+    },
+    {
+      "level": 14,
+      "money": "200T",
+      "brainrots": [
+        "Garamaramadungdung"
+      ],
+      "initialBalance": "10B",
+      "moneyMult": "+1",
+      "lockTime": "+10",
+      "slots": "+1",
+      "gadgets": [
+        "Carnival Slap",
+        "Jet Chair"
+      ]
+    },
+    {
+      "level": 15,
+      "money": "1Qa",
+      "brainrots": [
+        "La Grande Combinacion"
+      ],
+      "initialBalance": "50B",
+      "moneyMult": "+1",
+      "lockTime": "+10",
+      "slots": "+1",
+      "gadgets": [
+        "Aqua Slap",
+        "Frost Mine"
+      ]
+    },
+    {
+      "level": 16,
+      "money": "5Qa",
+      "brainrots": [
+        "La Esok Sekolah"
+      ],
+      "initialBalance": "100B",
+      "moneyMult": "+1",
+      "lockTime": "+10",
+      "slots": "+1",
+      "gadgets": [
+        "Halloween Slap"
+      ]
+    },
+    {
+      "level": 17,
+      "money": "10Qa",
+      "brainrots": [
+        "Cannelloni Dragoni"
+      ],
+      "initialBalance": "200B",
+      "moneyMult": "+1",
+      "lockTime": "+10",
+      "slots": "+1",
+      "gadgets": [
+        "Christmas Slap"
+      ]
+    },
+    {
+      "level": 18,
+      "money": "25Qa",
+      "brainrots": [
+        "Gigalitraktos Spidorobos"
+      ],
+      "initialBalance": "500B",
+      "moneyMult": "+1",
+      "lockTime": "+10",
+      "slots": "+1",
+      "gadgets": [
+        "Chocolate Slap"
+      ]
+    },
+    {
+      "brainrots": [
+        "DiggoBlock",
+        "Fishini Mechinini"
+      ],
+      "gadgets": "[   \"Magical Slap\" ]",
+      "slots": "+1",
+      "moneyMult": "+1",
+      "money": "100Qa",
+      "lockTime": "+10",
+      "level": "19",
+      "initialBalance": "1T"
+    }
+  ]
+}

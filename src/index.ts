@@ -14,7 +14,21 @@ import {
   type VoiceState,
 } from 'discord.js';
 import { registerCommands } from './commands/registerCommands.js';
-import { ADD_MEMBER_MODAL_ID, APPLY_MEDIATOR, REMOVE_MEMBER_MODAL_ID, TICKET_BUTTON_IDS, isOpenTicketModal, isAuthorizedAdmin } from './constants/customIds.js';
+import {
+  ADD_MEMBER_MODAL_ID,
+  APPLY_MEDIATOR,
+  MEDIATOR_ACCEPT_MODAL_PREFIX,
+  MEDIATOR_ACCEPT_PREFIX,
+  MEDIATOR_CLOSE_CANCEL_PREFIX,
+  MEDIATOR_CLOSE_CONFIRM_PREFIX,
+  MEDIATOR_CLOSE_PREFIX,
+  MEDIATOR_REJECT_MODAL_PREFIX,
+  MEDIATOR_REJECT_PREFIX,
+  REMOVE_MEMBER_MODAL_ID,
+  TICKET_BUTTON_IDS,
+  isOpenTicketModal,
+  isAuthorizedAdmin,
+} from './constants/customIds.js';
 import { createSupabaseClient } from './database/supabase.js';
 import { InfrastructureRepository } from './database/infrastructureRepository.js';
 import { TicketRepository } from './database/ticketRepository.js';
@@ -58,7 +72,7 @@ const roleManagementRepository = new RoleManagementRepository(supabase);
 const mediatorRepository = new MediatorRepository(supabase);
 const complaintRepository = new ComplaintRepository(supabase);
 const transcriptService = new TranscriptService();
-const panelService = new PanelService(configStore);
+const panelService = new PanelService(configStore, mediatorRepository);
 const infrastructureService = new InfrastructureService({
   configStore,
   infrastructureRepository,
@@ -70,7 +84,13 @@ const ticketService = new TicketService({
   mediatorRepository,
 });
 const mediatorService = new MediatorService(configStore, mediatorRepository, complaintRepository);
-const mediatorApplicationHandler = new MediatorApplicationHandler(mediatorRepository, configStore, env);
+const mediatorApplicationHandler = new MediatorApplicationHandler(
+  mediatorRepository,
+  configStore,
+  env,
+  transcriptService,
+  panelService,
+);
 const complaintService = new ComplaintService(configStore, complaintRepository, ticketRepository, mediatorRepository);
 const aiService = new AIService(
   {
@@ -304,6 +324,42 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
     return;
   }
 
+  if (interaction.commandName === 'mediator-config') {
+    if (!(await ensurePanelManager(interaction))) {
+      return;
+    }
+    if (!(await safeDeferReply(interaction, interaction.commandName))) {
+      return;
+    }
+
+    const subcommand = interaction.options.getSubcommand();
+    const updated = subcommand === 'open'
+      ? await mediatorService.updateApplicationConfig({ isOpen: true })
+      : subcommand === 'close'
+        ? await mediatorService.updateApplicationConfig({ isOpen: false })
+        : await mediatorService.updateApplicationConfig({
+            maxCount: interaction.options.getInteger('number', true),
+          });
+
+    await panelService.refreshPanel(interaction.guild!).catch((error) => {
+      logger.warn('Failed to refresh ticket panel after mediator config update.', error);
+    });
+
+    const effectiveOpen = updated.is_open && updated.current_count < updated.max_count;
+    await safeEditReply(interaction, [
+      buildSuccessEmbed(
+        configStore.current,
+        'تم تحديث تقديم الوسطاء',
+        [
+          `الحالة: **${effectiveOpen ? 'مفتوح' : 'مغلق'}**`,
+          `عدد الوسطاء: **${updated.current_count}/${updated.max_count}**`,
+          `المتطلب: **${updated.required_weapon}**`,
+        ].join('\n'),
+      ),
+    ]);
+    return;
+  }
+
   if (interaction.commandName === 'panel-complaints-send') {
     if (!isAuthorizedAdmin(interaction.user.id)) {
       await safeReply(interaction, [buildErrorEmbed(configStore.current, '❌ ليس لديك الصلاحية لاستخدام هذا الأمر.')]);
@@ -420,6 +476,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     if (interaction.isModalSubmit()) {
+      if (
+        interaction.customId.startsWith(MEDIATOR_ACCEPT_MODAL_PREFIX) ||
+        interaction.customId.startsWith(MEDIATOR_REJECT_MODAL_PREFIX)
+      ) {
+        await mediatorApplicationHandler.handleDecisionModal(interaction);
+        trackLifecycleHealth();
+        return;
+      }
+
       if (isOpenTicketModal(interaction.customId)) {
         await ticketService.handleOpenModal(interaction);
         trackLifecycleHealth();
@@ -478,6 +543,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (interaction.isButton()) {
       if (interaction.customId === APPLY_MEDIATOR) {
         await mediatorApplicationHandler.handle(interaction);
+        trackLifecycleHealth();
+        return;
+      }
+
+      if (
+        interaction.customId.startsWith(MEDIATOR_ACCEPT_PREFIX) ||
+        interaction.customId.startsWith(MEDIATOR_REJECT_PREFIX) ||
+        interaction.customId.startsWith(MEDIATOR_CLOSE_PREFIX) ||
+        interaction.customId.startsWith(MEDIATOR_CLOSE_CONFIRM_PREFIX) ||
+        interaction.customId.startsWith(MEDIATOR_CLOSE_CANCEL_PREFIX)
+      ) {
+        await mediatorApplicationHandler.handleActionButton(interaction);
         trackLifecycleHealth();
         return;
       }

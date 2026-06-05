@@ -1,0 +1,432 @@
+{
+  "brainrotRows": [
+    {
+      "name": "Pipi Potato",
+      "rates": [
+        15,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "name": "Tukanno Bananno",
+      "rates": [
+        15,
+        25,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "name": "Zibra Zubra Zibralini",
+      "rates": [
+        20,
+        20,
+        23,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "name": "Strawberrelli Flamingelli",
+      "rates": [
+        24,
+        20,
+        25,
+        20,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "name": "Tralalero Tralala",
+      "rates": [
+        13,
+        17,
+        25,
+        30,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "name": "Chillin Chili",
+      "rates": [
+        7,
+        9,
+        10,
+        20,
+        30,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "name": "Piccionetta Machina",
+      "rates": [
+        5,
+        6,
+        8,
+        14,
+        28,
+        25,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "name": "Kravilino Cekicino",
+      "rates": [
+        1,
+        3,
+        6,
+        8,
+        20,
+        30,
+        25,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "name": "Peeling Peely",
+      "rates": [
+        null,
+        null,
+        3,
+        5,
+        10,
+        25,
+        30,
+        15,
+        null,
+        null
+      ]
+    },
+    {
+      "name": "Frogino Assassino",
+      "rates": [
+        null,
+        null,
+        null,
+        3,
+        8,
+        14,
+        25,
+        25,
+        15,
+        null
+      ]
+    },
+    {
+      "catalogName": "21",
+      "name": "Twenty One",
+      "rates": [
+        null,
+        null,
+        null,
+        null,
+        4,
+        5,
+        10,
+        30,
+        25,
+        20
+      ]
+    },
+    {
+      "name": "Garamaramadungdung",
+      "rates": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        1,
+        8,
+        17,
+        30,
+        25
+      ]
+    },
+    {
+      "catalogName": "67",
+      "name": "Six Seven",
+      "rates": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        1.8,
+        11.8,
+        27,
+        32
+      ]
+    },
+    {
+      "name": "Chickanini Bananini",
+      "rates": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        8,
+        13
+      ]
+    },
+    {
+      "name": "La Esok Sekolah",
+      "rates": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        0.2,
+        1,
+        4,
+        8
+      ]
+    },
+    {
+      "name": "Klombo",
+      "rates": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        0.2,
+        1,
+        2
+      ]
+    }
+  ],
+  "brainrotSectionIntro": "Here are all rates for brainrots in Llama Rot. Rates are the same for all Llama Rot types; only the brainrot type changes.",
+  "codesNote": "Llama Rot is also sometimes available via codes.",
+  "footerNotes": [],
+  "interactionColumnHints": [
+    "If you fail on the first or the second interaction, you fall under column 1"
+  ],
+  "interactionCounts": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "interactionRatesNote": "All rates are in percentage (%)",
+  "intro": [
+    "Llama Rot rates depend on how many interactions you hit correctly on the llama.",
+    "The number of interactions allowed varies based on the player's rebirth level. See the table below."
+  ],
+  "meta": {
+    "lastUpdated": "2026-05-16",
+    "lastUpdatedIso": "2026-05-16",
+    "lastUpdatedLabel": "May 16, 2026",
+    "title": "Llama Rot Rates"
+  },
+  "rebirthRows": [
+    {
+      "interactions": 4,
+      "level": 0
+    },
+    {
+      "interactions": 4,
+      "level": 1
+    },
+    {
+      "interactions": 5,
+      "level": 2
+    },
+    {
+      "interactions": 5,
+      "level": 3
+    },
+    {
+      "interactions": 6,
+      "level": 4
+    },
+    {
+      "interactions": 6,
+      "level": 5
+    },
+    {
+      "interactions": 6,
+      "level": 6
+    },
+    {
+      "interactions": 6,
+      "level": 7
+    },
+    {
+      "interactions": 7,
+      "level": 8
+    },
+    {
+      "interactions": 7,
+      "level": 9
+    },
+    {
+      "interactions": 7,
+      "level": 10
+    },
+    {
+      "interactions": 8,
+      "level": 11
+    },
+    {
+      "interactions": 8,
+      "level": 12
+    },
+    {
+      "interactions": 9,
+      "level": 13
+    },
+    {
+      "interactions": 9,
+      "level": 14
+    },
+    {
+      "interactions": 10,
+      "level": 15
+    },
+    {
+      "interactions": 10,
+      "level": 16
+    },
+    {
+      "interactions": 10,
+      "level": 17
+    },
+    {
+      "interactions": 10,
+      "level": 18
+    },
+    {
+      "interactions": "10",
+      "level": "19"
+    }
+  ],
+  "spawnRateColumns": [
+    "Default",
+    "Rainbow",
+    "Chocolate",
+    "Christmas",
+    "Toxic",
+    "Lovely",
+    "Void",
+    "Heaven",
+    "Crystal",
+    "Magical"
+  ],
+  "spawnRateRows": [
+    {
+      "Chocolate": "9",
+      "Default": "91",
+      "event": "Chocolate"
+    },
+    {
+      "Christmas": "8",
+      "Default": "92",
+      "event": "Christmas"
+    },
+    {
+      "Default": "91",
+      "Toxic": "9",
+      "event": "Toxic"
+    },
+    {
+      "Default": "91",
+      "Lovely": "9",
+      "event": "Love"
+    },
+    {
+      "Chocolate": "5",
+      "Default": "89",
+      "Rainbow": "6",
+      "event": "Lucky Rot"
+    },
+    {
+      "Default": "94",
+      "Void": "6",
+      "event": "Void"
+    },
+    {
+      "Default": "94",
+      "Heaven": "6",
+      "event": "Heaven"
+    },
+    {
+      "Crystal": "6",
+      "Default": "94",
+      "event": "Crystal"
+    },
+    {
+      "Chocolate": "",
+      "Christmas": "",
+      "Crystal": "",
+      "Default": "94",
+      "Heaven": "",
+      "Lovely": "",
+      "Magical": "6",
+      "Rainbow": "",
+      "Toxic": "",
+      "Void": "",
+      "event": "Magical"
+    },
+    {
+      "Default": "90",
+      "Rainbow": "10",
+      "event": "None"
+    }
+  ],
+  "spawnRatesNote": "All rates are in percentage (%)",
+  "spawnRatesTitle": "Llama Rot Spawn Rates"
+}

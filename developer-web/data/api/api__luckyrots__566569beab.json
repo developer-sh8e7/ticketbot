@@ -1,0 +1,446 @@
+{
+  "meta": {
+    "lastUpdated": "2026-05-16",
+    "lastUpdatedIso": "2026-05-16",
+    "lastUpdatedLabel": "May 16, 2026",
+    "title": "Lucky Rot Rates"
+  },
+  "sections": [
+    {
+      "columns": [
+        {
+          "entries": [
+            {
+              "name": "Gorillo Watermellondrillo",
+              "rate": "15"
+            },
+            {
+              "name": "Bombombini Gusini",
+              "rate": "14.8"
+            },
+            {
+              "name": "Matteo",
+              "rate": "14"
+            },
+            {
+              "name": "Sigma Boy",
+              "rate": "14"
+            },
+            {
+              "name": "Los Spijuniritos",
+              "rate": "13"
+            },
+            {
+              "name": "Ganganzelli Trulala",
+              "rate": "12"
+            },
+            {
+              "name": "Strawberrelli Flamingelli",
+              "rate": "7"
+            },
+            {
+              "name": "To To To Sahur",
+              "rate": "5"
+            },
+            {
+              "name": "Girafa Celeste",
+              "rate": "2"
+            },
+            {
+              "name": "Antoniooo",
+              "rate": "2"
+            },
+            {
+              "name": "Tirilikalika Tirilikaliko",
+              "rate": "1"
+            },
+            {
+              "name": "Los Sigma Boys",
+              "rate": "0.2"
+            }
+          ],
+          "rarity": "Mythic"
+        },
+        {
+          "entries": [
+            {
+              "name": "Tralalero Tralala",
+              "rate": "12"
+            },
+            {
+              "name": "Odin Din Din Dun",
+              "rate": "11"
+            },
+            {
+              "name": "La Vaca Saturno Saturnita",
+              "rate": "11"
+            },
+            {
+              "name": "Bulbito Bandito Traktorito",
+              "rate": "10"
+            },
+            {
+              "name": "Brri Bicus Dicus",
+              "rate": "9"
+            },
+            {
+              "name": "*Bananananito Bandito",
+              "rate": "9"
+            },
+            {
+              "name": "Brr Es Teh Patipum",
+              "rate": "8"
+            },
+            {
+              "name": "Espressona Signora",
+              "rate": "8"
+            },
+            {
+              "name": "Torrtuginni Dragonfrutinni",
+              "rate": "6"
+            },
+            {
+              "name": "Bambini Tankini",
+              "rate": "4"
+            },
+            {
+              "name": "Los Crocodillitos",
+              "rate": "3"
+            },
+            {
+              "name": "*Bim Bim Bim Sadim",
+              "rate": "3"
+            },
+            {
+              "name": "Karkerkar Kurkur",
+              "rate": "2"
+            },
+            {
+              "name": "Il Mastodontico Telepiedone",
+              "rate": "2"
+            },
+            {
+              "name": "Malame Amarale",
+              "rate": "1"
+            },
+            {
+              "name": "Belugelo Beluga",
+              "rate": "1"
+            }
+          ],
+          "rarity": "Brainrot God"
+        },
+        {
+          "entries": [
+            {
+              "name": "Piccione Macchina",
+              "rate": "28"
+            },
+            {
+              "name": "Anpali Babel",
+              "rate": "25"
+            },
+            {
+              "name": "Orcalero Orcala",
+              "rate": "11.6"
+            },
+            {
+              "name": "Frogino Assassino",
+              "rate": "10"
+            },
+            {
+              "name": "Ketchuru and Musturu",
+              "rate": "7"
+            },
+            {
+              "name": "Il Sacro Cabrospaghetti",
+              "rate": "5"
+            },
+            {
+              "name": "La Grande Combinacion",
+              "rate": "4"
+            },
+            {
+              "name": "Nooo My Hotspot",
+              "rate": "3"
+            },
+            {
+              "name": "67",
+              "rate": "2"
+            },
+            {
+              "name": "Los Esok Sekolitos",
+              "rate": "2"
+            },
+            {
+              "name": "Ketupat Kepat Prekupat",
+              "rate": "1"
+            },
+            {
+              "name": "Los Garamadungcitos",
+              "rate": "1"
+            },
+            {
+              "name": "W or L",
+              "rate": "0.3"
+            },
+            {
+              "name": "Jisaoba Dashi",
+              "rate": "0.1"
+            }
+          ],
+          "rarity": "Secret"
+        }
+      ],
+      "footnote": "*A Bananananito Bandito would get replaced with Chillin Chilly if the chosen type is Halloween. A Bim Bim Bim Sadim would get replaced with Bambini Tankini if the chosen type is Christmas.",
+      "id": "lucky",
+      "intro": "Each Lucky Rot always gives Brainrots of the same type as the Lucky Rot itself (e.g. Diamond Lucky Rot will give a Diamond brainrot).",
+      "layout": "triple",
+      "title": "Lucky Rot"
+    },
+    {
+      "columns": [
+        {
+          "entries": [
+            {
+              "name": "Rhino Toasterino",
+              "rate": "50"
+            },
+            {
+              "name": "Elefantino Frigorifero",
+              "rate": "30"
+            },
+            {
+              "name": "Perochello Lemonchello",
+              "rate": "15"
+            },
+            {
+              "name": "Los Matteos",
+              "rate": "5"
+            }
+          ],
+          "rarity": "Mythic"
+        },
+        {
+          "entries": [
+            {
+              "name": "Chachechicha",
+              "rate": "39"
+            },
+            {
+              "name": "Trippi Troppi Troppa Trippa",
+              "rate": "25"
+            },
+            {
+              "name": "Agarrini La Palini",
+              "rate": "20"
+            },
+            {
+              "name": "Las Sis",
+              "rate": "13"
+            },
+            {
+              "name": "Missilpython Turbozzo",
+              "rate": "2"
+            },
+            {
+              "name": "Auglurini Arbuzini",
+              "rate": "1"
+            }
+          ],
+          "rarity": "Brainrot God"
+        },
+        {
+          "entries": [
+            {
+              "name": "TrenoStruzzo Turbo 4000",
+              "rate": "37.5"
+            },
+            {
+              "name": "Pirulitoita Bicicleteira",
+              "rate": "30"
+            },
+            {
+              "name": "Pingus Kingus",
+              "rate": "18"
+            },
+            {
+              "name": "Lirili Ralilu",
+              "rate": "10"
+            },
+            {
+              "name": "Shtekerito el Bulbonito",
+              "rate": "3.5"
+            },
+            {
+              "name": "La Crazy Combinacion",
+              "rate": "0.8"
+            },
+            {
+              "name": "Bearini Plammini Guardini",
+              "rate": "0.2"
+            }
+          ],
+          "rarity": "Secret"
+        }
+      ],
+      "id": "grande",
+      "intro": "Each Grande Rot always gives Brainrots of the same type as the Grande Rot itself (e.g. Rainbow Grande Rot will give a Rainbow brainrot).",
+      "layout": "triple",
+      "title": "Grande Rot"
+    },
+    {
+      "columnRarity": "Secret",
+      "entries": [
+        {
+          "name": "Nooo My Hotspot",
+          "rate": "50"
+        },
+        {
+          "name": "Garamaramadungdung",
+          "rate": "25"
+        },
+        {
+          "name": "La Grande Combinacion",
+          "rate": "12"
+        },
+        {
+          "name": "67",
+          "rate": "7"
+        },
+        {
+          "name": "Ketupat Kepat Prekupat",
+          "rate": "5"
+        },
+        {
+          "name": "Spaghetti Tualetti",
+          "rate": "1"
+        }
+      ],
+      "id": "pumpkin",
+      "intro": "Pumpkin Rot has a 10% chance of giving a Halloween type brainrot (otherwise Normal).",
+      "layout": "single",
+      "title": "Pumpkin Rot"
+    },
+    {
+      "columnRarity": "Secret",
+      "entries": [
+        {
+          "name": "Pot Hotspotina",
+          "rate": "70"
+        },
+        {
+          "name": "Chicleteirina Bicicleteirina",
+          "rate": "20"
+        },
+        {
+          "name": "Coccoblade",
+          "rate": "6"
+        },
+        {
+          "name": "Los Garamadungcitos",
+          "rate": "3"
+        },
+        {
+          "name": "Strawberry Elephant",
+          "rate": "1"
+        }
+      ],
+      "id": "present",
+      "intro": "Present Rot has a 100% chance of giving a Christmas type brainrot.",
+      "layout": "single",
+      "title": "Present Rot"
+    },
+    {
+      "columnRarity": "Secret",
+      "entries": [
+        {
+          "name": "14",
+          "rate": "54"
+        },
+        {
+          "name": "Rosalero",
+          "rate": "25"
+        },
+        {
+          "name": "Lovey Lovey Bear",
+          "rate": "12"
+        },
+        {
+          "name": "Lovelypat",
+          "rate": "6"
+        },
+        {
+          "name": "La Royals",
+          "rate": "2.5"
+        },
+        {
+          "name": "Chocone Dragone",
+          "rate": "0.5"
+        }
+      ],
+      "id": "love",
+      "intro": "Love Rot has a 10% chance of giving a Lovely type brainrot (otherwise Normal).",
+      "layout": "single",
+      "title": "Love Rot"
+    },
+    {
+      "columnRarity": "Secret",
+      "entries": [
+        {
+          "name": "Bun Din Din Dun",
+          "rate": "49"
+        },
+        {
+          "name": "Noo My Eggs",
+          "rate": "33"
+        },
+        {
+          "name": "Carrot Carrot Sahur",
+          "rate": "15"
+        },
+        {
+          "name": "Baskuru and Egguru",
+          "rate": "2.5"
+        },
+        {
+          "name": "La Easter Eggolah",
+          "rate": "0.5"
+        }
+      ],
+      "id": "easter",
+      "intro": "Easter Rot has a 15% chance of giving a brainrot with one of the following mutations: Dreamy, Chocolate, Love, Void or Heaven. Otherwise default.",
+      "layout": "single",
+      "title": "Easter Rot"
+    },
+    {
+      "columnRarity": "Secret",
+      "entries": [
+        {
+          "name": "Croakolini Spellini",
+          "rate": "49"
+        },
+        {
+          "name": "Flowerfang Squirreli",
+          "rate": "33"
+        },
+        {
+          "name": "Mushzilla Fungzilla",
+          "rate": "15"
+        },
+        {
+          "name": "Mistifly",
+          "rate": "2.5"
+        },
+        {
+          "name": "Guardilope Antilope",
+          "rate": "0.5"
+        }
+      ],
+      "id": "forest",
+      "intro": "Each Forest Rot always gives Brainrots of the same type as the Grande Rot itself (e.g. Rainbow Forest Rot will give a Rainbow brainrot).",
+      "layout": "single",
+      "title": "FOREST ROT"
+    }
+  ]
+}

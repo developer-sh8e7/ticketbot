@@ -328,11 +328,13 @@ Required Environment Variables:
 | `DISCORD_TOKEN` | Discord bot token |
 | `DISCORD_CLIENT_ID` | Discord application client ID |
 | `DISCORD_CLIENT_SECRET` | Discord OAuth2 client secret |
-| `DISCORD_REDIRECT_URI` | `https://stb-arab.vercel.app/api/auth/discord/callback` |
+| `DISCORD_REDIRECT_URI` | `https://stb-arab.vercel.app/auth/discord/callback` |
 | `SUPABASE_URL` | Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key |
 | `CONFIG_PATH` | `./config/config.json` |
 | `STAFF_ROLE_ID` | Staff role allowed to view mediator verification tickets |
+| `MEDIATOR_ROLE_ID` | `1506010306407694346` |
+| `LOG_CHANNEL_ID` | `1483569377054822420` |
 | `TWILIO_ACCOUNT_SID` | Twilio account SID |
 | `TWILIO_AUTH_TOKEN` | Twilio auth token |
 | `TWILIO_WHATSAPP_NUMBER` | Twilio WhatsApp sender number |
@@ -369,9 +371,11 @@ The mediator verification website is served from `src/web/server.ts` and is read
 Vercel routes:
 
 ```text
-/
+/verify
 /auth/discord
-/api/auth/discord/callback
+/auth/discord/callback
+/api/mediator/config
+/api/csrf-token
 /api/status
 /api/send-otp
 /api/verify-otp
@@ -380,7 +384,7 @@ Vercel routes:
 Before deploying the website, run this SQL file in Supabase SQL Editor:
 
 ```text
-supabase/mediator_verification.sql
+supabase/mediator_application_system.sql
 ```
 
 Vercel Environment Variables:
@@ -389,20 +393,35 @@ Vercel Environment Variables:
 DISCORD_TOKEN
 DISCORD_CLIENT_ID
 DISCORD_CLIENT_SECRET
-DISCORD_REDIRECT_URI=https://stb-arab.vercel.app/api/auth/discord/callback
+DISCORD_REDIRECT_URI=https://stb-arab.vercel.app/auth/discord/callback
+MAIN_DISCORD_REDIRECT_URI=https://stb-arab.vercel.app/api/auth/discord/callback
 SUPABASE_URL
 SUPABASE_SERVICE_ROLE_KEY
-STAFF_ROLE_ID
+STAFF_ROLE_ID=1483021857048232036
+MEDIATOR_ROLE_ID=1506010306407694346
+LOG_CHANNEL_ID=1483569377054822420
 TWILIO_ACCOUNT_SID
 TWILIO_AUTH_TOKEN
 TWILIO_WHATSAPP_NUMBER
 TWILIO_CONTENT_SID
 TWILIO_SANDBOX_JOIN_CODE
-WEBSITE_URL=https://stb-arab.vercel.app/
+WEBSITE_URL=https://stb-arab.vercel.app
+VERIFY_URL=https://stb-arab.vercel.app/verify
 VERIFICATION_WEBHOOK_URL
 SESSION_SECRET
 JWT_SECRET
 ```
+
+Add both Discord OAuth redirect URLs to the Discord Developer Portal:
+
+```text
+https://stb-arab.vercel.app/auth/discord/callback
+https://stb-arab.vercel.app/api/auth/discord/callback
+```
+
+Completing Discord and WhatsApp verification only makes the applicant eligible
+to open a mediator application ticket. The mediator role is granted only when
+an authorized staff member explicitly accepts the application in Discord.
 
 When the shared Twilio WhatsApp Sandbox number is used, each recipient must join
 the Sandbox before receiving an OTP. The website detects this state and opens a

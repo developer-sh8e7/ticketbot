@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "lastUpdated": "2026-05-17",
+    "lastUpdatedIso": "2026-05-17",
+    "lastUpdatedLabel": "May 17, 2026"
+  },
+  "label": "ALL TYPE MULTS",
+  "types": [
+    {
+      "name": "Default",
+      "slug": "default",
+      "multiplier": 1
+    },
+    {
+      "name": "Gold",
+      "slug": "gold",
+      "multiplier": 2
+    },
+    {
+      "name": "Diamond",
+      "slug": "diamond",
+      "multiplier": 3
+    },
+    {
+      "name": "Galaxy",
+      "slug": "galaxy",
+      "multiplier": 4
+    },
+    {
+      "name": "Zombie",
+      "slug": "zombie",
+      "multiplier": 5
+    },
+    {
+      "name": "Dreamy",
+      "slug": "dreamy",
+      "multiplier": 6
+    },
+    {
+      "name": "Ice & Fire",
+      "slug": "ice-fire",
+      "multiplier": 7
+    },
+    {
+      "name": "Carnival",
+      "slug": "carnival",
+      "multiplier": 8
+    },
+    {
+      "name": "Aqua",
+      "slug": "aqua",
+      "multiplier": 9
+    },
+    {
+      "name": "Neon",
+      "slug": "neon",
+      "multiplier": 9.5
+    },
+    {
+      "name": "Halloween",
+      "slug": "halloween",
+      "multiplier": 10
+    },
+    {
+      "name": "Rainbow",
+      "slug": "rainbow",
+      "multiplier": 10
+    },
+    {
+      "name": "Chocolate",
+      "slug": "chocolate",
+      "multiplier": 10.5
+    },
+    {
+      "name": "Lovely",
+      "slug": "lovely",
+      "multiplier": 10.5
+    },
+    {
+      "name": "Darkness",
+      "slug": "darkness",
+      "multiplier": 11
+    },
+    {
+      "name": "Toxic",
+      "slug": "toxic",
+      "multiplier": 11
+    },
+    {
+      "name": "Christmas",
+      "slug": "christmas",
+      "multiplier": 12
+    },
+    {
+      "name": "Heaven",
+      "slug": "heaven",
+      "multiplier": 12.5
+    },
+    {
+      "name": "Void",
+      "slug": "void",
+      "multiplier": 13
+    },
+    {
+      "name": "Crystal",
+      "slug": "crystal",
+      "multiplier": 13
+    },
+    {
+      "multiplier": 13.5,
+      "name": "Magical",
+      "slug": "magical"
+    }
+  ]
+}

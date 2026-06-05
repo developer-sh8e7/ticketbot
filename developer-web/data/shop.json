@@ -1,0 +1,54 @@
+{
+  "categories": [
+    {
+      "id": "grande-rots",
+      "navLabel": "GRANDE ROTS",
+      "navTone": "purple",
+      "sectionTitle": "Grande Rots",
+      "kind": "cards",
+      "cards": [
+        { "name": "Grande Rot", "rarity": "Mythic", "price": 150 },
+        { "name": "Grande Rot", "rarity": "Brainrot God", "price": 500 },
+        { "name": "Grande Rot", "rarity": "Secret", "price": 1800 }
+      ]
+    },
+    {
+      "id": "server-luck",
+      "navLabel": "SERVER LUCK",
+      "navTone": "green",
+      "sectionTitle": "Server Luck",
+      "kind": "banner",
+      "banner": {
+        "lineLeft": "1x",
+        "lineSub": ">",
+        "lineEmphasis": "2x",
+        "sub": "For 15 Minutes",
+        "price": 200
+      }
+    },
+    {
+      "id": "gear",
+      "navLabel": "GEAR",
+      "navTone": "bronze",
+      "sectionTitle": "Gear",
+      "kind": "empty",
+      "emptyTextKey": "emptyGear"
+    },
+    {
+      "id": "gamepass",
+      "navLabel": "GAMEPASS",
+      "navTone": "gold",
+      "sectionTitle": "Gamepass",
+      "kind": "empty",
+      "emptyTextKey": "emptyGamepass"
+    },
+    {
+      "id": "waves",
+      "navLabel": "WAVES",
+      "navTone": "aqua",
+      "sectionTitle": "Waves",
+      "kind": "empty",
+      "emptyTextKey": "emptyWaves"
+    }
+  ]
+}

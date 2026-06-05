@@ -1,0 +1,368 @@
+{
+  "typeOrder": [
+    "default",
+    "gold",
+    "diamond",
+    "rainbow",
+    "galaxy",
+    "zombie",
+    "dreamy",
+    "ice-fire",
+    "carnival",
+    "darkness",
+    "aqua",
+    "halloween",
+    "neon",
+    "chocolate",
+    "christmas",
+    "toxic",
+    "lovely",
+    "void",
+    "heaven",
+    "crystal",
+    "magical"
+  ],
+  "verseGameEvents": [
+    {
+      "id": 1,
+      "label": "Galaxy Event",
+      "bonus": [
+        "galaxy"
+      ],
+      "rarityProfile": "fiesta"
+    },
+    {
+      "id": 2,
+      "label": "Rainbow Event",
+      "bonus": [
+        "rainbow"
+      ],
+      "rarityProfile": "fiesta"
+    },
+    {
+      "id": 3,
+      "label": "Zombie Event",
+      "bonus": [
+        "zombie"
+      ],
+      "rarityProfile": "none"
+    },
+    {
+      "id": 4,
+      "label": "Lucky Rot Event",
+      "bonus": [
+        "rainbow",
+        "chocolate"
+      ],
+      "rarityProfile": "carnival_bump",
+      "fixedRates": {
+        "default": 24,
+        "gold": 20,
+        "diamond": 14,
+        "rainbow": 2,
+        "galaxy": 9,
+        "zombie": 6,
+        "dreamy": 5,
+        "ice-fire": 3,
+        "carnival": 3,
+        "darkness": 2,
+        "aqua": 2,
+        "neon": 2,
+        "chocolate": 2,
+        "toxic": 2,
+        "lovely": 2,
+        "void": 1,
+        "heaven": 1
+      }
+    },
+    {
+      "id": 5,
+      "label": "Dreamy Event",
+      "bonus": [
+        "dreamy"
+      ],
+      "rarityProfile": "fiesta"
+    },
+    {
+      "id": 6,
+      "label": "Fire Ice Event",
+      "bonus": [
+        "ice-fire"
+      ],
+      "rarityProfile": "none"
+    },
+    {
+      "id": 7,
+      "label": "Carnival Event",
+      "bonus": [
+        "carnival"
+      ],
+      "rarityProfile": "carnival_bump"
+    },
+    {
+      "id": 8,
+      "label": "Darkness Event",
+      "bonus": [
+        "darkness"
+      ],
+      "rarityProfile": "none"
+    },
+    {
+      "id": 9,
+      "label": "Aquatic Event",
+      "bonus": [
+        "aqua"
+      ],
+      "rarityProfile": "none"
+    },
+    {
+      "id": 10,
+      "label": "Halloween Event",
+      "bonus": [
+        "halloween"
+      ],
+      "rarityProfile": "none"
+    },
+    {
+      "id": 11,
+      "label": "Galaxy & Dreamy Event",
+      "bonus": [
+        "galaxy",
+        "dreamy"
+      ],
+      "rarityProfile": "fiesta"
+    },
+    {
+      "id": 12,
+      "label": "Zombie & Ice-Fire Event",
+      "bonus": [
+        "zombie",
+        "ice-fire"
+      ],
+      "rarityProfile": "none",
+      "fixedRates": {
+        "default": 55,
+        "ice-fire": 25,
+        "zombie": 20
+      }
+    },
+    {
+      "id": 13,
+      "label": "Tokyo Event",
+      "bonus": [
+        "neon"
+      ],
+      "rarityProfile": "none"
+    },
+    {
+      "id": 14,
+      "label": "New Season Event",
+      "bonus": [
+        "crystal"
+      ],
+      "rarityProfile": "crystal_hype"
+    },
+    {
+      "id": 15,
+      "label": "Chocolate Event",
+      "bonus": [
+        "chocolate"
+      ],
+      "rarityProfile": "none"
+    },
+    {
+      "id": 16,
+      "label": "Christmas Event",
+      "bonus": [
+        "christmas"
+      ],
+      "rarityProfile": "none"
+    },
+    {
+      "id": 17,
+      "label": "Toxic Event",
+      "bonus": [
+        "toxic"
+      ],
+      "rarityProfile": "none"
+    },
+    {
+      "id": 18,
+      "label": "Love Event",
+      "bonus": [
+        "lovely"
+      ],
+      "rarityProfile": "none"
+    },
+    {
+      "id": 19,
+      "label": "Void Event",
+      "bonus": [
+        "void"
+      ],
+      "rarityProfile": "crystal_hype",
+      "fixedRates": {
+        "default": 55,
+        "darkness": 20,
+        "void": 25
+      }
+    },
+    {
+      "id": 20,
+      "label": "Heaven Event",
+      "bonus": [
+        "heaven"
+      ],
+      "rarityProfile": "crystal_hype"
+    },
+    {
+      "id": 21,
+      "label": "Crystal Event",
+      "bonus": [
+        "crystal"
+      ],
+      "rarityProfile": "crystal_hype"
+    },
+    {
+      "id": "22",
+      "bonus": [
+        "magical"
+      ],
+      "label": "Magical  Event",
+      "rarityProfile": "crystal_hype"
+    }
+  ],
+  "withoutEvent": {
+    "1": {
+      "default": 84,
+      "gold": 10,
+      "diamond": 5,
+      "rainbow": 1
+    },
+    "2": {
+      "default": 67,
+      "gold": 20,
+      "diamond": 10,
+      "rainbow": 3
+    },
+    "4": {
+      "default": 50,
+      "gold": 25,
+      "diamond": 15,
+      "rainbow": 10
+    },
+    "10": {
+      "default": 31,
+      "gold": 25,
+      "diamond": 15,
+      "rainbow": 3,
+      "galaxy": 8,
+      "zombie": 5,
+      "dreamy": 4,
+      "ice-fire": 4,
+      "carnival": 4,
+      "darkness": 1,
+      "magical": 0
+    },
+    "20": {
+      "default": 24,
+      "gold": 18,
+      "diamond": 14,
+      "rainbow": 4,
+      "galaxy": 9,
+      "zombie": 7,
+      "dreamy": 7,
+      "ice-fire": 7,
+      "carnival": 4,
+      "darkness": 2,
+      "aqua": 2,
+      "neon": 1,
+      "chocolate": 1,
+      "magical": 0
+    },
+    "50": {
+      "default": 17,
+      "gold": 13,
+      "diamond": 11,
+      "rainbow": 5,
+      "galaxy": 11,
+      "zombie": 9,
+      "dreamy": 7,
+      "ice-fire": 8,
+      "carnival": 4,
+      "darkness": 2,
+      "aqua": 3,
+      "neon": 3,
+      "chocolate": 2,
+      "toxic": 1,
+      "lovely": 1,
+      "void": 1,
+      "heaven": 1,
+      "crystal": 1,
+      "magical": 0
+    },
+    "67": {
+      "default": 16,
+      "gold": 12,
+      "diamond": 12,
+      "rainbow": 5,
+      "galaxy": 11,
+      "zombie": 9,
+      "dreamy": 7,
+      "ice-fire": 8,
+      "carnival": 4,
+      "darkness": 2,
+      "aqua": 3,
+      "neon": 3,
+      "chocolate": 2,
+      "toxic": 1,
+      "lovely": 2,
+      "void": 1,
+      "heaven": 1,
+      "crystal": 1,
+      "magical": 0
+    },
+    "100": {
+      "default": 13,
+      "gold": 11,
+      "diamond": 11,
+      "rainbow": 4,
+      "galaxy": 9,
+      "zombie": 8,
+      "dreamy": 7,
+      "ice-fire": 7,
+      "carnival": 6,
+      "darkness": 3,
+      "aqua": 4,
+      "neon": 4,
+      "chocolate": 3,
+      "toxic": 2,
+      "lovely": 2,
+      "void": 2,
+      "heaven": 2,
+      "crystal": 2,
+      "magical": 0
+    },
+    "150": {
+      "default": 13,
+      "gold": 11,
+      "diamond": 11,
+      "rainbow": 4,
+      "galaxy": 9,
+      "zombie": 8,
+      "dreamy": 7,
+      "ice-fire": 7,
+      "carnival": 6,
+      "darkness": 3,
+      "aqua": 4,
+      "neon": 4,
+      "chocolate": 3,
+      "toxic": 2,
+      "lovely": 2,
+      "void": 2,
+      "heaven": 2,
+      "crystal": 2,
+      "magical": 0
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "boostBase": "/assets/images/Boosters",
+  "boostByEnum": {
+    "1": "Luck.png",
+    "7": "llamarot.png",
+    "11": "boxrot.png",
+    "13": "eggrot.png"
+  },
+  "luckByAmount": {
+    "2x": "Luck.png",
+    "4x": "Luck.png",
+    "10x": "Luck.png"
+  }
+}

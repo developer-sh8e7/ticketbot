@@ -262,6 +262,39 @@ pre code{background:none;padding:0}
 }
 
 export class TranscriptService {
+  public async buildTextAttachment(
+    channel: GuildTextBasedChannel,
+    fileName: string,
+  ): Promise<AttachmentBuilder> {
+    const messages = await fetchAllMessages(channel);
+    const lines = messages.map((message) => {
+      const timestamp = new Date(message.createdTimestamp).toISOString();
+      const author = `${message.author.tag} (${message.author.id})`;
+      const content = message.content?.trim() || '[no text content]';
+      const attachments = message.attachments.map((attachment) => attachment.url);
+      const embeds = message.embeds
+        .map((embed) => [embed.title, embed.description].filter(Boolean).join(' - '))
+        .filter(Boolean);
+      return [
+        `[${timestamp}] ${author}`,
+        content,
+        ...attachments.map((url) => `[attachment] ${url}`),
+        ...embeds.map((embed) => `[embed] ${embed}`),
+      ].join('\n');
+    });
+
+    const header = [
+      `Channel: #${channel.name} (${channel.id})`,
+      `Guild: ${channel.guild.name} (${channel.guild.id})`,
+      `Generated: ${new Date().toISOString()}`,
+      '',
+    ].join('\n');
+
+    return new AttachmentBuilder(Buffer.from(`${header}${lines.join('\n\n')}`, 'utf8'), {
+      name: fileName,
+    });
+  }
+
   public async buildAttachment(
     channel: GuildTextBasedChannel,
     ticket: TicketRecord,

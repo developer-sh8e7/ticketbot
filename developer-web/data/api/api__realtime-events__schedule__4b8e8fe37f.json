@@ -1,0 +1,828 @@
+{
+  "current": [
+    {
+      "cycleSec": 21600,
+      "durationSec": 1200,
+      "eventKey": "admin",
+      "label": "Admin Machine",
+      "secondsRemaining": 337,
+      "spawnEventId": null,
+      "windowEnd": 1780051800,
+      "windowEndIso": "2026-05-29T10:50:00.000Z",
+      "windowStart": 1780050600,
+      "windowStartIso": "2026-05-29T10:30:00.000Z"
+    }
+  ],
+  "events": [
+    {
+      "enabled": false,
+      "eventDurationSec": 1200,
+      "id": "galaxy",
+      "label": "Galaxy Event",
+      "officialStart": 1754164800,
+      "weekdayCycleSec": 43200,
+      "weekendCycleSec": 43200
+    },
+    {
+      "enabled": false,
+      "eventDurationSec": 1200,
+      "id": "rainbow",
+      "label": "Rainbow Event",
+      "officialStart": 1754164800,
+      "weekdayCycleSec": 43200,
+      "weekendCycleSec": 43200
+    },
+    {
+      "enabled": false,
+      "eventDurationSec": 1200,
+      "id": "zombie",
+      "label": "Zombie Event",
+      "officialStart": 1754164800,
+      "weekdayCycleSec": 43200,
+      "weekendCycleSec": 43200
+    },
+    {
+      "enabled": false,
+      "eventDurationSec": 1200,
+      "id": "dreamy",
+      "label": "Dreamy Event",
+      "officialStart": 1754766000,
+      "weekdayCycleSec": 10800,
+      "weekendCycleSec": 7200
+    },
+    {
+      "enabled": false,
+      "eventDurationSec": 1200,
+      "id": "galaxy_dreamy",
+      "label": "Galaxy & Dreamy Event",
+      "officialStart": 1761359400,
+      "weekdayCycleSec": 43200,
+      "weekendCycleSec": 43200
+    },
+    {
+      "enabled": false,
+      "eventDurationSec": 1200,
+      "id": "halloween",
+      "label": "Halloween Event",
+      "officialStart": 1761418800,
+      "weekdayCycleSec": 7200,
+      "weekendCycleSec": 7200
+    },
+    {
+      "enabled": false,
+      "eventDurationSec": 1200,
+      "id": "fire_ice",
+      "label": "Fire Ice Event",
+      "officialStart": 1762628400,
+      "weekdayCycleSec": 43200,
+      "weekendCycleSec": 43200
+    },
+    {
+      "enabled": true,
+      "eventDurationSec": 1200,
+      "id": "lucky_rot",
+      "label": "Lucky Rot Event",
+      "officialStart": 1762628400,
+      "weekdayCycleSec": 21600,
+      "weekendCycleSec": 21600
+    },
+    {
+      "enabled": false,
+      "eventDurationSec": 1200,
+      "id": "new_season",
+      "label": "New Season Event",
+      "officialStart": 1762810200,
+      "weekdayCycleSec": 14400,
+      "weekendCycleSec": 14400
+    },
+    {
+      "enabled": false,
+      "eventDurationSec": 1200,
+      "id": "zombie_fire_ice",
+      "label": "Zombie & Fire Ice Event",
+      "officialStart": 1766255400,
+      "weekdayCycleSec": 43200,
+      "weekendCycleSec": 43200
+    },
+    {
+      "enabled": false,
+      "eventDurationSec": 1200,
+      "id": "christmas",
+      "label": "Christmas Event",
+      "officialStart": 1766257200,
+      "weekdayCycleSec": 28800,
+      "weekendCycleSec": 28800
+    },
+    {
+      "enabled": false,
+      "eventDurationSec": 1200,
+      "id": "neon",
+      "label": "Tokyo Event",
+      "officialStart": 1766266200,
+      "weekdayCycleSec": 43200,
+      "weekendCycleSec": 43200
+    },
+    {
+      "enabled": false,
+      "eventDurationSec": 1200,
+      "id": "carnival",
+      "label": "Carnival Event",
+      "officialStart": 1766277000,
+      "weekdayCycleSec": 43200,
+      "weekendCycleSec": 43200
+    },
+    {
+      "enabled": false,
+      "eventDurationSec": 1200,
+      "id": "toxic",
+      "label": "Toxic Event",
+      "officialStart": 1766284200,
+      "weekdayCycleSec": 43200,
+      "weekendCycleSec": 43200
+    },
+    {
+      "enabled": false,
+      "eventDurationSec": 1200,
+      "id": "aqua",
+      "label": "Aquatic Event",
+      "officialStart": 1766287800,
+      "weekdayCycleSec": 43200,
+      "weekendCycleSec": 43200
+    },
+    {
+      "enabled": true,
+      "eventDurationSec": 1200,
+      "id": "darkness",
+      "label": "Darkness Event",
+      "officialStart": 1766860200,
+      "weekdayCycleSec": 43200,
+      "weekendCycleSec": 43200
+    },
+    {
+      "enabled": true,
+      "eventDurationSec": 1200,
+      "id": "chocolate",
+      "label": "Chocolate Event",
+      "officialStart": 1766871000,
+      "weekdayCycleSec": 43200,
+      "weekendCycleSec": 43200
+    },
+    {
+      "enabled": true,
+      "eventDurationSec": 1200,
+      "id": "love",
+      "label": "Love Event",
+      "officialStart": 1766881800,
+      "weekdayCycleSec": 43200,
+      "weekendCycleSec": 43200
+    },
+    {
+      "enabled": true,
+      "eventDurationSec": 1200,
+      "id": "void",
+      "label": "Void Event",
+      "officialStart": 1766892600,
+      "weekdayCycleSec": 43200,
+      "weekendCycleSec": 43200
+    },
+    {
+      "enabled": true,
+      "eventDurationSec": 1200,
+      "id": "admin",
+      "label": "Admin Machine",
+      "officialStart": 1775341800,
+      "weekdayCycleSec": 21600,
+      "weekendCycleSec": 21600
+    },
+    {
+      "enabled": true,
+      "eventDurationSec": 1200,
+      "id": "magical",
+      "label": "Magical Event",
+      "officialStart": 1776542400,
+      "weekdayCycleSec": 21600,
+      "weekendCycleSec": 21600
+    },
+    {
+      "enabled": true,
+      "eventDurationSec": 1200,
+      "id": "crystal",
+      "label": "Crystal Event",
+      "officialStart": 1776549600,
+      "weekdayCycleSec": 21600,
+      "weekendCycleSec": 21600
+    },
+    {
+      "enabled": true,
+      "eventDurationSec": 1200,
+      "id": "heaven",
+      "label": "Heaven Event",
+      "officialStart": 1776556800,
+      "weekdayCycleSec": 21600,
+      "weekendCycleSec": 21600
+    }
+  ],
+  "live": {
+    "cycleSec": 21600,
+    "durationSec": 1200,
+    "eventKey": "admin",
+    "label": "Admin Machine",
+    "secondsRemaining": 337,
+    "spawnEventId": null,
+    "windowEnd": 1780051800,
+    "windowEndIso": "2026-05-29T10:50:00.000Z",
+    "windowStart": 1780050600,
+    "windowStartIso": "2026-05-29T10:30:00.000Z"
+  },
+  "meta": {
+    "defaultEventDurationSec": 1200,
+    "defaultWeekdayCycleSec": 10800,
+    "defaultWeekendCycleSec": 7200,
+    "lastUpdated": "2026-05-21",
+    "lastUpdatedIso": "2026-05-21",
+    "lastUpdatedLabel": "May 21, 2026",
+    "source": "TycoonCode-realtime_event_settings",
+    "timezone": "UTC",
+    "title": "Realtime event rotation",
+    "verseExport": "_Verse.json"
+  },
+  "next": {
+    "cycleSec": 21600,
+    "durationSec": 1200,
+    "eventKey": "heaven",
+    "label": "Heaven Event",
+    "secondsUntil": 4537,
+    "spawnEventId": 20,
+    "startsAt": 1780056000,
+    "startsAtIso": "2026-05-29T12:00:00.000Z"
+  },
+  "nowIso": "2026-05-29T10:44:23.000Z",
+  "nowUnix": 1780051463,
+  "ok": true,
+  "schedule": {
+    "activeNow": [
+      {
+        "active": true,
+        "cycleSec": 21600,
+        "durationSec": 1200,
+        "enabled": true,
+        "event": {
+          "enabled": true,
+          "eventDurationSec": 1200,
+          "eventKey": "admin",
+          "label": "Admin Machine",
+          "officialStart": 1775341800,
+          "weekdayCycleSec": 21600,
+          "weekendCycleSec": 21600
+        },
+        "nextStart": 1780072200,
+        "secondsUntil": 20737,
+        "windowEnd": 1780051800,
+        "windowStart": 1780050600
+      }
+    ],
+    "live": {
+      "active": true,
+      "cycleSec": 21600,
+      "durationSec": 1200,
+      "enabled": true,
+      "event": {
+        "enabled": true,
+        "eventDurationSec": 1200,
+        "eventKey": "admin",
+        "label": "Admin Machine",
+        "officialStart": 1775341800,
+        "weekdayCycleSec": 21600,
+        "weekendCycleSec": 21600
+      },
+      "nextStart": 1780072200,
+      "secondsUntil": 20737,
+      "windowEnd": 1780051800,
+      "windowStart": 1780050600
+    },
+    "nowIso": "2026-05-29T10:44:23.000Z",
+    "nowUnix": 1780051463,
+    "perEvent": [
+      {
+        "active": false,
+        "cycleSec": 21600,
+        "durationSec": 1200,
+        "enabled": true,
+        "event": {
+          "enabled": true,
+          "eventDurationSec": 1200,
+          "eventKey": "heaven",
+          "label": "Heaven Event",
+          "officialStart": 1776556800,
+          "weekdayCycleSec": 21600,
+          "weekendCycleSec": 21600
+        },
+        "nextStart": 1780056000,
+        "secondsUntil": 4537,
+        "windowEnd": 1780035600,
+        "windowStart": 1780034400
+      },
+      {
+        "active": false,
+        "cycleSec": 43200,
+        "durationSec": 1200,
+        "enabled": true,
+        "event": {
+          "enabled": true,
+          "eventDurationSec": 1200,
+          "eventKey": "love",
+          "label": "Love Event",
+          "officialStart": 1766881800,
+          "weekdayCycleSec": 43200,
+          "weekendCycleSec": 43200
+        },
+        "nextStart": 1780057800,
+        "secondsUntil": 6337,
+        "windowEnd": 1780015800,
+        "windowStart": 1780014600
+      },
+      {
+        "active": false,
+        "cycleSec": 21600,
+        "durationSec": 1200,
+        "enabled": true,
+        "event": {
+          "enabled": true,
+          "eventDurationSec": 1200,
+          "eventKey": "lucky_rot",
+          "label": "Lucky Rot Event",
+          "officialStart": 1762628400,
+          "weekdayCycleSec": 21600,
+          "weekendCycleSec": 21600
+        },
+        "nextStart": 1780059600,
+        "secondsUntil": 8137,
+        "windowEnd": 1780039200,
+        "windowStart": 1780038000
+      },
+      {
+        "active": false,
+        "cycleSec": 21600,
+        "durationSec": 1200,
+        "enabled": true,
+        "event": {
+          "enabled": true,
+          "eventDurationSec": 1200,
+          "eventKey": "magical",
+          "label": "Magical Event",
+          "officialStart": 1776542400,
+          "weekdayCycleSec": 21600,
+          "weekendCycleSec": 21600
+        },
+        "nextStart": 1780063200,
+        "secondsUntil": 11737,
+        "windowEnd": 1780042800,
+        "windowStart": 1780041600
+      },
+      {
+        "active": false,
+        "cycleSec": 43200,
+        "durationSec": 1200,
+        "enabled": true,
+        "event": {
+          "enabled": true,
+          "eventDurationSec": 1200,
+          "eventKey": "void",
+          "label": "Void Event",
+          "officialStart": 1766892600,
+          "weekdayCycleSec": 43200,
+          "weekendCycleSec": 43200
+        },
+        "nextStart": 1780068600,
+        "secondsUntil": 17137,
+        "windowEnd": 1780026600,
+        "windowStart": 1780025400
+      },
+      {
+        "active": false,
+        "cycleSec": 21600,
+        "durationSec": 1200,
+        "enabled": true,
+        "event": {
+          "enabled": true,
+          "eventDurationSec": 1200,
+          "eventKey": "crystal",
+          "label": "Crystal Event",
+          "officialStart": 1776549600,
+          "weekdayCycleSec": 21600,
+          "weekendCycleSec": 21600
+        },
+        "nextStart": 1780070400,
+        "secondsUntil": 18937,
+        "windowEnd": 1780050000,
+        "windowStart": 1780048800
+      },
+      {
+        "active": true,
+        "cycleSec": 21600,
+        "durationSec": 1200,
+        "enabled": true,
+        "event": {
+          "enabled": true,
+          "eventDurationSec": 1200,
+          "eventKey": "admin",
+          "label": "Admin Machine",
+          "officialStart": 1775341800,
+          "weekdayCycleSec": 21600,
+          "weekendCycleSec": 21600
+        },
+        "nextStart": 1780072200,
+        "secondsUntil": 20737,
+        "windowEnd": 1780051800,
+        "windowStart": 1780050600
+      },
+      {
+        "active": false,
+        "cycleSec": 43200,
+        "durationSec": 1200,
+        "enabled": true,
+        "event": {
+          "enabled": true,
+          "eventDurationSec": 1200,
+          "eventKey": "darkness",
+          "label": "Darkness Event",
+          "officialStart": 1766860200,
+          "weekdayCycleSec": 43200,
+          "weekendCycleSec": 43200
+        },
+        "nextStart": 1780079400,
+        "secondsUntil": 27937,
+        "windowEnd": 1780037400,
+        "windowStart": 1780036200
+      },
+      {
+        "active": false,
+        "cycleSec": 43200,
+        "durationSec": 1200,
+        "enabled": true,
+        "event": {
+          "enabled": true,
+          "eventDurationSec": 1200,
+          "eventKey": "chocolate",
+          "label": "Chocolate Event",
+          "officialStart": 1766871000,
+          "weekdayCycleSec": 43200,
+          "weekendCycleSec": 43200
+        },
+        "nextStart": 1780090200,
+        "secondsUntil": 38737,
+        "windowEnd": 1780048200,
+        "windowStart": 1780047000
+      },
+      {
+        "active": false,
+        "cycleSec": null,
+        "durationSec": null,
+        "enabled": false,
+        "event": {
+          "enabled": false,
+          "eventDurationSec": 1200,
+          "eventKey": "aqua",
+          "label": "Aquatic Event",
+          "officialStart": 1766287800,
+          "weekdayCycleSec": 43200,
+          "weekendCycleSec": 43200
+        },
+        "nextStart": null,
+        "secondsUntil": null
+      },
+      {
+        "active": false,
+        "cycleSec": null,
+        "durationSec": null,
+        "enabled": false,
+        "event": {
+          "enabled": false,
+          "eventDurationSec": 1200,
+          "eventKey": "carnival",
+          "label": "Carnival Event",
+          "officialStart": 1766277000,
+          "weekdayCycleSec": 43200,
+          "weekendCycleSec": 43200
+        },
+        "nextStart": null,
+        "secondsUntil": null
+      },
+      {
+        "active": false,
+        "cycleSec": null,
+        "durationSec": null,
+        "enabled": false,
+        "event": {
+          "enabled": false,
+          "eventDurationSec": 1200,
+          "eventKey": "christmas",
+          "label": "Christmas Event",
+          "officialStart": 1766257200,
+          "weekdayCycleSec": 28800,
+          "weekendCycleSec": 28800
+        },
+        "nextStart": null,
+        "secondsUntil": null
+      },
+      {
+        "active": false,
+        "cycleSec": null,
+        "durationSec": null,
+        "enabled": false,
+        "event": {
+          "enabled": false,
+          "eventDurationSec": 1200,
+          "eventKey": "dreamy",
+          "label": "Dreamy Event",
+          "officialStart": 1754766000,
+          "weekdayCycleSec": 10800,
+          "weekendCycleSec": 7200
+        },
+        "nextStart": null,
+        "secondsUntil": null
+      },
+      {
+        "active": false,
+        "cycleSec": null,
+        "durationSec": null,
+        "enabled": false,
+        "event": {
+          "enabled": false,
+          "eventDurationSec": 1200,
+          "eventKey": "fire_ice",
+          "label": "Fire Ice Event",
+          "officialStart": 1762628400,
+          "weekdayCycleSec": 43200,
+          "weekendCycleSec": 43200
+        },
+        "nextStart": null,
+        "secondsUntil": null
+      },
+      {
+        "active": false,
+        "cycleSec": null,
+        "durationSec": null,
+        "enabled": false,
+        "event": {
+          "enabled": false,
+          "eventDurationSec": 1200,
+          "eventKey": "galaxy",
+          "label": "Galaxy Event",
+          "officialStart": 1754164800,
+          "weekdayCycleSec": 43200,
+          "weekendCycleSec": 43200
+        },
+        "nextStart": null,
+        "secondsUntil": null
+      },
+      {
+        "active": false,
+        "cycleSec": null,
+        "durationSec": null,
+        "enabled": false,
+        "event": {
+          "enabled": false,
+          "eventDurationSec": 1200,
+          "eventKey": "galaxy_dreamy",
+          "label": "Galaxy & Dreamy Event",
+          "officialStart": 1761359400,
+          "weekdayCycleSec": 43200,
+          "weekendCycleSec": 43200
+        },
+        "nextStart": null,
+        "secondsUntil": null
+      },
+      {
+        "active": false,
+        "cycleSec": null,
+        "durationSec": null,
+        "enabled": false,
+        "event": {
+          "enabled": false,
+          "eventDurationSec": 1200,
+          "eventKey": "halloween",
+          "label": "Halloween Event",
+          "officialStart": 1761418800,
+          "weekdayCycleSec": 7200,
+          "weekendCycleSec": 7200
+        },
+        "nextStart": null,
+        "secondsUntil": null
+      },
+      {
+        "active": false,
+        "cycleSec": null,
+        "durationSec": null,
+        "enabled": false,
+        "event": {
+          "enabled": false,
+          "eventDurationSec": 1200,
+          "eventKey": "neon",
+          "label": "Tokyo Event",
+          "officialStart": 1766266200,
+          "weekdayCycleSec": 43200,
+          "weekendCycleSec": 43200
+        },
+        "nextStart": null,
+        "secondsUntil": null
+      },
+      {
+        "active": false,
+        "cycleSec": null,
+        "durationSec": null,
+        "enabled": false,
+        "event": {
+          "enabled": false,
+          "eventDurationSec": 1200,
+          "eventKey": "new_season",
+          "label": "New Season Event",
+          "officialStart": 1762810200,
+          "weekdayCycleSec": 14400,
+          "weekendCycleSec": 14400
+        },
+        "nextStart": null,
+        "secondsUntil": null
+      },
+      {
+        "active": false,
+        "cycleSec": null,
+        "durationSec": null,
+        "enabled": false,
+        "event": {
+          "enabled": false,
+          "eventDurationSec": 1200,
+          "eventKey": "rainbow",
+          "label": "Rainbow Event",
+          "officialStart": 1754164800,
+          "weekdayCycleSec": 43200,
+          "weekendCycleSec": 43200
+        },
+        "nextStart": null,
+        "secondsUntil": null
+      },
+      {
+        "active": false,
+        "cycleSec": null,
+        "durationSec": null,
+        "enabled": false,
+        "event": {
+          "enabled": false,
+          "eventDurationSec": 1200,
+          "eventKey": "toxic",
+          "label": "Toxic Event",
+          "officialStart": 1766284200,
+          "weekdayCycleSec": 43200,
+          "weekendCycleSec": 43200
+        },
+        "nextStart": null,
+        "secondsUntil": null
+      },
+      {
+        "active": false,
+        "cycleSec": null,
+        "durationSec": null,
+        "enabled": false,
+        "event": {
+          "enabled": false,
+          "eventDurationSec": 1200,
+          "eventKey": "zombie",
+          "label": "Zombie Event",
+          "officialStart": 1754164800,
+          "weekdayCycleSec": 43200,
+          "weekendCycleSec": 43200
+        },
+        "nextStart": null,
+        "secondsUntil": null
+      },
+      {
+        "active": false,
+        "cycleSec": null,
+        "durationSec": null,
+        "enabled": false,
+        "event": {
+          "enabled": false,
+          "eventDurationSec": 1200,
+          "eventKey": "zombie_fire_ice",
+          "label": "Zombie & Fire Ice Event",
+          "officialStart": 1766255400,
+          "weekdayCycleSec": 43200,
+          "weekendCycleSec": 43200
+        },
+        "nextStart": null,
+        "secondsUntil": null
+      }
+    ],
+    "upNext": {
+      "active": false,
+      "cycleSec": 21600,
+      "durationSec": 1200,
+      "enabled": true,
+      "event": {
+        "enabled": true,
+        "eventDurationSec": 1200,
+        "eventKey": "heaven",
+        "label": "Heaven Event",
+        "officialStart": 1776556800,
+        "weekdayCycleSec": 21600,
+        "weekendCycleSec": 21600
+      },
+      "nextStart": 1780056000,
+      "secondsUntil": 4537,
+      "windowEnd": 1780035600,
+      "windowStart": 1780034400
+    }
+  },
+  "upcoming": [
+    {
+      "activeNow": false,
+      "cycleSec": 21600,
+      "eventKey": "heaven",
+      "label": "Heaven Event",
+      "secondsUntil": 4537,
+      "spawnEventId": 20,
+      "startsAt": 1780056000,
+      "startsAtIso": "2026-05-29T12:00:00.000Z"
+    },
+    {
+      "activeNow": false,
+      "cycleSec": 43200,
+      "eventKey": "love",
+      "label": "Love Event",
+      "secondsUntil": 6337,
+      "spawnEventId": 18,
+      "startsAt": 1780057800,
+      "startsAtIso": "2026-05-29T12:30:00.000Z"
+    },
+    {
+      "activeNow": false,
+      "cycleSec": 21600,
+      "eventKey": "lucky_rot",
+      "label": "Lucky Rot Event",
+      "secondsUntil": 8137,
+      "spawnEventId": 4,
+      "startsAt": 1780059600,
+      "startsAtIso": "2026-05-29T13:00:00.000Z"
+    },
+    {
+      "activeNow": false,
+      "cycleSec": 21600,
+      "eventKey": "magical",
+      "label": "Magical Event",
+      "secondsUntil": 11737,
+      "spawnEventId": 22,
+      "startsAt": 1780063200,
+      "startsAtIso": "2026-05-29T14:00:00.000Z"
+    },
+    {
+      "activeNow": false,
+      "cycleSec": 43200,
+      "eventKey": "void",
+      "label": "Void Event",
+      "secondsUntil": 17137,
+      "spawnEventId": 19,
+      "startsAt": 1780068600,
+      "startsAtIso": "2026-05-29T15:30:00.000Z"
+    },
+    {
+      "activeNow": false,
+      "cycleSec": 21600,
+      "eventKey": "crystal",
+      "label": "Crystal Event",
+      "secondsUntil": 18937,
+      "spawnEventId": 21,
+      "startsAt": 1780070400,
+      "startsAtIso": "2026-05-29T16:00:00.000Z"
+    },
+    {
+      "activeNow": true,
+      "cycleSec": 21600,
+      "eventKey": "admin",
+      "label": "Admin Machine",
+      "secondsUntil": 20737,
+      "spawnEventId": null,
+      "startsAt": 1780072200,
+      "startsAtIso": "2026-05-29T16:30:00.000Z"
+    },
+    {
+      "activeNow": false,
+      "cycleSec": 43200,
+      "eventKey": "darkness",
+      "label": "Darkness Event",
+      "secondsUntil": 27937,
+      "spawnEventId": 8,
+      "startsAt": 1780079400,
+      "startsAtIso": "2026-05-29T18:30:00.000Z"
+    },
+    {
+      "activeNow": false,
+      "cycleSec": 43200,
+      "eventKey": "chocolate",
+      "label": "Chocolate Event",
+      "secondsUntil": 38737,
+      "spawnEventId": 15,
+      "startsAt": 1780090200,
+      "startsAtIso": "2026-05-29T21:30:00.000Z"
+    }
+  ]
+}

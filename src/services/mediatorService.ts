@@ -16,7 +16,11 @@ import {
   type TextChannel
 } from 'discord.js';
 import type { ConfigStore } from './configStore.js';
-import { MediatorRepository, type MediatorRecord } from '../database/mediatorRepository.js';
+import {
+  MediatorRepository,
+  type MediatorConfigRecord,
+  type MediatorRecord,
+} from '../database/mediatorRepository.js';
 import { ComplaintRepository } from '../database/complaintRepository.js';
 import { isAuthorizedAdmin } from '../constants/customIds.js';
 import { logger } from '../utils/logger.js';
@@ -41,6 +45,31 @@ export class MediatorService {
 
   private get config() {
     return this.configStore.current;
+  }
+
+  public async getMediatorConfig(): Promise<{
+    isOpen: boolean;
+    currentCount: number;
+    maxCount: number;
+    requiredWeapon: string;
+  }> {
+    const config = await this.mediatorRepository.getMediatorConfig();
+    return {
+      isOpen: config.is_open && config.current_count < config.max_count,
+      currentCount: config.current_count,
+      maxCount: config.max_count,
+      requiredWeapon: config.required_weapon,
+    };
+  }
+
+  public async updateApplicationConfig(input: {
+    isOpen?: boolean;
+    maxCount?: number;
+  }): Promise<MediatorConfigRecord> {
+    const updates: Partial<Pick<MediatorConfigRecord, 'is_open' | 'max_count'>> = {};
+    if (input.isOpen !== undefined) updates.is_open = input.isOpen;
+    if (input.maxCount !== undefined) updates.max_count = input.maxCount;
+    return this.mediatorRepository.updateMediatorConfig(updates);
   }
 
   /**

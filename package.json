@@ -15,8 +15,8 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@supabase/supabase-js": "2.49.8",
-    "axios": "^1.15.2",
+    "@supabase/supabase-js": "^2.107.0",
+    "axios": "^1.17.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "crypto-js": "^4.2.0",
@@ -25,14 +25,19 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
     "express-session": "^1.19.0",
+    "express-slow-down": "^3.1.0",
     "form-data": "^4.0.5",
     "helmet": "^8.2.0",
+    "hpp": "^0.2.3",
     "imgbb-uploader": "^1.5.1",
     "jsonwebtoken": "^9.0.3",
     "libphonenumber-js": "^1.13.5",
+    "morgan": "^1.11.0",
     "node-fetch": "^2.7.0",
     "sharp": "^0.34.5",
     "twilio": "^6.0.2",
+    "winston": "^3.19.0",
+    "ws": "^8.21.0",
     "zod": "3.24.2"
   },
   "devDependencies": {
@@ -41,7 +46,9 @@
     "@types/crypto-js": "^4.2.2",
     "@types/express": "^5.0.6",
     "@types/express-session": "^1.19.0",
+    "@types/hpp": "^0.2.7",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
     "@types/node": "22.13.10",
     "tsx": "4.19.3",
     "typescript": "5.8.2"

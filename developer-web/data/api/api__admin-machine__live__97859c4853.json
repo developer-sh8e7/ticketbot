@@ -1,0 +1,33 @@
+{
+  "at": 1780051463,
+  "countdown": {
+    "label": "Next rotation starts in",
+    "seconds": 20737
+  },
+  "ok": true,
+  "preview": {
+    "boostEnum": 1,
+    "boostName": "Luck",
+    "characterName": "Chicleteira Bicicleteira",
+    "eventName": "Heaven",
+    "luckAmount": "4x",
+    "spawnEtaMinutes": 13.1,
+    "traitNames": [
+      "Skibidi",
+      "Cupid"
+    ]
+  },
+  "result": {
+    "boost": "Luck",
+    "brainrot": "Chicleteira Bicicleteira",
+    "event": "Heaven",
+    "luck": "4x",
+    "spawnEtaMinutes": 13.1,
+    "traits": [
+      "Skibidi",
+      "Cupid"
+    ]
+  },
+  "serverTimeSec": 1780051463,
+  "timeExplicit": false
+}

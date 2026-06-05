@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { logger } from '../utils/logger.js';
 
 export interface MediatorRecord {
   user_id: string;
@@ -41,9 +42,13 @@ export interface MediatorVerificationRecord {
   discord_id: string;
   discord_username: string;
   discord_display_name: string | null;
+  discord_avatar_url: string | null;
   phone_hash: string | null;
+  phone_lookup_hash: string | null;
   is_fully_verified: boolean;
   verification_token: string | null;
+  jwt_jti_hash: string | null;
+  jwt_expires_at: string | null;
   ip_address: string | null;
   user_agent: string | null;
   created_at: string;
@@ -65,6 +70,42 @@ export interface LatestOtpRecord {
   created_at: string;
 }
 
+export interface MediatorConfigRecord {
+  id: string;
+  is_open: boolean;
+  current_count: number;
+  max_count: number;
+  required_weapon: string;
+  updated_at: string;
+}
+
+export interface MediatorApplicationRecord {
+  id: string;
+  guild_id: string;
+  channel_id: string;
+  message_id: string | null;
+  applicant_id: string;
+  applicant_tag: string;
+  verified_at: string | null;
+  status: 'open' | 'accepted' | 'rejected' | 'closed';
+  decided_by: string | null;
+  decision_notes: string | null;
+  rejection_reason: string | null;
+  opened_at: string;
+  decided_at: string | null;
+  closed_at: string | null;
+  updated_at: string;
+}
+
+const DEFAULT_MEDIATOR_CONFIG: MediatorConfigRecord = {
+  id: '00000000-0000-0000-0000-000000000000',
+  is_open: false,
+  current_count: 6,
+  max_count: 6,
+  required_weapon: 'مدفع كريسمس',
+  updated_at: new Date(0).toISOString(),
+};
+
 // In-memory fallback storage
 const inMemoryMediators = new Map<string, MediatorRecord>();
 const inMemoryHistory: MediatorHistoryRecord[] = [];
@@ -78,9 +119,15 @@ export class MediatorRepository {
 
   private handleDbError(error: any, context: string): void {
     if (error.code === '42P01') {
-      console.warn(`[MediatorRepository] Table missing during "${context}". Falling back to in-memory storage. Please run 'supabase/mediators.sql' in your Supabase SQL Editor. Details: ${error.message}`);
+      logger.warn('Mediator table is missing; using in-memory fallback.', {
+        context,
+        message: error.message,
+      });
     } else {
-      console.error(`[MediatorRepository] Database error during "${context}":`, error.message);
+      logger.error('Mediator repository database error.', {
+        context,
+        message: error.message,
+      });
     }
   }
 
@@ -105,7 +152,7 @@ export class MediatorRepository {
 
       return null;
     } catch (err) {
-      console.error(`[MediatorRepository] Exception in getMediator:`, err);
+      logger.error('Mediator repository get failed.', err);
       return inMemoryMediators.get(userId) || null;
     }
   }
@@ -163,7 +210,7 @@ export class MediatorRepository {
       inMemoryMediators.set(input.user_id, data as MediatorRecord);
       return data as MediatorRecord;
     } catch (err) {
-      console.error(`[MediatorRepository] Exception in createMediator:`, err);
+      logger.error('Mediator repository create failed.', err);
       const fullRecord: MediatorRecord = { ...record, updated_at: new Date().toISOString() };
       inMemoryMediators.set(input.user_id, fullRecord);
       return fullRecord;
@@ -220,7 +267,7 @@ export class MediatorRepository {
       inMemoryMediators.set(userId, data as MediatorRecord);
       return data as MediatorRecord;
     } catch (err) {
-      console.error(`[MediatorRepository] Exception in updateMediator:`, err);
+      logger.error('Mediator repository update failed.', err);
       const existing = inMemoryMediators.get(userId)!;
       const merged: MediatorRecord = {
         ...existing,
@@ -251,7 +298,7 @@ export class MediatorRepository {
 
       return (data || []) as MediatorRecord[];
     } catch (err) {
-      console.error(`[MediatorRepository] Exception in listMediators:`, err);
+      logger.error('Mediator repository list failed.', err);
       return Array.from(inMemoryMediators.values());
     }
   }
@@ -287,7 +334,7 @@ export class MediatorRepository {
         inMemoryHistory.push(historyItem);
       }
     } catch (err) {
-      console.error(`[MediatorRepository] Exception in logHistory:`, err);
+      logger.error('Mediator history write failed.', err);
       inMemoryHistory.push(historyItem);
     }
   }
@@ -306,7 +353,7 @@ export class MediatorRepository {
 
       return (data || []) as MediatorHistoryRecord[];
     } catch (err) {
-      console.error(`[MediatorRepository] Exception in listHistory:`, err);
+      logger.error('Mediator history list failed.', err);
       return inMemoryHistory.slice().reverse();
     }
   }
@@ -334,6 +381,7 @@ export class MediatorRepository {
     discordId: string,
     username: string,
     displayName: string | null,
+    avatarUrl: string | null,
     ipAddress: string,
     userAgent: string,
   ): Promise<void> {
@@ -343,6 +391,7 @@ export class MediatorRepository {
         discord_id: discordId,
         discord_username: username,
         discord_display_name: displayName,
+        discord_avatar_url: avatarUrl,
         ip_address: ipAddress,
         user_agent: userAgent,
       }, { onConflict: 'discord_id' });
@@ -363,11 +412,37 @@ export class MediatorRepository {
     }
   }
 
-  public async updatePhoneVerified(discordId: string, phoneHash: string): Promise<void> {
+  public async setVerificationSession(
+    discordId: string,
+    token: string,
+    jtiHash: string,
+    expiresAt: Date,
+  ): Promise<void> {
+    const { error } = await this.supabase
+      .from('mediator_verification')
+      .update({
+        verification_token: token,
+        jwt_jti_hash: jtiHash,
+        jwt_expires_at: expiresAt.toISOString(),
+      })
+      .eq('discord_id', discordId);
+
+    if (error) {
+      this.handleDbError(error, `setVerificationSession (${discordId})`);
+      throw new Error('Failed to persist verification session');
+    }
+  }
+
+  public async updatePhoneVerified(
+    discordId: string,
+    phoneHash: string,
+    phoneLookupHash: string,
+  ): Promise<void> {
     const { error } = await this.supabase
       .from('mediator_verification')
       .update({
         phone_hash: phoneHash,
+        phone_lookup_hash: phoneLookupHash,
         is_fully_verified: true,
         verified_at: new Date().toISOString(),
       })
@@ -375,6 +450,7 @@ export class MediatorRepository {
 
     if (error) {
       this.handleDbError(error, `updatePhoneVerified (${discordId})`);
+      throw new Error('Failed to persist phone verification');
     }
   }
 
@@ -387,6 +463,21 @@ export class MediatorRepository {
 
     if (error) {
       this.handleDbError(error, 'isPhoneHashTaken');
+      return false;
+    }
+
+    return Boolean(data);
+  }
+
+  public async isPhoneLookupHashTaken(phoneLookupHash: string): Promise<boolean> {
+    const { data, error } = await this.supabase
+      .from('mediator_verification')
+      .select('discord_id')
+      .eq('phone_lookup_hash', phoneLookupHash)
+      .maybeSingle();
+
+    if (error) {
+      this.handleDbError(error, 'isPhoneLookupHashTaken');
       return false;
     }
 
@@ -439,11 +530,12 @@ export class MediatorRepository {
     return data as LatestOtpRecord | null;
   }
 
-  public async getValidOtp(phoneHash: string): Promise<ValidOtpRecord | null> {
+  public async getValidOtp(phoneHash: string, discordId: string): Promise<ValidOtpRecord | null> {
     const { data, error } = await this.supabase
       .from('mediator_otp_records')
       .select('id, otp_hash, attempts')
       .eq('phone_hash', phoneHash)
+      .eq('discord_id', discordId)
       .eq('used', false)
       .gt('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false })
@@ -451,7 +543,7 @@ export class MediatorRepository {
       .maybeSingle();
 
     if (error) {
-      this.handleDbError(error, 'getValidOtp');
+      this.handleDbError(error, `getValidOtp (${discordId})`);
       return null;
     }
 
@@ -520,6 +612,201 @@ export class MediatorRepository {
     }
 
     return data as MediatorVerificationRecord | null;
+  }
+
+  public async getUserByJtiHash(jtiHash: string): Promise<MediatorVerificationRecord | null> {
+    const { data, error } = await this.supabase
+      .from('mediator_verification')
+      .select('*')
+      .eq('jwt_jti_hash', jtiHash)
+      .gt('jwt_expires_at', new Date().toISOString())
+      .maybeSingle();
+
+    if (error) {
+      this.handleDbError(error, 'getUserByJtiHash');
+      return null;
+    }
+
+    return data as MediatorVerificationRecord | null;
+  }
+
+  public async getMediatorConfig(): Promise<MediatorConfigRecord> {
+    const { data, error } = await this.supabase
+      .from('mediator_config')
+      .select('*')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      this.handleDbError(error, 'getMediatorConfig');
+      return DEFAULT_MEDIATOR_CONFIG;
+    }
+
+    return (data as MediatorConfigRecord | null) ?? DEFAULT_MEDIATOR_CONFIG;
+  }
+
+  public async updateMediatorConfig(
+    updates: Partial<Pick<MediatorConfigRecord, 'is_open' | 'current_count' | 'max_count' | 'required_weapon'>>,
+  ): Promise<MediatorConfigRecord> {
+    const current = await this.getMediatorConfig();
+    if (current.id === DEFAULT_MEDIATOR_CONFIG.id) {
+      const { data, error } = await this.supabase
+        .from('mediator_config')
+        .insert({
+          is_open: updates.is_open ?? current.is_open,
+          current_count: updates.current_count ?? current.current_count,
+          max_count: updates.max_count ?? current.max_count,
+          required_weapon: updates.required_weapon ?? current.required_weapon,
+        })
+        .select('*')
+        .single();
+
+      if (error) {
+        this.handleDbError(error, 'createMediatorConfig');
+        throw new Error('Mediator configuration table is unavailable');
+      }
+      return data as MediatorConfigRecord;
+    }
+
+    const { data, error } = await this.supabase
+      .from('mediator_config')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', current.id)
+      .select('*')
+      .single();
+
+    if (error) {
+      this.handleDbError(error, 'updateMediatorConfig');
+      throw new Error('Failed to update mediator configuration');
+    }
+
+    return data as MediatorConfigRecord;
+  }
+
+  public async incrementMediatorCount(): Promise<MediatorConfigRecord> {
+    const { data, error } = await this.supabase.rpc('increment_mediator_count');
+    if (!error && data) {
+      return (Array.isArray(data) ? data[0] : data) as MediatorConfigRecord;
+    }
+
+    const current = await this.getMediatorConfig();
+    return this.updateMediatorConfig({
+      current_count: Math.min(current.max_count, current.current_count + 1),
+    });
+  }
+
+  public async findOpenMediatorApplication(
+    guildId: string,
+    applicantId: string,
+  ): Promise<MediatorApplicationRecord | null> {
+    const { data, error } = await this.supabase
+      .from('mediator_applications')
+      .select('*')
+      .eq('guild_id', guildId)
+      .eq('applicant_id', applicantId)
+      .eq('status', 'open')
+      .maybeSingle();
+
+    if (error) {
+      this.handleDbError(error, `findOpenMediatorApplication (${applicantId})`);
+      return null;
+    }
+    return data as MediatorApplicationRecord | null;
+  }
+
+  public async createMediatorApplication(input: {
+    guildId: string;
+    channelId: string;
+    applicantId: string;
+    applicantTag: string;
+    verifiedAt: string | null;
+  }): Promise<MediatorApplicationRecord> {
+    const { data, error } = await this.supabase
+      .from('mediator_applications')
+      .insert({
+        guild_id: input.guildId,
+        channel_id: input.channelId,
+        applicant_id: input.applicantId,
+        applicant_tag: input.applicantTag,
+        verified_at: input.verifiedAt,
+      })
+      .select('*')
+      .single();
+
+    if (error) {
+      this.handleDbError(error, `createMediatorApplication (${input.applicantId})`);
+      throw new Error('Failed to save mediator application');
+    }
+    return data as MediatorApplicationRecord;
+  }
+
+  public async setMediatorApplicationMessage(applicationId: string, messageId: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('mediator_applications')
+      .update({ message_id: messageId, updated_at: new Date().toISOString() })
+      .eq('id', applicationId);
+
+    if (error) {
+      this.handleDbError(error, `setMediatorApplicationMessage (${applicationId})`);
+    }
+  }
+
+  public async getMediatorApplicationByChannel(channelId: string): Promise<MediatorApplicationRecord | null> {
+    const { data, error } = await this.supabase
+      .from('mediator_applications')
+      .select('*')
+      .eq('channel_id', channelId)
+      .maybeSingle();
+
+    if (error) {
+      this.handleDbError(error, `getMediatorApplicationByChannel (${channelId})`);
+      return null;
+    }
+    return data as MediatorApplicationRecord | null;
+  }
+
+  public async updateMediatorApplication(
+    applicationId: string,
+    updates: Partial<Pick<
+      MediatorApplicationRecord,
+      'status' | 'decided_by' | 'decision_notes' | 'rejection_reason' | 'decided_at' | 'closed_at'
+    >>,
+  ): Promise<MediatorApplicationRecord> {
+    const { data, error } = await this.supabase
+      .from('mediator_applications')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', applicationId)
+      .select('*')
+      .single();
+
+    if (error) {
+      this.handleDbError(error, `updateMediatorApplication (${applicationId})`);
+      throw new Error('Failed to update mediator application');
+    }
+    return data as MediatorApplicationRecord;
+  }
+
+  public async decideMediatorApplication(
+    applicationId: string,
+    updates: Pick<
+      MediatorApplicationRecord,
+      'status' | 'decided_by' | 'decision_notes' | 'rejection_reason' | 'decided_at'
+    >,
+  ): Promise<MediatorApplicationRecord | null> {
+    const { data, error } = await this.supabase
+      .from('mediator_applications')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', applicationId)
+      .eq('status', 'open')
+      .select('*')
+      .maybeSingle();
+
+    if (error) {
+      this.handleDbError(error, `decideMediatorApplication (${applicationId})`);
+      throw new Error('Failed to decide mediator application');
+    }
+    return data as MediatorApplicationRecord | null;
   }
 
   public async logRateLimit(ipAddress: string, endpoint: string): Promise<void> {

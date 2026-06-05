@@ -1,0 +1,842 @@
+{
+  "meta": {
+    "title": "Eternal Machine reference",
+    "lastUpdated": "2026-05-16",
+    "lastUpdatedLabel": "May 16, 2026",
+    "lastUpdatedIso": "2026-05-16"
+  },
+  "machineGroups": [
+    {
+      "id": "A",
+      "label": "group A",
+      "members": [
+        "Fragola La La La",
+        "Yess My Hotspot",
+        "Nuclearo Dinossauro"
+      ]
+    },
+    {
+      "id": "B",
+      "label": "group B",
+      "members": [
+        "Cacasito Satelito",
+        "Crocodila Bicicleteira"
+      ]
+    },
+    {
+      "id": "C",
+      "label": "group C",
+      "members": [
+        "Chimpanzini Kingini",
+        "Penguini Armorini Kingini"
+      ]
+    },
+    {
+      "id": "D",
+      "label": "group D",
+      "members": [
+        "Tictac Tictac Sahur",
+        "Tractoro Dinosauro"
+      ]
+    },
+    {
+      "id": "E",
+      "label": "group E",
+      "members": [
+        "Cabritos Brotheritos",
+        "Cornzilla"
+      ]
+    },
+    {
+      "id": "F",
+      "label": "group F",
+      "members": [
+        "Burguro dan Fryuro",
+        "Tiramisubmarini",
+        "Tralaledon"
+      ]
+    }
+  ],
+  "specials": [
+    {
+      "name": "Los 67",
+      "summary": "Two “67” brainrots in the machine",
+      "replacesColumn": "Nooo My Bicicleteira",
+      "replaceWith": "Los 67"
+    },
+    {
+      "name": "Los Chimpanzini Princinis",
+      "summary": "Chimpanzini Kingini in the machine",
+      "replacesColumn": "group D",
+      "replaceWith": "Los Chimpanzini Princinis"
+    },
+    {
+      "name": "La Superior Combinacion (boost)",
+      "summary": "Two different brainrots between Bearini Plammini Guardini, Garbagzilla, Tiramisubmarini, or Cannelloni Dragoni",
+      "replacesColumn": "La Superior Combinacion",
+      "replaceWith": "La Superior Combinacion fixed at 2% with standard machine rates, 3% with premium machine rates."
+    }
+  ],
+  "typeRates": [
+    {
+      "name": "Default",
+      "slug": "default",
+      "pct": 13
+    },
+    {
+      "name": "Gold",
+      "slug": "gold",
+      "pct": 11
+    },
+    {
+      "name": "Diamond",
+      "slug": "diamond",
+      "pct": 11
+    },
+    {
+      "name": "Rainbow",
+      "slug": "rainbow",
+      "pct": 4
+    },
+    {
+      "name": "Galaxy",
+      "slug": "galaxy",
+      "pct": 9
+    },
+    {
+      "name": "Zombie",
+      "slug": "zombie",
+      "pct": 8
+    },
+    {
+      "name": "Dreamy",
+      "slug": "dreamy",
+      "pct": 7
+    },
+    {
+      "name": "Ice & Fire",
+      "slug": "ice-fire",
+      "pct": 7
+    },
+    {
+      "name": "Carnival",
+      "slug": "carnival",
+      "pct": 6
+    },
+    {
+      "name": "Darkness",
+      "slug": "darkness",
+      "pct": 3
+    },
+    {
+      "name": "Aqua",
+      "slug": "aqua",
+      "pct": 4
+    },
+    {
+      "name": "Halloween",
+      "slug": "halloween",
+      "pct": 0
+    },
+    {
+      "name": "Neon",
+      "slug": "neon",
+      "pct": 4
+    },
+    {
+      "name": "Chocolate",
+      "slug": "chocolate",
+      "pct": 3
+    },
+    {
+      "name": "Christmas",
+      "slug": "christmas",
+      "pct": 0
+    },
+    {
+      "name": "Toxic",
+      "slug": "toxic",
+      "pct": 2
+    },
+    {
+      "name": "Lovely",
+      "slug": "lovely",
+      "pct": 2
+    },
+    {
+      "name": "Void",
+      "slug": "void",
+      "pct": 2
+    },
+    {
+      "name": "Heaven",
+      "slug": "heaven",
+      "pct": 2
+    },
+    {
+      "name": "Crystal",
+      "slug": "crystal",
+      "pct": 2
+    },
+    {
+      "name": "Magical",
+      "slug": "magical",
+      "pct": 0
+    }
+  ],
+  "typeNotes": [
+    "Christmas / Halloween brainrots in the machine can still skew those mutation outcomes.",
+    "If the rolled type is Christmas or Halloween but the output brainrot does not support it, the fuse picks uniformly among Rainbow, Galaxy, Zombie, Dreamy, Ice & Fire, Carnival, Darkness, Aqua, Neon, Chocolate, Toxic, Lovely, Void, Heaven, and Crystal."
+  ],
+  "groupRule": "If the roll lands on a group, one brainrot is picked uniformly between its members.",
+  "premiumTiers": [
+    {
+      "tier": 1,
+      "minIncomeMs": 0,
+      "weights": [
+        40,
+        40,
+        20,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 2,
+      "minIncomeMs": 0.1,
+      "weights": [
+        25,
+        25,
+        25,
+        25,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 3,
+      "minIncomeMs": 0.2,
+      "weights": [
+        0,
+        0,
+        40,
+        30,
+        20,
+        10,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 4,
+      "minIncomeMs": 0.3,
+      "weights": [
+        0,
+        0,
+        10,
+        30,
+        35,
+        25,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 5,
+      "minIncomeMs": 0.5,
+      "weights": [
+        0,
+        0,
+        0,
+        20,
+        20,
+        35,
+        15,
+        10,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 6,
+      "minIncomeMs": 0.75,
+      "weights": [
+        0,
+        0,
+        0,
+        10,
+        10,
+        45,
+        25,
+        10,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 7,
+      "minIncomeMs": 1,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        30,
+        35,
+        35,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 8,
+      "minIncomeMs": 1.5,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        20,
+        30,
+        40,
+        10,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 9,
+      "minIncomeMs": 2,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        20,
+        50,
+        30,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 10,
+      "minIncomeMs": 3,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        5,
+        50,
+        35,
+        10,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 11,
+      "minIncomeMs": 4,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        35,
+        35,
+        30,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 12,
+      "minIncomeMs": 5,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        10,
+        50,
+        40,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 13,
+      "minIncomeMs": 6.5,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        5,
+        45,
+        40,
+        10,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 14,
+      "minIncomeMs": 8,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        40,
+        40,
+        20,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 15,
+      "minIncomeMs": 10,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        25,
+        45,
+        30,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 16,
+      "minIncomeMs": 12,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        10,
+        35,
+        45,
+        10,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 17,
+      "minIncomeMs": 16,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        5,
+        30,
+        45,
+        20,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 18,
+      "minIncomeMs": 20,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        20,
+        45,
+        25,
+        10,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 19,
+      "minIncomeMs": 25,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        10,
+        40,
+        30,
+        20,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 20,
+      "minIncomeMs": 30,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        10,
+        30,
+        35,
+        15,
+        10,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 21,
+      "minIncomeMs": 35,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        30,
+        33,
+        22,
+        15,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 22,
+      "minIncomeMs": 40,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        24,
+        31,
+        22,
+        15,
+        8,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 23,
+      "minIncomeMs": 45,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        19,
+        34,
+        22,
+        15,
+        8,
+        2,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 24,
+      "minIncomeMs": 55,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        12,
+        30,
+        27,
+        20,
+        8,
+        3,
+        0,
+        0
+      ]
+    },
+    {
+      "tier": 25,
+      "minIncomeMs": 65,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        32,
+        30,
+        23,
+        9,
+        4,
+        2,
+        0
+      ]
+    },
+    {
+      "tier": 26,
+      "minIncomeMs": 80,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        20,
+        30,
+        30,
+        12,
+        5,
+        3,
+        0
+      ]
+    },
+    {
+      "tier": 27,
+      "minIncomeMs": 100,
+      "weights": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        16,
+        30,
+        33,
+        14,
+        6,
+        0,
+        1
+      ]
+    }
+  ]
+}

@@ -1,0 +1,3063 @@
+{
+  "aggregates": {
+    "14": {
+      "reactions": {
+        "fire": 0,
+        "flush": 0,
+        "love": 0,
+        "poop": 0,
+        "vomit": 1
+      },
+      "score": -1.5,
+      "totalVotes": 1
+    },
+    "21": {
+      "reactions": {
+        "fire": 8,
+        "flush": 9,
+        "love": 1,
+        "poop": 10,
+        "vomit": 8
+      },
+      "score": -9.5,
+      "totalVotes": 36
+    },
+    "25": {
+      "reactions": {
+        "fire": 13,
+        "flush": 1,
+        "love": 3,
+        "poop": 0,
+        "vomit": 1
+      },
+      "score": 31,
+      "totalVotes": 18
+    },
+    "67": {
+      "reactions": {
+        "fire": 27,
+        "flush": 4,
+        "love": 5,
+        "poop": 5,
+        "vomit": 4
+      },
+      "score": 50,
+      "totalVotes": 45
+    },
+    "agarrini-la-palini": {
+      "reactions": {
+        "fire": 4,
+        "flush": 7,
+        "love": 2,
+        "poop": 8,
+        "vomit": 1
+      },
+      "score": -2,
+      "totalVotes": 22
+    },
+    "akulini-cactusini": {
+      "reactions": {
+        "fire": 8,
+        "flush": 3,
+        "love": 0,
+        "poop": 4,
+        "vomit": 8
+      },
+      "score": -2.5,
+      "totalVotes": 23
+    },
+    "alessiooooooo": {
+      "reactions": {
+        "fire": 6,
+        "flush": 6,
+        "love": 7,
+        "poop": 6,
+        "vomit": 1
+      },
+      "score": 15.5,
+      "totalVotes": 26
+    },
+    "alligarto-alligarto": {
+      "reactions": {
+        "fire": 44,
+        "flush": 1,
+        "love": 16,
+        "poop": 0,
+        "vomit": 0
+      },
+      "score": 120.5,
+      "totalVotes": 61
+    },
+    "anpali-babel": {
+      "reactions": {
+        "fire": 6,
+        "flush": 1,
+        "love": 1,
+        "poop": 23,
+        "vomit": 4
+      },
+      "score": -37.5,
+      "totalVotes": 35
+    },
+    "antoniooo": {
+      "reactions": {
+        "fire": 9,
+        "flush": 5,
+        "love": 7,
+        "poop": 4,
+        "vomit": 1
+      },
+      "score": 25,
+      "totalVotes": 26
+    },
+    "aquanaut": {
+      "reactions": {
+        "fire": 25,
+        "flush": 10,
+        "love": 11,
+        "poop": 0,
+        "vomit": 0
+      },
+      "score": 77,
+      "totalVotes": 46
+    },
+    "auglurini-arbuzini": {
+      "reactions": {
+        "fire": 16,
+        "flush": 6,
+        "love": 8,
+        "poop": 1,
+        "vomit": 0
+      },
+      "score": 49,
+      "totalVotes": 31
+    },
+    "avocadini-antilopini": {
+      "reactions": {
+        "fire": 10,
+        "flush": 9,
+        "love": 5,
+        "poop": 3,
+        "vomit": 1
+      },
+      "score": 27,
+      "totalVotes": 28
+    },
+    "avocadorilla": {
+      "reactions": {
+        "fire": 7,
+        "flush": 5,
+        "love": 3,
+        "poop": 5,
+        "vomit": 6
+      },
+      "score": 3.5,
+      "totalVotes": 26
+    },
+    "ballerina-cappuccina": {
+      "reactions": {
+        "fire": 9,
+        "flush": 4,
+        "love": 6,
+        "poop": 6,
+        "vomit": 2
+      },
+      "score": 17,
+      "totalVotes": 27
+    },
+    "ballerino-lololo": {
+      "reactions": {
+        "fire": 10,
+        "flush": 4,
+        "love": 1,
+        "poop": 8,
+        "vomit": 6
+      },
+      "score": -1,
+      "totalVotes": 29
+    },
+    "bambini-crostini": {
+      "reactions": {
+        "fire": 11,
+        "flush": 3,
+        "love": 5,
+        "poop": 4,
+        "vomit": 5
+      },
+      "score": 18,
+      "totalVotes": 28
+    },
+    "bambini-tankini": {
+      "reactions": {
+        "fire": 6,
+        "flush": 4,
+        "love": 2,
+        "poop": 5,
+        "vomit": 3
+      },
+      "score": 3.5,
+      "totalVotes": 20
+    },
+    "bambu-di-miale": {
+      "reactions": {
+        "fire": 5,
+        "flush": 4,
+        "love": 0,
+        "poop": 10,
+        "vomit": 6
+      },
+      "score": -17,
+      "totalVotes": 25
+    },
+    "bananananito-bandito": {
+      "reactions": {
+        "fire": 7,
+        "flush": 4,
+        "love": 3,
+        "poop": 4,
+        "vomit": 2
+      },
+      "score": 11,
+      "totalVotes": 20
+    },
+    "bananita-dolphinita": {
+      "reactions": {
+        "fire": 8,
+        "flush": 1,
+        "love": 2,
+        "poop": 5,
+        "vomit": 8
+      },
+      "score": -1.5,
+      "totalVotes": 24
+    },
+    "baskuru-and-egguru": {
+      "reactions": {
+        "fire": 24,
+        "flush": 11,
+        "love": 5,
+        "poop": 1,
+        "vomit": 0
+      },
+      "score": 61.5,
+      "totalVotes": 41
+    },
+    "bau-wang-wolf-monarca": {
+      "reactions": {
+        "fire": 35,
+        "flush": 4,
+        "love": 7,
+        "poop": 0,
+        "vomit": 0
+      },
+      "score": 86,
+      "totalVotes": 46
+    },
+    "bearini-plammini-guardini": {
+      "reactions": {
+        "fire": 72,
+        "flush": 1,
+        "love": 20,
+        "poop": 1,
+        "vomit": 0
+      },
+      "score": 182.5,
+      "totalVotes": 94
+    },
+    "bella-pancasita": {
+      "reactions": {
+        "fire": 20,
+        "flush": 3,
+        "love": 6,
+        "poop": 0,
+        "vomit": 0
+      },
+      "score": 53.5,
+      "totalVotes": 29
+    },
+    "belugelo-beluga": {
+      "reactions": {
+        "fire": 5,
+        "flush": 5,
+        "love": 6,
+        "poop": 2,
+        "vomit": 2
+      },
+      "score": 17.5,
+      "totalVotes": 20
+    },
+    "bim-bim-bim-sadim": {
+      "reactions": {
+        "fire": 7,
+        "flush": 3,
+        "love": 2,
+        "poop": 3,
+        "vomit": 6
+      },
+      "score": 4.5,
+      "totalVotes": 21
+    },
+    "blueberrini-tatticini": {
+      "reactions": {
+        "fire": 12,
+        "flush": 6,
+        "love": 7,
+        "poop": 3,
+        "vomit": 0
+      },
+      "score": 35,
+      "totalVotes": 28
+    },
+    "blueberrinni-octopussini": {
+      "reactions": {
+        "fire": 8,
+        "flush": 7,
+        "love": 3,
+        "poop": 6,
+        "vomit": 2
+      },
+      "score": 10.5,
+      "totalVotes": 26
+    },
+    "bombardiro-crocodilo": {
+      "reactions": {
+        "fire": 8,
+        "flush": 1,
+        "love": 4,
+        "poop": 7,
+        "vomit": 3
+      },
+      "score": 6,
+      "totalVotes": 23
+    },
+    "bombombini-gusini": {
+      "reactions": {
+        "fire": 7,
+        "flush": 3,
+        "love": 1,
+        "poop": 7,
+        "vomit": 3
+      },
+      "score": -1,
+      "totalVotes": 21
+    },
+    "boneca-ambalabu": {
+      "reactions": {
+        "fire": 8,
+        "flush": 6,
+        "love": 1,
+        "poop": 9,
+        "vomit": 9
+      },
+      "score": -10.5,
+      "totalVotes": 33
+    },
+    "brr-brr-patapim": {
+      "reactions": {
+        "fire": 11,
+        "flush": 2,
+        "love": 1,
+        "poop": 6,
+        "vomit": 6
+      },
+      "score": 4,
+      "totalVotes": 26
+    },
+    "brr-es-teh-patipum": {
+      "reactions": {
+        "fire": 6,
+        "flush": 3,
+        "love": 2,
+        "poop": 7,
+        "vomit": 2
+      },
+      "score": 0.5,
+      "totalVotes": 20
+    },
+    "brri-bicus-dicus": {
+      "reactions": {
+        "fire": 6,
+        "flush": 3,
+        "love": 2,
+        "poop": 6,
+        "vomit": 2
+      },
+      "score": 2.5,
+      "totalVotes": 19
+    },
+    "bulbito-bandito-traktorito": {
+      "reactions": {
+        "fire": 6,
+        "flush": 2,
+        "love": 2,
+        "poop": 5,
+        "vomit": 6
+      },
+      "score": -2,
+      "totalVotes": 21
+    },
+    "bun-din-din-dun": {
+      "reactions": {
+        "fire": 6,
+        "flush": 8,
+        "love": 1,
+        "poop": 15,
+        "vomit": 4
+      },
+      "score": -18,
+      "totalVotes": 34
+    },
+    "burballoni-watermeloni": {
+      "reactions": {
+        "fire": 11,
+        "flush": 7,
+        "love": 5,
+        "poop": 3,
+        "vomit": 1
+      },
+      "score": 28,
+      "totalVotes": 27
+    },
+    "burbalona-loliloli": {
+      "reactions": {
+        "fire": 0,
+        "flush": 0,
+        "love": 0,
+        "poop": 0,
+        "vomit": 1
+      },
+      "score": -1.5,
+      "totalVotes": 1
+    },
+    "burbaloni-lulilolli": {
+      "reactions": {
+        "fire": 10,
+        "flush": 2,
+        "love": 4,
+        "poop": 6,
+        "vomit": 5
+      },
+      "score": 9.5,
+      "totalVotes": 27
+    },
+    "burguro-dan-fryuro": {
+      "reactions": {
+        "fire": 48,
+        "flush": 5,
+        "love": 19,
+        "poop": 4,
+        "vomit": 2
+      },
+      "score": 125.5,
+      "totalVotes": 78
+    },
+    "cabritos-brotheritos": {
+      "reactions": {
+        "fire": 19,
+        "flush": 7,
+        "love": 5,
+        "poop": 5,
+        "vomit": 2
+      },
+      "score": 38.5,
+      "totalVotes": 38
+    },
+    "cacasito-satelito": {
+      "reactions": {
+        "fire": 5,
+        "flush": 6,
+        "love": 4,
+        "poop": 6,
+        "vomit": 10
+      },
+      "score": -6,
+      "totalVotes": 31
+    },
+    "cacto-hipopotamo": {
+      "reactions": {
+        "fire": 4,
+        "flush": 5,
+        "love": 3,
+        "poop": 10,
+        "vomit": 4
+      },
+      "score": -9.5,
+      "totalVotes": 26
+    },
+    "cannelloni-dragoni": {
+      "reactions": {
+        "fire": 111,
+        "flush": 3,
+        "love": 23,
+        "poop": 1,
+        "vomit": 1
+      },
+      "score": 266,
+      "totalVotes": 139
+    },
+    "cannone-maledettone": {
+      "reactions": {
+        "fire": 81,
+        "flush": 4,
+        "love": 19,
+        "poop": 1,
+        "vomit": 0
+      },
+      "score": 200,
+      "totalVotes": 105
+    },
+    "capanna-distruttore": {
+      "reactions": {
+        "fire": 32,
+        "flush": 3,
+        "love": 6,
+        "poop": 6,
+        "vomit": 0
+      },
+      "score": 65.5,
+      "totalVotes": 47
+    },
+    "cappuccino-assassino": {
+      "reactions": {
+        "fire": 13,
+        "flush": 2,
+        "love": 3,
+        "poop": 5,
+        "vomit": 2
+      },
+      "score": 20,
+      "totalVotes": 25
+    },
+    "carrot-carrot-sahur": {
+      "reactions": {
+        "fire": 16,
+        "flush": 7,
+        "love": 3,
+        "poop": 4,
+        "vomit": 2
+      },
+      "score": 30.5,
+      "totalVotes": 32
+    },
+    "catino-timeno": {
+      "reactions": {
+        "fire": 15,
+        "flush": 4,
+        "love": 6,
+        "poop": 3,
+        "vomit": 2
+      },
+      "score": 35,
+      "totalVotes": 30
+    },
+    "centralucci-nuclearucci": {
+      "reactions": {
+        "fire": 3,
+        "flush": 5,
+        "love": 1,
+        "poop": 7,
+        "vomit": 4
+      },
+      "score": -9.5,
+      "totalVotes": 20
+    },
+    "chachechi-sahur": {
+      "reactions": {
+        "fire": 4,
+        "flush": 4,
+        "love": 1,
+        "poop": 13,
+        "vomit": 6
+      },
+      "score": -23,
+      "totalVotes": 28
+    },
+    "chachechicha": {
+      "reactions": {
+        "fire": 4,
+        "flush": 3,
+        "love": 0,
+        "poop": 11,
+        "vomit": 5
+      },
+      "score": -20,
+      "totalVotes": 23
+    },
+    "chef-crabracadabra": {
+      "reactions": {
+        "fire": 6,
+        "flush": 7,
+        "love": 1,
+        "poop": 9,
+        "vomit": 2
+      },
+      "score": -3.5,
+      "totalVotes": 25
+    },
+    "chickanini-bananini": {
+      "reactions": {
+        "fire": 30,
+        "flush": 4,
+        "love": 10,
+        "poop": 7,
+        "vomit": 6
+      },
+      "score": 59,
+      "totalVotes": 57
+    },
+    "chicleteira-bicicleteira": {
+      "reactions": {
+        "fire": 10,
+        "flush": 4,
+        "love": 2,
+        "poop": 2,
+        "vomit": 8
+      },
+      "score": 10,
+      "totalVotes": 26
+    },
+    "chicleteirina-bicicleteirina": {
+      "reactions": {
+        "fire": 4,
+        "flush": 7,
+        "love": 3,
+        "poop": 3,
+        "vomit": 8
+      },
+      "score": -0.5,
+      "totalVotes": 25
+    },
+    "chillin-chili": {
+      "reactions": {
+        "fire": 6,
+        "flush": 3,
+        "love": 2,
+        "poop": 7,
+        "vomit": 3
+      },
+      "score": -1,
+      "totalVotes": 21
+    },
+    "chilyeie-y-avocadoa": {
+      "reactions": {
+        "fire": 29,
+        "flush": 9,
+        "love": 8,
+        "poop": 3,
+        "vomit": 0
+      },
+      "score": 72.5,
+      "totalVotes": 49
+    },
+    "chimpanzini-bananini": {
+      "reactions": {
+        "fire": 6,
+        "flush": 3,
+        "love": 2,
+        "poop": 9,
+        "vomit": 3
+      },
+      "score": -5,
+      "totalVotes": 23
+    },
+    "chimpanzini-kingini": {
+      "reactions": {
+        "fire": 14,
+        "flush": 1,
+        "love": 3,
+        "poop": 23,
+        "vomit": 4
+      },
+      "score": -17.5,
+      "totalVotes": 45
+    },
+    "chocone-dragone": {
+      "reactions": {
+        "fire": 61,
+        "flush": 7,
+        "love": 25,
+        "poop": 0,
+        "vomit": 0
+      },
+      "score": 175.5,
+      "totalVotes": 93
+    },
+    "chop-chop-chop-sahur": {
+      "reactions": {
+        "fire": 11,
+        "flush": 10,
+        "love": 4,
+        "poop": 2,
+        "vomit": 1
+      },
+      "score": 29.5,
+      "totalVotes": 28
+    },
+    "cioccolatini-pancioncioni": {
+      "reactions": {
+        "fire": 5,
+        "flush": 5,
+        "love": 2,
+        "poop": 6,
+        "vomit": 5
+      },
+      "score": -3,
+      "totalVotes": 23
+    },
+    "clove-clove-clove-sahur": {
+      "reactions": {
+        "fire": 16,
+        "flush": 1,
+        "love": 7,
+        "poop": 3,
+        "vomit": 3
+      },
+      "score": 36,
+      "totalVotes": 30
+    },
+    "clown-clown-sahur": {
+      "reactions": {
+        "fire": 22,
+        "flush": 8,
+        "love": 6,
+        "poop": 3,
+        "vomit": 1
+      },
+      "score": 52.5,
+      "totalVotes": 40
+    },
+    "cobracadabra": {
+      "reactions": {
+        "fire": 17,
+        "flush": 6,
+        "love": 9,
+        "poop": 1,
+        "vomit": 1
+      },
+      "score": 51.5,
+      "totalVotes": 34
+    },
+    "coccoblade": {
+      "reactions": {
+        "fire": 14,
+        "flush": 8,
+        "love": 3,
+        "poop": 3,
+        "vomit": 4
+      },
+      "score": 26,
+      "totalVotes": 32
+    },
+    "coccobladina": {
+      "reactions": {
+        "fire": 13,
+        "flush": 6,
+        "love": 3,
+        "poop": 1,
+        "vomit": 5
+      },
+      "score": 25.5,
+      "totalVotes": 28
+    },
+    "cocofanto-elefanto": {
+      "reactions": {
+        "fire": 4,
+        "flush": 3,
+        "love": 1,
+        "poop": 11,
+        "vomit": 4
+      },
+      "score": -16.5,
+      "totalVotes": 23
+    },
+    "cookipat": {
+      "reactions": {
+        "fire": 24,
+        "flush": 2,
+        "love": 6,
+        "poop": 0,
+        "vomit": 4
+      },
+      "score": 55,
+      "totalVotes": 36
+    },
+    "cornball-sahur": {
+      "reactions": {
+        "fire": 8,
+        "flush": 2,
+        "love": 2,
+        "poop": 6,
+        "vomit": 9
+      },
+      "score": -4.5,
+      "totalVotes": 27
+    },
+    "cornzilla": {
+      "reactions": {
+        "fire": 22,
+        "flush": 4,
+        "love": 5,
+        "poop": 4,
+        "vomit": 2
+      },
+      "score": 45,
+      "totalVotes": 37
+    },
+    "croakolini-spellini": {
+      "reactions": {
+        "fire": 16,
+        "flush": 4,
+        "love": 0,
+        "poop": 3,
+        "vomit": 4
+      },
+      "score": 22,
+      "totalVotes": 27
+    },
+    "crocodila-bicicleteira": {
+      "reactions": {
+        "fire": 9,
+        "flush": 5,
+        "love": 6,
+        "poop": 3,
+        "vomit": 2
+      },
+      "score": 23.5,
+      "totalVotes": 25
+    },
+    "croissantini-et-caffettino": {
+      "reactions": {
+        "fire": 41,
+        "flush": 1,
+        "love": 5,
+        "poop": 3,
+        "vomit": 1
+      },
+      "score": 85,
+      "totalVotes": 51
+    },
+    "dig-torto-dolf": {
+      "reactions": {
+        "fire": 10,
+        "flush": 3,
+        "love": 3,
+        "poop": 2,
+        "vomit": 4
+      },
+      "score": 17.5,
+      "totalVotes": 22
+    },
+    "diggoblock": {
+      "reactions": {
+        "fire": 64,
+        "flush": 8,
+        "love": 14,
+        "poop": 6,
+        "vomit": 3
+      },
+      "score": 143.5,
+      "totalVotes": 95
+    },
+    "dilly-pickle": {
+      "reactions": {
+        "fire": 18,
+        "flush": 9,
+        "love": 2,
+        "poop": 1,
+        "vomit": 1
+      },
+      "score": 41,
+      "totalVotes": 31
+    },
+    "dragonini-ananasini": {
+      "reactions": {
+        "fire": 22,
+        "flush": 3,
+        "love": 6,
+        "poop": 1,
+        "vomit": 1
+      },
+      "score": 54,
+      "totalVotes": 33
+    },
+    "dul-dul-dul": {
+      "reactions": {
+        "fire": 15,
+        "flush": 7,
+        "love": 6,
+        "poop": 2,
+        "vomit": 2
+      },
+      "score": 38.5,
+      "totalVotes": 32
+    },
+    "eaglucci-cocosucci": {
+      "reactions": {
+        "fire": 14,
+        "flush": 3,
+        "love": 7,
+        "poop": 1,
+        "vomit": 1
+      },
+      "score": 40,
+      "totalVotes": 26
+    },
+    "easter-rot": {
+      "reactions": {
+        "fire": 18,
+        "flush": 6,
+        "love": 5,
+        "poop": 5,
+        "vomit": 1
+      },
+      "score": 37.5,
+      "totalVotes": 35
+    },
+    "ecco-cavallo-virtuoso": {
+      "reactions": {
+        "fire": 6,
+        "flush": 4,
+        "love": 2,
+        "poop": 7,
+        "vomit": 3
+      },
+      "score": -0.5,
+      "totalVotes": 22
+    },
+    "elefante-cafettino": {
+      "reactions": {
+        "fire": 6,
+        "flush": 6,
+        "love": 2,
+        "poop": 5,
+        "vomit": 4
+      },
+      "score": 3,
+      "totalVotes": 23
+    },
+    "elefantino-frigorifero": {
+      "reactions": {
+        "fire": 6,
+        "flush": 5,
+        "love": 3,
+        "poop": 11,
+        "vomit": 0
+      },
+      "score": -1.5,
+      "totalVotes": 25
+    },
+    "elefantucci-bananucci": {
+      "reactions": {
+        "fire": 4,
+        "flush": 6,
+        "love": 5,
+        "poop": 6,
+        "vomit": 2
+      },
+      "score": 6,
+      "totalVotes": 23
+    },
+    "elf-elf-elf": {
+      "reactions": {
+        "fire": 19,
+        "flush": 3,
+        "love": 4,
+        "poop": 2,
+        "vomit": 0
+      },
+      "score": 43.5,
+      "totalVotes": 28
+    },
+    "espressona-signora": {
+      "reactions": {
+        "fire": 6,
+        "flush": 2,
+        "love": 5,
+        "poop": 5,
+        "vomit": 4
+      },
+      "score": 7,
+      "totalVotes": 22
+    },
+    "ferinsini-luckini": {
+      "reactions": {
+        "fire": 37,
+        "flush": 0,
+        "love": 5,
+        "poop": 0,
+        "vomit": 3
+      },
+      "score": 79.5,
+      "totalVotes": 45
+    },
+    "fireworkito-explodito": {
+      "reactions": {
+        "fire": 9,
+        "flush": 6,
+        "love": 3,
+        "poop": 4,
+        "vomit": 0
+      },
+      "score": 19,
+      "totalVotes": 22
+    },
+    "fishini-bossini": {
+      "reactions": {
+        "fire": 117,
+        "flush": 6,
+        "love": 31,
+        "poop": 24,
+        "vomit": 10
+      },
+      "score": 236,
+      "totalVotes": 188
+    },
+    "fishini-mechinini": {
+      "reactions": {
+        "fire": 88,
+        "flush": 2,
+        "love": 15,
+        "poop": 4,
+        "vomit": 3
+      },
+      "score": 194.5,
+      "totalVotes": 112
+    },
+    "fishinis-santinis": {
+      "reactions": {
+        "fire": 24,
+        "flush": 4,
+        "love": 6,
+        "poop": 0,
+        "vomit": 0
+      },
+      "score": 62,
+      "totalVotes": 34
+    },
+    "flowerfang-squirreli": {
+      "reactions": {
+        "fire": 18,
+        "flush": 5,
+        "love": 9,
+        "poop": 0,
+        "vomit": 0
+      },
+      "score": 56.5,
+      "totalVotes": 32
+    },
+    "fluriflura": {
+      "reactions": {
+        "fire": 35,
+        "flush": 12,
+        "love": 9,
+        "poop": 17,
+        "vomit": 9
+      },
+      "score": 46.5,
+      "totalVotes": 82
+    },
+    "forest-rot": {
+      "reactions": {
+        "fire": 27,
+        "flush": 3,
+        "love": 9,
+        "poop": 2,
+        "vomit": 2
+      },
+      "score": 66.5,
+      "totalVotes": 43
+    },
+    "fourteen": {
+      "reactions": {
+        "fire": 8,
+        "flush": 1,
+        "love": 0,
+        "poop": 15,
+        "vomit": 2
+      },
+      "score": -16.5,
+      "totalVotes": 26
+    },
+    "fragola-la-la-la": {
+      "reactions": {
+        "fire": 10,
+        "flush": 2,
+        "love": 6,
+        "poop": 4,
+        "vomit": 7
+      },
+      "score": 14.5,
+      "totalVotes": 29
+    },
+    "francescoo": {
+      "reactions": {
+        "fire": 8,
+        "flush": 2,
+        "love": 3,
+        "poop": 7,
+        "vomit": 3
+      },
+      "score": 4.5,
+      "totalVotes": 23
+    },
+    "frigo-camelo": {
+      "reactions": {
+        "fire": 8,
+        "flush": 2,
+        "love": 0,
+        "poop": 9,
+        "vomit": 2
+      },
+      "score": -4,
+      "totalVotes": 21
+    },
+    "frogatto-piratto": {
+      "reactions": {
+        "fire": 5,
+        "flush": 9,
+        "love": 0,
+        "poop": 5,
+        "vomit": 6
+      },
+      "score": -4.5,
+      "totalVotes": 25
+    },
+    "frogino-assassino": {
+      "reactions": {
+        "fire": 3,
+        "flush": 2,
+        "love": 2,
+        "poop": 14,
+        "vomit": 4
+      },
+      "score": -23,
+      "totalVotes": 25
+    },
+    "ganganzelli-trulala": {
+      "reactions": {
+        "fire": 6,
+        "flush": 2,
+        "love": 1,
+        "poop": 10,
+        "vomit": 3
+      },
+      "score": -9.5,
+      "totalVotes": 22
+    },
+    "gangster-footera": {
+      "reactions": {
+        "fire": 9,
+        "flush": 3,
+        "love": 3,
+        "poop": 7,
+        "vomit": 5
+      },
+      "score": 4,
+      "totalVotes": 27
+    },
+    "garamaramadungdung": {
+      "reactions": {
+        "fire": 7,
+        "flush": 3,
+        "love": 5,
+        "poop": 6,
+        "vomit": 7
+      },
+      "score": 3,
+      "totalVotes": 28
+    },
+    "garbagzilla": {
+      "reactions": {
+        "fire": 102,
+        "flush": 0,
+        "love": 21,
+        "poop": 1,
+        "vomit": 4
+      },
+      "score": 238,
+      "totalVotes": 128
+    },
+    "giga-bonito-cannoinito": {
+      "reactions": {
+        "fire": 21,
+        "flush": 8,
+        "love": 7,
+        "poop": 3,
+        "vomit": 4
+      },
+      "score": 48,
+      "totalVotes": 43
+    },
+    "gigalitraktos-spidorobos": {
+      "reactions": {
+        "fire": 108,
+        "flush": 6,
+        "love": 19,
+        "poop": 3,
+        "vomit": 1
+      },
+      "score": 249.5,
+      "totalVotes": 137
+    },
+    "gingobalo-gingobali": {
+      "reactions": {
+        "fire": 6,
+        "flush": 6,
+        "love": 2,
+        "poop": 10,
+        "vomit": 2
+      },
+      "score": -4,
+      "totalVotes": 26
+    },
+    "girafa-celeste": {
+      "reactions": {
+        "fire": 14,
+        "flush": 2,
+        "love": 10,
+        "poop": 3,
+        "vomit": 0
+      },
+      "score": 43,
+      "totalVotes": 29
+    },
+    "glorbo-fruttodillo": {
+      "reactions": {
+        "fire": 7,
+        "flush": 4,
+        "love": 1,
+        "poop": 6,
+        "vomit": 5
+      },
+      "score": -1.5,
+      "totalVotes": 23
+    },
+    "gorgonzilla": {
+      "reactions": {
+        "fire": 44,
+        "flush": 2,
+        "love": 13,
+        "poop": 1,
+        "vomit": 0
+      },
+      "score": 113,
+      "totalVotes": 60
+    },
+    "gorillari-altoparlanti": {
+      "reactions": {
+        "fire": 16,
+        "flush": 6,
+        "love": 2,
+        "poop": 3,
+        "vomit": 2
+      },
+      "score": 30,
+      "totalVotes": 29
+    },
+    "gorillo-watermellondrillo": {
+      "reactions": {
+        "fire": 3,
+        "flush": 1,
+        "love": 4,
+        "poop": 7,
+        "vomit": 6
+      },
+      "score": -8.5,
+      "totalVotes": 21
+    },
+    "grande-rot": {
+      "reactions": {
+        "fire": 9,
+        "flush": 4,
+        "love": 1,
+        "poop": 8,
+        "vomit": 4
+      },
+      "score": 0,
+      "totalVotes": 26
+    },
+    "grande-rot-140": {
+      "reactions": {
+        "fire": 7,
+        "flush": 4,
+        "love": 3,
+        "poop": 6,
+        "vomit": 4
+      },
+      "score": 4,
+      "totalVotes": 24
+    },
+    "grande-rot-141": {
+      "reactions": {
+        "fire": 24,
+        "flush": 5,
+        "love": 2,
+        "poop": 2,
+        "vomit": 1
+      },
+      "score": 49,
+      "totalVotes": 34
+    },
+    "guardilope-antilope": {
+      "reactions": {
+        "fire": 42,
+        "flush": 2,
+        "love": 14,
+        "poop": 0,
+        "vomit": 1
+      },
+      "score": 111.5,
+      "totalVotes": 59
+    },
+    "hotti-coccolli": {
+      "reactions": {
+        "fire": 13,
+        "flush": 5,
+        "love": 2,
+        "poop": 1,
+        "vomit": 2
+      },
+      "score": 27.5,
+      "totalVotes": 23
+    },
+    "il-bisonte-giuppitere": {
+      "reactions": {
+        "fire": 6,
+        "flush": 5,
+        "love": 4,
+        "poop": 5,
+        "vomit": 1
+      },
+      "score": 11,
+      "totalVotes": 21
+    },
+    "il-costruttore-di-pomodori": {
+      "reactions": {
+        "fire": 6,
+        "flush": 6,
+        "love": 0,
+        "poop": 4,
+        "vomit": 5
+      },
+      "score": -0.5,
+      "totalVotes": 21
+    },
+    "il-maledettones": {
+      "reactions": {
+        "fire": 158,
+        "flush": 3,
+        "love": 21,
+        "poop": 4,
+        "vomit": 2
+      },
+      "score": 348.5,
+      "totalVotes": 188
+    },
+    "il-mastodontico-telepiedone": {
+      "reactions": {
+        "fire": 11,
+        "flush": 2,
+        "love": 1,
+        "poop": 6,
+        "vomit": 3
+      },
+      "score": 8.5,
+      "totalVotes": 23
+    },
+    "il-piccione-musculone": {
+      "reactions": {
+        "fire": 7,
+        "flush": 5,
+        "love": 3,
+        "poop": 4,
+        "vomit": 1
+      },
+      "score": 13,
+      "totalVotes": 20
+    },
+    "il-sacro-cabrospaghetti": {
+      "reactions": {
+        "fire": 11,
+        "flush": 5,
+        "love": 2,
+        "poop": 9,
+        "vomit": 5
+      },
+      "score": 3,
+      "totalVotes": 32
+    },
+    "jiqi-jiqi-shizhon": {
+      "reactions": {
+        "fire": 4,
+        "flush": 7,
+        "love": 3,
+        "poop": 4,
+        "vomit": 2
+      },
+      "score": 6.5,
+      "totalVotes": 20
+    },
+    "jisaoba-dashi": {
+      "reactions": {
+        "fire": 37,
+        "flush": 5,
+        "love": 12,
+        "poop": 1,
+        "vomit": 0
+      },
+      "score": 98.5,
+      "totalVotes": 55
+    },
+    "job-job-job-sahur": {
+      "reactions": {
+        "fire": 17,
+        "flush": 1,
+        "love": 2,
+        "poop": 3,
+        "vomit": 1
+      },
+      "score": 31,
+      "totalVotes": 24
+    },
+    "karkerkar-kurkur": {
+      "reactions": {
+        "fire": 8,
+        "flush": 1,
+        "love": 2,
+        "poop": 7,
+        "vomit": 4
+      },
+      "score": 0.5,
+      "totalVotes": 22
+    },
+    "ketchuru-and-musturu": {
+      "reactions": {
+        "fire": 3,
+        "flush": 3,
+        "love": 0,
+        "poop": 15,
+        "vomit": 6
+      },
+      "score": -31.5,
+      "totalVotes": 27
+    },
+    "ketupat-kepat-prekupat": {
+      "reactions": {
+        "fire": 22,
+        "flush": 4,
+        "love": 6,
+        "poop": 6,
+        "vomit": 0
+      },
+      "score": 46,
+      "totalVotes": 38
+    },
+    "klombo": {
+      "reactions": {
+        "fire": 46,
+        "flush": 1,
+        "love": 22,
+        "poop": 0,
+        "vomit": 0
+      },
+      "score": 136.5,
+      "totalVotes": 69
+    },
+    "koinobori-shogunelli": {
+      "reactions": {
+        "fire": 13,
+        "flush": 6,
+        "love": 9,
+        "poop": 4,
+        "vomit": 1
+      },
+      "score": 37.5,
+      "totalVotes": 33
+    },
+    "kravilino-cekicino": {
+      "reactions": {
+        "fire": 5,
+        "flush": 1,
+        "love": 0,
+        "poop": 21,
+        "vomit": 4
+      },
+      "score": -37.5,
+      "totalVotes": 31
+    },
+    "krr-krr-kataking": {
+      "reactions": {
+        "fire": 13,
+        "flush": 7,
+        "love": 6,
+        "poop": 0,
+        "vomit": 0
+      },
+      "score": 41.5,
+      "totalVotes": 26
+    },
+    "kudanile-astronaute": {
+      "reactions": {
+        "fire": 5,
+        "flush": 4,
+        "love": 6,
+        "poop": 6,
+        "vomit": 2
+      },
+      "score": 9,
+      "totalVotes": 23
+    },
+    "la-christmas-combinacion": {
+      "reactions": {
+        "fire": 17,
+        "flush": 7,
+        "love": 2,
+        "poop": 1,
+        "vomit": 2
+      },
+      "score": 36.5,
+      "totalVotes": 29
+    },
+    "la-crazy-combinacion": {
+      "reactions": {
+        "fire": 29,
+        "flush": 5,
+        "love": 10,
+        "poop": 4,
+        "vomit": 0
+      },
+      "score": 72.5,
+      "totalVotes": 48
+    },
+    "la-easter-eggolah": {
+      "reactions": {
+        "fire": 22,
+        "flush": 4,
+        "love": 7,
+        "poop": 0,
+        "vomit": 3
+      },
+      "score": 55.5,
+      "totalVotes": 36
+    },
+    "la-esok-sekolah": {
+      "reactions": {
+        "fire": 23,
+        "flush": 5,
+        "love": 7,
+        "poop": 3,
+        "vomit": 1
+      },
+      "score": 55,
+      "totalVotes": 39
+    },
+    "la-grande-combinacion": {
+      "reactions": {
+        "fire": 12,
+        "flush": 6,
+        "love": 1,
+        "poop": 3,
+        "vomit": 1
+      },
+      "score": 21.5,
+      "totalVotes": 23
+    },
+    "la-matcha-assassino": {
+      "reactions": {
+        "fire": 8,
+        "flush": 5,
+        "love": 1,
+        "poop": 4,
+        "vomit": 3
+      },
+      "score": 8,
+      "totalVotes": 21
+    },
+    "la-royals": {
+      "reactions": {
+        "fire": 12,
+        "flush": 1,
+        "love": 18,
+        "poop": 2,
+        "vomit": 1
+      },
+      "score": 55,
+      "totalVotes": 34
+    },
+    "la-superior-combinacion": {
+      "reactions": {
+        "fire": 108,
+        "flush": 3,
+        "love": 15,
+        "poop": 6,
+        "vomit": 1
+      },
+      "score": 234,
+      "totalVotes": 133
+    },
+    "la-vaca-saturno-saturnita": {
+      "reactions": {
+        "fire": 8,
+        "flush": 0,
+        "love": 2,
+        "poop": 5,
+        "vomit": 6
+      },
+      "score": 1,
+      "totalVotes": 21
+    },
+    "lampu-lampu-sahur": {
+      "reactions": {
+        "fire": 7,
+        "flush": 4,
+        "love": 7,
+        "poop": 4,
+        "vomit": 3
+      },
+      "score": 17.5,
+      "totalVotes": 25
+    },
+    "las-agarrinis": {
+      "reactions": {
+        "fire": 5,
+        "flush": 6,
+        "love": 2,
+        "poop": 6,
+        "vomit": 7
+      },
+      "score": -5.5,
+      "totalVotes": 26
+    },
+    "las-sis": {
+      "reactions": {
+        "fire": 7,
+        "flush": 1,
+        "love": 12,
+        "poop": 3,
+        "vomit": 1
+      },
+      "score": 31,
+      "totalVotes": 24
+    },
+    "le-golem-de-frigider": {
+      "reactions": {
+        "fire": 8,
+        "flush": 8,
+        "love": 4,
+        "poop": 4,
+        "vomit": 0
+      },
+      "score": 20,
+      "totalVotes": 24
+    },
+    "leonelli-cactuselli": {
+      "reactions": {
+        "fire": 7,
+        "flush": 4,
+        "love": 2,
+        "poop": 7,
+        "vomit": 4
+      },
+      "score": 0,
+      "totalVotes": 24
+    },
+    "lerulerulerule": {
+      "reactions": {
+        "fire": 7,
+        "flush": 8,
+        "love": 4,
+        "poop": 5,
+        "vomit": 1
+      },
+      "score": 14.5,
+      "totalVotes": 25
+    },
+    "linguicine-serpentine": {
+      "reactions": {
+        "fire": 13,
+        "flush": 4,
+        "love": 3,
+        "poop": 1,
+        "vomit": 1
+      },
+      "score": 30.5,
+      "totalVotes": 22
+    },
+    "lirili-larilla": {
+      "reactions": {
+        "fire": 37,
+        "flush": 9,
+        "love": 5,
+        "poop": 22,
+        "vomit": 7
+      },
+      "score": 34,
+      "totalVotes": 80
+    },
+    "lirili-ralilu": {
+      "reactions": {
+        "fire": 19,
+        "flush": 0,
+        "love": 18,
+        "poop": 4,
+        "vomit": 0
+      },
+      "score": 66,
+      "totalVotes": 41
+    },
+    "los-67": {
+      "reactions": {
+        "fire": 22,
+        "flush": 5,
+        "love": 14,
+        "poop": 1,
+        "vomit": 3
+      },
+      "score": 68,
+      "totalVotes": 45
+    },
+    "los-bros": {
+      "reactions": {
+        "fire": 6,
+        "flush": 9,
+        "love": 2,
+        "poop": 2,
+        "vomit": 2
+      },
+      "score": 13.5,
+      "totalVotes": 21
+    },
+    "los-chimpanzini-princinis": {
+      "reactions": {
+        "fire": 19,
+        "flush": 3,
+        "love": 16,
+        "poop": 1,
+        "vomit": 0
+      },
+      "score": 69.5,
+      "totalVotes": 39
+    },
+    "los-christmas-bros": {
+      "reactions": {
+        "fire": 18,
+        "flush": 4,
+        "love": 4,
+        "poop": 0,
+        "vomit": 0
+      },
+      "score": 46,
+      "totalVotes": 26
+    },
+    "los-couples": {
+      "reactions": {
+        "fire": 5,
+        "flush": 2,
+        "love": 5,
+        "poop": 7,
+        "vomit": 6
+      },
+      "score": -2,
+      "totalVotes": 25
+    },
+    "los-crocodillitos": {
+      "reactions": {
+        "fire": 7,
+        "flush": 4,
+        "love": 4,
+        "poop": 2,
+        "vomit": 3
+      },
+      "score": 15.5,
+      "totalVotes": 20
+    },
+    "los-esok-sekolitos": {
+      "reactions": {
+        "fire": 7,
+        "flush": 7,
+        "love": 6,
+        "poop": 6,
+        "vomit": 1
+      },
+      "score": 16,
+      "totalVotes": 27
+    },
+    "los-garamadungcitos": {
+      "reactions": {
+        "fire": 24,
+        "flush": 0,
+        "love": 15,
+        "poop": 0,
+        "vomit": 0
+      },
+      "score": 78,
+      "totalVotes": 39
+    },
+    "los-job-jobsitos": {
+      "reactions": {
+        "fire": 11,
+        "flush": 4,
+        "love": 10,
+        "poop": 2,
+        "vomit": 0
+      },
+      "score": 40,
+      "totalVotes": 27
+    },
+    "los-karkeritos": {
+      "reactions": {
+        "fire": 4,
+        "flush": 2,
+        "love": 0,
+        "poop": 10,
+        "vomit": 6
+      },
+      "score": -20,
+      "totalVotes": 22
+    },
+    "los-lirilitos": {
+      "reactions": {
+        "fire": 4,
+        "flush": 3,
+        "love": 4,
+        "poop": 6,
+        "vomit": 8
+      },
+      "score": -6.5,
+      "totalVotes": 25
+    },
+    "los-matteos": {
+      "reactions": {
+        "fire": 14,
+        "flush": 4,
+        "love": 6,
+        "poop": 1,
+        "vomit": 0
+      },
+      "score": 40,
+      "totalVotes": 25
+    },
+    "los-mobilis": {
+      "reactions": {
+        "fire": 4,
+        "flush": 1,
+        "love": 2,
+        "poop": 13,
+        "vomit": 5
+      },
+      "score": -21,
+      "totalVotes": 25
+    },
+    "los-orcaleritos": {
+      "reactions": {
+        "fire": 5,
+        "flush": 3,
+        "love": 2,
+        "poop": 6,
+        "vomit": 7
+      },
+      "score": -7,
+      "totalVotes": 23
+    },
+    "los-santacitos": {
+      "reactions": {
+        "fire": 15,
+        "flush": 5,
+        "love": 7,
+        "poop": 1,
+        "vomit": 1
+      },
+      "score": 43,
+      "totalVotes": 29
+    },
+    "los-sigma-boys": {
+      "reactions": {
+        "fire": 24,
+        "flush": 3,
+        "love": 7,
+        "poop": 1,
+        "vomit": 0
+      },
+      "score": 61.5,
+      "totalVotes": 35
+    },
+    "los-spijuniritos": {
+      "reactions": {
+        "fire": 6,
+        "flush": 4,
+        "love": 5,
+        "poop": 5,
+        "vomit": 3
+      },
+      "score": 9.5,
+      "totalVotes": 23
+    },
+    "los-tralaleritas": {
+      "reactions": {
+        "fire": 4,
+        "flush": 6,
+        "love": 3,
+        "poop": 7,
+        "vomit": 5
+      },
+      "score": -4.5,
+      "totalVotes": 25
+    },
+    "los-tralaleritos": {
+      "reactions": {
+        "fire": 5,
+        "flush": 5,
+        "love": 1,
+        "poop": 8,
+        "vomit": 4
+      },
+      "score": -7.5,
+      "totalVotes": 23
+    },
+    "los-tung-tungcitos": {
+      "reactions": {
+        "fire": 7,
+        "flush": 2,
+        "love": 4,
+        "poop": 6,
+        "vomit": 5
+      },
+      "score": 3.5,
+      "totalVotes": 24
+    },
+    "los-vaquitas-saturnitas": {
+      "reactions": {
+        "fire": 7,
+        "flush": 4,
+        "love": 10,
+        "poop": 1,
+        "vomit": 0
+      },
+      "score": 34,
+      "totalVotes": 22
+    },
+    "love-rot": {
+      "reactions": {
+        "fire": 15,
+        "flush": 2,
+        "love": 12,
+        "poop": 0,
+        "vomit": 1
+      },
+      "score": 53.5,
+      "totalVotes": 30
+    },
+    "lovelypat": {
+      "reactions": {
+        "fire": 11,
+        "flush": 7,
+        "love": 15,
+        "poop": 2,
+        "vomit": 2
+      },
+      "score": 48.5,
+      "totalVotes": 37
+    },
+    "lovey-lovey-bear": {
+      "reactions": {
+        "fire": 15,
+        "flush": 1,
+        "love": 18,
+        "poop": 0,
+        "vomit": 1
+      },
+      "score": 65,
+      "totalVotes": 35
+    },
+    "lucky-rot": {
+      "reactions": {
+        "fire": 10,
+        "flush": 2,
+        "love": 0,
+        "poop": 6,
+        "vomit": 3
+      },
+      "score": 4.5,
+      "totalVotes": 21
+    },
+    "lucky-rot-42": {
+      "reactions": {
+        "fire": 9,
+        "flush": 3,
+        "love": 2,
+        "poop": 4,
+        "vomit": 1
+      },
+      "score": 14,
+      "totalVotes": 19
+    },
+    "lucky-rot-43": {
+      "reactions": {
+        "fire": 14,
+        "flush": 3,
+        "love": 1,
+        "poop": 5,
+        "vomit": 1
+      },
+      "score": 20,
+      "totalVotes": 24
+    },
+    "malame-amarale": {
+      "reactions": {
+        "fire": 5,
+        "flush": 5,
+        "love": 1,
+        "poop": 7,
+        "vomit": 3
+      },
+      "score": -4,
+      "totalVotes": 21
+    },
+    "mangolini-parrocini": {
+      "reactions": {
+        "fire": 10,
+        "flush": 6,
+        "love": 6,
+        "poop": 2,
+        "vomit": 2
+      },
+      "score": 28,
+      "totalVotes": 26
+    },
+    "matteo": {
+      "reactions": {
+        "fire": 10,
+        "flush": 5,
+        "love": 1,
+        "poop": 3,
+        "vomit": 4
+      },
+      "score": 12.5,
+      "totalVotes": 23
+    },
+    "mcpenne-dougal": {
+      "reactions": {
+        "fire": 24,
+        "flush": 5,
+        "love": 8,
+        "poop": 5,
+        "vomit": 0
+      },
+      "score": 56.5,
+      "totalVotes": 42
+    },
+    "meccavallo": {
+      "reactions": {
+        "fire": 37,
+        "flush": 1,
+        "love": 6,
+        "poop": 0,
+        "vomit": 0
+      },
+      "score": 86.5,
+      "totalVotes": 44
+    },
+    "missilpython-turbozzo": {
+      "reactions": {
+        "fire": 17,
+        "flush": 2,
+        "love": 5,
+        "poop": 0,
+        "vomit": 3
+      },
+      "score": 40.5,
+      "totalVotes": 27
+    },
+    "mistifly": {
+      "reactions": {
+        "fire": 21,
+        "flush": 5,
+        "love": 13,
+        "poop": 0,
+        "vomit": 1
+      },
+      "score": 69,
+      "totalVotes": 40
+    },
+    "mr-peppermint": {
+      "reactions": {
+        "fire": 19,
+        "flush": 2,
+        "love": 2,
+        "poop": 2,
+        "vomit": 1
+      },
+      "score": 37.5,
+      "totalVotes": 26
+    },
+    "mushzilla-fungzilla": {
+      "reactions": {
+        "fire": 22,
+        "flush": 4,
+        "love": 5,
+        "poop": 0,
+        "vomit": 5
+      },
+      "score": 48.5,
+      "totalVotes": 36
+    },
+    "noo-my-eggs": {
+      "reactions": {
+        "fire": 6,
+        "flush": 5,
+        "love": 1,
+        "poop": 9,
+        "vomit": 4
+      },
+      "score": -7.5,
+      "totalVotes": 25
+    },
+    "nooo-my-bicicleteira": {
+      "reactions": {
+        "fire": 7,
+        "flush": 3,
+        "love": 2,
+        "poop": 16,
+        "vomit": 6
+      },
+      "score": -21.5,
+      "totalVotes": 34
+    },
+    "nooo-my-hotspot": {
+      "reactions": {
+        "fire": 3,
+        "flush": 1,
+        "love": 3,
+        "poop": 10,
+        "vomit": 8
+      },
+      "score": -19.5,
+      "totalVotes": 25
+    },
+    "nooo-my-present": {
+      "reactions": {
+        "fire": 16,
+        "flush": 4,
+        "love": 1,
+        "poop": 4,
+        "vomit": 0
+      },
+      "score": 28,
+      "totalVotes": 25
+    },
+    "nuclearo-dinossauro": {
+      "reactions": {
+        "fire": 10,
+        "flush": 3,
+        "love": 2,
+        "poop": 2,
+        "vomit": 9
+      },
+      "score": 8,
+      "totalVotes": 26
+    },
+    "octopuss-coconuss": {
+      "reactions": {
+        "fire": 7,
+        "flush": 6,
+        "love": 4,
+        "poop": 5,
+        "vomit": 3
+      },
+      "score": 10.5,
+      "totalVotes": 25
+    },
+    "odin-din-din-dun": {
+      "reactions": {
+        "fire": 6,
+        "flush": 0,
+        "love": 2,
+        "poop": 7,
+        "vomit": 5
+      },
+      "score": -5.5,
+      "totalVotes": 20
+    },
+    "orangutini-ananassini": {
+      "reactions": {
+        "fire": 6,
+        "flush": 4,
+        "love": 0,
+        "poop": 8,
+        "vomit": 6
+      },
+      "score": -11,
+      "totalVotes": 24
+    },
+    "orcalero-orcala": {
+      "reactions": {
+        "fire": 7,
+        "flush": 2,
+        "love": 1,
+        "poop": 9,
+        "vomit": 3
+      },
+      "score": -5.5,
+      "totalVotes": 22
+    },
+    "owlito-tactito": {
+      "reactions": {
+        "fire": 4,
+        "flush": 7,
+        "love": 2,
+        "poop": 4,
+        "vomit": 6
+      },
+      "score": -1.5,
+      "totalVotes": 23
+    },
+    "pakrahmatmamat": {
+      "reactions": {
+        "fire": 3,
+        "flush": 3,
+        "love": 1,
+        "poop": 12,
+        "vomit": 4
+      },
+      "score": -20.5,
+      "totalVotes": 23
+    },
+    "pakrahmatmamatcita": {
+      "reactions": {
+        "fire": 1,
+        "flush": 1,
+        "love": 1,
+        "poop": 16,
+        "vomit": 4
+      },
+      "score": -33.5,
+      "totalVotes": 23
+    },
+    "papero-aspiratorino": {
+      "reactions": {
+        "fire": 6,
+        "flush": 0,
+        "love": 1,
+        "poop": 13,
+        "vomit": 4
+      },
+      "score": -18,
+      "totalVotes": 24
+    },
+    "paquito-el-taquito": {
+      "reactions": {
+        "fire": 13,
+        "flush": 4,
+        "love": 10,
+        "poop": 1,
+        "vomit": 2
+      },
+      "score": 43,
+      "totalVotes": 30
+    },
+    "patapimus-maximus": {
+      "reactions": {
+        "fire": 8,
+        "flush": 4,
+        "love": 3,
+        "poop": 5,
+        "vomit": 1
+      },
+      "score": 12.5,
+      "totalVotes": 21
+    },
+    "peeling-peely": {
+      "reactions": {
+        "fire": 7,
+        "flush": 3,
+        "love": 2,
+        "poop": 11,
+        "vomit": 4
+      },
+      "score": -8.5,
+      "totalVotes": 27
+    },
+    "penguini-armorini-kingini": {
+      "reactions": {
+        "fire": 7,
+        "flush": 6,
+        "love": 4,
+        "poop": 10,
+        "vomit": 2
+      },
+      "score": 2,
+      "totalVotes": 29
+    },
+    "penguini-zucchini": {
+      "reactions": {
+        "fire": 6,
+        "flush": 4,
+        "love": 2,
+        "poop": 7,
+        "vomit": 5
+      },
+      "score": -3.5,
+      "totalVotes": 24
+    },
+    "penguino-cocosino": {
+      "reactions": {
+        "fire": 28,
+        "flush": 13,
+        "love": 5,
+        "poop": 14,
+        "vomit": 7
+      },
+      "score": 34,
+      "totalVotes": 67
+    },
+    "perochello-lemonchello": {
+      "reactions": {
+        "fire": 8,
+        "flush": 7,
+        "love": 4,
+        "poop": 2,
+        "vomit": 2
+      },
+      "score": 20.5,
+      "totalVotes": 23
+    },
+    "piccione-macchina": {
+      "reactions": {
+        "fire": 8,
+        "flush": 1,
+        "love": 1,
+        "poop": 31,
+        "vomit": 1
+      },
+      "score": -45,
+      "totalVotes": 42
+    },
+    "piccionetta-machina": {
+      "reactions": {
+        "fire": 6,
+        "flush": 1,
+        "love": 1,
+        "poop": 12,
+        "vomit": 7
+      },
+      "score": -20,
+      "totalVotes": 27
+    },
+    "pickolini-malakini": {
+      "reactions": {
+        "fire": 4,
+        "flush": 7,
+        "love": 1,
+        "poop": 2,
+        "vomit": 8
+      },
+      "score": -2.5,
+      "totalVotes": 22
+    },
+    "pingus-kingus": {
+      "reactions": {
+        "fire": 16,
+        "flush": 3,
+        "love": 6,
+        "poop": 3,
+        "vomit": 1
+      },
+      "score": 38,
+      "totalVotes": 29
+    },
+    "pipi-avocado": {
+      "reactions": {
+        "fire": 32,
+        "flush": 2,
+        "love": 6,
+        "poop": 12,
+        "vomit": 11
+      },
+      "score": 36.5,
+      "totalVotes": 63
+    },
+    "pipi-corni": {
+      "reactions": {
+        "fire": 10,
+        "flush": 5,
+        "love": 2,
+        "poop": 4,
+        "vomit": 7
+      },
+      "score": 8,
+      "totalVotes": 28
+    },
+    "pipi-kiwi": {
+      "reactions": {
+        "fire": 20,
+        "flush": 7,
+        "love": 4,
+        "poop": 16,
+        "vomit": 2
+      },
+      "score": 16.5,
+      "totalVotes": 49
+    },
+    "pipi-potato": {
+      "reactions": {
+        "fire": 20,
+        "flush": 3,
+        "love": 6,
+        "poop": 3,
+        "vomit": 3
+      },
+      "score": 43,
+      "totalVotes": 35
+    },
+    "pipoqueira-motoqueira": {
+      "reactions": {
+        "fire": 8,
+        "flush": 2,
+        "love": 3,
+        "poop": 6,
+        "vomit": 4
+      },
+      "score": 5,
+      "totalVotes": 23
+    },
+    "pirulitoita-bicicleteira": {
+      "reactions": {
+        "fire": 5,
+        "flush": 2,
+        "love": 2,
+        "poop": 7,
+        "vomit": 5
+      },
+      "score": -6.5,
+      "totalVotes": 21
+    },
+    "pitiata-baem": {
+      "reactions": {
+        "fire": 23,
+        "flush": 2,
+        "love": 5,
+        "poop": 1,
+        "vomit": 1
+      },
+      "score": 53.5,
+      "totalVotes": 32
+    },
+    "pot-hotspot": {
+      "reactions": {
+        "fire": 6,
+        "flush": 4,
+        "love": 1,
+        "poop": 10,
+        "vomit": 1
+      },
+      "score": -5.5,
+      "totalVotes": 22
+    },
+    "pot-hotspotina": {
+      "reactions": {
+        "fire": 3,
+        "flush": 4,
+        "love": 0,
+        "poop": 12,
+        "vomit": 4
+      },
+      "score": -22,
+      "totalVotes": 23
+    },
+    "present-rot": {
+      "reactions": {
+        "fire": 25,
+        "flush": 2,
+        "love": 7,
+        "poop": 0,
+        "vomit": 1
+      },
+      "score": 63.5,
+      "totalVotes": 35
+    },
+    "pumpkin-rot": {
+      "reactions": {
+        "fire": 29,
+        "flush": 3,
+        "love": 6,
+        "poop": 1,
+        "vomit": 4
+      },
+      "score": 63.5,
+      "totalVotes": 43
+    },
+    "rang-reng-kelerang": {
+      "reactions": {
+        "fire": 10,
+        "flush": 6,
+        "love": 7,
+        "poop": 1,
+        "vomit": 0
+      },
+      "score": 35,
+      "totalVotes": 24
+    },
+    "re-delle-carte": {
+      "reactions": {
+        "fire": 14,
+        "flush": 6,
+        "love": 5,
+        "poop": 0,
+        "vomit": 1
+      },
+      "score": 39.5,
+      "totalVotes": 26
+    },
+    "rhino-helicopterino": {
+      "reactions": {
+        "fire": 23,
+        "flush": 2,
+        "love": 4,
+        "poop": 2,
+        "vomit": 3
+      },
+      "score": 46.5,
+      "totalVotes": 34
+    },
+    "rhino-toasterino": {
+      "reactions": {
+        "fire": 2,
+        "flush": 3,
+        "love": 5,
+        "poop": 10,
+        "vomit": 2
+      },
+      "score": -7.5,
+      "totalVotes": 22
+    },
+    "roobinha-acerolinha": {
+      "reactions": {
+        "fire": 6,
+        "flush": 6,
+        "love": 6,
+        "poop": 2,
+        "vomit": 2
+      },
+      "score": 20,
+      "totalVotes": 22
+    },
+    "rosalero": {
+      "reactions": {
+        "fire": 6,
+        "flush": 3,
+        "love": 12,
+        "poop": 2,
+        "vomit": 2
+      },
+      "score": 30.5,
+      "totalVotes": 25
+    },
+    "salamino-pinguino": {
+      "reactions": {
+        "fire": 6,
+        "flush": 6,
+        "love": 3,
+        "poop": 6,
+        "vomit": 3
+      },
+      "score": 4.5,
+      "totalVotes": 24
+    },
+    "santatini-el-treeetini": {
+      "reactions": {
+        "fire": 19,
+        "flush": 6,
+        "love": 5,
+        "poop": 1,
+        "vomit": 1
+      },
+      "score": 47.5,
+      "totalVotes": 32
+    },
+    "santoniooo": {
+      "reactions": {
+        "fire": 18,
+        "flush": 5,
+        "love": 3,
+        "poop": 0,
+        "vomit": 0
+      },
+      "score": 44.5,
+      "totalVotes": 26
+    },
+    "scarletbyte": {
+      "reactions": {
+        "fire": 10,
+        "flush": 3,
+        "love": 20,
+        "poop": 0,
+        "vomit": 1
+      },
+      "score": 60,
+      "totalVotes": 34
+    },
+    "shtekerito-el-bulbonito": {
+      "reactions": {
+        "fire": 16,
+        "flush": 4,
+        "love": 7,
+        "poop": 0,
+        "vomit": 1
+      },
+      "score": 46.5,
+      "totalVotes": 28
+    },
+    "sigma-boy": {
+      "reactions": {
+        "fire": 11,
+        "flush": 2,
+        "love": 1,
+        "poop": 7,
+        "vomit": 3
+      },
+      "score": 6.5,
+      "totalVotes": 24
+    },
+    "skibidi-toilet": {
+      "reactions": {
+        "fire": 141,
+        "flush": 8,
+        "love": 27,
+        "poop": 11,
+        "vomit": 4
+      },
+      "score": 312,
+      "totalVotes": 191
+    },
+    "spaghetti-tualetti": {
+      "reactions": {
+        "fire": 32,
+        "flush": 3,
+        "love": 13,
+        "poop": 1,
+        "vomit": 0
+      },
+      "score": 89.5,
+      "totalVotes": 49
+    },
+    "spijuniro-golubiro": {
+      "reactions": {
+        "fire": 7,
+        "flush": 5,
+        "love": 3,
+        "poop": 7,
+        "vomit": 6
+      },
+      "score": -0.5,
+      "totalVotes": 28
+    },
+    "strawberrelli-flamingelli": {
+      "reactions": {
+        "fire": 5,
+        "flush": 6,
+        "love": 6,
+        "poop": 5,
+        "vomit": 3
+      },
+      "score": 10.5,
+      "totalVotes": 25
+    },
+    "strawberry-elephant": {
+      "reactions": {
+        "fire": 36,
+        "flush": 1,
+        "love": 16,
+        "poop": 1,
+        "vomit": 1
+      },
+      "score": 101,
+      "totalVotes": 55
+    },
+    "svinina-bombardino": {
+      "reactions": {
+        "fire": 11,
+        "flush": 7,
+        "love": 1,
+        "poop": 14,
+        "vomit": 7
+      },
+      "score": -11,
+      "totalVotes": 40
+    },
+    "ta-ta-ta-ta-sahur": {
+      "reactions": {
+        "fire": 8,
+        "flush": 2,
+        "love": 5,
+        "poop": 6,
+        "vomit": 8
+      },
+      "score": 3,
+      "totalVotes": 29
+    },
+    "tang-tang-kelentang": {
+      "reactions": {
+        "fire": 7,
+        "flush": 8,
+        "love": 0,
+        "poop": 5,
+        "vomit": 1
+      },
+      "score": 6.5,
+      "totalVotes": 21
+    },
+    "tatoruman": {
+      "reactions": {
+        "fire": 5,
+        "flush": 6,
+        "love": 1,
+        "poop": 6,
+        "vomit": 4
+      },
+      "score": -3,
+      "totalVotes": 22
+    },
+    "te-te-te-sahur": {
+      "reactions": {
+        "fire": 7,
+        "flush": 5,
+        "love": 0,
+        "poop": 5,
+        "vomit": 4
+      },
+      "score": 0.5,
+      "totalVotes": 21
+    },
+    "ti-ti-ti-sahur": {
+      "reactions": {
+        "fire": 5,
+        "flush": 9,
+        "love": 2,
+        "poop": 8,
+        "vomit": 1
+      },
+      "score": 1,
+      "totalVotes": 25
+    },
+    "tictac-tictac-sahur": {
+      "reactions": {
+        "fire": 8,
+        "flush": 5,
+        "love": 6,
+        "poop": 6,
+        "vomit": 3
+      },
+      "score": 14,
+      "totalVotes": 28
+    },
+    "tim-cheese": {
+      "reactions": {
+        "fire": 46,
+        "flush": 3,
+        "love": 1,
+        "poop": 10,
+        "vomit": 2
+      },
+      "score": 72.5,
+      "totalVotes": 62
+    },
+    "tiramisubmarini": {
+      "reactions": {
+        "fire": 63,
+        "flush": 7,
+        "love": 19,
+        "poop": 3,
+        "vomit": 2
+      },
+      "score": 158.5,
+      "totalVotes": 94
+    },
+    "tirilikalika-tirilikaliko": {
+      "reactions": {
+        "fire": 10,
+        "flush": 4,
+        "love": 5,
+        "poop": 4,
+        "vomit": 0
+      },
+      "score": 24,
+      "totalVotes": 23
+    },
+    "to-to-to-sahur": {
+      "reactions": {
+        "fire": 8,
+        "flush": 3,
+        "love": 2,
+        "poop": 5,
+        "vomit": 3
+      },
+      "score": 7,
+      "totalVotes": 21
+    },
+    "tob-tobi-tob": {
+      "reactions": {
+        "fire": 6,
+        "flush": 0,
+        "love": 0,
+        "poop": 10,
+        "vomit": 5
+      },
+      "score": -15.5,
+      "totalVotes": 21
+    },
+    "torrtuginni-dragonfrutinni": {
+      "reactions": {
+        "fire": 6,
+        "flush": 2,
+        "love": 2,
+        "poop": 7,
+        "vomit": 4
+      },
+      "score": -3,
+      "totalVotes": 21
+    },
+    "tractoro-dinosauro": {
+      "reactions": {
+        "fire": 12,
+        "flush": 5,
+        "love": 6,
+        "poop": 3,
+        "vomit": 5
+      },
+      "score": 25,
+      "totalVotes": 31
+    },
+    "tralaledon": {
+      "reactions": {
+        "fire": 76,
+        "flush": 1,
+        "love": 23,
+        "poop": 2,
+        "vomit": 0
+      },
+      "score": 194.5,
+      "totalVotes": 102
+    },
+    "tralalero-kingala": {
+      "reactions": {
+        "fire": 29,
+        "flush": 6,
+        "love": 8,
+        "poop": 3,
+        "vomit": 0
+      },
+      "score": 71,
+      "totalVotes": 46
+    },
+    "tralalero-tralala": {
+      "reactions": {
+        "fire": 12,
+        "flush": 1,
+        "love": 2,
+        "poop": 6,
+        "vomit": 4
+      },
+      "score": 10.5,
+      "totalVotes": 25
+    },
+    "trenostruzzo-turbo-3000": {
+      "reactions": {
+        "fire": 6,
+        "flush": 2,
+        "love": 0,
+        "poop": 20,
+        "vomit": 1
+      },
+      "score": -28.5,
+      "totalVotes": 29
+    },
+    "trenostruzzo-turbo-4000": {
+      "reactions": {
+        "fire": 3,
+        "flush": 0,
+        "love": 0,
+        "poop": 29,
+        "vomit": 3
+      },
+      "score": -56.5,
+      "totalVotes": 35
+    },
+    "tric-trac-baraboom": {
+      "reactions": {
+        "fire": 6,
+        "flush": 3,
+        "love": 1,
+        "poop": 10,
+        "vomit": 7
+      },
+      "score": -15,
+      "totalVotes": 27
+    },
+    "trifoglita-bicicleta": {
+      "reactions": {
+        "fire": 16,
+        "flush": 2,
+        "love": 5,
+        "poop": 3,
+        "vomit": 4
+      },
+      "score": 31,
+      "totalVotes": 30
+    },
+    "trippi-troppi": {
+      "reactions": {
+        "fire": 12,
+        "flush": 2,
+        "love": 1,
+        "poop": 7,
+        "vomit": 5
+      },
+      "score": 5.5,
+      "totalVotes": 27
+    },
+    "trippi-troppi-troppa-trippa": {
+      "reactions": {
+        "fire": 6,
+        "flush": 4,
+        "love": 3,
+        "poop": 10,
+        "vomit": 2
+      },
+      "score": -3,
+      "totalVotes": 25
+    },
+    "trulimero-trulicina": {
+      "reactions": {
+        "fire": 6,
+        "flush": 7,
+        "love": 1,
+        "poop": 7,
+        "vomit": 7
+      },
+      "score": -7,
+      "totalVotes": 28
+    },
+    "tukanno-bananno": {
+      "reactions": {
+        "fire": 8,
+        "flush": 5,
+        "love": 5,
+        "poop": 10,
+        "vomit": 3
+      },
+      "score": 4,
+      "totalVotes": 31
+    },
+    "tung-ballerina-sahur": {
+      "reactions": {
+        "fire": 13,
+        "flush": 5,
+        "love": 5,
+        "poop": 5,
+        "vomit": 1
+      },
+      "score": 27,
+      "totalVotes": 29
+    },
+    "tung-tung-tung-sahur": {
+      "reactions": {
+        "fire": 22,
+        "flush": 2,
+        "love": 3,
+        "poop": 2,
+        "vomit": 2
+      },
+      "score": 44,
+      "totalVotes": 31
+    },
+    "twenty-five": {
+      "reactions": {
+        "fire": 6,
+        "flush": 4,
+        "love": 2,
+        "poop": 1,
+        "vomit": 0
+      },
+      "score": 16,
+      "totalVotes": 13
+    },
+    "vikino-penguino": {
+      "reactions": {
+        "fire": 11,
+        "flush": 3,
+        "love": 5,
+        "poop": 6,
+        "vomit": 3
+      },
+      "score": 17,
+      "totalVotes": 28
+    },
+    "vulturino-skeletono": {
+      "reactions": {
+        "fire": 41,
+        "flush": 4,
+        "love": 6,
+        "poop": 0,
+        "vomit": 1
+      },
+      "score": 94.5,
+      "totalVotes": 52
+    },
+    "w-or-l": {
+      "reactions": {
+        "fire": 15,
+        "flush": 7,
+        "love": 3,
+        "poop": 1,
+        "vomit": 2
+      },
+      "score": 34.5,
+      "totalVotes": 28
+    },
+    "wolfito-micronodo": {
+      "reactions": {
+        "fire": 22,
+        "flush": 5,
+        "love": 10,
+        "poop": 0,
+        "vomit": 2
+      },
+      "score": 63.5,
+      "totalVotes": 39
+    },
+    "yess-my-hotspot": {
+      "reactions": {
+        "fire": 7,
+        "flush": 3,
+        "love": 1,
+        "poop": 12,
+        "vomit": 9
+      },
+      "score": -20,
+      "totalVotes": 32
+    },
+    "yule-yule-il-reino": {
+      "reactions": {
+        "fire": 25,
+        "flush": 6,
+        "love": 2,
+        "poop": 0,
+        "vomit": 5
+      },
+      "score": 49.5,
+      "totalVotes": 38
+    },
+    "zibra-zubra-zibralini": {
+      "reactions": {
+        "fire": 5,
+        "flush": 4,
+        "love": 1,
+        "poop": 7,
+        "vomit": 8
+      },
+      "score": -12,
+      "totalVotes": 25
+    }
+  },
+  "ok": true
+}

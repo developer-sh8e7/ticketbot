@@ -1,0 +1,84 @@
+{
+  "exportStemByTrait": {
+    "Carps": "CarpsTrait",
+    "Cupid": "Cupid",
+    "Firework": "Fireworks",
+    "Fireworks": "Fireworks",
+    "Forest": "Forest",
+    "Frozen": "Frozen",
+    "Glitch": "Glitch",
+    "Lightning": "Lightning",
+    "Pumpkin": "Pumpkin",
+    "Skibidi": "Skibidi",
+    "Tung": "Tung",
+    "Wave": "Wave",
+    "Wave**": "Wave",
+    "wave": "Wave"
+  },
+  "footnote": "** Per wave hit. It will only apply the trait if the wave type has a lower or equal multiplier than the current brainrot type.",
+  "iconBase": "/assets/images/traits",
+  "meta": {
+    "lastUpdated": "2026-05-20",
+    "lastUpdatedIso": "2026-05-20",
+    "lastUpdatedLabel": "May 20, 2026",
+    "title": "Traits Mult"
+  },
+  "multNote": "",
+  "rows": [
+    {
+      "mult": 3,
+      "name": "Carps",
+      "rate": 25
+    },
+    {
+      "mult": 2.5,
+      "name": "Cupid",
+      "rate": 25
+    },
+    {
+      "mult": 2,
+      "name": "Firework",
+      "rate": 25
+    },
+    {
+      "mult": 3.5,
+      "name": "Forest",
+      "rate": 35
+    },
+    {
+      "mult": 2,
+      "name": "Frozen",
+      "rate": 25
+    },
+    {
+      "mult": 3,
+      "name": "Glitch",
+      "rate": 30
+    },
+    {
+      "mult": 1.5,
+      "name": "Lightning",
+      "rate": 40
+    },
+    {
+      "mult": 4,
+      "name": "Pumpkin",
+      "rate": 20
+    },
+    {
+      "mult": 5,
+      "name": "Skibidi",
+      "rate": 20
+    },
+    {
+      "mult": 3,
+      "name": "Tung",
+      "rate": 35
+    },
+    {
+      "mult": 3,
+      "name": "Wave**",
+      "rate": 10
+    }
+  ]
+}
