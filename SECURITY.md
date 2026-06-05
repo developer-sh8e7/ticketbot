@@ -12,7 +12,8 @@ member accepts that application in Discord.
 - SQL injection: Supabase parameterized query builders are used for all input.
 - XSS: strict CSP, external scripts, text-only DOM updates, and input cleanup.
 - CSRF: signed OAuth state, SameSite cookies, and a JWT-bound CSRF token.
-- Session fixation: the Express session is regenerated after Discord OAuth.
+- Session fixation: verification authentication is stateless and issues a new
+  signed JWT after every successful Discord OAuth callback.
 - Session hijacking: `__Host-` cookies are Secure, HttpOnly, and SameSite.
 - JWT downgrade: verification explicitly accepts HS512 only.
 - JWT replay: every JWT contains a random `jti` whose keyed hash and expiry are
@@ -33,6 +34,11 @@ member accepts that application in Discord.
 - Discord OAuth minimization: the wheel requests `identify` only and never
   stores access tokens, refresh tokens, email, guild lists, connections, IP
   geolocation, or browser evidence.
+- Mediator verification requests `identify`, `email`, and `guilds` with an
+  explicit on-page disclosure. Email and guild membership data are encrypted
+  with AES-256-GCM while verification is pending, sent only to the configured
+  private verification webhook after OTP success, and cleared after delivery.
+  Discord access and refresh tokens are never persisted or sent to webhooks.
 - Race conditions: application decisions update only rows still in `open`
   status, and mediator count increments through a database function.
 - Dependencies: `npm audit` is run before release and must report no known

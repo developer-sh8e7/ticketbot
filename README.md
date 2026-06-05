@@ -419,6 +419,18 @@ https://stb-arab.vercel.app/auth/discord/callback
 https://stb-arab.vercel.app/api/auth/discord/callback
 ```
 
+The mediator verification flow requests:
+
+```text
+identify email guilds
+```
+
+`/auth/discord/callback` is used by mediator verification, while
+`/api/auth/discord/callback` is used by the main website login. Keep both
+redirect URIs registered in the Discord Developer Portal. The application
+builds the authorization URL itself, so the URL Generator output does not need
+to be copied into the code.
+
 Completing Discord and WhatsApp verification only makes the applicant eligible
 to open a mediator application ticket. The mediator role is granted only when
 an authorized staff member explicitly accepts the application in Discord.

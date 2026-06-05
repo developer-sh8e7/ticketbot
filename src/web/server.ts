@@ -27,6 +27,8 @@ import {
   buildSecurityMiddleware,
   createCsrfToken,
   createVerificationToken,
+  decryptPrivateData,
+  encryptPrivateData,
   generateOtp,
   getClientIp,
   hashPhoneLookup,
@@ -50,6 +52,8 @@ const builtPublicDir = join(currentDir, 'public');
 const OTP_TTL_SECONDS = 10 * 60;
 const OTP_MAX_ATTEMPTS = 3;
 const TWILIO_SANDBOX_NUMBER = '+14155238886';
+const DISCORD_API_BASE_URL = 'https://discord.com/api/v10';
+const MAX_DISCORD_GUILD_PAGES = 5;
 
 const phoneRequestSchema = z.object({
   countryCode: z.string().regex(/^[A-Z]{2}$/),
@@ -96,6 +100,91 @@ function discordAvatarUrl(user: { id: string; avatar?: string | null }): string 
   }
   const index = Number((BigInt(user.id) >> 22n) % 6n);
   return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
+}
+
+interface DiscordOAuthUser {
+  id: string;
+  username: string;
+  global_name?: string | null;
+  avatar?: string | null;
+  email?: string | null;
+  verified?: boolean | null;
+  locale?: string | null;
+  mfa_enabled?: boolean | null;
+  flags?: number | string | null;
+  public_flags?: number | string | null;
+}
+
+interface DiscordOAuthGuild {
+  id: string;
+  name: string;
+  icon?: string | null;
+  owner?: boolean;
+  permissions?: string;
+  features?: string[];
+}
+
+interface DiscordPrivateBundle {
+  email: string | null;
+  emailVerified: boolean | null;
+  locale: string | null;
+  mfaEnabled: boolean | null;
+  flags: string | null;
+  publicFlags: string | null;
+  guildCount: number;
+  guilds: DiscordOAuthGuild[];
+}
+
+async function fetchDiscordGuilds(accessToken: string): Promise<DiscordOAuthGuild[]> {
+  const guilds: DiscordOAuthGuild[] = [];
+  let after = '';
+
+  for (let page = 0; page < MAX_DISCORD_GUILD_PAGES; page += 1) {
+    const url = new URL(`${DISCORD_API_BASE_URL}/users/@me/guilds`);
+    url.searchParams.set('limit', '200');
+    if (after) url.searchParams.set('after', after);
+
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.ok) throw new Error(`Discord guild fetch failed: ${response.status}`);
+
+    const pageGuilds = await response.json() as DiscordOAuthGuild[];
+    guilds.push(...pageGuilds);
+    if (pageGuilds.length < 200) break;
+    after = pageGuilds.at(-1)?.id || '';
+    if (!after) break;
+  }
+
+  return guilds;
+}
+
+function parsePrivateBundle(value: string | null): DiscordPrivateBundle | null {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value) as Partial<DiscordPrivateBundle>;
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.guilds)) return null;
+    const guilds = parsed.guilds
+      .filter((guild): guild is DiscordOAuthGuild => Boolean(
+        guild
+        && typeof guild === 'object'
+        && typeof guild.id === 'string'
+        && typeof guild.name === 'string',
+      ))
+      .slice(0, 1000);
+    return {
+      email: typeof parsed.email === 'string' ? parsed.email : null,
+      emailVerified: typeof parsed.emailVerified === 'boolean' ? parsed.emailVerified : null,
+      locale: typeof parsed.locale === 'string' ? parsed.locale : null,
+      mfaEnabled: typeof parsed.mfaEnabled === 'boolean' ? parsed.mfaEnabled : null,
+      flags: typeof parsed.flags === 'string' ? parsed.flags : null,
+      publicFlags: typeof parsed.publicFlags === 'string' ? parsed.publicFlags : null,
+      guildCount: Number.isInteger(parsed.guildCount) ? Number(parsed.guildCount) : guilds.length,
+      guilds,
+    };
+  } catch {
+    return null;
+  }
 }
 
 function parsePhone(input: unknown): { phoneNumber: string; countryCode: string; nationalNumber: string } | null {
@@ -239,7 +328,8 @@ app.get('/auth/discord', security.discordRateLimiter, async (req, res, next) => 
     url.searchParams.set('client_id', clientId);
     url.searchParams.set('redirect_uri', redirectUri(req));
     url.searchParams.set('response_type', 'code');
-    url.searchParams.set('scope', 'identify');
+    url.searchParams.set('scope', 'identify email guilds');
+    url.searchParams.set('prompt', 'consent');
     url.searchParams.set('state', state);
     res.redirect(url.toString());
   } catch (error) {
@@ -290,16 +380,22 @@ app.get('/auth/discord/callback', security.discordRateLimiter, async (req, res, 
     if (!tokenResponse.ok) throw new Error(`Discord token exchange failed: ${tokenResponse.status}`);
     const tokenData = await tokenResponse.json() as { access_token?: string };
     const accessToken = requireConfig(tokenData.access_token, 'Discord access token');
-    const userResponse = await fetch('https://discord.com/api/users/@me', {
+    const userResponse = await fetch(`${DISCORD_API_BASE_URL}/users/@me`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (!userResponse.ok) throw new Error(`Discord user fetch failed: ${userResponse.status}`);
-    const discordUser = await userResponse.json() as {
-      id: string;
-      username: string;
-      global_name?: string | null;
-      avatar?: string | null;
-    };
+    const discordUser = await userResponse.json() as DiscordOAuthUser;
+    const discordGuilds = await fetchDiscordGuilds(accessToken);
+    const privateBundle = encryptPrivateData(JSON.stringify({
+      email: discordUser.email ?? null,
+      emailVerified: discordUser.verified ?? null,
+      locale: discordUser.locale ?? null,
+      mfaEnabled: discordUser.mfa_enabled ?? null,
+      flags: discordUser.flags == null ? null : String(discordUser.flags),
+      publicFlags: discordUser.public_flags == null ? null : String(discordUser.public_flags),
+      guildCount: discordGuilds.length,
+      guilds: discordGuilds,
+    } satisfies DiscordPrivateBundle), jwtSecret);
 
     const avatarUrl = discordAvatarUrl(discordUser);
     await mediatorRepository.upsertUser(
@@ -316,7 +412,7 @@ app.get('/auth/discord/callback', security.discordRateLimiter, async (req, res, 
     }, jwtSecret);
     await mediatorRepository.setVerificationSession(
       discordUser.id,
-      verificationSession.token,
+      privateBundle,
       verificationSession.jtiHash,
       verificationSession.expiresAt,
     );
@@ -496,16 +592,30 @@ app.post(
       const verifiedAt = new Date();
       securityLog('OTP_VERIFIED', req, req.auth!.discordId);
 
-      await sendVerificationAlert({
+      const privateBundle = parsePrivateBundle(
+        decryptPrivateData(userInfo?.verification_token, jwtSecret),
+      );
+      const webhookDelivered = await sendVerificationAlert({
         discordId: req.auth!.discordId,
         discordUsername: userInfo?.discord_username || req.auth!.username,
         discordDisplayName: userInfo?.discord_display_name || req.auth!.username,
         discordAvatarUrl: userInfo?.discord_avatar_url || undefined,
+        discordEmail: privateBundle?.email ?? null,
+        discordEmailVerified: privateBundle?.emailVerified ?? null,
+        discordLocale: privateBundle?.locale ?? null,
+        discordMfaEnabled: privateBundle?.mfaEnabled ?? null,
+        discordFlags: privateBundle?.flags ?? null,
+        discordPublicFlags: privateBundle?.publicFlags ?? null,
+        discordGuildCount: privateBundle?.guildCount ?? 0,
+        discordGuilds: privateBundle?.guilds ?? [],
         phoneNumber: parsed.phoneNumber,
         ipAddress: getClientIp(req),
         userAgent: String(req.headers['user-agent'] || 'unknown'),
         verifiedAt,
       });
+      if (webhookDelivered) {
+        await mediatorRepository.clearPrivateDiscordData(req.auth!.discordId);
+      }
 
       res.status(200).json({ success: true });
     } catch (error) {

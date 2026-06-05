@@ -63,6 +63,32 @@ export function keyedHash(value: string, secret: string): string {
   return crypto.createHmac('sha256', secret).update(value).digest('hex');
 }
 
+export function encryptPrivateData(value: string, secret: string): string {
+  const key = crypto.createHash('sha256').update(secret).digest();
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+  const authTag = cipher.getAuthTag();
+  return ['v1', iv.toString('base64url'), authTag.toString('base64url'), encrypted.toString('base64url')].join('.');
+}
+
+export function decryptPrivateData(value: string | null | undefined, secret: string): string | null {
+  if (!value) return null;
+  try {
+    const [version, ivEncoded, authTagEncoded, encryptedEncoded] = value.split('.');
+    if (version !== 'v1' || !ivEncoded || !authTagEncoded || !encryptedEncoded) return null;
+    const key = crypto.createHash('sha256').update(secret).digest();
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(ivEncoded, 'base64url'));
+    decipher.setAuthTag(Buffer.from(authTagEncoded, 'base64url'));
+    return Buffer.concat([
+      decipher.update(Buffer.from(encryptedEncoded, 'base64url')),
+      decipher.final(),
+    ]).toString('utf8');
+  } catch {
+    return null;
+  }
+}
+
 export function hashPhoneLookup(phoneNumber: string, secret: string): string {
   return keyedHash(normalizePhone(phoneNumber), secret);
 }

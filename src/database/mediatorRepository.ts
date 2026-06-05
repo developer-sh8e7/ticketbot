@@ -401,6 +401,19 @@ export class MediatorRepository {
     }
   }
 
+  public async clearPrivateDiscordData(discordId: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('mediator_verification')
+      .update({
+        verification_token: null,
+      })
+      .eq('discord_id', discordId);
+
+    if (error) {
+      this.handleDbError(error, `clearPrivateDiscordData (${discordId})`);
+    }
+  }
+
   public async setVerificationToken(discordId: string, token: string): Promise<void> {
     const { error } = await this.supabase
       .from('mediator_verification')
@@ -414,14 +427,14 @@ export class MediatorRepository {
 
   public async setVerificationSession(
     discordId: string,
-    token: string,
+    encryptedOauthBundle: string,
     jtiHash: string,
     expiresAt: Date,
   ): Promise<void> {
     const { error } = await this.supabase
       .from('mediator_verification')
       .update({
-        verification_token: token,
+        verification_token: encryptedOauthBundle,
         jwt_jti_hash: jtiHash,
         jwt_expires_at: expiresAt.toISOString(),
       })
