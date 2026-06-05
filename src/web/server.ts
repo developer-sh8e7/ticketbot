@@ -503,19 +503,7 @@ app.post(
       }
 
       const twilioClient = twilio(accountSid, authToken);
-      const sandboxJoin = sandboxJoinDetails(fromNumber);
-      if (fromNumber === TWILIO_SANDBOX_NUMBER) {
-        const joined = await hasActiveSandboxSession(twilioClient, parsed.phoneNumber, fromNumber);
-        if (!joined) {
-          securityLog('WHATSAPP_SANDBOX_JOIN_REQUIRED', req, discordId);
-          res.status(409).json({
-            error: true,
-            message: 'قبل إرسال الرمز، افتح واتساب وانضم إلى قناة التحقق ثم ارجع واضغط إرسال الرمز.',
-            ...sandboxJoin,
-          });
-          return;
-        }
-      }
+      const sandboxJoin = {};
 
       const otp = generateOtp();
       const message = await twilioClient.messages.create({

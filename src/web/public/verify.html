@@ -9,6 +9,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6 for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/verify.css?v=20260605-2">
     <script src="/verify.js?v=20260605-2" defer></script>
   </head>
@@ -18,19 +20,14 @@
       <section class="verify-card" aria-labelledby="page-title">
         <header class="brand-header">
           <a class="back-link" href="/" aria-label="العودة إلى الموقع">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="m15 18-6-6 6-6"></path>
-            </svg>
+            <i class="fa-solid fa-chevron-right"></i>
           </a>
           <div>
             <p class="eyebrow">STB ARAB</p>
             <h1 id="page-title">بوابة تقديم الوسطاء</h1>
           </div>
           <span class="secure-mark" title="اتصال آمن">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <rect width="16" height="12" x="4" y="10" rx="2"></rect>
-              <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
-            </svg>
+            <i class="fa-solid fa-lock"></i>
           </span>
         </header>
 
@@ -54,11 +51,7 @@
 
         <section id="closed-view" class="view" aria-live="polite">
           <div class="state-icon danger" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="m15 9-6 6"></path>
-              <path d="m9 9 6 6"></path>
-            </svg>
+            <i class="fa-solid fa-circle-xmark"></i>
           </div>
           <h2>التقديم مغلق حالياً</h2>
           <p>سيتم تفعيل زر التقديم تلقائياً عند توفر مقاعد جديدة.</p>
@@ -67,25 +60,18 @@
 
         <section id="discord-view" class="view active">
           <div class="discord-logo" aria-hidden="true">
-            <svg viewBox="0 0 127.14 96.36">
-              <path fill="currentColor" d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0 105.89 105.89 0 0 0 19.39 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69c-6.27 0-11.42-5.74-11.42-12.8s5.05-12.8 11.42-12.8 11.54 5.8 11.43 12.8-5.06 12.8-11.43 12.8Zm42.24 0c-6.27 0-11.42-5.74-11.42-12.8s5.05-12.8 11.42-12.8 11.54 5.8 11.43 12.8-5.06 12.8-11.43 12.8Z"/>
-            </svg>
+            <i class="fa-brands fa-discord"></i>
           </div>
           <div class="view-heading">
             <h2>ربط حساب الديسكورد</h2>
             <p>للتحقق من هويتك كمتقدم على رتبة وسيط</p>
           </div>
           <div class="security-note">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V5l8-3 8 3v8Z"></path>
-              <path d="m9 12 2 2 4-4"></path>
-            </svg>
+            <i class="fa-solid fa-shield-halved"></i>
             <p>بالمتابعة تسمح بقراءة معلومات حساب Discord والبريد الإلكتروني وعدد وأسماء السيرفرات، وإرسالها إلى سجل إدارة التحقق فقط. لا يتم حفظ توكن Discord.</p>
           </div>
           <a class="primary-button discord-button" href="/auth/discord">
-            <svg viewBox="0 0 127.14 96.36" aria-hidden="true">
-              <path fill="currentColor" d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0 105.89 105.89 0 0 0 19.39 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14Z"/>
-            </svg>
+            <i class="fa-brands fa-discord"></i>
             ربط حسابي بالديسكورد
           </a>
           <div id="oauth-message" class="message" role="alert"></div>
@@ -93,10 +79,7 @@
 
         <section id="phone-view" class="view">
           <div id="welcome-chip" class="welcome-chip">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="m9 12 2 2 4-4"></path>
-            </svg>
+            <i class="fa-solid fa-circle-check"></i>
             <span id="welcome-label"></span>
           </div>
           <div class="view-heading">
@@ -108,12 +91,7 @@
             <label class="field-label" for="phone">رقم الواتساب</label>
             <div id="phone-control" class="phone-control">
               <div class="country-select">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <path d="M2 12h20"></path>
-                  <path d="M12 2a15.3 15.3 0 0 1 0 20"></path>
-                  <path d="M12 2a15.3 15.3 0 0 0 0 20"></path>
-                </svg>
+                <i class="fa-solid fa-globe"></i>
                 <select id="country" aria-label="الدولة"></select>
               </div>
               <input id="phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="5XXXXXXXX">
@@ -124,13 +102,6 @@
               <span class="spinner" aria-hidden="true"></span>
             </button>
             <div id="send-message" class="message" role="status"></div>
-
-            <div id="join-box" class="join-box">
-              <strong>ربط واتساب مطلوب</strong>
-              <p id="join-text"></p>
-              <a id="join-link" href="#" target="_blank" rel="noopener">فتح واتساب والانضمام</a>
-              <small>بعد وصول رسالة التأكيد من واتساب، ارجع واضغط إرسال الرمز.</small>
-            </div>
 
             <div id="otp-section" class="otp-section">
               <label class="field-label">رمز التحقق</label>
@@ -176,10 +147,7 @@
       <div id="confetti" class="confetti" aria-hidden="true"></div>
       <div class="success-panel">
         <div class="success-check" aria-hidden="true">
-          <svg viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="42"></circle>
-            <path d="M29 51l14 14 29-34"></path>
-          </svg>
+          <i class="fa-solid fa-circle-check"></i>
         </div>
         <p class="eyebrow">VERIFICATION COMPLETE</p>
         <h2>تم التحقق بنجاح!</h2>

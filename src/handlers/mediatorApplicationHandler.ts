@@ -120,11 +120,11 @@ export class MediatorApplicationHandler {
           value: `<t:${Math.floor(new Date(application.opened_at).getTime() / 1000)}:F>`,
           inline: true,
         },
-        { name: '🔐 الجوال', value: 'محفوظ ومشفر بـ bcrypt ✅', inline: true },
+        
         { name: '📊 حالة التذكرة', value: statusText, inline: true },
       )
       .setThumbnail(avatarUrl)
-      .setFooter({ text: 'نظام وسطاء السيرفر | البيانات الحساسة محفوظة كقيم غير قابلة للاسترجاع' })
+      .setFooter({ text: 'STB Arab • نظام التقديم' })
       .setTimestamp();
 
     if (decisionText) {

@@ -21,9 +21,6 @@ const els = {
   phoneControl: document.getElementById("phone-control"),
   sendOtp: document.getElementById("send-otp"),
   sendMessage: document.getElementById("send-message"),
-  joinBox: document.getElementById("join-box"),
-  joinText: document.getElementById("join-text"),
-  joinLink: document.getElementById("join-link"),
   otpSection: document.getElementById("otp-section"),
   otpInputs: Array.from(document.querySelectorAll(".otp-digit")),
   otpInputsWrap: document.getElementById("otp-inputs"),
@@ -170,14 +167,6 @@ function startCountdown(seconds) {
   state.timer = setInterval(updateCountdown, 1000);
 }
 
-function showSandboxJoin(data) {
-  if (!data || !data.joinUrl) return false;
-  els.joinText.textContent = "أرسل الرسالة التالية إلى رقم التحقق: " + data.joinMessage;
-  els.joinLink.href = data.joinUrl;
-  els.joinBox.classList.add("active");
-  return true;
-}
-
 function showSuccess() {
   els.successOverlay.classList.add("active");
   els.successOverlay.setAttribute("aria-hidden", "false");
@@ -223,7 +212,6 @@ async function loadStatus() {
 
 async function sendOtp(button) {
   setMessage(els.sendMessage, "", "");
-  els.joinBox.classList.remove("active");
   if (!validatePhoneField()) {
     setMessage(els.sendMessage, "اختر الدولة واكتب رقم الواتساب الصحيح بدون مفتاح الدولة.", "error");
     return;
@@ -239,9 +227,7 @@ async function sendOtp(button) {
     els.otpInputs[0].focus();
     startCountdown(Number(data.resendAfter || 600));
   } catch (error) {
-    if (showSandboxJoin(error.data)) {
-      setMessage(els.sendMessage, error.message, "error");
-    } else if (error.data && error.data.code === "OTP_COOLDOWN") {
+    if (error.data && error.data.code === "OTP_COOLDOWN") {
       els.otpSection.classList.add("active");
       startCountdown(Number(error.data.retryAfter || 600));
       setMessage(els.sendMessage, error.message, "error");
