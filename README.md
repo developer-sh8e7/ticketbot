@@ -327,9 +327,20 @@ Required Environment Variables:
 | --- | --- |
 | `DISCORD_TOKEN` | Discord bot token |
 | `DISCORD_CLIENT_ID` | Discord application client ID |
+| `DISCORD_CLIENT_SECRET` | Discord OAuth2 client secret |
+| `DISCORD_REDIRECT_URI` | `https://stb-arab.vercel.app/api/auth/discord/callback` |
 | `SUPABASE_URL` | Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key |
 | `CONFIG_PATH` | `./config/config.json` |
+| `STAFF_ROLE_ID` | Staff role allowed to view mediator verification tickets |
+| `TWILIO_ACCOUNT_SID` | Twilio account SID |
+| `TWILIO_AUTH_TOKEN` | Twilio auth token |
+| `TWILIO_WHATSAPP_NUMBER` | Twilio WhatsApp sender number |
+| `TWILIO_CONTENT_SID` | Twilio content template SID, if using templates |
+| `WEBSITE_URL` | `https://stb-arab.vercel.app/` |
+| `VERIFICATION_WEBHOOK_URL` | Discord webhook URL for verification logs |
+| `SESSION_SECRET` | Random 64+ character secret |
+| `JWT_SECRET` | Random 64+ character secret |
 
 Optional Environment Variables:
 
@@ -339,7 +350,6 @@ Optional Environment Variables:
 | `AI_PROVIDER` | `openai` |
 | `AI_BASE_URL` | `https://opencode.ai/zen/v1` |
 | `AI_MODEL` | `deepseek-v4-flash-free` |
-| `DISCORD_CLIENT_SECRET` | empty |
 
 Health Check URL:
 
