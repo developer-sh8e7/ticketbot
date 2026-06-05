@@ -11,6 +11,11 @@ import { MediatorRepository } from '../database/mediatorRepository.js';
 import { loadEnv } from '../env.js';
 import { sendVerificationAlert } from '../services/verificationWebhookService.js';
 import {
+  listCountryPhoneOptions,
+  maskPhone,
+  normalizeInternationalPhone,
+} from './phone.js';
+import {
   type AuthenticatedRequest,
   buildJwtAuthMiddleware,
   buildSecurityMiddleware,
@@ -35,6 +40,8 @@ const currentFile = fileURLToPath(import.meta.url);
 const currentDir = dirname(currentFile);
 const publicIndexPath = join(currentDir, 'public', 'index.html');
 const sourcePublicIndexPath = join(process.cwd(), 'src', 'web', 'public', 'index.html');
+const OTP_TTL_SECONDS = 10 * 60;
+const TWILIO_SANDBOX_NUMBER = '+14155238886';
 
 function requireConfig(value: string | undefined, name: string): string {
   if (!value?.trim()) {
@@ -53,6 +60,60 @@ function redirectUri(req: Request): string {
 
 function genericError(res: Response, status = 500): void {
   res.status(status).json({ error: true, message: 'حدث خطأ، حاول مرة أخرى' });
+}
+
+function phoneNumberFromRequest(req: Request): string | null {
+  const countryCode = String(req.body?.countryCode || '');
+  const nationalNumber = String(req.body?.nationalNumber || '');
+  if (countryCode && nationalNumber) {
+    return normalizeInternationalPhone(countryCode, nationalNumber);
+  }
+
+  const legacyPhone = normalizePhone(String(req.body?.phoneNumber || ''));
+  return validatePhone(legacyPhone) ? legacyPhone : null;
+}
+
+function sandboxJoinDetails(fromNumber: string) {
+  const joinCode = env.TWILIO_SANDBOX_JOIN_CODE?.trim();
+  if (!joinCode) return {};
+
+  const joinMessage = `join ${joinCode}`;
+  return {
+    code: 'WHATSAPP_SANDBOX_NOT_JOINED',
+    sandboxNumber: fromNumber,
+    joinMessage,
+    joinUrl: `https://wa.me/${fromNumber.replace(/\D/g, '')}?text=${encodeURIComponent(joinMessage)}`,
+  };
+}
+
+async function hasActiveSandboxSession(
+  twilioClient: ReturnType<typeof twilio>,
+  phoneNumber: string,
+  fromNumber: string,
+): Promise<boolean> {
+  const joinCode = env.TWILIO_SANDBOX_JOIN_CODE?.trim().toLowerCase();
+  if (!joinCode) return false;
+
+  const inboundMessages = await twilioClient.messages.list({
+    from: `whatsapp:${phoneNumber}`,
+    to: `whatsapp:${fromNumber}`,
+    dateSentAfter: new Date(Date.now() - 24 * 60 * 60 * 1000),
+    limit: 20,
+  });
+  const expected = `join ${joinCode}`;
+  return inboundMessages.some((message) => message.body?.trim().toLowerCase() === expected);
+}
+
+async function waitForMessageStatus(
+  twilioClient: ReturnType<typeof twilio>,
+  messageSid: string,
+): Promise<{ status: string; errorCode: number | null }> {
+  let latest = await twilioClient.messages(messageSid).fetch();
+  for (let attempt = 0; attempt < 4 && ['accepted', 'queued', 'sending'].includes(latest.status); attempt += 1) {
+    await new Promise((resolveDelay) => setTimeout(resolveDelay, 750));
+    latest = await twilioClient.messages(messageSid).fetch();
+  }
+  return { status: latest.status, errorCode: latest.errorCode };
 }
 
 async function readIndexHtml(): Promise<string> {
@@ -75,6 +136,11 @@ app.use(security.securityLogger);
 
 app.get('/health', (_req, res) => {
   res.status(200).type('text/plain').send('ok');
+});
+
+app.get('/api/countries', (_req, res) => {
+  res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=86400');
+  res.status(200).json({ countries: listCountryPhoneOptions() });
 });
 
 app.get('/', async (_req, res, next) => {
@@ -196,10 +262,10 @@ app.get(['/auth/discord/callback', '/api/auth/discord/callback'], security.disco
 
 app.post('/api/send-otp', security.sendOtpRateLimiter, jwtAuth, security.sanitizeInputs, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const phoneNumber = normalizePhone(String(req.body?.phoneNumber || ''));
-    if (!validatePhone(phoneNumber)) {
+    const phoneNumber = phoneNumberFromRequest(req);
+    if (!phoneNumber) {
       securityLog('INVALID_INPUT', req, req.auth?.discordId);
-      res.status(400).json({ error: true, message: 'رقم الواتساب غير صحيح. اكتب الرقم بصيغة دولية مثل +966XXXXXXXXX' });
+      res.status(400).json({ error: true, message: 'رقم الواتساب غير صحيح أو لا يطابق الدولة المختارة.' });
       return;
     }
 
@@ -209,6 +275,21 @@ app.post('/api/send-otp', security.sendOtpRateLimiter, jwtAuth, security.sanitiz
     const fromNumber = requireConfig(env.TWILIO_WHATSAPP_NUMBER, 'TWILIO_WHATSAPP_NUMBER');
     const discordId = req.auth!.discordId;
     const phoneHash = hashPhone(phoneNumber, jwtSecret);
+    const latestOtp = await mediatorRepository.getLatestOtp(phoneHash, discordId);
+    if (latestOtp) {
+      const retryAfter = Math.ceil(
+        (new Date(latestOtp.created_at).getTime() + OTP_TTL_SECONDS * 1000 - Date.now()) / 1000,
+      );
+      if (retryAfter > 0) {
+        res.status(429).json({
+          error: true,
+          code: 'OTP_COOLDOWN',
+          retryAfter,
+          message: `يمكنك طلب رمز جديد بعد ${Math.ceil(retryAfter / 60)} دقيقة.`,
+        });
+        return;
+      }
+    }
 
     const otpCount = await mediatorRepository.getRateLimitCount(phoneHash, 'otp_phone', 60 * 60 * 1000);
     if (otpCount >= 3) {
@@ -225,21 +306,59 @@ app.post('/api/send-otp', security.sendOtpRateLimiter, jwtAuth, security.sanitiz
 
     const otp = generateOtp();
     const otpHash = await bcrypt.hash(otp, 12);
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-    await mediatorRepository.saveOtp(phoneHash, otpHash, discordId, expiresAt);
-    await mediatorRepository.logRateLimit(phoneHash, 'otp_phone');
-
     const twilioClient = twilio(accountSid, authToken);
-    await twilioClient.messages.create({
+    const sandboxJoin = sandboxJoinDetails(fromNumber);
+    if (fromNumber === TWILIO_SANDBOX_NUMBER) {
+      const joined = await hasActiveSandboxSession(twilioClient, phoneNumber, fromNumber);
+      if (!joined) {
+        securityLog('WHATSAPP_SANDBOX_JOIN_REQUIRED', req, discordId);
+        res.status(409).json({
+          error: true,
+          message: 'قبل إرسال الرمز، افتح واتساب وانضم إلى قناة التحقق ثم ارجع واضغط إرسال الرمز.',
+          ...sandboxJoin,
+        });
+        return;
+      }
+    }
+
+    const message = await twilioClient.messages.create({
       to: `whatsapp:${phoneNumber}`,
       from: `whatsapp:${fromNumber}`,
       body: `🔐 رمز التحقق: *${otp}*\n\nصالح 10 دقائق فقط.\n⚠️ لا تشاركه مع أحد.`,
     });
+    const delivery = await waitForMessageStatus(twilioClient, message.sid);
+    if (['failed', 'undelivered', 'canceled'].includes(delivery.status)) {
+      securityLog(`WHATSAPP_DELIVERY_FAILED_${delivery.errorCode ?? 'UNKNOWN'}`, req, discordId);
+      if (delivery.errorCode === 63015 || delivery.errorCode === 63016) {
+        res.status(409).json({
+          error: true,
+          message: 'تعذر الإرسال لأن واتساب غير مرتبط بقناة التحقق. افتح رابط الانضمام ثم أعد المحاولة.',
+          ...sandboxJoin,
+        });
+        return;
+      }
+      res.status(502).json({
+        error: true,
+        code: 'WHATSAPP_DELIVERY_FAILED',
+        message: `تعذر تسليم الرسالة من مزود واتساب. رمز الخطأ: ${delivery.errorCode ?? 'غير معروف'}.`,
+      });
+      return;
+    }
+
+    const expiresAt = new Date(Date.now() + OTP_TTL_SECONDS * 1000);
+    await mediatorRepository.invalidateOtps(phoneHash, discordId);
+    await mediatorRepository.saveOtp(phoneHash, otpHash, discordId, expiresAt);
+    await mediatorRepository.logRateLimit(phoneHash, 'otp_phone');
 
     req.session.pendingPhoneHash = phoneHash;
     req.session.pendingPhone = phoneNumber;
     securityLog('OTP_SENT', req, discordId);
-    res.status(200).json({ success: true, expiresIn: 600 });
+    res.status(200).json({
+      success: true,
+      expiresIn: OTP_TTL_SECONDS,
+      resendAfter: OTP_TTL_SECONDS,
+      phone: maskPhone(phoneNumber),
+    });
   } catch (error) {
     next(error);
   }
@@ -247,11 +366,11 @@ app.post('/api/send-otp', security.sendOtpRateLimiter, jwtAuth, security.sanitiz
 
 app.post('/api/verify-otp', security.verifyOtpRateLimiter, jwtAuth, security.sanitizeInputs, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const phoneNumber = normalizePhone(String(req.body?.phoneNumber || ''));
+    const phoneNumber = phoneNumberFromRequest(req);
     const otp = String(req.body?.otp || '').trim();
     const discordId = req.auth!.discordId;
 
-    if (!validatePhone(phoneNumber) || !/^\d{6}$/.test(otp)) {
+    if (!phoneNumber || !/^\d{6}$/.test(otp)) {
       securityLog('INVALID_INPUT', req, discordId);
       res.status(400).json({ error: true, message: 'الرقم أو رمز التحقق غير صحيح.' });
       return;

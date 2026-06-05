@@ -61,6 +61,10 @@ export interface ValidOtpRecord {
   attempts: number;
 }
 
+export interface LatestOtpRecord {
+  created_at: string;
+}
+
 // In-memory fallback storage
 const inMemoryMediators = new Map<string, MediatorRecord>();
 const inMemoryHistory: MediatorHistoryRecord[] = [];
@@ -402,6 +406,37 @@ export class MediatorRepository {
     if (error) {
       this.handleDbError(error, `saveOtp (${discordId})`);
     }
+  }
+
+  public async invalidateOtps(phoneHash: string, discordId: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('mediator_otp_records')
+      .update({ used: true })
+      .eq('phone_hash', phoneHash)
+      .eq('discord_id', discordId)
+      .eq('used', false);
+
+    if (error) {
+      this.handleDbError(error, `invalidateOtps (${discordId})`);
+    }
+  }
+
+  public async getLatestOtp(phoneHash: string, discordId: string): Promise<LatestOtpRecord | null> {
+    const { data, error } = await this.supabase
+      .from('mediator_otp_records')
+      .select('created_at')
+      .eq('phone_hash', phoneHash)
+      .eq('discord_id', discordId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      this.handleDbError(error, `getLatestOtp (${discordId})`);
+      return null;
+    }
+
+    return data as LatestOtpRecord | null;
   }
 
   public async getValidOtp(phoneHash: string): Promise<ValidOtpRecord | null> {
