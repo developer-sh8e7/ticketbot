@@ -17,12 +17,21 @@
     <main class="shell">
       <section class="verify-card" aria-labelledby="page-title">
         <header class="brand-header">
-          <a class="back-link" href="/" aria-label="العودة إلى الموقع">←</a>
+          <a class="back-link" href="/" aria-label="العودة إلى الموقع">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="m15 18-6-6 6-6"></path>
+            </svg>
+          </a>
           <div>
             <p class="eyebrow">STB ARAB</p>
             <h1 id="page-title">بوابة تقديم الوسطاء</h1>
           </div>
-          <span class="secure-mark" title="اتصال آمن">🔒</span>
+          <span class="secure-mark" title="اتصال آمن">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect width="16" height="12" x="4" y="10" rx="2"></rect>
+              <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+            </svg>
+          </span>
         </header>
 
         <div class="progress-wrap" aria-label="خطوات التحقق">
@@ -44,7 +53,13 @@
         </div>
 
         <section id="closed-view" class="view" aria-live="polite">
-          <div class="state-icon danger">×</div>
+          <div class="state-icon danger" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="m15 9-6 6"></path>
+              <path d="m9 9 6 6"></path>
+            </svg>
+          </div>
           <h2>التقديم مغلق حالياً</h2>
           <p>سيتم تفعيل زر التقديم تلقائياً عند توفر مقاعد جديدة.</p>
           <a class="secondary-link" href="/">العودة إلى الموقع</a>
@@ -61,7 +76,10 @@
             <p>للتحقق من هويتك كمتقدم على رتبة وسيط</p>
           </div>
           <div class="security-note">
-            <span>🔒</span>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V5l8-3 8 3v8Z"></path>
+              <path d="m9 12 2 2 4-4"></path>
+            </svg>
             <p>نطلب صلاحية قراءة معلومات حسابك الأساسية فقط.</p>
           </div>
           <a class="primary-button discord-button" href="/auth/discord">
@@ -73,7 +91,13 @@
         </section>
 
         <section id="phone-view" class="view">
-          <div id="welcome-chip" class="welcome-chip"></div>
+          <div id="welcome-chip" class="welcome-chip">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="m9 12 2 2 4-4"></path>
+            </svg>
+            <span id="welcome-label"></span>
+          </div>
           <div class="view-heading">
             <h2>تأكيد رقم الواتساب</h2>
             <p>سيصلك رمز تحقق مكوّن من 6 أرقام</p>
@@ -82,7 +106,15 @@
           <div class="form-stack">
             <label class="field-label" for="phone">رقم الواتساب</label>
             <div id="phone-control" class="phone-control">
-              <select id="country" aria-label="الدولة"></select>
+              <div class="country-select">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M2 12h20"></path>
+                  <path d="M12 2a15.3 15.3 0 0 1 0 20"></path>
+                  <path d="M12 2a15.3 15.3 0 0 0 0 20"></path>
+                </svg>
+                <select id="country" aria-label="الدولة"></select>
+              </div>
               <input id="phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="5XXXXXXXX">
               <span id="phone-validity" class="validity" aria-hidden="true"></span>
             </div>

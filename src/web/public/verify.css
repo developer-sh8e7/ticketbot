@@ -95,6 +95,14 @@ button, a { -webkit-tap-highlight-color: transparent; }
   text-decoration: none;
   background: rgba(255, 255, 255, 0.03);
 }
+.back-link svg, .secure-mark svg {
+  width: 19px;
+  height: 19px;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
 .brand-header > div { min-width: 0; text-align: center; }
 .eyebrow {
@@ -183,6 +191,16 @@ button, a { -webkit-tap-highlight-color: transparent; }
   background: rgba(87, 242, 135, 0.055);
 }
 .security-note p { margin: 0; color: #b8c8be; font-size: 13px; }
+.security-note svg {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 19px;
+  color: var(--success);
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
 .primary-button, .secondary-link {
   width: 100%;
@@ -216,9 +234,16 @@ button, a { -webkit-tap-highlight-color: transparent; }
   display: grid;
   place-items: center;
   border-radius: 50%;
-  font: 500 50px/1 "Inter", sans-serif;
 }
 .state-icon.danger { color: var(--danger); border: 1px solid rgba(237, 66, 69, 0.45); background: rgba(237, 66, 69, 0.08); }
+.state-icon svg {
+  width: 43px;
+  height: 43px;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
 .welcome-chip {
   width: fit-content;
@@ -232,6 +257,18 @@ button, a { -webkit-tap-highlight-color: transparent; }
   font-size: 13px;
   font-weight: 700;
   overflow-wrap: anywhere;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.welcome-chip svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .form-stack { display: grid; gap: 13px; margin-top: 24px; }
@@ -258,10 +295,28 @@ button, a { -webkit-tap-highlight-color: transparent; }
   color: var(--text);
   background: transparent;
 }
+.country-select {
+  height: 50px;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  border-right: 1px solid var(--border);
+}
+.country-select svg {
+  width: 17px;
+  height: 17px;
+  margin-left: 8px;
+  color: #8d97ff;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .phone-control select {
   direction: rtl;
-  padding: 0 10px;
-  border-right: 1px solid var(--border);
+  width: 100%;
+  padding: 0 8px;
   font-size: 13px;
 }
 .phone-control select option { background: var(--surface-strong); }
@@ -271,9 +326,27 @@ button, a { -webkit-tap-highlight-color: transparent; }
   font: 600 18px "Inter", sans-serif;
   letter-spacing: 0;
 }
-.validity { font-size: 17px; text-align: center; }
-.phone-control.valid .validity::after { content: "✓"; color: var(--success); }
-.phone-control.invalid .validity::after { content: "!"; color: var(--danger); }
+.validity {
+  width: 17px;
+  height: 17px;
+  margin: auto;
+  background: currentColor;
+  opacity: 0;
+  -webkit-mask: center / contain no-repeat;
+  mask: center / contain no-repeat;
+}
+.phone-control.valid .validity {
+  color: var(--success);
+  opacity: 1;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m9 12 2 2 4-4'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m9 12 2 2 4-4'/%3E%3C/svg%3E");
+}
+.phone-control.invalid .validity {
+  color: var(--danger);
+  opacity: 1;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 8v4M12 16h.01'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 8v4M12 16h.01'/%3E%3C/svg%3E");
+}
 
 .message { min-height: 22px; text-align: center; font-size: 13px; font-weight: 700; }
 .message.error { color: #ff8a8c; }

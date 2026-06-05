@@ -8,7 +8,7 @@
   function setState(isOpen) {
     statusElement.classList.toggle("is-open", isOpen);
     statusElement.classList.toggle("is-closed", !isOpen);
-    statusElement.textContent = isOpen ? "🟢 التقديم مفتوح" : "🔴 التقديم مغلق";
+    statusElement.textContent = isOpen ? "التقديم مفتوح" : "التقديم مغلق";
     linkElement.setAttribute("aria-disabled", isOpen ? "false" : "true");
     linkElement.title = isOpen ? "ابدأ التقديم" : "التقديم مغلق حالياً";
   }

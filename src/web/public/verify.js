@@ -14,7 +14,7 @@ const els = {
   progressDiscord: document.getElementById("progress-discord"),
   progressPhone: document.getElementById("progress-phone"),
   progressLine: document.getElementById("progress-line"),
-  welcome: document.getElementById("welcome-chip"),
+  welcome: document.getElementById("welcome-label"),
   country: document.getElementById("country"),
   phone: document.getElementById("phone"),
   phoneControl: document.getElementById("phone-control"),
@@ -60,7 +60,7 @@ function showView(name, payload) {
   els.progressLine.className = "progress-line " + (name === "phone" || name === "done" ? "done" : "");
   if (name === "phone") {
     const displayName = safeText(payload && (payload.displayName || payload.username));
-    els.welcome.textContent = "✅ مرحباً " + displayName;
+    els.welcome.textContent = "مرحباً " + displayName;
   }
 }
 
@@ -83,12 +83,6 @@ async function api(path, options) {
   return data;
 }
 
-function flagEmoji(countryCode) {
-  return Array.from(countryCode)
-    .map((letter) => String.fromCodePoint(127397 + letter.charCodeAt(0)))
-    .join("");
-}
-
 async function loadCountries() {
   const response = await fetch("/api/countries", { credentials: "include" });
   if (!response.ok) throw new Error("تعذر تحميل قائمة الدول.");
@@ -107,7 +101,7 @@ async function loadCountries() {
   for (const country of state.countries) {
     const option = document.createElement("option");
     option.value = country.code;
-    option.textContent = flagEmoji(country.code) + " " + country.name + " (" + country.callingCode + ")";
+    option.textContent = country.name + " (" + country.callingCode + ")";
     fragment.appendChild(option);
   }
   els.country.replaceChildren(fragment);
