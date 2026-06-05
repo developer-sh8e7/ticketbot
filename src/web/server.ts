@@ -149,15 +149,6 @@ function oauthStateCookie(nonce: string, secret: string): string {
   return keyedHash(`oauth:${nonce}`, secret);
 }
 
-function regenerateSession(req: Request): Promise<void> {
-  return new Promise((resolveSession, rejectSession) => {
-    req.session.regenerate((error) => {
-      if (error) rejectSession(error);
-      else resolveSession();
-    });
-  });
-}
-
 app.set('trust proxy', 1);
 app.use(security.requestIdMiddleware);
 app.use(security.helmetMiddleware);
@@ -170,7 +161,6 @@ app.use(slowDown({
 }));
 app.use(hpp());
 app.use(express.json({ limit: '2kb' }));
-app.use(security.sessionMiddleware);
 app.use(security.noStoreAuthRoutes);
 app.use(security.validateJsonContentType);
 app.use(morgan('combined', { stream: logger.httpStream }));
@@ -331,10 +321,6 @@ app.get('/auth/discord/callback', security.discordRateLimiter, async (req, res, 
       verificationSession.expiresAt,
     );
 
-    await regenerateSession(req);
-    req.session.discordId = discordUser.id;
-    req.session.username = discordUser.username;
-    req.session.displayName = discordUser.global_name ?? discordUser.username;
     res.cookie('__Host-verify_token', verificationSession.token, {
       httpOnly: true,
       secure: true,
@@ -352,7 +338,6 @@ app.get('/auth/discord/callback', security.discordRateLimiter, async (req, res, 
 app.get('/api/csrf-token', jwtAuth, (req: AuthenticatedRequest, res) => {
   const secret = requireConfig(env.SESSION_SECRET, 'SESSION_SECRET');
   const csrfToken = createCsrfToken(req.auth!.jti, secret);
-  req.session.csrfToken = csrfToken;
   res.status(200).json({ csrfToken });
 });
 
@@ -509,7 +494,6 @@ app.post(
       );
       const userInfo = await mediatorRepository.getUserInfo(req.auth!.discordId);
       const verifiedAt = new Date();
-      req.session.isVerified = true;
       securityLog('OTP_VERIFIED', req, req.auth!.discordId);
 
       await sendVerificationAlert({

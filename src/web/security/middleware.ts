@@ -1,24 +1,12 @@
 import crypto from 'node:crypto';
 import type { NextFunction, Request, Response } from 'express';
-import type { SessionOptions } from 'express-session';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
-import session from 'express-session';
 import helmet from 'helmet';
 import jwt, { type JwtPayload } from 'jsonwebtoken';
 import type { Env } from '../../env.js';
 import type { MediatorRepository } from '../../database/mediatorRepository.js';
 import { logger } from '../../utils/logger.js';
-
-declare module 'express-session' {
-  interface SessionData {
-    discordId?: string;
-    username?: string;
-    displayName?: string | null;
-    isVerified?: boolean;
-    csrfToken?: string;
-  }
-}
 
 export interface AuthenticatedRequest extends Request {
   auth?: {
@@ -211,21 +199,6 @@ export function buildSecurityMiddleware(env: Env) {
     },
   });
 
-  const sessionOptions: SessionOptions = {
-    secret: sessionSecret,
-    name: '__Host-sid',
-    resave: false,
-    saveUninitialized: false,
-    rolling: true,
-    cookie: {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      maxAge: 2 * 60 * 60 * 1000,
-      path: '/',
-    },
-  };
-
   const requestIdMiddleware = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     const requestId = String(req.headers['x-request-id'] || crypto.randomUUID()).slice(0, 80);
     const startedAt = process.hrtime.bigint();
@@ -273,7 +246,6 @@ export function buildSecurityMiddleware(env: Env) {
     sendOtpRateLimiter,
     verifyOtpRateLimiter,
     discordRateLimiter,
-    sessionMiddleware: session(sessionOptions),
     requestIdMiddleware,
     noStoreAuthRoutes,
     validateJsonContentType,
@@ -328,9 +300,7 @@ export function buildCsrfGuard(env: Env) {
     const token = String(req.headers['x-csrf-token'] || '');
     const jti = req.auth?.jti;
     const secret = env.SESSION_SECRET;
-    const sessionToken = req.session.csrfToken;
-    const sessionMatches = !sessionToken || sessionToken === token;
-    if (!token || !jti || !secret || !sessionMatches || !validateCsrfToken(token, jti, secret)) {
+    if (!token || !jti || !secret || !validateCsrfToken(token, jti, secret)) {
       securityLog('CSRF_REJECTED', req, req.auth?.discordId);
       res.status(403).json({ error: true, message: 'تعذر التحقق من أمان الطلب، حدّث الصفحة وحاول مجدداً.' });
       return;
