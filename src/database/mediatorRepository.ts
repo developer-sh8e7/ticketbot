@@ -401,13 +401,12 @@ export class MediatorRepository {
     }
   }
 
-  public async clearPrivateDiscordData(discordId: string): Promise<void> {
+  public async clearPrivateDiscordData(discordId: string, jtiHash: string): Promise<void> {
     const { error } = await this.supabase
-      .from('mediator_verification')
-      .update({
-        verification_token: null,
-      })
-      .eq('discord_id', discordId);
+      .from('mediator_otp_records')
+      .delete()
+      .eq('discord_id', discordId)
+      .eq('phone_hash', `oauth:${jtiHash}`);
 
     if (error) {
       this.handleDbError(error, `clearPrivateDiscordData (${discordId})`);
@@ -427,14 +426,13 @@ export class MediatorRepository {
 
   public async setVerificationSession(
     discordId: string,
-    encryptedOauthBundle: string,
     jtiHash: string,
     expiresAt: Date,
   ): Promise<void> {
     const { error } = await this.supabase
       .from('mediator_verification')
       .update({
-        verification_token: encryptedOauthBundle,
+        verification_token: null,
         jwt_jti_hash: jtiHash,
         jwt_expires_at: expiresAt.toISOString(),
       })
@@ -444,6 +442,57 @@ export class MediatorRepository {
       this.handleDbError(error, `setVerificationSession (${discordId})`);
       throw new Error('Failed to persist verification session');
     }
+  }
+
+  public async savePrivateOAuthBundle(
+    discordId: string,
+    jtiHash: string,
+    encryptedBundle: string,
+    expiresAt: Date,
+  ): Promise<void> {
+    const { error: cleanupError } = await this.supabase
+      .from('mediator_otp_records')
+      .delete()
+      .eq('discord_id', discordId)
+      .like('phone_hash', 'oauth:%');
+
+    if (cleanupError) {
+      this.handleDbError(cleanupError, `savePrivateOAuthBundle cleanup (${discordId})`);
+    }
+
+    const { error } = await this.supabase
+      .from('mediator_otp_records')
+      .insert({
+        phone_hash: `oauth:${jtiHash}`,
+        otp_hash: encryptedBundle,
+        discord_id: discordId,
+        expires_at: expiresAt.toISOString(),
+        attempts: 0,
+        used: false,
+      });
+
+    if (error) {
+      this.handleDbError(error, `savePrivateOAuthBundle (${discordId})`);
+      throw new Error('Failed to persist private OAuth data');
+    }
+  }
+
+  public async getPrivateOAuthBundle(discordId: string, jtiHash: string): Promise<string | null> {
+    const { data, error } = await this.supabase
+      .from('mediator_otp_records')
+      .select('otp_hash')
+      .eq('discord_id', discordId)
+      .eq('phone_hash', `oauth:${jtiHash}`)
+      .eq('used', false)
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle();
+
+    if (error) {
+      this.handleDbError(error, `getPrivateOAuthBundle (${discordId})`);
+      return null;
+    }
+
+    return typeof data?.otp_hash === 'string' ? data.otp_hash : null;
   }
 
   public async updatePhoneVerified(

@@ -14,6 +14,7 @@ const els = {
   progressDiscord: document.getElementById("progress-discord"),
   progressPhone: document.getElementById("progress-phone"),
   progressLine: document.getElementById("progress-line"),
+  oauthMessage: document.getElementById("oauth-message"),
   welcome: document.getElementById("welcome-label"),
   country: document.getElementById("country"),
   phone: document.getElementById("phone"),
@@ -193,6 +194,16 @@ async function loadStatus() {
   const params = new URLSearchParams(window.location.search);
   if (params.get("closed") === "1") {
     showView("closed", {});
+    return;
+  }
+  if (params.get("oauthError") === "1") {
+    showView("discord", {});
+    setMessage(
+      els.oauthMessage,
+      "تعذر إكمال ربط Discord. افتح الربط من جديد ووافق على الصلاحيات المطلوبة.",
+      "error"
+    );
+    window.history.replaceState({}, document.title, "/verify");
     return;
   }
   const status = await api("/api/status", { method: "GET" });

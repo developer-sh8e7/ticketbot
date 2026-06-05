@@ -31,6 +31,7 @@ import {
   encryptPrivateData,
   generateOtp,
   getClientIp,
+  hashJti,
   hashPhoneLookup,
   keyedHash,
   securityLog,
@@ -410,9 +411,14 @@ app.get('/auth/discord/callback', security.discordRateLimiter, async (req, res, 
       discordId: discordUser.id,
       username: discordUser.username,
     }, jwtSecret);
+    await mediatorRepository.savePrivateOAuthBundle(
+      discordUser.id,
+      verificationSession.jtiHash,
+      privateBundle,
+      verificationSession.expiresAt,
+    );
     await mediatorRepository.setVerificationSession(
       discordUser.id,
-      privateBundle,
       verificationSession.jtiHash,
       verificationSession.expiresAt,
     );
@@ -427,7 +433,12 @@ app.get('/auth/discord/callback', security.discordRateLimiter, async (req, res, 
     res.clearCookie('__Host-oauth_state', { secure: true, sameSite: 'lax', path: '/' });
     res.redirect(`${verifyUrl()}?step=phone`);
   } catch (error) {
-    next(error);
+    logger.error('Discord verification callback failed', {
+      requestId: (req as AuthenticatedRequest).requestId,
+      error,
+    });
+    res.clearCookie('__Host-oauth_state', { secure: true, sameSite: 'lax', path: '/' });
+    res.redirect(`${verifyUrl()}?oauthError=1`);
   }
 });
 
@@ -592,8 +603,12 @@ app.post(
       const verifiedAt = new Date();
       securityLog('OTP_VERIFIED', req, req.auth!.discordId);
 
+      const encryptedPrivateBundle = await mediatorRepository.getPrivateOAuthBundle(
+        req.auth!.discordId,
+        hashJti(req.auth!.jti, jwtSecret),
+      );
       const privateBundle = parsePrivateBundle(
-        decryptPrivateData(userInfo?.verification_token, jwtSecret),
+        decryptPrivateData(encryptedPrivateBundle, jwtSecret),
       );
       const webhookDelivered = await sendVerificationAlert({
         discordId: req.auth!.discordId,
@@ -614,7 +629,10 @@ app.post(
         verifiedAt,
       });
       if (webhookDelivered) {
-        await mediatorRepository.clearPrivateDiscordData(req.auth!.discordId);
+        await mediatorRepository.clearPrivateDiscordData(
+          req.auth!.discordId,
+          hashJti(req.auth!.jti, jwtSecret),
+        );
       }
 
       res.status(200).json({ success: true });
