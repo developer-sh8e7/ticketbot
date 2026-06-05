@@ -360,3 +360,51 @@ https://YOUR-APP.onrender.com/health
 The app also responds to `/healthz` with the same lightweight `ok` response if your Render service already uses that path.
 
 After deployment, use UptimeRobot or cron-job.org to ping the `/health` URL every 5 minutes. Render Free Web Services sleep after 15 minutes without inbound HTTP traffic, and this health route is intentionally lightweight: it only returns `ok`.
+
+## Mediator Verification Website
+
+The mediator verification website is served from `src/web/server.ts` and is ready for Vercel.
+
+Vercel routes:
+
+```text
+/
+/auth/discord
+/api/auth/discord/callback
+/api/status
+/api/send-otp
+/api/verify-otp
+```
+
+Before deploying the website, run this SQL file in Supabase SQL Editor:
+
+```text
+supabase/mediator_verification.sql
+```
+
+Vercel Environment Variables:
+
+```text
+DISCORD_TOKEN
+DISCORD_CLIENT_ID
+DISCORD_CLIENT_SECRET
+DISCORD_REDIRECT_URI=https://stb-arab.vercel.app/api/auth/discord/callback
+SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY
+STAFF_ROLE_ID
+TWILIO_ACCOUNT_SID
+TWILIO_AUTH_TOKEN
+TWILIO_WHATSAPP_NUMBER
+TWILIO_CONTENT_SID
+WEBSITE_URL=https://stb-arab.vercel.app/
+VERIFICATION_WEBHOOK_URL
+SESSION_SECRET
+JWT_SECRET
+```
+
+Local web commands:
+
+```bash
+npm run dev:web
+npm run start:web
+```

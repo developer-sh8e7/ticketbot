@@ -1,5 +1,7 @@
 import {
   ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   EmbedBuilder,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
@@ -7,6 +9,7 @@ import {
   type Guild,
 } from 'discord.js';
 import type { AppConfig } from '../types/config.js';
+import { APPLY_MEDIATOR } from '../constants/customIds.js';
 import { hexToDecimal } from '../utils/color.js';
 import { componentEmojiFromId } from '../utils/emoji.js';
 
@@ -19,7 +22,7 @@ export async function buildPanelEmbeds(config: AppConfig, guild: Guild): Promise
   return [introEmbed];
 }
 
-export function buildPanelComponents(config: AppConfig): ActionRowBuilder<StringSelectMenuBuilder>[] {
+export function buildPanelComponents(config: AppConfig): ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>[] {
   const enabledCategories = config.categories.filter((category) => category.enabled);
 
   const menu = new StringSelectMenuBuilder()
@@ -41,7 +44,16 @@ export function buildPanelComponents(config: AppConfig): ActionRowBuilder<String
       }),
     );
 
-  return [new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu)];
+  const mediatorButton = new ButtonBuilder()
+    .setCustomId(APPLY_MEDIATOR)
+    .setLabel('التقديم على رتبة وسيط')
+    .setStyle(ButtonStyle.Secondary)
+    .setEmoji('🛡️');
+
+  return [
+    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(mediatorButton),
+  ];
 }
 
 export interface ResolvedPanelChannel {

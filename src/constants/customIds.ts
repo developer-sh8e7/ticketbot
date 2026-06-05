@@ -1,6 +1,7 @@
 export const OPEN_TICKET_MODAL_PREFIX = 'ticket:modal:open:';
 export const ADD_MEMBER_MODAL_ID = 'ticket:modal:add-member';
 export const REMOVE_MEMBER_MODAL_ID = 'ticket:modal:remove-member';
+export const APPLY_MEDIATOR = 'apply_mediator_role';
 
 export const TICKET_BUTTON_IDS = {
   close: 'ticket:btn:close',

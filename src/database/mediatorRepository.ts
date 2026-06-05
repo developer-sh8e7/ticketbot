@@ -36,6 +36,31 @@ export interface MediatorHistoryRecord {
   created_at: string;
 }
 
+export interface MediatorVerificationRecord {
+  id: string;
+  discord_id: string;
+  discord_username: string;
+  discord_display_name: string | null;
+  phone_hash: string | null;
+  is_fully_verified: boolean;
+  verification_token: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: string;
+  verified_at: string | null;
+}
+
+export interface VerificationStatus {
+  isFullyVerified: boolean;
+  verifiedAt: string | null;
+}
+
+export interface ValidOtpRecord {
+  id: string;
+  otp_hash: string;
+  attempts: number;
+}
+
 // In-memory fallback storage
 const inMemoryMediators = new Map<string, MediatorRecord>();
 const inMemoryHistory: MediatorHistoryRecord[] = [];
@@ -280,5 +305,215 @@ export class MediatorRepository {
       console.error(`[MediatorRepository] Exception in listHistory:`, err);
       return inMemoryHistory.slice().reverse();
     }
+  }
+
+  public async checkVerificationStatus(discordId: string): Promise<VerificationStatus | null> {
+    const { data, error } = await this.supabase
+      .from('mediator_verification')
+      .select('is_fully_verified, verified_at')
+      .eq('discord_id', discordId)
+      .maybeSingle();
+
+    if (error) {
+      this.handleDbError(error, `checkVerificationStatus (${discordId})`);
+      return null;
+    }
+
+    if (!data) return null;
+    return {
+      isFullyVerified: Boolean(data.is_fully_verified),
+      verifiedAt: data.verified_at ?? null,
+    };
+  }
+
+  public async upsertUser(
+    discordId: string,
+    username: string,
+    displayName: string | null,
+    ipAddress: string,
+    userAgent: string,
+  ): Promise<void> {
+    const { error } = await this.supabase
+      .from('mediator_verification')
+      .upsert({
+        discord_id: discordId,
+        discord_username: username,
+        discord_display_name: displayName,
+        ip_address: ipAddress,
+        user_agent: userAgent,
+      }, { onConflict: 'discord_id' });
+
+    if (error) {
+      this.handleDbError(error, `upsertUser (${discordId})`);
+    }
+  }
+
+  public async setVerificationToken(discordId: string, token: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('mediator_verification')
+      .update({ verification_token: token })
+      .eq('discord_id', discordId);
+
+    if (error) {
+      this.handleDbError(error, `setVerificationToken (${discordId})`);
+    }
+  }
+
+  public async updatePhoneVerified(discordId: string, phoneHash: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('mediator_verification')
+      .update({
+        phone_hash: phoneHash,
+        is_fully_verified: true,
+        verified_at: new Date().toISOString(),
+      })
+      .eq('discord_id', discordId);
+
+    if (error) {
+      this.handleDbError(error, `updatePhoneVerified (${discordId})`);
+    }
+  }
+
+  public async isPhoneHashTaken(phoneHash: string): Promise<boolean> {
+    const { data, error } = await this.supabase
+      .from('mediator_verification')
+      .select('discord_id')
+      .eq('phone_hash', phoneHash)
+      .maybeSingle();
+
+    if (error) {
+      this.handleDbError(error, 'isPhoneHashTaken');
+      return false;
+    }
+
+    return Boolean(data);
+  }
+
+  public async saveOtp(phoneHash: string, otpHash: string, discordId: string, expiresAt: Date): Promise<void> {
+    const { error } = await this.supabase
+      .from('mediator_otp_records')
+      .insert({
+        phone_hash: phoneHash,
+        otp_hash: otpHash,
+        discord_id: discordId,
+        expires_at: expiresAt.toISOString(),
+      });
+
+    if (error) {
+      this.handleDbError(error, `saveOtp (${discordId})`);
+    }
+  }
+
+  public async getValidOtp(phoneHash: string): Promise<ValidOtpRecord | null> {
+    const { data, error } = await this.supabase
+      .from('mediator_otp_records')
+      .select('id, otp_hash, attempts')
+      .eq('phone_hash', phoneHash)
+      .eq('used', false)
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      this.handleDbError(error, 'getValidOtp');
+      return null;
+    }
+
+    return data as ValidOtpRecord | null;
+  }
+
+  public async incrementAttempts(otpId: string): Promise<void> {
+    const { data, error: fetchError } = await this.supabase
+      .from('mediator_otp_records')
+      .select('attempts')
+      .eq('id', otpId)
+      .maybeSingle();
+
+    if (fetchError) {
+      this.handleDbError(fetchError, `incrementAttempts fetch (${otpId})`);
+      return;
+    }
+
+    const attempts = Number(data?.attempts ?? 0) + 1;
+    const { error } = await this.supabase
+      .from('mediator_otp_records')
+      .update({ attempts })
+      .eq('id', otpId);
+
+    if (error) {
+      this.handleDbError(error, `incrementAttempts (${otpId})`);
+    }
+  }
+
+  public async markOtpUsed(otpId: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('mediator_otp_records')
+      .update({ used: true })
+      .eq('id', otpId);
+
+    if (error) {
+      this.handleDbError(error, `markOtpUsed (${otpId})`);
+    }
+  }
+
+  public async getUserInfo(discordId: string): Promise<MediatorVerificationRecord | null> {
+    const { data, error } = await this.supabase
+      .from('mediator_verification')
+      .select('*')
+      .eq('discord_id', discordId)
+      .maybeSingle();
+
+    if (error) {
+      this.handleDbError(error, `getUserInfo (${discordId})`);
+      return null;
+    }
+
+    return data as MediatorVerificationRecord | null;
+  }
+
+  public async getUserByToken(token: string): Promise<MediatorVerificationRecord | null> {
+    const { data, error } = await this.supabase
+      .from('mediator_verification')
+      .select('*')
+      .eq('verification_token', token)
+      .maybeSingle();
+
+    if (error) {
+      this.handleDbError(error, 'getUserByToken');
+      return null;
+    }
+
+    return data as MediatorVerificationRecord | null;
+  }
+
+  public async logRateLimit(ipAddress: string, endpoint: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('rate_limit_log')
+      .insert({
+        ip_address: ipAddress,
+        endpoint,
+      });
+
+    if (error) {
+      this.handleDbError(error, `logRateLimit (${endpoint})`);
+    }
+  }
+
+  public async getRateLimitCount(ipAddress: string, endpoint: string, windowMs: number): Promise<number> {
+    const since = new Date(Date.now() - windowMs).toISOString();
+    const { count, error } = await this.supabase
+      .from('rate_limit_log')
+      .select('id', { count: 'exact', head: true })
+      .eq('ip_address', ipAddress)
+      .eq('endpoint', endpoint)
+      .gte('hit_at', since);
+
+    if (error) {
+      this.handleDbError(error, `getRateLimitCount (${endpoint})`);
+      return 0;
+    }
+
+    return count ?? 0;
   }
 }

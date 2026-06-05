@@ -22,6 +22,7 @@ const envSchema = z.object({
   VERIFICATION_WEBHOOK_URL: z.string().url().optional(),
   SESSION_SECRET: z.string().min(64).optional(),
   JWT_SECRET: z.string().min(64).optional(),
+  WEB_PORT: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -53,5 +54,6 @@ export function loadEnv(): Env {
     VERIFICATION_WEBHOOK_URL: optionalEnv(process.env.VERIFICATION_WEBHOOK_URL),
     SESSION_SECRET: optionalEnv(process.env.SESSION_SECRET),
     JWT_SECRET: optionalEnv(process.env.JWT_SECRET),
+    WEB_PORT: optionalEnv(process.env.WEB_PORT),
   });
 }

@@ -14,7 +14,7 @@ import {
   type VoiceState,
 } from 'discord.js';
 import { registerCommands } from './commands/registerCommands.js';
-import { ADD_MEMBER_MODAL_ID, REMOVE_MEMBER_MODAL_ID, TICKET_BUTTON_IDS, isOpenTicketModal, isAuthorizedAdmin } from './constants/customIds.js';
+import { ADD_MEMBER_MODAL_ID, APPLY_MEDIATOR, REMOVE_MEMBER_MODAL_ID, TICKET_BUTTON_IDS, isOpenTicketModal, isAuthorizedAdmin } from './constants/customIds.js';
 import { createSupabaseClient } from './database/supabase.js';
 import { InfrastructureRepository } from './database/infrastructureRepository.js';
 import { TicketRepository } from './database/ticketRepository.js';
@@ -38,6 +38,7 @@ import { SecurityService } from './services/securityService.js';
 import { WelcomeService } from './services/welcomeService.js';
 import { MediatorRepository } from './database/mediatorRepository.js';
 import { MediatorService } from './services/mediatorService.js';
+import { MediatorApplicationHandler } from './handlers/mediatorApplicationHandler.js';
 import { activityTypeFromName } from './utils/discord.js';
 import { consumeLifecycleErrors, isInteractionLifecycleError, safeDeferReply, safeEditReply, safeReply } from './utils/interaction.js';
 import { logger } from './utils/logger.js';
@@ -69,6 +70,7 @@ const ticketService = new TicketService({
   mediatorRepository,
 });
 const mediatorService = new MediatorService(configStore, mediatorRepository, complaintRepository);
+const mediatorApplicationHandler = new MediatorApplicationHandler(mediatorRepository, configStore, env);
 const complaintService = new ComplaintService(configStore, complaintRepository, ticketRepository, mediatorRepository);
 const aiService = new AIService(
   {
@@ -474,6 +476,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     if (interaction.isButton()) {
+      if (interaction.customId === APPLY_MEDIATOR) {
+        await mediatorApplicationHandler.handle(interaction);
+        trackLifecycleHealth();
+        return;
+      }
+
       const ticketButtonIds = Object.values(TICKET_BUTTON_IDS);
       if (ticketButtonIds.includes(interaction.customId as (typeof ticketButtonIds)[number])) {
         await ticketService.handleTicketButton(interaction);
