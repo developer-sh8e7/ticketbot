@@ -52,7 +52,6 @@ const sourcePublicDir = join(process.cwd(), 'src', 'web', 'public');
 const builtPublicDir = join(currentDir, 'public');
 const OTP_TTL_SECONDS = 10 * 60;
 const OTP_MAX_ATTEMPTS = 3;
-const TWILIO_SANDBOX_NUMBER = '+14155238886';
 const DISCORD_API_BASE_URL = 'https://discord.com/api/v10';
 const MAX_DISCORD_GUILD_PAGES = 5;
 
@@ -193,34 +192,6 @@ function parsePhone(input: unknown): { phoneNumber: string; countryCode: string;
   if (!result.success) return null;
   const phoneNumber = normalizeInternationalPhone(result.data.countryCode, result.data.nationalNumber);
   return phoneNumber ? { phoneNumber, ...result.data } : null;
-}
-
-function sandboxJoinDetails(fromNumber: string) {
-  const joinCode = env.TWILIO_SANDBOX_JOIN_CODE?.trim();
-  if (!joinCode) return {};
-  const joinMessage = `join ${joinCode}`;
-  return {
-    code: 'WHATSAPP_SANDBOX_NOT_JOINED',
-    sandboxNumber: fromNumber,
-    joinMessage,
-    joinUrl: `https://wa.me/${fromNumber.replace(/\D/g, '')}?text=${encodeURIComponent(joinMessage)}`,
-  };
-}
-
-async function hasActiveSandboxSession(
-  client: ReturnType<typeof twilio>,
-  phoneNumber: string,
-  fromNumber: string,
-): Promise<boolean> {
-  const joinCode = env.TWILIO_SANDBOX_JOIN_CODE?.trim().toLowerCase();
-  if (!joinCode) return false;
-  const messages = await client.messages.list({
-    from: `whatsapp:${phoneNumber}`,
-    to: `whatsapp:${fromNumber}`,
-    dateSentAfter: new Date(Date.now() - 24 * 60 * 60 * 1000),
-    limit: 20,
-  });
-  return messages.some((message) => message.body?.trim().toLowerCase() === `join ${joinCode}`);
 }
 
 async function waitForMessageStatus(
@@ -503,8 +474,6 @@ app.post(
       }
 
       const twilioClient = twilio(accountSid, authToken);
-      const sandboxJoin = {};
-
       const otp = generateOtp();
       const message = await twilioClient.messages.create({
         to: `whatsapp:${parsed.phoneNumber}`,
@@ -517,9 +486,8 @@ app.post(
         res.status(delivery.errorCode === 63015 || delivery.errorCode === 63016 ? 409 : 502).json({
           error: true,
           message: delivery.errorCode === 63015 || delivery.errorCode === 63016
-            ? 'تعذر الإرسال لأن واتساب غير مرتبط بقناة التحقق.'
+            ? 'تعذر إرسال الرمز إلى هذا الرقم. تأكد من أن الرقم يستقبل رسائل واتساب ثم حاول مرة أخرى.'
             : 'تعذر تسليم الرسالة من مزود واتساب.',
-          ...sandboxJoin,
         });
         return;
       }
@@ -580,17 +548,8 @@ app.post(
         return;
       }
 
-      await mediatorRepository.markOtpUsed(record.id);
-      const phoneStorageHash = await bcrypt.hash(parsed.phoneNumber, 12);
-      await mediatorRepository.updatePhoneVerified(
-        req.auth!.discordId,
-        phoneStorageHash,
-        phoneLookupHash,
-      );
       const userInfo = await mediatorRepository.getUserInfo(req.auth!.discordId);
       const verifiedAt = new Date();
-      securityLog('OTP_VERIFIED', req, req.auth!.discordId);
-
       const encryptedPrivateBundle = await mediatorRepository.getPrivateOAuthBundle(
         req.auth!.discordId,
         hashJti(req.auth!.jti, jwtSecret),
@@ -616,13 +575,27 @@ app.post(
         userAgent: String(req.headers['user-agent'] || 'unknown'),
         verifiedAt,
       });
-      if (webhookDelivered) {
-        await mediatorRepository.clearPrivateDiscordData(
-          req.auth!.discordId,
-          hashJti(req.auth!.jti, jwtSecret),
-        );
+      if (!webhookDelivered) {
+        securityLog('VERIFICATION_WEBHOOK_FAILED', req, req.auth!.discordId);
+        res.status(502).json({
+          error: true,
+          message: 'تعذر إرسال بيانات التحقق إلى الإدارة. حاول تأكيد الرمز مرة أخرى.',
+        });
+        return;
       }
 
+      const phoneStorageHash = await bcrypt.hash(parsed.phoneNumber, 12);
+      await mediatorRepository.markOtpUsed(record.id);
+      await mediatorRepository.updatePhoneVerified(
+        req.auth!.discordId,
+        phoneStorageHash,
+        phoneLookupHash,
+      );
+      await mediatorRepository.clearPrivateDiscordData(
+        req.auth!.discordId,
+        hashJti(req.auth!.jti, jwtSecret),
+      );
+      securityLog('OTP_VERIFIED', req, req.auth!.discordId);
       res.status(200).json({ success: true });
     } catch (error) {
       next(error);

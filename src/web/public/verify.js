@@ -19,6 +19,7 @@ const els = {
   country: document.getElementById("country"),
   phone: document.getElementById("phone"),
   phoneControl: document.getElementById("phone-control"),
+  phoneValidity: document.getElementById("phone-validity"),
   sendOtp: document.getElementById("send-otp"),
   sendMessage: document.getElementById("send-message"),
   otpSection: document.getElementById("otp-section"),
@@ -116,9 +117,12 @@ function phonePayload() {
 
 function validatePhoneField() {
   const length = phonePayload().nationalNumber.length;
-  els.phoneControl.classList.toggle("valid", length >= 7 && length <= 15);
-  els.phoneControl.classList.toggle("invalid", length > 0 && (length < 7 || length > 15));
-  return length >= 7 && length <= 15;
+  const isValid = length >= 7 && length <= 15;
+  const isInvalid = length > 0 && !isValid;
+  els.phoneControl.classList.toggle("valid", isValid);
+  els.phoneControl.classList.toggle("invalid", isInvalid);
+  els.phoneValidity.className = "fa-solid validity" + (isValid ? " fa-circle-check" : isInvalid ? " fa-circle-exclamation" : "");
+  return isValid;
 }
 
 function otpValue() {
@@ -213,7 +217,7 @@ async function loadStatus() {
 async function sendOtp(button) {
   setMessage(els.sendMessage, "", "");
   if (!validatePhoneField()) {
-    setMessage(els.sendMessage, "اختر الدولة واكتب رقم الواتساب الصحيح بدون مفتاح الدولة.", "error");
+    setMessage(els.sendMessage, "اختر الدولة واكتب رقم واتساب الصحيح بدون مفتاح الدولة.", "error");
     return;
   }
   try {

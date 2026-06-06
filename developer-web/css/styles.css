@@ -552,7 +552,11 @@ html[dir="rtl"] .header-lang__dropdown {
 }
 
 .header-discord__icon {
-  display: block;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
   transform-origin: center center;
 }
 
@@ -4385,6 +4389,7 @@ button.style-tile.style-tile--pick:focus-visible {
 
 .wiki-home__join-icon {
   flex-shrink: 0;
+  font-size: 20px;
   opacity: 0.95;
 }
 
@@ -15369,13 +15374,8 @@ body {
   background: rgba(88, 101, 242, 0.11);
   color: #8d97ff;
 }
-.mediator-application-card__icon svg {
-  width: 34px;
-  height: 34px;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.mediator-application-card__icon i {
+  font-size: 30px;
 }
 
 .mediator-application-card__content { min-width: 0; }
@@ -15444,14 +15444,9 @@ body {
   font-weight: 800;
   transition: transform 180ms ease, background-color 180ms ease, opacity 180ms ease;
 }
-.mediator-application-card__button svg {
-  width: 18px;
-  height: 18px;
+.mediator-application-card__button i {
+  font-size: 15px;
   margin-right: 8px;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
 }
 .mediator-application-card__button:hover {
   color: #fff;
@@ -15474,9 +15469,8 @@ body {
     width: 52px;
     height: 52px;
   }
-  .mediator-application-card__icon svg {
-    width: 28px;
-    height: 28px;
+  .mediator-application-card__icon i {
+    font-size: 25px;
   }
   .mediator-application-card__heading {
     display: grid;

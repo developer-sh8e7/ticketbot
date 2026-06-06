@@ -157,8 +157,8 @@ export function buildSecurityMiddleware(env: Env) {
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],
-        styleSrc: ["'self'", 'https://fonts.googleapis.com'],
-        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        styleSrc: ["'self'", 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'],
         connectSrc: ["'self'"],
         imgSrc: ["'self'", 'data:', 'https://cdn.discordapp.com'],
         frameSrc: ["'none'"],

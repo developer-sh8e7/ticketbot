@@ -339,7 +339,6 @@ Required Environment Variables:
 | `TWILIO_AUTH_TOKEN` | Twilio auth token |
 | `TWILIO_WHATSAPP_NUMBER` | Twilio WhatsApp sender number |
 | `TWILIO_CONTENT_SID` | Twilio content template SID, if using templates |
-| `TWILIO_SANDBOX_JOIN_CODE` | Twilio Sandbox join code, without the `join` word |
 | `WEBSITE_URL` | `https://stb-arab.vercel.app/` |
 | `VERIFICATION_WEBHOOK_URL` | Discord webhook URL for verification logs |
 | `SESSION_SECRET` | Random 64+ character secret |
@@ -404,7 +403,6 @@ TWILIO_ACCOUNT_SID
 TWILIO_AUTH_TOKEN
 TWILIO_WHATSAPP_NUMBER
 TWILIO_CONTENT_SID
-TWILIO_SANDBOX_JOIN_CODE
 WEBSITE_URL=https://stb-arab.vercel.app
 VERIFY_URL=https://stb-arab.vercel.app/verify
 VERIFICATION_WEBHOOK_URL
@@ -435,10 +433,9 @@ Completing Discord and WhatsApp verification only makes the applicant eligible
 to open a mediator application ticket. The mediator role is granted only when
 an authorized staff member explicitly accepts the application in Discord.
 
-When the shared Twilio WhatsApp Sandbox number is used, each recipient must join
-the Sandbox before receiving an OTP. The website detects this state and opens a
-pre-filled WhatsApp join message. A production WhatsApp sender removes this
-Sandbox-only requirement.
+Use an approved production WhatsApp sender for OTP delivery to applicants.
+Twilio Sandbox senders are intended for development and do not deliver to
+arbitrary recipients.
 
 Local web commands:
 

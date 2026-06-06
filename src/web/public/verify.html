@@ -9,10 +9,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome 6 for Premium Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/verify.css?v=20260605-2">
-    <script src="/verify.js?v=20260605-2" defer></script>
+    <link rel="stylesheet" href="/verify.css?v=20260606-1">
+    <script src="/verify.js?v=20260606-1" defer></script>
   </head>
   <body>
     <div class="mesh" aria-hidden="true"></div>
@@ -24,7 +23,7 @@
           </a>
           <div>
             <p class="eyebrow">STB ARAB</p>
-            <h1 id="page-title">بوابة تقديم الوسطاء</h1>
+            <h1 id="page-title">تقديم الوسطاء</h1>
           </div>
           <span class="secure-mark" title="اتصال آمن">
             <i class="fa-solid fa-lock"></i>
@@ -43,8 +42,8 @@
           <div id="progress-phone" class="progress-step">
             <div class="progress-ring"><span>2</span></div>
             <div>
-              <strong>تأكيد الواتساب</strong>
-              <small>تأكيد الرقم</small>
+              <strong>رمز التحقق</strong>
+              <small>إرسال الرمز فقط</small>
             </div>
           </div>
         </div>
@@ -66,10 +65,6 @@
             <h2>ربط حساب الديسكورد</h2>
             <p>للتحقق من هويتك كمتقدم على رتبة وسيط</p>
           </div>
-          <div class="security-note">
-            <i class="fa-solid fa-shield-halved"></i>
-            <p>بالمتابعة تسمح بقراءة معلومات حساب Discord والبريد الإلكتروني وعدد وأسماء السيرفرات، وإرسالها إلى سجل إدارة التحقق فقط. لا يتم حفظ توكن Discord.</p>
-          </div>
           <a class="primary-button discord-button" href="/auth/discord">
             <i class="fa-brands fa-discord"></i>
             ربط حسابي بالديسكورد
@@ -83,19 +78,19 @@
             <span id="welcome-label"></span>
           </div>
           <div class="view-heading">
-            <h2>تأكيد رقم الواتساب</h2>
-            <p>سيصلك رمز تحقق مكوّن من 6 أرقام</p>
+            <h2>استلام رمز التحقق</h2>
+            <p>اكتب رقم واتساب الصحيح وسيصلك رمز مكوّن من 6 أرقام.</p>
           </div>
 
           <div class="form-stack">
-            <label class="field-label" for="phone">رقم الواتساب</label>
+            <label class="field-label" for="phone">رقم واتساب</label>
             <div id="phone-control" class="phone-control">
               <div class="country-select">
                 <i class="fa-solid fa-globe"></i>
                 <select id="country" aria-label="الدولة"></select>
               </div>
               <input id="phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="5XXXXXXXX">
-              <span id="phone-validity" class="validity" aria-hidden="true"></span>
+              <i id="phone-validity" class="fa-solid validity" aria-hidden="true"></i>
             </div>
             <button id="send-otp" class="primary-button" type="button">
               <span class="button-label">إرسال رمز التحقق</span>
