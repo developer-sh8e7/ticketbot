@@ -698,6 +698,10 @@
     var san = sanitizeLangCode(code) || defaultLangCode();
     var meta = getLangMeta(san);
     if (!meta || meta.live === false) san = defaultLangCode();
+    if (san === "en") {
+      STBARAB_I18N_TREE = null;
+      return Promise.resolve(null);
+    }
     return fetch(dataJsonUrl("translations/" + san + ".json"))
       .then(function (r) {
         return r.ok ? r.json() : null;
