@@ -250,6 +250,20 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
     return;
   }
 
+  if (interaction.commandName === 'restore-panel') {
+    if (!interaction.inCachedGuild()) {
+      await safeReply(interaction, [buildErrorEmbed(configStore.current, 'هذا الأمر يعمل داخل السيرفر فقط.')]);
+      return;
+    }
+
+    if (!(await safeDeferReply(interaction, interaction.commandName))) {
+      return;
+    }
+
+    await ticketService.restoreTicketPanel(interaction);
+    return;
+  }
+
   if (interaction.commandName === 'clear') {
     if (!interaction.inCachedGuild()) {
       await safeReply(interaction, [buildErrorEmbed(configStore.current, 'هذا الأمر يعمل داخل السيرفر فقط.')]);
@@ -391,6 +405,16 @@ client.once(Events.ClientReady, async (readyClient) => {
     logger.info('Infrastructure verified / created successfully.');
   } catch (error) {
     logger.error('Failed to setup infrastructure', error instanceof Error ? error.message : error);
+  }
+
+  try {
+    const guild = await readyClient.guilds.fetch(config.guild.id);
+    const removed = await ticketService.cleanupStaleOpenTickets(guild);
+    if (removed > 0) {
+      logger.warn(`Removed ${removed} stale open ticket record(s) during startup.`);
+    }
+  } catch (error) {
+    logger.error('Failed to clean stale open ticket records', error instanceof Error ? error.message : error);
   }
 
   try {

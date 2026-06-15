@@ -67,6 +67,12 @@ export function buildCommandDefinitions(config: AppConfig) {
 
   commands.push(
     new SlashCommandBuilder()
+      .setName('restore-panel')
+      .setDescription('إعادة لوحة التحكم داخل التذكرة الحالية إذا اختفت.') as SlashCommandBuilder,
+  );
+
+  commands.push(
+    new SlashCommandBuilder()
       .setName('clear')
       .setDescription('Delete all messages sent by a specific user id across the server.')
       .addStringOption((option) =>

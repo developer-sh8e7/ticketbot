@@ -14,6 +14,7 @@ import {
   type ChatInputCommandInteraction,
   type Guild,
   type GuildMember,
+  type Message,
   type ModalSubmitInteraction,
   type StringSelectMenuInteraction,
   type TextChannel,
@@ -93,6 +94,19 @@ export class TicketService {
 
   private get config(): AppConfig {
     return this.configStore.current;
+  }
+
+  private isTicketControlMessage(message: Message): boolean {
+    return (
+      message.author.id === message.client.user.id &&
+      message.components.some(
+        (row) =>
+          'components' in row &&
+          row.components.some(
+            (component) => 'customId' in component && component.customId === TICKET_BUTTON_IDS.close,
+          ),
+      )
+    );
   }
 
   private getEnabledCategory(categoryKey: string): TicketCategoryConfig | undefined {
@@ -361,6 +375,118 @@ export class TicketService {
     return this.ticketRepository.findOpenByCreator(guildId, userId);
   }
 
+  public async cleanupStaleOpenTickets(guild: Guild): Promise<number> {
+    const openTickets = await this.ticketRepository.findOpenTickets(guild.id);
+    if (openTickets.length === 0) {
+      logger.info('Startup ticket cleanup: no open ticket records found.');
+      return 0;
+    }
+
+    const channels = await guild.channels.fetch();
+    const staleTickets = openTickets.filter(
+      (ticket) => !ticket.channel_id || !channels.has(ticket.channel_id),
+    );
+
+    let removed = 0;
+    for (const ticket of staleTickets) {
+      try {
+        await this.ticketRepository.deleteTicketById(ticket.id);
+        removed += 1;
+        logger.warn(
+          `Startup ticket cleanup removed stale ticket #${ticket.ticket_number} ` +
+          `(creator=${ticket.creator_id}, channel=${ticket.channel_id ?? 'missing'}).`,
+        );
+      } catch (error) {
+        logger.error(
+          `Startup ticket cleanup failed to remove ticket #${ticket.ticket_number}.`,
+          error instanceof Error ? error.message : error,
+        );
+      }
+    }
+
+    logger.info(
+      `Startup ticket cleanup complete: checked=${openTickets.length}, stale=${staleTickets.length}, removed=${removed}.`,
+    );
+    return removed;
+  }
+
+  public async restoreTicketPanel(interaction: ChatInputCommandInteraction): Promise<void> {
+    if (!interaction.inCachedGuild() || !interaction.channel) {
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'هذا الأمر يعمل داخل تذكرة مفتوحة فقط.')]);
+      return;
+    }
+
+    const ticket = await this.ticketRepository.findByChannelId(interaction.channelId);
+    if (!ticket || ticket.status !== 'open' || !ticket.channel_id) {
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'هذه القناة ليست تذكرة مفتوحة مسجلة.')]);
+      return;
+    }
+
+    const channel = await interaction.guild.channels.fetch(ticket.channel_id).catch(() => null);
+    if (!isGuildTextChannelType(channel) || channel.type !== ChannelType.GuildText) {
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'لم يتم العثور على قناة التذكرة.')]);
+      return;
+    }
+
+    const member = interaction.member as GuildMember;
+    if (ticket.creator_id !== interaction.user.id && !canManageTicket(member, this.config)) {
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, this.config.ticket.messages.noPermission)]);
+      return;
+    }
+
+    const embeds = await buildTicketEmbeds(interaction.guild, this.config, ticket);
+    const components = buildTicketActionRows(this.config, ticket.claimed_by !== null);
+    const storedPanelId =
+      typeof ticket.metadata.control_message_id === 'string'
+        ? ticket.metadata.control_message_id
+        : null;
+    const storedMessage = storedPanelId
+      ? await channel.messages.fetch(storedPanelId).catch(() => null)
+      : null;
+    const storedPanel = storedMessage && this.isTicketControlMessage(storedMessage)
+      ? storedMessage
+      : null;
+    const recentMessages = storedPanel
+      ? null
+      : await channel.messages.fetch({ limit: 100 }).catch(() => null);
+    const existingPanel = storedPanel ?? recentMessages?.find(
+      (message) => this.isTicketControlMessage(message),
+    );
+
+    const refreshedPanel = existingPanel
+      ? await existingPanel.edit({ embeds, components }).catch(() => null)
+      : null;
+    const panelMessage = refreshedPanel ?? await channel.send({
+      embeds,
+      components,
+      allowedMentions: { parse: [] },
+    });
+
+    if (this.config.limits.pinSummaryMessageOnCreate && !panelMessage.pinned) {
+      await panelMessage.pin().catch(() => null);
+    }
+
+    await this.ticketRepository.updateMetadata(ticket.channel_id, {
+      ...ticket.metadata,
+      control_message_id: panelMessage.id,
+      control_message_restored_at: new Date().toISOString(),
+      control_message_restored_by: interaction.user.id,
+    }).catch((error) => {
+      logger.warn(
+        `Failed to save restored panel metadata for ticket #${ticket.ticket_number}.`,
+        error instanceof Error ? error.message : error,
+      );
+    });
+
+    await safeEditReply(interaction, [
+      buildSuccessEmbed(
+        this.config,
+        refreshedPanel ? 'تم تحديث لوحة التذكرة' : 'تمت إعادة لوحة التذكرة',
+        `لوحة التحكم جاهزة الآن: ${panelMessage.url}`,
+      ),
+    ]);
+  }
+
   public async handleOpenSelect(interaction: StringSelectMenuInteraction): Promise<void> {
     if (!interaction.inCachedGuild()) {
       await safeReply(interaction, [buildErrorEmbed(this.config, 'This action only works inside the guild.')]);
@@ -552,6 +678,18 @@ export class TicketService {
             users: [interaction.user.id],
             roles: uniqueStrings(validMentions),
           },
+        });
+
+        await this.ticketRepository.updateMetadata(created.id, {
+          ...createdTicket.metadata,
+          control_message_id: sentMessage.id,
+        }).then((updatedTicket) => {
+          createdTicket = updatedTicket;
+        }).catch((error) => {
+          logger.warn(
+            `Failed to save control message id for ticket #${createdTicket?.ticket_number ?? ticketNumber}.`,
+            error instanceof Error ? error.message : error,
+          );
         });
 
         if (this.config.limits.pinSummaryMessageOnCreate) {
@@ -1845,6 +1983,16 @@ export class TicketService {
           users: [ticket.creator_id],
           roles: [mediatorRoleId],
         },
+      });
+
+      await this.ticketRepository.updateMetadata(created.id, {
+        ...updatedTicket.metadata,
+        control_message_id: sentMessage.id,
+      }).catch((error) => {
+        logger.warn(
+          `Failed to save control message id for transitioned ticket #${updatedTicket.ticket_number}.`,
+          error instanceof Error ? error.message : error,
+        );
       });
 
       if (this.config.limits.pinSummaryMessageOnCreate) {
