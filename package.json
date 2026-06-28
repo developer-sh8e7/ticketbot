@@ -2,24 +2,21 @@
   "name": "opus-solutions",
   "version": "1.0.0",
   "private": true,
-  "description": "Opus Solutions — منصة بيع بوتات ديسكورد كاشتراكات (SaaS). مونوريبو يفصل كل بوت كمنتج مستقل فوق نواة مشتركة، مع طبقة تحكم (orchestrator) تدير بركة التوكنات والتفعيل التلقائي ودورة حياة الاشتراك.",
+  "description": "Opus Solutions — SaaS platform for Discord bot subscriptions.",
   "type": "module",
-  "packageManager": "pnpm@9.0.0",
-  "engines": {
-    "node": ">=20"
-  },
+  "packageManager": "npm@11.10.1",
+  "workspaces": ["apps/*", "packages/*"],
+  "engines": { "node": ">=20" },
   "scripts": {
-    "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck",
-    "dev:ticket": "pnpm --filter @opus/ticket-bot dev",
-    "dev:rooms": "pnpm --filter @opus/voice-rooms-bot dev",
-    "dev:general": "pnpm --filter @opus/general-bot dev",
-    "dev:orchestrator": "pnpm --filter @opus/orchestrator dev",
-    "start:orchestrator": "pnpm --filter @opus/orchestrator start"
+    "build": "npm --workspace @opus/core run build && npm --workspace @opus/ticket-bot run build && npm --workspace @opus/voice-rooms-bot run build && npm --workspace @opus/general-bot run build && npm --workspace @opus/orchestrator run build && npm --workspace @opus/web run build",
+    "smoke:audit": "tsx tests/audit-smoke.ts",
+    "typecheck": "npm --workspace @opus/core run build && npm --workspace @opus/ticket-bot run build && npm --workspace @opus/voice-rooms-bot run build && npm --workspace @opus/general-bot run build && npm --workspace @opus/orchestrator run typecheck && npm --workspace @opus/web run typecheck && npm --workspace @opus/core run typecheck",
+    "dev:web": "npm --workspace @opus/web run dev",
+    "dev:ticket": "npm --workspace @opus/ticket-bot run dev",
+    "dev:rooms": "npm --workspace @opus/voice-rooms-bot run dev",
+    "dev:general": "npm --workspace @opus/general-bot run dev",
+    "dev:orchestrator": "npm --workspace @opus/orchestrator run dev",
+    "start:orchestrator": "npm --workspace @opus/orchestrator run start"
   },
-  "devDependencies": {
-    "typescript": "^5.5.4",
-    "tsx": "^4.16.2",
-    "@types/node": "^20.14.0"
-  }
+  "devDependencies": { "@types/node": "^22.13.10", "tsx": "^4.19.3", "typescript": "^5.8.2" }
 }

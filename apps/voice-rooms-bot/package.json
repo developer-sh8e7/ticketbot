@@ -4,21 +4,15 @@
   "private": true,
   "type": "module",
   "main": "./dist/bot.js",
-  "exports": {
-    ".": "./dist/bot.js"
-  },
-  "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "dev": "tsx watch src/index.ts",
-    "start": "node dist/index.js"
-  },
+  "exports": { ".": "./dist/bot.js" },
+  "scripts": { "build": "tsc -p tsconfig.json", "typecheck": "tsc -p tsconfig.json --noEmit", "dev": "tsx watch src/index.ts", "start": "node dist/index.js" },
   "dependencies": {
-    "@opus/core": "workspace:*",
-    "discord.js": "^14.16.0"
+    "@discordjs/voice": "^0.19.2",
+    "@opus/core": "*",
+    "discord.js": "^14.26.3",
+    "dotenv": "16.4.7",
+    "zod": "3.24.2",
+    "winston": "^3.19.0"
   },
-  "devDependencies": {
-    "typescript": "^5.5.4",
-    "tsx": "^4.16.2"
-  }
+  "devDependencies": { "@types/node": "^22.13.10", "typescript": "^5.8.2", "tsx": "^4.19.3" }
 }

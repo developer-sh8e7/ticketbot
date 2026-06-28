@@ -1,9 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "rootDir": "./src",
-    "outDir": "./dist"
-  },
-  "references": [{ "path": "../../packages/core" }],
-  "include": ["src/**/*.ts"]
+  "compilerOptions": { "rootDir": "./src", "outDir": "./dist" },
+  "include": ["src/bot.ts", "src/index.ts"],
+  "exclude": ["src/legacy/**"]
 }

@@ -128,11 +128,11 @@ export class InstanceManager {
     log.info(`🔴 إيقاف ${id} (${reason})`);
     await bot.stop().catch(() => null);
     this.running.delete(id);
-    await this.supabase
+    const { error } = await this.supabase
       .from('bot_instances')
       .update({ last_stopped_at: new Date().toISOString() })
-      .eq('id', id)
-      .catch?.(() => null);
+      .eq('id', id);
+    if (error) log.warn(`تعذر تحديث وقت إيقاف النسخة ${id}: ${error.message}`);
   }
 
   public get runningCount(): number {

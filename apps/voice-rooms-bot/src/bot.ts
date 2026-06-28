@@ -1,59 +1,67 @@
-import { Client, Events, GatewayIntentBits } from 'discord.js';
-import {
-  createLogger,
-  createSupabaseClient,
-  type BotFactory,
-  type BotRuntimeOptions,
-  type RunningBot,
-} from '@opus/core';
+import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { Client, Events, GatewayIntentBits, Partials } from 'discord.js';
+import { createLogger, type BotFactory, type BotRuntimeOptions, type RunningBot } from '@opus/core';
+import { ConfigStore } from './legacy/services/configStore.js';
+import { TempRoomService } from './legacy/services/tempRoomService.js';
+import { Voice247Service } from './legacy/services/voice247Service.js';
 
 const log = createLogger('voice-rooms-bot');
 
-/**
- * مصنع بوت الغرف الصوتية المؤقتة.
- *
- * ── الخدمات التي تُرحّل إلى هذه الحزمة (انظر MIGRATION_MAP.md) ──
- *   services: tempRoomService, voice247Service
- *
- * الفكرة: عضو يدخل قناة "إنشاء" → ينشئ البوت قناة صوتية مؤقتة يملكها،
- * تُحذف عند فراغها، مع نقل الملكية عند مغادرة المالك.
- */
+/** Voice/TempRooms Bot factory using the original TempRoomService and Voice247Service logic. */
 export const createVoiceRoomsBot: BotFactory = (options: BotRuntimeOptions): RunningBot => {
-  const supabase = createSupabaseClient({
-    SUPABASE_URL: options.supabaseUrl,
-    SUPABASE_SERVICE_ROLE_KEY: options.supabaseServiceRoleKey,
-  });
-
-  const client = new Client({
-    intents: [
-      GatewayIntentBits.Guilds,
-      GatewayIntentBits.GuildVoiceStates,
-      GatewayIntentBits.GuildMembers,
-    ],
-  });
-
-  client.once(Events.ClientReady, async (ready) => {
-    log.info(`🔊 Voice rooms bot ready: ${ready.user.tag} → guild ${options.guildId}`);
-    // TODO(migration): استعادة لوحة التحكم وقنوات الإنشاء من options.config.
-    void supabase;
-  });
-
-  client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
-    if (newState.guild.id !== options.guildId && oldState.guild.id !== options.guildId) return;
-    // TODO(migration): TempRoomService.handleVoiceStateUpdate(oldState, newState)
-  });
-
-  client.on(Events.Error, (err) => log.error(`Voice client error: ${err.message}`));
+  const runtimeDir = join(tmpdir(), 'opus-solutions', options.instanceId);
+  const configPath = join(runtimeDir, `config_${options.guildId}.json`);
+  let client: Client | null = null;
+  let configStore: ConfigStore | null = null;
+  let tempRooms: TempRoomService | null = null;
+  let voice247: Voice247Service | null = null;
 
   return {
     productType: 'voice_rooms',
     instanceId: options.instanceId,
     async start() {
+      mkdirSync(runtimeDir, { recursive: true });
+      writeFileSync(configPath, JSON.stringify(options.config ?? {}, null, 2), 'utf8');
+      configStore = new ConfigStore(configPath);
+      tempRooms = new TempRoomService(configStore);
+      voice247 = new Voice247Service(configStore);
+      client = new Client({
+        intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages],
+        partials: [Partials.Channel, Partials.Message],
+      });
+      client.once(Events.ClientReady, async (ready) => {
+        log.info(`Voice rooms bot ready: ${ready.user.tag} → guild ${options.guildId}`);
+        await tempRooms?.recoverAll(ready).catch((error) => log.error(String(error)));
+        await voice247?.recoverAll(ready).catch((error) => log.error(String(error)));
+      });
+      client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
+        if (oldState.guild.id !== options.guildId && newState.guild.id !== options.guildId) return;
+        await tempRooms?.handleVoiceStateUpdate(oldState, newState).catch((error) => log.error(String(error)));
+        await voice247?.handleVoiceStateUpdate(oldState, newState).catch((error) => log.error(String(error)));
+      });
+      client.on(Events.InteractionCreate, async (interaction) => {
+        if (interaction.guildId !== options.guildId) return;
+        if (!interaction.isButton() && !interaction.isStringSelectMenu() && !interaction.isUserSelectMenu() && !interaction.isModalSubmit() && !interaction.isChatInputCommand()) return;
+        const id = 'customId' in interaction ? interaction.customId : interaction.commandName;
+        if (interaction.isChatInputCommand() && id === 'temp-room') {
+          await tempRooms?.handleSetupCommand(interaction).catch((error) => log.error(String(error)));
+        } else if (interaction.isButton() && tempRooms?.isTempButton(id)) {
+          await tempRooms.handleButton(interaction).catch((error) => log.error(String(error)));
+        } else if ((interaction.isStringSelectMenu() || interaction.isUserSelectMenu()) && tempRooms?.isTempSelect(id)) {
+          await tempRooms.handleSelect(interaction).catch((error) => log.error(String(error)));
+        } else if (interaction.isModalSubmit() && tempRooms?.isTempModal(id)) {
+          await tempRooms.handleModal(interaction).catch((error) => log.error(String(error)));
+        }
+      });
       await client.login(options.token);
       return { botUserId: client.user?.id ?? '' };
     },
     async stop() {
-      await client.destroy();
+      await client?.destroy();
+      client = null;
+      rmSync(runtimeDir, { recursive: true, force: true });
     },
   };
 };

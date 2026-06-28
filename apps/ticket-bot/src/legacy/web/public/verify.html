@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>التحقق من الوسيط | STB Arab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/verify.css?v=20260625-sms3">
+    <script src="/verify.js?v=20260625-sms3" defer></script>
+  </head>
+  <body>
+    <div class="mesh" aria-hidden="true"></div>
+    <main class="shell">
+      <section class="verify-card" aria-labelledby="page-title">
+        <header class="brand-header">
+          <a class="back-link" href="/" aria-label="العودة إلى الموقع">
+            <i class="fa-solid fa-chevron-right"></i>
+          </a>
+          <div>
+            <p class="eyebrow">STB ARAB</p>
+            <h1 id="page-title">تقديم الوسطاء</h1>
+          </div>
+          <span class="secure-mark" title="اتصال آمن">
+            <i class="fa-solid fa-lock"></i>
+          </span>
+        </header>
+
+        <div class="progress-wrap" aria-label="خطوات التحقق">
+          <div id="progress-discord" class="progress-step active">
+            <div class="progress-ring"><span>1</span></div>
+            <div>
+              <strong>ربط الديسكورد</strong>
+              <small>تأكيد الحساب</small>
+            </div>
+          </div>
+          <div id="progress-line" class="progress-line"></div>
+          <div id="progress-phone" class="progress-step">
+            <div class="progress-ring"><span>2</span></div>
+            <div>
+              <strong>رمز التحقق</strong>
+              <small>إرسال الرمز فقط</small>
+            </div>
+          </div>
+        </div>
+
+        <section id="loading-view" class="view active" aria-live="polite">
+          <div class="loading-orb" aria-hidden="true">
+            <i class="fa-solid fa-spinner"></i>
+          </div>
+          <div class="view-heading">
+            <h2>جاري التحقق من الربط</h2>
+            <p>انتظر لحظات، يتم تجهيز خطوة رقم الجوال...</p>
+          </div>
+        </section>
+
+        <section id="closed-view" class="view" aria-live="polite">
+          <div class="state-icon danger" aria-hidden="true">
+            <i class="fa-solid fa-circle-xmark"></i>
+          </div>
+          <h2>التقديم مغلق حالياً</h2>
+          <p>سيتم تفعيل زر التقديم تلقائياً عند توفر مقاعد جديدة.</p>
+          <a class="secondary-link" href="/">العودة إلى الموقع</a>
+        </section>
+
+        <section id="discord-view" class="view">
+          <div class="discord-logo" aria-hidden="true">
+            <i class="fa-brands fa-discord"></i>
+          </div>
+          <div class="view-heading">
+            <h2>ربط حساب الديسكورد</h2>
+            <p>للتحقق من هويتك كمتقدم على رتبة وسيط</p>
+          </div>
+          <a class="primary-button discord-button" href="/auth/discord">
+            <i class="fa-brands fa-discord"></i>
+            ربط حسابي بالديسكورد
+          </a>
+          <div id="oauth-message" class="message" role="alert"></div>
+        </section>
+
+        <section id="phone-view" class="view">
+          <div id="welcome-chip" class="welcome-chip">
+            <i class="fa-solid fa-circle-check"></i>
+            <span id="welcome-label"></span>
+          </div>
+          <div class="view-heading">
+            <h2>استلام رمز التحقق</h2>
+            <p>اكتب رقم الجوال الصحيح وسيصلك رمز مكوّن من 6 أرقام برسالة نصية SMS.</p>
+          </div>
+
+          <div class="form-stack">
+            <label class="field-label" for="phone">رقم الجوال</label>
+            <div id="phone-control" class="phone-control">
+              <div class="country-select">
+                <i class="fa-solid fa-globe"></i>
+                <select id="country" aria-label="الدولة"></select>
+              </div>
+              <input id="phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="5XXXXXXXX">
+              <i id="phone-validity" class="fa-solid validity" aria-hidden="true"></i>
+            </div>
+            <button id="send-otp" class="primary-button" type="button">
+              <span class="button-label">إرسال رمز التحقق</span>
+              <span class="spinner" aria-hidden="true"></span>
+            </button>
+            <div id="send-message" class="message" role="status"></div>
+
+            <div id="otp-section" class="otp-section">
+              <label class="field-label">رمز التحقق</label>
+              <div id="otp-inputs" class="otp-inputs" dir="ltr">
+                <input class="otp-digit" inputmode="numeric" autocomplete="one-time-code" maxlength="1" aria-label="الرقم الأول">
+                <input class="otp-digit" inputmode="numeric" maxlength="1" aria-label="الرقم الثاني">
+                <input class="otp-digit" inputmode="numeric" maxlength="1" aria-label="الرقم الثالث">
+                <input class="otp-digit" inputmode="numeric" maxlength="1" aria-label="الرقم الرابع">
+                <input class="otp-digit" inputmode="numeric" maxlength="1" aria-label="الرقم الخامس">
+                <input class="otp-digit" inputmode="numeric" maxlength="1" aria-label="الرقم السادس">
+              </div>
+
+              <div class="timer-row">
+                <div class="countdown-ring">
+                  <svg viewBox="0 0 46 46" aria-hidden="true">
+                    <circle class="ring-track" cx="23" cy="23" r="19"></circle>
+                    <circle id="ring-progress" class="ring-progress" cx="23" cy="23" r="19"></circle>
+                  </svg>
+                  <span id="ring-time">10:00</span>
+                </div>
+                <div>
+                  <strong>صلاحية الرمز</strong>
+                  <p id="countdown-text">ينتهي خلال 10 دقائق</p>
+                </div>
+              </div>
+
+              <button id="verify-otp" class="primary-button success-button" type="button" disabled>
+                <span class="button-label">تأكيد الرمز</span>
+                <span class="spinner" aria-hidden="true"></span>
+              </button>
+              <div class="resend-row">
+                <span>لم يصلك الرمز؟</span>
+                <button id="resend-otp" type="button" disabled>إعادة الإرسال خلال 10:00</button>
+              </div>
+              <div id="verify-message" class="message" role="status"></div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <section id="success-overlay" class="success-overlay" aria-hidden="true">
+      <div id="confetti" class="confetti" aria-hidden="true"></div>
+      <div class="success-panel">
+        <div class="success-check" aria-hidden="true">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <p class="eyebrow">VERIFICATION COMPLETE</p>
+        <h2>تم التحقق بنجاح!</h2>
+        <p>عد إلى ديسكورد وافتح طلب التقديم. القرار النهائي وقبول الرتبة يتمان من الإدارة.</p>
+        <a class="primary-button" href="/">العودة إلى STB Arab</a>
+      </div>
+    </section>
+  </body>
+</html>

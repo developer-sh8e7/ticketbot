@@ -1,0 +1,578 @@
+import {
+  ChannelType,
+  Collection,
+  EmbedBuilder,
+  PermissionsBitField,
+  type ChatInputCommandInteraction,
+  type Guild,
+  type GuildMember,
+  type Message,
+  type NewsChannel,
+  type TextChannel,
+} from 'discord.js';
+import { buildErrorEmbed, buildSuccessEmbed } from '../builders/ticketBuilder.js';
+import {
+  ARABIC_PROFANITY_PHRASES,
+  ARABIC_PROFANITY_TERMS,
+} from '../data/moderationWordLists.js';
+import type { AppConfig } from '../types/config.js';
+import { hexToDecimal } from '../utils/color.js';
+import { logger } from '../utils/logger.js';
+import { safeEditReply } from '../utils/interaction.js';
+import { ServerLogService } from './serverLogService.js';
+
+const WORD_BOUNDARY_PATTERN = '[^\\p{L}\\p{N}]';
+
+type SecurityViolation = {
+  reason: 'profanity' | 'spam';
+  timeoutMs: number;
+  title: string;
+};
+
+type SecurityLogField = {
+  name: string;
+  value: string;
+  inline?: boolean;
+};
+
+type ClearChannelIssue = {
+  channelId: string;
+  channelName: string;
+  reason: string;
+};
+
+type ClearableTextChannel = TextChannel | NewsChannel;
+
+type ClearMessageSample = {
+  channelId: string;
+  channelName: string;
+  content: string;
+  createdAt: number;
+};
+
+type ClearProgress = {
+  phase: 'scanning' | 'deleting';
+  channelName: string;
+  channelsScanned: number;
+  totalChannels: number;
+  deleted: number;
+  matched: number;
+};
+
+type ClearResult = {
+  deleted: number;
+  deletedRecent: number;
+  deletedOld: number;
+  failed: number;
+  matched: number;
+  scannedMessages: number;
+  channels: number;
+  totalChannels: number;
+  skippedChannels: number;
+  noPermissionChannels: ClearChannelIssue[];
+  failedChannels: ClearChannelIssue[];
+  samples: ClearMessageSample[];
+};
+
+const RECENT_BULK_DELETE_LIMIT_MS = 14 * 24 * 60 * 60 * 1000 - 60_000;
+const CLEAR_PROGRESS_INTERVAL_MS = 2500;
+const CLEAR_DELETE_CHUNK_SIZE = 100;
+const CLEAR_OLD_DELETE_CONCURRENCY = 5;
+const CLEAR_SAMPLE_LIMIT = 8;
+const CLEAR_CHANNEL_CONCURRENCY = 4;
+const SECURITY_TIMEOUT_MS = 0;
+const SPAM_WINDOW_MS = 20 * 1000;
+const SPAM_MESSAGE_LIMIT = 15;
+
+export class SecurityService {
+  private readonly spamMessageTimes = new Map<string, number[]>();
+  private readonly spamCooldownUntil = new Map<string, number>();
+
+  public constructor(
+    private readonly config: AppConfig,
+    private readonly logs: ServerLogService,
+  ) {}
+
+  public async handleMessage(message: Message): Promise<boolean> {
+    if (!message.inGuild() || message.author.bot) return false;
+
+    const violation = this.detectViolation(message.content) ?? this.detectSpam(message);
+    if (!violation) return false;
+
+    let messageDeleted = false;
+    let deleteError: string | null = null;
+    await message.delete().then(() => {
+      messageDeleted = true;
+    }).catch((error) => {
+      deleteError = error instanceof Error ? error.message : 'تعذر حذف الرسالة.';
+      logger.warn('Failed to delete security message', error instanceof Error ? error.message : error);
+    });
+
+    const member = message.member;
+    let timeoutApplied = false;
+    let timeoutError: string | null = null;
+    if (member?.moderatable && violation.timeoutMs > 0) {
+      await member.timeout(violation.timeoutMs, `Security protection: ${violation.reason}`).then(() => {
+        timeoutApplied = true;
+      }).catch((error) => {
+        timeoutError = error instanceof Error ? error.message : 'تعذر تطبيق التايم أوت.';
+        logger.warn('Failed to timeout security user', error instanceof Error ? error.message : error);
+      });
+    } else if (violation.timeoutMs > 0) {
+      timeoutError = 'البوت لا يملك صلاحية تايم أوت على هذا العضو أو رتبة العضو أعلى من البوت.';
+    }
+
+    const action = this.securityActionLabel(violation, timeoutApplied, timeoutError);
+    const fields: SecurityLogField[] = [
+      { name: 'العضو', value: `<@${message.author.id}>\n${message.author.tag}\nID: ${message.author.id}`, inline: true },
+      { name: 'الروم', value: `<#${message.channelId}>`, inline: true },
+      { name: 'السبب', value: this.securityReasonLabel(violation.reason), inline: true },
+      { name: 'الإجراء', value: action, inline: true },
+      { name: 'حالة الحذف', value: messageDeleted ? 'تم حذف الرسالة' : 'تعذر حذف الرسالة', inline: true },
+      { name: 'مدة التايم أوت', value: this.formatDuration(violation.timeoutMs), inline: true },
+      { name: 'آيدي الرسالة', value: message.id, inline: true },
+      { name: 'المحتوى', value: this.trimEmbedValue(message.content || 'بدون محتوى') },
+    ];
+
+    if (deleteError) {
+      fields.push({ name: 'ملاحظة الحذف', value: this.trimEmbedValue(deleteError), inline: false });
+    }
+
+    if (timeoutError) {
+      fields.push({ name: 'ملاحظة التايم أوت', value: this.trimEmbedValue(timeoutError), inline: false });
+    }
+
+    await this.logs.send('security', violation.title, `تم تنفيذ نظام الحماية على رسالة من <@${message.author.id}>.`, fields);
+
+    return true;
+  }
+
+  public async clearUserMessages(interaction: ChatInputCommandInteraction): Promise<void> {
+    if (!interaction.inCachedGuild()) return;
+
+    const allowed = this.canUseClear(interaction.member as GuildMember, interaction.user.id);
+    if (!allowed) {
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'ما عندك صلاحيات كافية.')]);
+      return;
+    }
+
+    const userId = interaction.options.getString('user-id', true).replace(/[<@!>]/g, '').trim();
+    if (!/^\d{16,20}$/.test(userId)) {
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'اكتب كوبي آيدي صحيح للشخص.')]);
+      return;
+    }
+
+    await safeEditReply(interaction, [
+      this.buildClearStatusEmbed('جاري تنظيف الرسائل', `بدأ فحص رومات السيرفر بحثاً عن رسائل <@${userId}>.`),
+    ]);
+
+    let lastProgressAt = 0;
+    const result = await this.deleteMessagesByUser(interaction.guild, userId, async (progress) => {
+      if (Date.now() - lastProgressAt < CLEAR_PROGRESS_INTERVAL_MS) return;
+      lastProgressAt = Date.now();
+      await safeEditReply(interaction, [
+        this.buildClearStatusEmbed(
+          progress.phase === 'scanning' ? 'جاري فحص الرسائل' : 'جاري حذف الرسائل',
+          `الروم الحالي: #${progress.channelName}`,
+          [
+            { name: 'الرومات المفحوصة', value: `${progress.channelsScanned}`, inline: true },
+            { name: 'رسائل مطابقة', value: `${progress.matched}`, inline: true },
+            { name: 'المحذوف الآن', value: `${progress.deleted}`, inline: true },
+            { name: 'التقدم', value: this.renderProgressBar(progress.channelsScanned, progress.totalChannels), inline: false },
+          ],
+        ),
+      ]);
+    });
+
+    await this.logs.send('security', 'تنظيف رسائل عضو', `تم تشغيل أمر /clear على <@${userId}>.`, [
+      { name: 'بواسطة', value: `${interaction.user.tag} (${interaction.user.id})`, inline: true },
+      { name: 'المحذوف', value: `${result.deleted}`, inline: true },
+      { name: 'رسائل مطابقة', value: `${result.matched}`, inline: true },
+      { name: 'فشل حذفها', value: `${result.failed}`, inline: true },
+      { name: 'الرومات المفحوصة', value: `${result.channels}`, inline: true },
+      { name: 'رومات بلا صلاحية', value: `${result.noPermissionChannels.length}`, inline: true },
+      { name: 'تفاصيل', value: this.buildClearDetails(result) },
+      { name: 'عينات من الرسائل', value: this.buildClearSamples(result) },
+    ]);
+
+    const finalEmbed = buildSuccessEmbed(this.config, 'تم التنظيف', `تم حذف ${result.deleted} رسالة من <@${userId}>.`);
+    finalEmbed.addFields(
+      { name: 'رسائل حديثة حذفت دفعة واحدة', value: `${result.deletedRecent}`, inline: true },
+      { name: 'رسائل قديمة حذفت فردي', value: `${result.deletedOld}`, inline: true },
+      { name: 'فشل حذفها', value: `${result.failed}`, inline: true },
+      { name: 'الرومات المفحوصة', value: `${result.channels}`, inline: true },
+      { name: 'الرسائل المفحوصة', value: `${result.scannedMessages}`, inline: true },
+      { name: 'رومات تم تخطيها', value: `${result.skippedChannels}`, inline: true },
+      { name: 'التقدم', value: this.renderProgressBar(result.channels + result.skippedChannels, result.totalChannels), inline: false },
+      { name: 'تفاصيل مهمة', value: this.buildClearDetails(result) },
+      { name: 'عينات من رسائل الشخص', value: this.buildClearSamples(result) },
+    );
+
+    await safeEditReply(interaction, [finalEmbed]);
+  }
+
+  private canUseClear(member: GuildMember, userId: string): boolean {
+    return userId === this.config.roleManagement.ownerId || member.permissions.has(PermissionsBitField.Flags.Administrator);
+  }
+
+  private detectViolation(content: string): SecurityViolation | null {
+    const normalized = this.normalizeContent(content);
+
+    if (this.hasSevereProfanity(normalized)) {
+      return { reason: 'profanity', timeoutMs: SECURITY_TIMEOUT_MS, title: 'حذف قذف صريح' };
+    }
+
+    return null;
+  }
+
+  private detectSpam(message: Message): SecurityViolation | null {
+    const now = Date.now();
+    const cooldownUntil = this.spamCooldownUntil.get(message.author.id) ?? 0;
+    if (cooldownUntil > now) return null;
+
+    const recentTimes = (this.spamMessageTimes.get(message.author.id) ?? []).filter((time) => now - time <= SPAM_WINDOW_MS);
+    recentTimes.push(now);
+    this.spamMessageTimes.set(message.author.id, recentTimes);
+
+    if (recentTimes.length < SPAM_MESSAGE_LIMIT) return null;
+
+    this.spamMessageTimes.set(message.author.id, []);
+    this.spamCooldownUntil.set(message.author.id, now + SPAM_WINDOW_MS);
+    return { reason: 'spam', timeoutMs: SECURITY_TIMEOUT_MS, title: 'حماية السبام' };
+  }
+
+  private hasSevereProfanity(normalized: string): boolean {
+    return this.hasArabicProfanity(normalized);
+  }
+
+  private hasArabicProfanity(normalized: string): boolean {
+    for (const term of ARABIC_PROFANITY_TERMS) {
+      const normalizedTerm = this.normalizeContent(term);
+      if (this.hasStandaloneTerm(normalized, normalizedTerm)) {
+        return true;
+      }
+    }
+
+    for (const phrase of ARABIC_PROFANITY_PHRASES) {
+      const normalizedPhrase = this.normalizeContent(phrase);
+      if (this.hasExactPhrase(normalized, normalizedPhrase)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private hasStandaloneTerm(content: string, term: string): boolean {
+    const pattern = new RegExp(`(?:^|${WORD_BOUNDARY_PATTERN})${this.escapeRegExp(term)}(?=$|${WORD_BOUNDARY_PATTERN})`, 'iu');
+    return pattern.test(content);
+  }
+
+  private hasExactPhrase(content: string, phrase: string): boolean {
+    const pattern = new RegExp(`(?:^|${WORD_BOUNDARY_PATTERN})${this.escapeRegExp(phrase)}(?=$|${WORD_BOUNDARY_PATTERN})`, 'iu');
+    return pattern.test(content);
+  }
+
+  private escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  private securityReasonLabel(reason: SecurityViolation['reason']): string {
+    switch (reason) {
+      case 'profanity':
+        return 'قذف صريح';
+      case 'spam':
+        return 'سبام رسائل';
+      default:
+        return reason;
+    }
+  }
+
+  private securityActionLabel(violation: SecurityViolation, timeoutApplied: boolean, timeoutError: string | null): string {
+    if (violation.reason === 'spam') {
+      return 'حذف الرسالة فقط';
+    }
+
+    if (violation.timeoutMs <= 0) return 'حذف الرسالة فقط';
+    if (timeoutApplied) return 'حذف الرسالة + تايم أوت';
+    if (timeoutError) return 'حذف الرسالة فقط - تعذر التايم أوت';
+    return 'حذف الرسالة فقط';
+  }
+
+  private formatDuration(ms: number): string {
+    if (ms <= 0) return 'لا يوجد';
+
+    const minutes = Math.round(ms / 60_000);
+    if (minutes < 60) return `${minutes} دقيقة`;
+
+    const hours = minutes / 60;
+    return Number.isInteger(hours) ? `${hours} ساعة` : `${minutes} دقيقة`;
+  }
+
+  private normalizeContent(content: string): string {
+    return content
+      .toLowerCase()
+      .normalize('NFKC')
+      .replace(/[\u064B-\u065F\u0670]/g, '')
+      .replace(/[إأآ]/g, 'ا')
+      .replace(/[ى]/g, 'ي')
+      .replace(/[ة]/g, 'ه')
+      .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
+  }
+
+  private async deleteMessagesByUser(
+    guild: Guild,
+    userId: string,
+    onProgress?: (progress: ClearProgress) => Promise<void>,
+  ): Promise<ClearResult> {
+    const channels = await guild.channels.fetch();
+    const textChannels = [...channels.values()].filter((channel): channel is ClearableTextChannel => {
+      return !!channel && (channel.type === ChannelType.GuildText || channel.type === ChannelType.GuildAnnouncement);
+    });
+    const botMember = guild.members.me ?? await guild.members.fetchMe().catch(() => null);
+    const result: ClearResult = {
+      deleted: 0,
+      deletedRecent: 0,
+      deletedOld: 0,
+      failed: 0,
+      matched: 0,
+      scannedMessages: 0,
+      channels: 0,
+      totalChannels: textChannels.length,
+      skippedChannels: 0,
+      noPermissionChannels: [],
+      failedChannels: [],
+      samples: [],
+    };
+
+    if (!botMember) {
+      return {
+        ...result,
+        failedChannels: [{ channelId: guild.id, channelName: guild.name, reason: 'تعذر جلب عضو البوت داخل السيرفر.' }],
+      };
+    }
+
+    const newestBulkDeleteTime = Date.now() - RECENT_BULK_DELETE_LIMIT_MS;
+    let nextChannelIndex = 0;
+
+    const scanChannel = async (channel: ClearableTextChannel): Promise<void> => {
+      const channelName = channel.name ?? channel.id;
+      const permissions = channel.permissionsFor(botMember);
+      const canClear =
+        permissions?.has(PermissionsBitField.Flags.ViewChannel) &&
+        permissions.has(PermissionsBitField.Flags.ReadMessageHistory) &&
+        permissions.has(PermissionsBitField.Flags.ManageMessages);
+
+      if (!canClear) {
+        result.skippedChannels++;
+        result.noPermissionChannels.push({ channelId: channel.id, channelName, reason: 'البوت يحتاج View Channel + Read Message History + Manage Messages.' });
+        return;
+      }
+
+      result.channels++;
+      let before: string | undefined;
+
+      await this.reportClearProgress(result, channelName, 'scanning', onProgress);
+
+      while (true) {
+        const batch = await channel.messages.fetch({ limit: 100, before }).catch((error: unknown) => {
+          result.failedChannels.push({
+            channelId: channel.id,
+            channelName,
+            reason: error instanceof Error ? error.message : 'تعذر جلب الرسائل.',
+          });
+          return null;
+        });
+
+        if (!batch || batch.size === 0) break;
+
+        result.scannedMessages += batch.size;
+        before = batch.last()?.id;
+
+        const recentMatches = new Collection<string, Message>();
+        const oldMatches: Message[] = [];
+
+        for (const message of batch.values()) {
+          if (message.author.id !== userId) continue;
+
+          result.matched++;
+          this.addClearSample(result, channel, message);
+
+          if (message.createdTimestamp > newestBulkDeleteTime) {
+            recentMatches.set(message.id, message);
+          } else {
+            oldMatches.push(message);
+          }
+        }
+
+        if (recentMatches.size > 0 || oldMatches.length > 0) {
+          await this.reportClearProgress(result, channelName, 'deleting', onProgress);
+          await this.deleteClearMatches(channel, channelName, recentMatches, oldMatches, result);
+        }
+
+        await this.reportClearProgress(result, channelName, 'scanning', onProgress);
+
+        if (batch.size < 100) break;
+      }
+    };
+
+    const workerCount = Math.min(CLEAR_CHANNEL_CONCURRENCY, textChannels.length);
+    await Promise.all(
+      Array.from({ length: workerCount }, async () => {
+        while (nextChannelIndex < textChannels.length) {
+          const channel = textChannels[nextChannelIndex++];
+          if (channel) {
+            await scanChannel(channel);
+          }
+        }
+      }),
+    );
+
+    return result;
+  }
+
+  private async reportClearProgress(
+    result: ClearResult,
+    channelName: string,
+    phase: ClearProgress['phase'],
+    onProgress?: (progress: ClearProgress) => Promise<void>,
+  ): Promise<void> {
+    await onProgress?.({
+      phase,
+      channelName,
+      channelsScanned: Math.min(result.channels + result.skippedChannels, result.totalChannels),
+      totalChannels: result.totalChannels,
+      deleted: result.deleted,
+      matched: result.matched,
+    });
+  }
+
+  private addClearSample(result: ClearResult, channel: ClearableTextChannel, message: Message): void {
+    if (result.samples.length >= CLEAR_SAMPLE_LIMIT) return;
+
+    result.samples.push({
+      channelId: channel.id,
+      channelName: channel.name ?? channel.id,
+      content: this.describeClearMessage(message),
+      createdAt: message.createdTimestamp,
+    });
+  }
+
+  private async deleteClearMatches(
+    channel: ClearableTextChannel,
+    channelName: string,
+    recentMatches: Collection<string, Message>,
+    oldMatches: Message[],
+    result: ClearResult,
+  ): Promise<void> {
+    const recentMessages = [...recentMatches.values()];
+    for (let index = 0; index < recentMessages.length; index += CLEAR_DELETE_CHUNK_SIZE) {
+      const chunk = new Collection<string, Message>();
+      for (const message of recentMessages.slice(index, index + CLEAR_DELETE_CHUNK_SIZE)) {
+        chunk.set(message.id, message);
+      }
+
+      const deleted = await channel.bulkDelete(chunk, true).catch((error: unknown) => {
+        result.failed += chunk.size;
+        result.failedChannels.push({
+          channelId: channel.id,
+          channelName,
+          reason: error instanceof Error ? error.message : 'فشل الحذف الجماعي.',
+        });
+        return null;
+      });
+
+      if (deleted) {
+        result.deleted += deleted.size;
+        result.deletedRecent += deleted.size;
+        result.failed += Math.max(0, chunk.size - deleted.size);
+      }
+    }
+
+    for (let index = 0; index < oldMatches.length; index += CLEAR_OLD_DELETE_CONCURRENCY) {
+      const chunk = oldMatches.slice(index, index + CLEAR_OLD_DELETE_CONCURRENCY);
+      const settled = await Promise.allSettled(chunk.map((message) => message.delete()));
+      for (const item of settled) {
+        if (item.status === 'fulfilled') {
+          result.deleted++;
+          result.deletedOld++;
+        } else {
+          result.failed++;
+        }
+      }
+    }
+  }
+
+  private buildClearStatusEmbed(
+    title: string,
+    description: string,
+    fields: { name: string; value: string; inline?: boolean }[] = [],
+  ): EmbedBuilder {
+    return new EmbedBuilder()
+      .setColor(hexToDecimal(this.config.bot.embedColor))
+      .setTitle(title)
+      .setDescription(description)
+      .addFields(fields)
+      .setTimestamp();
+  }
+
+  private buildClearDetails(result: ClearResult): string {
+    const parts = [
+      `مطابقة: ${result.matched}`,
+      `محذوف: ${result.deleted}`,
+      `فشل: ${result.failed}`,
+      `بدون صلاحية: ${result.noPermissionChannels.length}`,
+    ];
+
+    const issues = [...result.noPermissionChannels, ...result.failedChannels]
+      .slice(0, 5)
+      .map((issue) => `#${issue.channelName}: ${issue.reason}`);
+
+    if (issues.length > 0) {
+      parts.push(`مشاكل:\n${issues.join('\n')}`);
+    }
+
+    return this.trimEmbedValue(parts.join('\n'));
+  }
+
+  private buildClearSamples(result: ClearResult): string {
+    if (result.samples.length === 0) {
+      return 'ما لقيت رسائل محفوظة لهذا الشخص ضمن نطاق الفحص.';
+    }
+
+    const lines = result.samples.map((sample, index) => {
+      const timestamp = Math.floor(sample.createdAt / 1000);
+      return `${index + 1}. <#${sample.channelId}> | <t:${timestamp}:R>\n> ${sample.content}`;
+    });
+
+    return this.trimEmbedValue(lines.join('\n'));
+  }
+
+  private describeClearMessage(message: Message): string {
+    const content = message.content?.trim();
+    if (content) return this.singleLine(content, 160);
+
+    const attachmentCount = message.attachments.size;
+    if (attachmentCount > 0) {
+      return attachmentCount === 1 ? 'رسالة فيها مرفق/صورة' : `رسالة فيها ${attachmentCount} مرفقات/صور`;
+    }
+
+    return 'رسالة بدون نص';
+  }
+
+  private renderProgressBar(current: number, total: number): string {
+    if (total <= 0) return '[----------] 0/0';
+
+    const width = 10;
+    const filled = Math.max(0, Math.min(width, Math.round((current / total) * width)));
+    return `[${'#'.repeat(filled)}${'-'.repeat(width - filled)}] ${current}/${total}`;
+  }
+
+  private singleLine(value: string, max: number): string {
+    return this.trimEmbedValue(value.replace(/\s+/g, ' ').trim(), max);
+  }
+
+  private trimEmbedValue(value: string, max = 1000): string {
+    return value.length > max ? `${value.slice(0, max - 3)}...` : value;
+  }
+}

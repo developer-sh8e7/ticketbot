@@ -1,71 +1,63 @@
-import { Client, Events, GatewayIntentBits, Partials } from 'discord.js';
-import {
-  createLogger,
-  createSupabaseClient,
-  type BotFactory,
-  type BotRuntimeOptions,
-  type RunningBot,
-} from '@opus/core';
+import { spawn, type ChildProcess } from 'node:child_process';
+import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { createLogger, type BotFactory, type BotRuntimeOptions, type RunningBot } from '@opus/core';
 
 const log = createLogger('ticket-bot');
 
+function legacyEntry(): string {
+  return process.env.NODE_ENV === 'production' || import.meta.url.includes('/dist/')
+    ? new URL('./legacy/index.js', import.meta.url).pathname
+    : new URL('./legacy/index.ts', import.meta.url).pathname;
+}
+
+function commandFor(entry: string): { cmd: string; args: string[] } {
+  return entry.endsWith('.ts') ? { cmd: 'npx', args: ['tsx', entry] } : { cmd: process.execPath, args: [entry] };
+}
+
 /**
- * مصنع بوت التكتات.
- * الأوركستريتر يستدعيه لكل نسخة زبون بتوكن مسحوب من البركة + إعدادات السيرفر المحفوظة.
+ * Ticket Bot factory.
  *
- * ── الخدمات التي تُرحّل إلى هذه الحزمة (انظر MIGRATION_MAP.md) ──
- *   services:  ticketService, panelService, transcriptService, escalationService,
- *              complaintService, mediatorService, vouchesService, vouchesImageService,
- *              welcomeService, aiService, securityService, serverLogService,
- *              roleManagementService, roleProtectionService, permissionService,
- *              emojiService, infrastructureService
- *   builders:  ticketBuilder, panelBuilder, modalBuilder
- *   handlers:  mediatorApplicationHandler
- *   database:  ticketRepository, mediatorRepository, complaintRepository,
- *              roleManagementRepository, roleProtectionRepository, infrastructureRepository
- *   data:      moderationWordLists
+ * The complete legacy Ticket runtime from C:/Users/pkg/Downloads/Ticket/src is kept under
+ * src/legacy and executed as an isolated per-instance worker. This preserves the original
+ * ticket, mediator, escalation, transcript, panel, role-protection, vouches, welcome,
+ * temp-room and config logic while the SaaS orchestrator owns subscription/token lifecycle.
  */
 export const createTicketBot: BotFactory = (options: BotRuntimeOptions): RunningBot => {
-  const supabase = createSupabaseClient({
-    SUPABASE_URL: options.supabaseUrl,
-    SUPABASE_SERVICE_ROLE_KEY: options.supabaseServiceRoleKey,
-  });
-
-  // التكتات تحتاج محتوى الرسائل والأعضاء (تأكد من تفعيل الـ Privileged Intents في البوابة).
-  const client = new Client({
-    intents: [
-      GatewayIntentBits.Guilds,
-      GatewayIntentBits.GuildMessages,
-      GatewayIntentBits.GuildMembers,
-      GatewayIntentBits.MessageContent,
-    ],
-    partials: [Partials.Channel, Partials.Message],
-  });
-
-  client.once(Events.ClientReady, async (ready) => {
-    log.info(`🎫 Ticket bot ready: ${ready.user.tag} → guild ${options.guildId}`);
-    // TODO(migration): registerProductCommands + InfrastructureService.ensureInfrastructure
-    //                  ثم استعادة لوحة التكتات من options.config المحفوظ.
-    void supabase; // يُستخدم داخل الخدمات المُرحّلة
-  });
-
-  client.on(Events.InteractionCreate, async (interaction) => {
-    if (interaction.guildId !== options.guildId) return; // عزل صارم: لا يخدم إلا سيرفره
-    // TODO(migration): توجيه التفاعلات إلى TicketService / PanelService.
-  });
-
-  client.on(Events.Error, (err) => log.error(`Ticket client error: ${err.message}`));
+  let child: ChildProcess | null = null;
+  const runtimeDir = join(tmpdir(), 'opus-solutions', options.instanceId);
+  const configPath = join(runtimeDir, `config_${options.guildId}.json`);
 
   return {
     productType: 'ticket',
     instanceId: options.instanceId,
     async start() {
-      await client.login(options.token);
-      const botUserId = client.user?.id ?? '';
-      return { botUserId };
+      mkdirSync(runtimeDir, { recursive: true });
+      writeFileSync(configPath, JSON.stringify(options.config ?? {}, null, 2), 'utf8');
+      const entry = legacyEntry();
+      const { cmd, args } = commandFor(entry);
+      child = spawn(cmd, args, {
+        cwd: new URL('..', import.meta.url).pathname,
+        env: {
+          ...process.env,
+          RUN_MODE: 'legacy',
+          DISCORD_TOKEN: options.token,
+          SUPABASE_URL: options.supabaseUrl,
+          SUPABASE_SERVICE_ROLE_KEY: options.supabaseServiceRoleKey,
+          CONFIG_PATH: configPath,
+        },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      child.stdout?.on('data', (chunk) => log.info(String(chunk).replace(options.token, '[redacted]').trim()));
+      child.stderr?.on('data', (chunk) => log.error(String(chunk).replace(options.token, '[redacted]').trim()));
+      child.on('exit', (code, signal) => log.warn(`Ticket worker ${options.instanceId} exited code=${code} signal=${signal}`));
+      return { botUserId: '' };
     },
     async stop() {
-      await client.destroy();
+      if (child && !child.killed) child.kill('SIGTERM');
+      child = null;
+      rmSync(runtimeDir, { recursive: true, force: true });
     },
   };
 };
