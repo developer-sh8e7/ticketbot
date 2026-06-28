@@ -26,7 +26,7 @@ export default {
 
     let idx = 0;
     const setStatus = () => {
-      const s = statuses[idx % statuses.length];
+      const s = statuses[idx % statuses.length]!;
       const name = s.name
         .replace("{members}", String(client.guilds.cache.reduce((a, g) => a + g.memberCount, 0)))
         .replace("{guilds}", String(client.guilds.cache.size));
