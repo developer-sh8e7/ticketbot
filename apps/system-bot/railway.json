@@ -2,10 +2,10 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "npm ci && npm run build -w @opus/core && npm run build -w @opus/general-bot"
+    "buildCommand": "npm run build -w @opus/core && npm run build -w @opus/system-bot"
   },
   "deploy": {
-    "startCommand": "npm run start -w @opus/general-bot",
+    "startCommand": "npm run start -w @opus/system-bot",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }
