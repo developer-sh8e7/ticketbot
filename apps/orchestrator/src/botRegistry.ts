@@ -1,7 +1,7 @@
 import type { BotFactory, ProductType } from '@opus/core';
 import { createTicketBot } from '@opus/ticket-bot';
 import { createVoiceRoomsBot } from '@opus/voice-rooms-bot';
-import { createGeneralBot } from '@opus/general-bot';
+import { createSystemBot } from '@opus/system-bot';
 
 /**
  * سجل المصانع: يربط نوع المنتج بمصنع البوت المنفصل الخاص به.
@@ -11,7 +11,7 @@ import { createGeneralBot } from '@opus/general-bot';
 export const BOT_FACTORIES: Record<ProductType, BotFactory> = {
   ticket: createTicketBot,
   voice_rooms: createVoiceRoomsBot,
-  general: createGeneralBot,
+  general: createSystemBot,
 };
 
 export function getBotFactory(productType: ProductType): BotFactory {

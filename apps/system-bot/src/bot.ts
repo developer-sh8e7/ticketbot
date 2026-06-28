@@ -1,7 +1,7 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { createLogger, type BotFactory, type BotRuntimeOptions, type RunningBot } from '@opus/core';
 
-const log = createLogger('general-bot');
+const log = createLogger('system-bot');
 
 function legacyEntry(): string {
   return process.env.NODE_ENV === 'production' || import.meta.url.includes('/dist/')
@@ -14,7 +14,7 @@ function commandFor(entry: string): { cmd: string; args: string[] } {
 }
 
 /** General/System Bot factory. Runs the migrated SystemBot Opus command/event runtime per SaaS instance. */
-export const createGeneralBot: BotFactory = (options: BotRuntimeOptions): RunningBot => {
+export const createSystemBot: BotFactory = (options: BotRuntimeOptions): RunningBot => {
   let child: ChildProcess | null = null;
   return {
     productType: 'general',
@@ -37,7 +37,7 @@ export const createGeneralBot: BotFactory = (options: BotRuntimeOptions): Runnin
       });
       child.stdout?.on('data', (chunk) => log.info(String(chunk).replace(options.token, '[redacted]').trim()));
       child.stderr?.on('data', (chunk) => log.error(String(chunk).replace(options.token, '[redacted]').trim()));
-      child.on('exit', (code, signal) => log.warn(`General worker ${options.instanceId} exited code=${code} signal=${signal}`));
+      child.on('exit', (code, signal) => log.warn(`System worker ${options.instanceId} exited code=${code} signal=${signal}`));
       return { botUserId: '' };
     },
     async stop() {
@@ -47,4 +47,4 @@ export const createGeneralBot: BotFactory = (options: BotRuntimeOptions): Runnin
   };
 };
 
-export default createGeneralBot;
+export default createSystemBot;

@@ -8,13 +8,13 @@
   "workspaces": ["apps/*", "packages/*"],
   "engines": { "node": ">=20" },
   "scripts": {
-    "build": "npm --workspace @opus/core run build && npm --workspace @opus/ticket-bot run build && npm --workspace @opus/voice-rooms-bot run build && npm --workspace @opus/general-bot run build && npm --workspace @opus/orchestrator run build && npm --workspace @opus/web run build",
+    "build": "npm --workspace @opus/core run build && npm --workspace @opus/ticket-bot run build && npm --workspace @opus/voice-rooms-bot run build && npm --workspace @opus/system-bot run build && npm --workspace @opus/orchestrator run build && npm --workspace @opus/web run build",
     "smoke:audit": "tsx tests/audit-smoke.ts",
-    "typecheck": "npm --workspace @opus/core run build && npm --workspace @opus/ticket-bot run build && npm --workspace @opus/voice-rooms-bot run build && npm --workspace @opus/general-bot run build && npm --workspace @opus/orchestrator run typecheck && npm --workspace @opus/web run typecheck && npm --workspace @opus/core run typecheck",
+    "typecheck": "npm --workspace @opus/core run build && npm --workspace @opus/ticket-bot run build && npm --workspace @opus/voice-rooms-bot run build && npm --workspace @opus/system-bot run build && npm --workspace @opus/orchestrator run typecheck && npm --workspace @opus/web run typecheck && npm --workspace @opus/core run typecheck",
     "dev:web": "npm --workspace @opus/web run dev",
     "dev:ticket": "npm --workspace @opus/ticket-bot run dev",
     "dev:rooms": "npm --workspace @opus/voice-rooms-bot run dev",
-    "dev:general": "npm --workspace @opus/general-bot run dev",
+    "dev:general": "npm --workspace @opus/system-bot run dev",
     "dev:orchestrator": "npm --workspace @opus/orchestrator run dev",
     "start:orchestrator": "npm --workspace @opus/orchestrator run start"
   },
