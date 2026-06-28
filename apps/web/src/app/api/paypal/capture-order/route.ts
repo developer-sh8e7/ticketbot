@@ -50,7 +50,9 @@ export async function POST(req: Request) {
     }, { onConflict: 'paypal_order_id' });
     if (paymentError) throw paymentError;
 
-    if (checkoutProduct.productType !== 'custom') {
+    // سيرفر المتجر مستثنى من الاشتراك ويعمل دائماً — لا يُزوّد عبر الشراء.
+    const STORE_GUILD_ID = '1395842846107631746';
+    if (checkoutProduct.productType !== 'custom' && guildId !== STORE_GUILD_ID) {
       const durationDays = checkoutProduct.plan.durationDays;
       const { data: instance, error: provisionError } = await supabase.rpc('provision_instance', {
         p_account_id: account.id,

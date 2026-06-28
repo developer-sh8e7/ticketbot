@@ -1,5 +1,8 @@
 import type { SupabaseClient, ProductType, BotInstanceRecord } from '@opus/core';
-import { createLogger } from '@opus/core';
+import { createLogger, isExemptGuild } from '@opus/core';
+
+/** مدة عملية (≈100 سنة) تُستخدم للسيرفرات المستثناة حتى لا تنتهي أبداً. */
+const NEVER_EXPIRE_DAYS = 36500;
 
 const log = createLogger('provisioning');
 
@@ -49,7 +52,9 @@ export class ProvisioningService {
     durationDays?: number;
     externalRef?: string | null;
   }): Promise<BotInstanceRecord> {
-    const accountId = await this.requireLinkedAccount(input.discordUserId);
+    // السيرفر المستثنى (المتجر) يعمل دائماً: لا ربط حساب إجباري ولا انتهاء.
+    const exempt = isExemptGuild(input.guildId);
+    const accountId = exempt ? null : await this.requireLinkedAccount(input.discordUserId);
 
     const { data, error } = await this.supabase.rpc('provision_instance', {
       p_account_id: accountId,
@@ -57,8 +62,8 @@ export class ProvisioningService {
       p_guild_id: input.guildId,
       p_guild_name: input.guildName ?? null,
       p_product_type: input.productType,
-      p_plan_name: input.planName ?? 'monthly',
-      p_duration_days: input.durationDays ?? 30,
+      p_plan_name: exempt ? 'store-exempt' : (input.planName ?? 'monthly'),
+      p_duration_days: exempt ? NEVER_EXPIRE_DAYS : (input.durationDays ?? 30),
       p_external_ref: input.externalRef ?? null,
     });
 

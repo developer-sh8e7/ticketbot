@@ -5,3 +5,4 @@ export * from './crypto.js';
 export * from './supabase.js';
 export * from './types.js';
 export * from './runtime.js';
+export * from './exempt.js';

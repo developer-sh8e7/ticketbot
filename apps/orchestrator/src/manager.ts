@@ -1,6 +1,7 @@
 import {
   createLogger,
   decryptToken,
+  EXEMPT_GUILD_IDS,
   type SupabaseClient,
   type BotInstanceRecord,
   type RunningBot,
@@ -62,12 +63,14 @@ export class InstanceManager {
 
   private async expireStale(): Promise<void> {
     const nowIso = new Date().toISOString();
+    // السيرفرات المستثناة (المتجر) لا تنتهي أبداً.
     await this.supabase
       .from('bot_instances')
       .update({ status: 'expired', updated_at: nowIso })
       .eq('status', 'active')
       .not('expires_at', 'is', null)
-      .lte('expires_at', nowIso);
+      .lte('expires_at', nowIso)
+      .not('guild_id', 'in', `(${EXEMPT_GUILD_IDS.join(',')})`);
   }
 
   /** يجلب الإعدادات المحفوظة لهذا (السيرفر × المنتج) — تجعل التجديد يرجع كأنه ما وقف. */
