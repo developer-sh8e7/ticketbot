@@ -1,4 +1,4 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  /nuke — Clone & delete a channel (reset)
 //  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
@@ -10,10 +10,10 @@ import {
   GuildMember,
   TextChannel,
 } from "discord.js";
-import { Command } from "../../types";
-import { successEmbed, errorEmbed } from "../../utils/embed";
-import { Emojis } from "../../utils/emojis";
-import { isAdmin, noPermission } from "../../utils/permissions";
+import { Command } from "../../types.js";
+import { successEmbed, errorEmbed } from "../../utils/embed.js";
+import { Emojis } from "../../utils/emojis.js";
+import { isAdmin, noPermission } from "../../utils/permissions.js";
 
 const command: Command = {
   data: new SlashCommandBuilder()

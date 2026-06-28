@@ -1,4 +1,4 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  Settings Commands (Welcome, Leave, Logs, AutoRole)
 //  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
@@ -8,10 +8,10 @@ import {
   ChatInputCommandInteraction,
   PermissionFlagsBits,
 } from "discord.js";
-import { Command } from "../../types";
-import { updateGuildSetting } from "../../db/guilds";
-import { successEmbed, errorEmbed } from "../../utils/embed";
-import { Emojis } from "../../utils/emojis";
+import { Command } from "../../types.js";
+import { updateGuildSetting } from "../../db/guilds.js";
+import { successEmbed, errorEmbed } from "../../utils/embed.js";
+import { Emojis } from "../../utils/emojis.js";
 
 // ── Generic Setting Factory ──────────────────────────────────
 function createSettingCommand(
@@ -184,7 +184,7 @@ export const antiRaidCommand: Command = {
 
     try {
       // Lazy import to avoid circular dependencies
-      const { updateGuildSetting } = await import("../../db/guilds");
+      const { updateGuildSetting } = await import("../../db/guilds.js");
       await updateGuildSetting(interaction.guildId!, "guild_modules", {
         antiraid_enabled: state,
       });

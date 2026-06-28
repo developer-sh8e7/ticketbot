@@ -1,10 +1,10 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  Opus System Bot — Permission Helpers
 // ══════════════════════════════════════════════════════════════
 
 import { GuildMember, PermissionFlagsBits, ChatInputCommandInteraction } from "discord.js";
-import { Config } from "../config";
-import { errorEmbed } from "./embed";
+import { Config } from "../config.js";
+import { errorEmbed } from "./embed.js";
 
 /** Check if a user is a bot owner */
 export function isOwner(userId: string): boolean {

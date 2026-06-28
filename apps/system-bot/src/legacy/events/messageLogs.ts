@@ -1,13 +1,13 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  Event — messageDelete & messageUpdate (Message Logs)
 //  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
 
 import { Client, Message, PartialMessage, EmbedBuilder } from "discord.js";
-import { Colors } from "../utils/embed";
-import { Emojis } from "../utils/emojis";
-import { Config } from "../config";
-import { getGuildConfig } from "../db/guilds";
+import { Colors } from "../utils/embed.js";
+import { Emojis } from "../utils/emojis.js";
+import { Config } from "../config.js";
+import { getGuildConfig } from "../db/guilds.js";
 
 export const messageDeleteEvent = {
   name: "messageDelete" as const,

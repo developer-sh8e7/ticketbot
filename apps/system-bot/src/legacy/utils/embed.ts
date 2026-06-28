@@ -1,11 +1,11 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  Opus System Bot V2 — Embed Utilities
 //  Premium dark theme with Application Emoji branding
 // ══════════════════════════════════════════════════════════════
 
 import { EmbedBuilder, ColorResolvable } from "discord.js";
-import { Config } from "../config";
-import { Emojis } from "./emojis";
+import { Config } from "../config.js";
+import { Emojis } from "./emojis.js";
 
 /** V2 Premium Color Palette */
 export const Colors = {

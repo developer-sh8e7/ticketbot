@@ -1,4 +1,4 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  /clear — Bulk delete messages
 //  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
@@ -10,9 +10,9 @@ import {
   GuildMember,
   TextChannel,
 } from "discord.js";
-import { Command } from "../../types";
-import { errorEmbed, successEmbed } from "../../utils/embed";
-import { isModerator, noPermission } from "../../utils/permissions";
+import { Command } from "../../types.js";
+import { errorEmbed, successEmbed } from "../../utils/embed.js";
+import { isModerator, noPermission } from "../../utils/permissions.js";
 
 const command: Command = {
   data: new SlashCommandBuilder()

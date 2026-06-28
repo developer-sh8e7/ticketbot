@@ -1,12 +1,12 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  Emoji Auto-Upload Script for Opus V2
 //  Run: npx ts-node src/scripts/uploadEmojis.ts
 // ══════════════════════════════════════════════════════════════
 
 import { REST } from "@discordjs/rest";
 import { Routes } from "discord-api-types/v10";
-import { Config } from "../config";
-import { Logger } from "../utils/logger";
+import { Config } from "../config.js";
+import { Logger } from "../utils/logger.js";
 import { config } from "dotenv";
 
 config(); // Load environment variables

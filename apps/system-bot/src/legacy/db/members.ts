@@ -1,6 +1,6 @@
-import { supabase } from "./supabase";
-import { Logger } from "../utils/logger";
-import { getUserData } from "./users";
+﻿import { supabase } from "./supabase.js";
+import { Logger } from "../utils/logger.js";
+import { getUserData } from "./users.js";
 
 export interface MemberData {
   guild_id: string;

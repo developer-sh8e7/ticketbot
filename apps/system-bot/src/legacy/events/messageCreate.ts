@@ -1,16 +1,16 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  Event — messageCreate (XP, Anti-Spam, Anti-Links, Anti-Swear)
 //  V2 — Application Emojis, Advanced Profanity Filter
 // ══════════════════════════════════════════════════════════════
 
 import { Client, Message, PermissionFlagsBits, EmbedBuilder } from "discord.js";
-import { getMemberData, updateMemberData } from "../db/members";
-import { getGuildConfig } from "../db/guilds";
-import { filterEmbed, errorEmbed, Colors } from "../utils/embed";
-import { Emojis } from "../utils/emojis";
-import { Config } from "../config";
-import { Logger } from "../utils/logger";
-import { checkProfanity, checkSpam, SPAM_CONFIG } from "../utils/profanityFilter";
+import { getMemberData, updateMemberData } from "../db/members.js";
+import { getGuildConfig } from "../db/guilds.js";
+import { filterEmbed, errorEmbed, Colors } from "../utils/embed.js";
+import { Emojis } from "../utils/emojis.js";
+import { Config } from "../config.js";
+import { Logger } from "../utils/logger.js";
+import { checkProfanity, checkSpam, SPAM_CONFIG } from "../utils/profanityFilter.js";
 
 const SWEAR_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 1 day timeout for swearing
 

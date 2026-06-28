@@ -1,4 +1,4 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  /credits — Check or transfer credits
 //  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
@@ -7,9 +7,9 @@ import {
   SlashCommandBuilder,
   ChatInputCommandInteraction,
 } from "discord.js";
-import { Command } from "../../types";
-import { getUserData, updateUserData } from "../../db/users";
-import { errorEmbed, successEmbed, economyEmbed } from "../../utils/embed";
+import { Command } from "../../types.js";
+import { getUserData, updateUserData } from "../../db/users.js";
+import { errorEmbed, successEmbed, economyEmbed } from "../../utils/embed.js";
 
 const command: Command = {
   data: new SlashCommandBuilder()

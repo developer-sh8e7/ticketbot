@@ -1,34 +1,34 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  Deploy Slash Commands to Discord API
 //  Run: npx ts-node src/deploy-commands.ts
 //  V2 — Added antiswear command
 // ══════════════════════════════════════════════════════════════
 
 import { REST, Routes } from "discord.js";
-import { Config } from "./config";
-import { Logger } from "./utils/logger";
+import { Config } from "./config.js";
+import { Logger } from "./utils/logger.js";
 
 // Import all commands
-import banCommand from "./commands/moderation/ban";
-import kickCommand from "./commands/moderation/kick";
-import timeoutCommand from "./commands/moderation/timeout";
-import warnCommand from "./commands/moderation/warn";
-import clearCommand from "./commands/moderation/clear";
-import unbanCommand from "./commands/moderation/unban";
-import slowmodeCommand from "./commands/moderation/slowmode";
-import { lockCommand, unlockCommand } from "./commands/moderation/lock";
-import nukeCommand from "./commands/moderation/nuke";
+import banCommand from "./commands/moderation/ban.js";
+import kickCommand from "./commands/moderation/kick.js";
+import timeoutCommand from "./commands/moderation/timeout.js";
+import warnCommand from "./commands/moderation/warn.js";
+import clearCommand from "./commands/moderation/clear.js";
+import unbanCommand from "./commands/moderation/unban.js";
+import slowmodeCommand from "./commands/moderation/slowmode.js";
+import { lockCommand, unlockCommand } from "./commands/moderation/lock.js";
+import nukeCommand from "./commands/moderation/nuke.js";
 
-import serverinfoCommand from "./commands/info/serverinfo";
-import userinfoCommand from "./commands/info/userinfo";
-import avatarCommand from "./commands/info/avatar";
-import pingCommand from "./commands/info/ping";
-import helpCommand from "./commands/info/help";
-import profileCommand from "./commands/info/profile";
+import serverinfoCommand from "./commands/info/serverinfo.js";
+import userinfoCommand from "./commands/info/userinfo.js";
+import avatarCommand from "./commands/info/avatar.js";
+import pingCommand from "./commands/info/ping.js";
+import helpCommand from "./commands/info/help.js";
+import profileCommand from "./commands/info/profile.js";
 
-import roleCommand from "./commands/moderation/role";
-import hideCommand from "./commands/moderation/hide";
-import showCommand from "./commands/moderation/show";
+import roleCommand from "./commands/moderation/role.js";
+import hideCommand from "./commands/moderation/hide.js";
+import showCommand from "./commands/moderation/show.js";
 
 import {
   setWelcomeCommand,
@@ -37,7 +37,7 @@ import {
   autoRoleCommand,
   embedCommand,
   antiRaidCommand,
-} from "./commands/settings/settings";
+} from "./commands/settings/settings.js";
 
 import {
   protectionCommand,
@@ -45,17 +45,17 @@ import {
   antiSpamCommand,
   antiBotsCommand,
   antiSwearCommand,
-} from "./commands/settings/protection";
+} from "./commands/settings/protection.js";
 
-import creditsCommand from "./commands/economy/credits";
-import dailyCommand from "./commands/economy/daily";
-import repCommand from "./commands/economy/rep";
+import creditsCommand from "./commands/economy/credits.js";
+import dailyCommand from "./commands/economy/daily.js";
+import repCommand from "./commands/economy/rep.js";
 
-import rankCommand from "./commands/levels/rank";
-import topCommand from "./commands/levels/top";
+import rankCommand from "./commands/levels/rank.js";
+import topCommand from "./commands/levels/top.js";
 
-import rollCommand from "./commands/fun/roll";
-import coinflipCommand from "./commands/fun/coinflip";
+import rollCommand from "./commands/fun/roll.js";
+import coinflipCommand from "./commands/fun/coinflip.js";
 
 const allCommands = [
   banCommand,

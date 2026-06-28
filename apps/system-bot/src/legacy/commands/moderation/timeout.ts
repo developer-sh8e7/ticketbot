@@ -1,4 +1,4 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  /timeout — Timeout (mute) a member
 //  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
@@ -10,10 +10,10 @@ import {
   GuildMember,
 } from "discord.js";
 import ms from "ms";
-import { Command } from "../../types";
-import { modEmbed, errorEmbed, successEmbed } from "../../utils/embed";
-import { isModerator, noPermission } from "../../utils/permissions";
-import { getGuildConfig } from "../../db/guilds";
+import { Command } from "../../types.js";
+import { modEmbed, errorEmbed, successEmbed } from "../../utils/embed.js";
+import { isModerator, noPermission } from "../../utils/permissions.js";
+import { getGuildConfig } from "../../db/guilds.js";
 
 const command: Command = {
   data: new SlashCommandBuilder()

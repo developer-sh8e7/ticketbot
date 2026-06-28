@@ -1,10 +1,10 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  Event — ready
 //  V2 — No Unicode emojis in status
 // ══════════════════════════════════════════════════════════════
 
 import { Client, ActivityType } from "discord.js";
-import { Logger } from "../utils/logger";
+import { Logger } from "../utils/logger.js";
 
 export default {
   name: "clientReady" as const,

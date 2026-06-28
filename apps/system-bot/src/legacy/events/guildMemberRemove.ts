@@ -1,14 +1,14 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  Event — guildMemberRemove (Leave message)
 //  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
 
 import { Client, GuildMember, EmbedBuilder, PartialGuildMember } from "discord.js";
-import { Colors } from "../utils/embed";
-import { Emojis } from "../utils/emojis";
-import { Config } from "../config";
-import { Logger } from "../utils/logger";
-import { getGuildConfig } from "../db/guilds";
+import { Colors } from "../utils/embed.js";
+import { Emojis } from "../utils/emojis.js";
+import { Config } from "../config.js";
+import { Logger } from "../utils/logger.js";
+import { getGuildConfig } from "../db/guilds.js";
 
 export default {
   name: "guildMemberRemove" as const,

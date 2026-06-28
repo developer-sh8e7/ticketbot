@@ -1,5 +1,5 @@
-import { supabase } from "./supabase";
-import { Logger } from "../utils/logger";
+﻿import { supabase } from "./supabase.js";
+import { Logger } from "../utils/logger.js";
 
 export interface UserData {
   id: string;

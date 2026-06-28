@@ -1,13 +1,13 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  Event — voiceStateUpdate (Voice Logs)
 //  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
 
 import { Client, VoiceState, EmbedBuilder } from "discord.js";
-import { Colors } from "../utils/embed";
-import { Emojis } from "../utils/emojis";
-import { Config } from "../config";
-import { getGuildConfig } from "../db/guilds";
+import { Colors } from "../utils/embed.js";
+import { Emojis } from "../utils/emojis.js";
+import { Config } from "../config.js";
+import { getGuildConfig } from "../db/guilds.js";
 
 export default {
   name: "voiceStateUpdate" as const,

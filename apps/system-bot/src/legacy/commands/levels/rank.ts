@@ -1,12 +1,12 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  /rank — Check your or someone else's level/rank
 //  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
 
 import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
-import { Command } from "../../types";
-import { getMemberData } from "../../db/members";
-import { levelEmbed, errorEmbed } from "../../utils/embed";
+import { Command } from "../../types.js";
+import { getMemberData } from "../../db/members.js";
+import { levelEmbed, errorEmbed } from "../../utils/embed.js";
 
 const command: Command = {
   data: new SlashCommandBuilder()

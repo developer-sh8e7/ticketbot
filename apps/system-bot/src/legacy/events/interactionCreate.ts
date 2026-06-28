@@ -1,11 +1,11 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  Event — interactionCreate (Slash Commands & Buttons)
 //  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
 
 import { Client, Interaction } from "discord.js";
-import { errorEmbed } from "../utils/embed";
-import { Logger } from "../utils/logger";
+import { errorEmbed } from "../utils/embed.js";
+import { Logger } from "../utils/logger.js";
 
 export default {
   name: "interactionCreate" as const,

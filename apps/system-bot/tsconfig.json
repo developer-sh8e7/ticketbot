@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "rootDir": "./src", "outDir": "./dist", "module": "ESNext", "moduleResolution": "Bundler" },
+  "compilerOptions": { "rootDir": "./src", "outDir": "./dist" },
   "include": ["src/**/*"],
   "exclude": ["src/bot-games/**/*"]
 }

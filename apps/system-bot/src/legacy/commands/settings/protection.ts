@@ -1,13 +1,13 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  Protection Commands (Anti-Spam, Anti-Links, Anti-Bots, Anti-Swear)
 //  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
 
 import { SlashCommandBuilder, ChatInputCommandInteraction, PermissionFlagsBits } from "discord.js";
-import { Command } from "../../types";
-import { updateGuildSetting } from "../../db/guilds";
-import { successEmbed, errorEmbed } from "../../utils/embed";
-import { Emojis } from "../../utils/emojis";
+import { Command } from "../../types.js";
+import { updateGuildSetting } from "../../db/guilds.js";
+import { successEmbed, errorEmbed } from "../../utils/embed.js";
+import { Emojis } from "../../utils/emojis.js";
 
 // ── Unified Protection Command ─────────────────────────────
 export const protectionCommand: Command = {

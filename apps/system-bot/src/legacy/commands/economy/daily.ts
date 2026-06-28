@@ -1,14 +1,14 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  /daily — Claim daily credits
 //  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
 
 import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
-import { Command } from "../../types";
-import { getUserData, updateUserData } from "../../db/users";
-import { errorEmbed, successEmbed, economyEmbed } from "../../utils/embed";
+import { Command } from "../../types.js";
+import { getUserData, updateUserData } from "../../db/users.js";
+import { errorEmbed, successEmbed, economyEmbed } from "../../utils/embed.js";
 import ms from "ms";
-import { Emojis } from "../../utils/emojis";
+import { Emojis } from "../../utils/emojis.js";
 
 const DAILY_AMOUNT = 500;
 const DAILY_COOLDOWN = 24 * 60 * 60 * 1000; // 24 hours

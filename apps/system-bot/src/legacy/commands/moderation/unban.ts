@@ -1,4 +1,4 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  /unban — Unban a user from the server
 //  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
@@ -9,10 +9,10 @@ import {
   PermissionFlagsBits,
   GuildMember,
 } from "discord.js";
-import { Command } from "../../types";
-import { errorEmbed, successEmbed, modEmbed } from "../../utils/embed";
-import { isModerator, noPermission } from "../../utils/permissions";
-import { getGuildConfig } from "../../db/guilds";
+import { Command } from "../../types.js";
+import { errorEmbed, successEmbed, modEmbed } from "../../utils/embed.js";
+import { isModerator, noPermission } from "../../utils/permissions.js";
+import { getGuildConfig } from "../../db/guilds.js";
 
 const command: Command = {
   data: new SlashCommandBuilder()

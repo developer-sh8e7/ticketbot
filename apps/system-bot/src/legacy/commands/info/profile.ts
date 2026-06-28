@@ -1,15 +1,15 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  /profile — View a user's profile
 //  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
 
 import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
-import { Command } from "../../types";
-import { getUserData } from "../../db/users";
-import { getMemberData } from "../../db/members";
-import { Colors } from "../../utils/embed";
-import { Emojis } from "../../utils/emojis";
-import { Config } from "../../config";
+import { Command } from "../../types.js";
+import { getUserData } from "../../db/users.js";
+import { getMemberData } from "../../db/members.js";
+import { Colors } from "../../utils/embed.js";
+import { Emojis } from "../../utils/emojis.js";
+import { Config } from "../../config.js";
 
 const command: Command = {
   data: new SlashCommandBuilder()

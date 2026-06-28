@@ -1,10 +1,10 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  Guild Configuration Handler with Caching
 // ══════════════════════════════════════════════════════════════
 
-import { supabase } from "./supabase";
-import { Logger } from "../utils/logger";
-import { Config } from "../config";
+import { supabase } from "./supabase.js";
+import { Logger } from "../utils/logger.js";
+import { Config } from "../config.js";
 
 export interface GuildSettings {
   id: string;

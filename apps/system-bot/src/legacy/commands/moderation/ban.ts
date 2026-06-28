@@ -1,4 +1,4 @@
-// ══════════════════════════════════════════════════════════════
+﻿// ══════════════════════════════════════════════════════════════
 //  /ban — Ban a member from the server
 //  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
@@ -9,11 +9,11 @@ import {
   PermissionFlagsBits,
   GuildMember,
 } from "discord.js";
-import { Command } from "../../types";
-import { modEmbed, errorEmbed, successEmbed } from "../../utils/embed";
-import { Emojis } from "../../utils/emojis";
-import { isModerator, noPermission } from "../../utils/permissions";
-import { getGuildConfig } from "../../db/guilds";
+import { Command } from "../../types.js";
+import { modEmbed, errorEmbed, successEmbed } from "../../utils/embed.js";
+import { Emojis } from "../../utils/emojis.js";
+import { isModerator, noPermission } from "../../utils/permissions.js";
+import { getGuildConfig } from "../../db/guilds.js";
 
 const command: Command = {
   data: new SlashCommandBuilder()
