@@ -1,5 +1,5 @@
 /** تشغيل مستقل للبوت العام (تطوير فقط). */
-import { createGeneralBot } from './bot.js';
+import { createSystemBot } from './bot.js';
 
 async function main() {
   const token = process.env.GENERAL_DEV_TOKEN;
@@ -8,7 +8,7 @@ async function main() {
     throw new Error('GENERAL_DEV_TOKEN و GENERAL_DEV_GUILD مطلوبان للتشغيل المستقل.');
   }
 
-  const bot = createGeneralBot({
+  const bot = createSystemBot({
     token,
     guildId,
     ownerId: process.env.GENERAL_DEV_OWNER ?? 'dev',
@@ -19,7 +19,7 @@ async function main() {
   });
 
   const { botUserId } = await bot.start();
-  console.log(`[general-bot] running as ${botUserId}`);
+  console.log(`[system-bot] running as ${botUserId}`);
 
   process.on('SIGINT', () => bot.stop().then(() => process.exit(0)));
   process.on('SIGTERM', () => bot.stop().then(() => process.exit(0)));
