@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist"
+  },
+  "references": [
+    { "path": "../../packages/core" },
+    { "path": "../ticket-bot" },
+    { "path": "../voice-rooms-bot" },
+    { "path": "../general-bot" }
+  ],
+  "include": ["src/**/*.ts"]
+}

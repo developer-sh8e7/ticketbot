@@ -1,0 +1,25 @@
+{
+  "name": "opus-solutions",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Opus Solutions — منصة بيع بوتات ديسكورد كاشتراكات (SaaS). مونوريبو يفصل كل بوت كمنتج مستقل فوق نواة مشتركة، مع طبقة تحكم (orchestrator) تدير بركة التوكنات والتفعيل التلقائي ودورة حياة الاشتراك.",
+  "type": "module",
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "dev:ticket": "pnpm --filter @opus/ticket-bot dev",
+    "dev:rooms": "pnpm --filter @opus/voice-rooms-bot dev",
+    "dev:general": "pnpm --filter @opus/general-bot dev",
+    "dev:orchestrator": "pnpm --filter @opus/orchestrator dev",
+    "start:orchestrator": "pnpm --filter @opus/orchestrator start"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "tsx": "^4.16.2",
+    "@types/node": "^20.14.0"
+  }
+}
