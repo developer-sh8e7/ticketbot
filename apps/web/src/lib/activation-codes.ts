@@ -14,6 +14,9 @@ function chunk() {
 
 export function generateActivationCode(productType: string = 'ticket') {
   const prefix = getProductPrefix(productType);
+  if (productType === 'humanguard') {
+    return `OPUS-${prefix}-${chunk()}-OpusAi`;
+  }
   return `OPUS-${prefix}-${chunk()}-${chunk()}`;
 }
 

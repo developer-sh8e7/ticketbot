@@ -1,6 +1,6 @@
 import { products, type Product } from '@/lib/site-content';
 
-export type CatalogProductType = 'ticket' | 'voice_rooms' | 'general' | 'custom';
+export type CatalogProductType = 'ticket' | 'voice_rooms' | 'general' | 'humanguard' | 'custom';
 export type CheckoutDuration = 'monthly' | '3_months';
 
 export type CatalogPlan = {
@@ -26,6 +26,7 @@ export function dbPlanIdFor(productType: string, duration: CheckoutDuration): st
   if (productType === 'ticket') return `ticket-${suffix}`;
   if (productType === 'voice_rooms') return `voice-rooms-${suffix}`;
   if (productType === 'general') return `general-${suffix}`;
+  if (productType === 'humanguard') return `humanguard-${suffix}`;
   return null;
 }
 

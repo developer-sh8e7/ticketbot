@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Bot, Code2, Mic2, Ticket, type LucideIcon } from 'lucide-react';
+import { Bot, Code2, Mic2, ShieldCheck, Ticket, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { ProductKey } from '@/lib/site-content';
 
@@ -25,6 +25,7 @@ const icons: Record<ProductKey, LucideIcon> = {
   ticket: Ticket,
   voice_rooms: Mic2,
   general: Bot,
+  humanguard: ShieldCheck,
   custom: Code2,
 };
 

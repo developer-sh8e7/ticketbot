@@ -53,7 +53,7 @@ export function formatActivationCode(productType: string): string {
   return `OPUS-${prefix}-XXXX-XXXX`;
 }
 
-export type ProductKey = 'ticket' | 'voice_rooms' | 'general' | 'custom';
+export type ProductKey = 'ticket' | 'voice_rooms' | 'general' | 'humanguard' | 'custom';
 
 export type Product = {
   key: ProductKey;
@@ -72,6 +72,7 @@ export type Product = {
   activationCodePrefix: string;
   productType: string;
   featured?: boolean;
+  manualActivation?: boolean;
 };
 
 export function products(): Product[] {
@@ -85,9 +86,9 @@ export function products(): Product[] {
       shortDescription: 'بوت تذاكر متكامل لإدارة طلبات العملاء داخل سيرفرك.',
       badge: 'متوفر الآن',
       description: 'بوت تذاكر Opus لإدارة إنشاء وإغلاق التذاكر، البنلات، الترانسكريبت، اللجان، التصعيد، والرولات من إعدادات محفوظة لكل سيرفر.',
-      priceLabel: '$9.99 / شهر',
-      price_monthly: 9.99,
-      price_quarterly: 27.99,
+      priceLabel: '$4.53 / شهر',
+      price_monthly: 4.53,
+      price_quarterly: 12.94,
       activationCodePrefix: 'TICKET',
       productType: 'ticket',
       featured: true,
@@ -101,9 +102,9 @@ export function products(): Product[] {
       shortName: 'الرومات المؤقتة',
       shortDescription: 'Join-to-create voice rooms مع لوحة تحكم كاملة للمالك.',
       description: 'ينشئ روم صوتي مؤقت عند دخول قناة الإنشاء، مع قفل/فتح، إخفاء/إظهار، طرد، حظر، تغيير الاسم والحد، نقل الملكية وحذف الروم عند الفراغ.',
-      priceLabel: '$7.99 / شهر',
-      price_monthly: 7.99,
-      price_quarterly: 21.99,
+      priceLabel: '$3 / شهر',
+      price_monthly: 3.00,
+      price_quarterly: 9.00,
       activationCodePrefix: 'TEMPROOMS',
       productType: 'voice_rooms',
       features: ['إنشاء روم تلقائي', 'لوحة تحكم للمالك', 'حظر وسماح وطرد', 'نقل ملكية وحذف تلقائي', 'استرجاع الحالة بعد restart'],
@@ -116,12 +117,28 @@ export function products(): Product[] {
       shortName: 'سيستم بوت',
       shortDescription: 'إدارة ومودريشن ولوقات ومستويات واقتصاد وألعاب خفيفة.',
       description: 'SystemBot يساعدك على إدارة سيرفر Discord بأوامر المودريشن، اللوقات، الترحيب، الحماية، المستويات، الاقتصاد والأوامر العامة.',
-      priceLabel: '$12.99 / شهر',
-      price_monthly: 12.99,
-      price_quarterly: 35.99,
+      priceLabel: '$9.79 / شهر',
+      price_monthly: 9.79,
+      price_quarterly: 28.71,
       activationCodePrefix: 'SYSTEM',
       productType: 'general',
       features: ['أوامر إدارة ومودريشن', 'لوقات وترحيب ومغادرة', 'مستويات واقتصاد', 'حماية وروابط وسبام', 'ألعاب وأوامر معلومات'],
+    },
+    {
+      key: 'humanguard',
+      id: 'humanguard-ai',
+      name: 'HumanGuard AI',
+      icon: 'ShieldCheck',
+      shortName: 'حماية AI',
+      shortDescription: 'بوت حماية ذكي يكتشف ويصدّ التهديدات داخل سيرفرك تلقائياً.',
+      description: 'HumanGuard AI يحمي سيرفرك من الرايدات، الإزعاج، والتهديدات باستخدام نظام AI متقدم. التفعيل يدوي عبر تكت مع كود خاص.',
+      priceLabel: '$15 / شهر',
+      price_monthly: 15.00,
+      price_quarterly: 45.00,
+      activationCodePrefix: 'HUMANGUARD',
+      productType: 'humanguard',
+      manualActivation: true,
+      features: ['كشف تهديدات بالذكاء الاصطناعي', 'حماية من الرايدات والسبام', 'تحليل سلوك الأعضاء', 'تفعيل يدوي بكود خاص', 'إعدادات مخصصة لكل سيرفر'],
     },
     {
       key: 'custom',
@@ -131,7 +148,7 @@ export function products(): Product[] {
       shortName: 'بوت مخصص',
       shortDescription: 'بوت Discord خاص حسب احتياج سيرفرك الفريد.',
       description: 'Custom Bot هو بوت يتم بناؤه حسب فكرتك واحتياجك. لا يوجد شراء مباشر؛ اضغط تواصل مع المطورين وافتح تذكرة في Discord.',
-      priceLabel: 'حسب الطلب',
+      priceLabel: 'تواصل معنا',
       price_monthly: 0,
       price_quarterly: 0,
       activationCodePrefix: 'CUSTOM',

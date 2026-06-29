@@ -130,12 +130,19 @@ export function PricingCheckout({ products }: { products: Product[] }) {
   const noteText = selectedProduct ? `${selectedProduct.name} - Opus Solutions - ${noteSuffix(billingPeriod)}` : '';
 
   const payPalMeSteps = selectedProduct
-    ? [
-        'ادفع المبلغ عبر طريقة الدفع التي اخترتها',
-        `اكتب في ملاحظة الدفع: "${noteText}"`,
-        'احفظ رقم العملية (Transaction ID)',
-        'افتح تكت في سيرفرنا وأرسل رقم العملية',
-      ]
+    ? selectedProduct.manualActivation
+      ? [
+          'ادفع المبلغ عبر طريقة الدفع التي اخترتها',
+          `اكتب في ملاحظة الدفع: "${noteText}"`,
+          'احفظ رقم العملية (Transaction ID)',
+          'افتح تكت في سيرفرنا وأرسل رقم العملية — ستستلم كود تفعيلك الخاص داخل التكت',
+        ]
+      : [
+          'ادفع المبلغ عبر طريقة الدفع التي اخترتها',
+          `اكتب في ملاحظة الدفع: "${noteText}"`,
+          'احفظ رقم العملية (Transaction ID)',
+          'افتح تكت في سيرفرنا وأرسل رقم العملية',
+        ]
     : [];
 
   return (
