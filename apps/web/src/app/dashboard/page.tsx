@@ -1,118 +1,183 @@
+import { redirect } from 'next/navigation';
 import { DashboardShell } from '@/components/DashboardShell';
-import { StatusDot } from '@/components/ui';
+import { OwnerPanel } from '@/components/dashboard/OwnerPanel';
 import { getSession } from '@/lib/sessions';
 import { getOwnedBots } from '@/lib/dashboard-data';
+import { sessionIsOwner } from '@/lib/owner';
+import { getAdminStats, getSubscribers, getTokenPool } from '@/lib/admin-data';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
 type OwnedBot = Awaited<ReturnType<typeof getOwnedBots>>[number];
-type BillingPeriod = 'monthly' | 'quarterly';
 
-function addMonths(date: Date, months: number) {
-  const copy = new Date(date);
-  copy.setMonth(copy.getMonth() + months);
-  return copy;
+const productLabels: Record<string, string> = {
+  ticket: 'بوت التذاكر',
+  voice_rooms: 'الغرف المؤقتة',
+  general: 'بوت الإدارة',
+};
+
+const statusMeta: Record<string, { label: string; dot: string; text: string }> = {
+  active: { label: 'نشط', dot: 'bg-emerald-400', text: 'text-emerald-300' },
+  paused: { label: 'موقوف مؤقتاً', dot: 'bg-amber-400', text: 'text-amber-300' },
+  expired: { label: 'منتهي', dot: 'bg-red-400', text: 'text-red-300' },
+  cancelled: { label: 'ملغى', dot: 'bg-red-400', text: 'text-red-300' },
+  rejected: { label: 'مرفوض', dot: 'bg-red-400', text: 'text-red-300' },
+};
+
+function fmtDate(value: string | null | undefined) {
+  return value ? new Date(value).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
 }
 
-function inferBillingPeriod(bot: OwnedBot): BillingPeriod {
-  const plan = String(bot.plan_type || '').toLowerCase();
-  return plan.includes('quarter') || plan.includes('3') ? 'quarterly' : 'monthly';
+function daysLeft(expires: string | null | undefined): number | null {
+  if (!expires) return null;
+  const diff = new Date(expires).getTime() - Date.now();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
-function periodLabel(period: BillingPeriod) {
-  return period === 'quarterly' ? '3 شهور' : 'شهري';
-}
+function BotCard({ bot }: { bot: OwnedBot }) {
+  const meta = statusMeta[String(bot.status ?? '')] ?? { label: bot.status ?? '—', dot: 'bg-gray-400', text: 'text-opus-muted' };
+  const remaining = daysLeft(bot.expires_at);
+  const isPaid = bot.plan_type !== 'trial';
 
-function formatDate(value: string | Date | null | undefined) {
-  return value ? new Date(value).toLocaleDateString('en-CA') : '—';
-}
+  return (
+    <div className="rounded-2xl border border-opus-border bg-opus-surface p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="font-arabic text-lg font-extrabold text-opus-text">
+            {productLabels[String(bot.product_type)] ?? bot.product_type ?? 'بوت'}
+          </p>
+          <p className="mt-0.5 font-english text-xs text-opus-muted">{bot.bot_name || bot.guild_name || bot.guild_id}</p>
+        </div>
+        <span className={`inline-flex items-center gap-2 rounded-full border border-opus-border px-3 py-1 font-arabic text-xs font-bold ${meta.text}`}>
+          <span className={`inline-block h-2 w-2 rounded-full ${meta.dot}`} />
+          {meta.label}
+        </span>
+      </div>
 
-function expiryForPeriod(bot: OwnedBot) {
-  if (bot.expires_at) return new Date(bot.expires_at);
-  const period = inferBillingPeriod(bot);
-  const start = bot.last_started_at || bot.updated_at;
-  if (!start) return null;
-  return addMonths(new Date(start), period === 'quarterly' ? 3 : 1);
-}
+      <dl className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div>
+          <dt className="font-arabic text-xs text-opus-muted">الباقة</dt>
+          <dd className="mt-1 font-arabic text-sm font-bold text-opus-text">{isPaid ? 'مدفوعة' : 'تجريبية'}</dd>
+        </div>
+        <div>
+          <dt className="font-arabic text-xs text-opus-muted">ينتهي في</dt>
+          <dd className="mt-1 font-arabic text-sm font-bold text-opus-text">{fmtDate(bot.expires_at)}</dd>
+        </div>
+        <div>
+          <dt className="font-arabic text-xs text-opus-muted">المتبقي</dt>
+          <dd className="mt-1 font-arabic text-sm font-bold text-opus-text">
+            {remaining === null ? 'غير محدود' : remaining > 0 ? `${remaining} يوم` : 'منتهي'}
+          </dd>
+        </div>
+        <div className="col-span-2 sm:col-span-3">
+          <dt className="font-arabic text-xs text-opus-muted">السيرفر</dt>
+          <dd className="mt-1 font-english text-sm text-opus-text">{bot.guild_id || '—'}</dd>
+        </div>
+      </dl>
 
-function planDisplay(bot: OwnedBot) {
-  const label = periodLabel(inferBillingPeriod(bot));
-  const plan = bot.plan_type || bot.product_type || '—';
-  return plan === '—' ? label : `${plan} — ${label}`;
+      {bot.status !== 'active' ? (
+        <a
+          href="/pricing"
+          className="mt-5 inline-flex rounded-xl bg-opus-accent px-4 py-2 font-arabic text-sm font-extrabold text-black transition hover:opacity-90"
+        >
+          تجديد الاشتراك
+        </a>
+      ) : remaining !== null && remaining <= 7 ? (
+        <a
+          href="/pricing"
+          className="mt-5 inline-flex rounded-xl border border-amber-500/50 px-4 py-2 font-arabic text-sm font-bold text-amber-300 transition hover:bg-amber-500/10"
+        >
+          ينتهي قريباً — جدّد الآن
+        </a>
+      ) : null}
+    </div>
+  );
 }
 
 export default async function DashboardPage() {
   const session = await getSession();
-  
-  let bots: Awaited<ReturnType<typeof getOwnedBots>> = [];
-  if (session) {
-    bots = await getOwnedBots(session.discordUserId);
-  }
+  if (!session) redirect('/login');
+
+  const owner = sessionIsOwner(session);
+
+  const [bots, payments] = await Promise.all([
+    getOwnedBots(session.discordUserId).catch(() => [] as OwnedBot[]),
+    (async () => {
+      const { data: account } = await supabaseAdmin().from('accounts').select('id').eq('discord_user_id', session.discordUserId).maybeSingle();
+      if (!account?.id) return [] as { amount_cents: number; currency: string; status: string; created_at: string }[];
+      const { data } = await supabaseAdmin()
+        .from('payments')
+        .select('amount_cents,currency,status,created_at')
+        .eq('account_id', account.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      return data || [];
+    })().catch(() => []),
+  ]);
+
+  // Owner-only data — fetched server-side, never sent to non-owners.
+  const ownerData = owner
+    ? await Promise.all([getAdminStats(), getSubscribers(100), getTokenPool()])
+        .then(([stats, subscribers, tokenPool]) => ({ stats, subscribers, tokenPool }))
+        .catch(() => null)
+    : null;
 
   return (
-    <DashboardShell title="Overview">
-      <div className="grid gap-4">
-        {!session ? (
-          <div className="rounded-2xl border border-opus-border bg-opus-bg p-8 text-center">
-            <p className="font-arabic text-lg font-bold text-opus-text">سجّل دخولك أولاً</p>
-            <p className="mt-2 text-sm text-opus-muted">اربط حساب Discord لعرض بوتاتك واشتراكاتك.</p>
-            <a
-              href="/api/auth/discord"
-              className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-[#5865F2] px-6 py-3 font-arabic text-sm font-extrabold text-white transition hover:opacity-90"
-            >
-              تسجيل الدخول عبر Discord
-            </a>
-          </div>
-        ) : bots.length === 0 ? (
-          <div className="rounded-2xl border border-opus-border bg-opus-bg p-8 text-center">
-            <p className="font-arabic text-lg font-bold text-opus-text">لا توجد بوتات بعد</p>
-            <p className="mt-2 text-sm text-opus-muted">اشترِ منتجاً لتفعيل أول بوت على سيرفرك.</p>
+    <DashboardShell
+      title={`أهلاً، ${session.username || 'بك'}`}
+      subtitle="تابع حالة بوتاتك واشتراكاتك من مكان واحد."
+      badge={owner ? 'مالك المتجر' : 'حساب عميل'}
+    >
+      <section className="grid gap-4">
+        <h2 className="font-arabic text-lg font-extrabold text-opus-text">بوتاتي واشتراكاتي</h2>
+        {bots.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-opus-border bg-opus-surface p-10 text-center">
+            <p className="font-arabic text-base font-bold text-opus-text">لا توجد اشتراكات بعد</p>
+            <p className="mt-2 font-arabic text-sm text-opus-muted">اشترِ منتجاً لتفعيل أول بوت على سيرفرك.</p>
             <a
               href="/pricing"
-              className="mt-4 inline-flex items-center justify-center rounded-xl bg-opus-accent px-6 py-3 font-arabic text-sm font-extrabold text-opus-text transition hover:opacity-90"
+              className="mt-5 inline-flex rounded-xl bg-opus-accent px-6 py-3 font-arabic text-sm font-extrabold text-black transition hover:opacity-90"
             >
               تصفّح المنتجات
             </a>
           </div>
         ) : (
-          <div className="grid gap-4">
-            {bots.map((bot) => {
-              const expiry = expiryForPeriod(bot);
-              return (
-                <div key={bot.id} className="rounded-2xl border border-opus-border bg-opus-panel p-4">
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-                    <div>
-                      <p className="text-xs text-opus-muted">Bot name</p>
-                      <p className="mt-1 font-semibold text-opus-text">{bot.bot_name || '—'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-opus-muted">Product</p>
-                      <p className="mt-1 font-semibold text-opus-text">{bot.product_type || '—'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-opus-muted">Status</p>
-                      <p className="mt-1 font-semibold text-opus-text"><StatusDot status={bot.status || 'inactive'} /></p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-opus-muted">Plan</p>
-                      <p className="mt-1 font-semibold text-opus-text">{planDisplay(bot)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-opus-muted">Renewal / Expires</p>
-                      <p className="mt-1 font-semibold text-opus-text">{formatDate(expiry)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-opus-muted">Guild ID</p>
-                      <p className="mt-1 font-semibold text-opus-text">{bot.guild_id || '—'}</p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="grid gap-4 md:grid-cols-2">
+            {bots.map((bot) => (
+              <BotCard key={bot.id} bot={bot} />
+            ))}
           </div>
         )}
-      </div>
+      </section>
 
+      {payments.length > 0 ? (
+        <section className="mt-10 grid gap-4">
+          <h2 className="font-arabic text-lg font-extrabold text-opus-text">سجل المدفوعات</h2>
+          <div className="overflow-hidden rounded-2xl border border-opus-border">
+            <table className="w-full text-right">
+              <thead className="bg-opus-surface">
+                <tr className="font-arabic text-xs text-opus-muted">
+                  <th className="px-4 py-3 font-bold">التاريخ</th>
+                  <th className="px-4 py-3 font-bold">المبلغ</th>
+                  <th className="px-4 py-3 font-bold">الحالة</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.map((p, i) => (
+                  <tr key={i} className="border-t border-opus-border font-arabic text-sm text-opus-text">
+                    <td className="px-4 py-3">{fmtDate(p.created_at)}</td>
+                    <td className="px-4 py-3 font-english">{(Number(p.amount_cents) / 100).toFixed(2)} {p.currency}</td>
+                    <td className="px-4 py-3">{p.status === 'captured' ? 'مكتمل' : p.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
+      {owner && ownerData ? <OwnerPanel stats={ownerData.stats} subscribers={ownerData.subscribers} tokenPool={ownerData.tokenPool} /> : null}
     </DashboardShell>
   );
 }

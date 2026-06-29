@@ -4,6 +4,7 @@ import { loadOrchestratorEnv } from './env.js';
 import { TokenPoolRepository } from './tokenPool.js';
 import { InstanceManager } from './manager.js';
 import { ProvisioningService, AccountNotLinkedError, NoTokenAvailableError } from './provisioning.js';
+import { startControlBot } from './controlBot.js';
 
 const log = createLogger('orchestrator');
 
@@ -16,6 +17,12 @@ async function main() {
   const provisioning = new ProvisioningService(supabase);
 
   await manager.init();
+
+  // Owner-only /info control bot (no-op if OPUS_CONTROL_BOT_TOKEN is unset).
+  const controlBot = await startControlBot(supabase, env).catch((e) => {
+    log.error('فشل تشغيل بوت التحكم', e instanceof Error ? e.message : e);
+    return null;
+  });
 
   const app = express();
   app.use(express.json());
@@ -56,7 +63,7 @@ async function main() {
   const port = Number(process.env.PORT) || env.WEB_PORT;
   app.listen(port, () => log.info(`🌐 Orchestrator webhook على المنفذ ${port}`));
 
-  const shutdown = async () => { await manager.destroy(); process.exit(0); };
+  const shutdown = async () => { await manager.destroy(); await controlBot?.destroy().catch(() => null); process.exit(0); };
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
 }

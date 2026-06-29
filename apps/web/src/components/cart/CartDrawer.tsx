@@ -63,7 +63,7 @@ export function CartDrawer() {
                   <Link
                     href="/pricing"
                     onClick={closeCart}
-                    className="mt-2 rounded-xl border border-opus-accent px-4 py-2 font-arabic text-sm font-bold text-opus-accent transition hover:bg-opus-accent hover:text-opus-text"
+                    className="mt-2 rounded-xl border border-opus-accent px-4 py-2 font-arabic text-sm font-bold text-opus-accent transition hover:bg-opus-accent hover:text-black"
                   >
                     تصفّح المنتجات
                   </Link>
@@ -121,7 +121,7 @@ export function CartDrawer() {
                 <Link
                   href="/cart"
                   onClick={closeCart}
-                  className="inline-flex w-full items-center justify-center rounded-xl bg-opus-accent px-5 py-3 font-arabic text-sm font-extrabold text-opus-text transition hover:opacity-90"
+                  className="inline-flex w-full items-center justify-center rounded-xl bg-opus-accent px-5 py-3 font-arabic text-sm font-extrabold text-black transition hover:opacity-90"
                 >
                   إتمام الشراء
                 </Link>

@@ -101,7 +101,7 @@ export function ButtonLink({ href = '#', children, muted = false, size = 'md', e
     btnBase,
     btnSize(size),
     isSolid && !muted
-      ? 'bg-[var(--color-accent)] text-[var(--color-text)] hover:opacity-90'
+      ? 'bg-[var(--color-accent)] text-black hover:opacity-90'
       : 'border border-[var(--color-border)] bg-transparent text-[var(--color-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-text)]',
     disabled && 'cursor-not-allowed opacity-50'
   );

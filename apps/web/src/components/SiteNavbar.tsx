@@ -62,7 +62,7 @@ export function SiteNavbar() {
     >
       <ShoppingCart size={18} />
       {count > 0 ? (
-        <span className="absolute -right-1.5 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-opus-accent px-1 font-english text-[11px] font-bold text-white">
+        <span className="absolute -right-1.5 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-opus-accent px-1 font-english text-[11px] font-bold text-black">
           {count}
         </span>
       ) : null}

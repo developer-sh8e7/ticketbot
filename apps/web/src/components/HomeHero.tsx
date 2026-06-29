@@ -44,7 +44,7 @@ export function HomeHero() {
         <motion.div variants={item} className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
             href="/pricing"
-            className="inline-flex min-w-36 items-center justify-center rounded-xl bg-[var(--color-accent)] px-6 py-3 font-arabic text-sm font-extrabold text-[var(--color-text)] transition hover:-translate-y-0.5 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+            className="inline-flex min-w-36 items-center justify-center rounded-xl bg-[var(--color-accent)] px-6 py-3 font-arabic text-sm font-extrabold text-black transition hover:-translate-y-0.5 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
           >
             اشترِ الآن
           </Link>

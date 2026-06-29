@@ -40,7 +40,7 @@ export function PaymentSection({ priceLabel, productName }: PaymentSectionProps)
           href={paypalUrl}
           target={isExternal ? '_blank' : undefined}
           rel={isExternal ? 'noopener noreferrer' : undefined}
-          className="inline-flex shrink-0 items-center justify-center rounded-xl bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--color-text)] transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+          className="inline-flex shrink-0 items-center justify-center rounded-xl bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-black transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
           aria-label={`ادفع عبر الباي بال لشراء ${productName}`}
         >
           ادفع {priceLabel} عبر الباي بال

@@ -10,9 +10,12 @@ export async function findOwnedBotIds(discordUserId: string) {
   return (data || []).map((row) => row.bot_instance_id as string).filter(Boolean);
 }
 
+const BOT_FIELDS =
+  'id,bot_user_id,bot_name,guild_id,guild_name,owner_id,product_type,plan_type,status,expires_at,last_started_at,last_stopped_at,created_at,updated_at';
+
 export async function getOwnedBots(discordUserId: string) {
   const ids = await findOwnedBotIds(discordUserId);
-  let query = supabaseAdmin().from('bot_instances').select('id,bot_user_id,bot_name,guild_id,guild_name,owner_id,product_type,plan_type,status,expires_at,support_ends_at,last_started_at,last_stopped_at,updated_at').eq('product_type', 'ticket');
+  let query = supabaseAdmin().from('bot_instances').select(BOT_FIELDS);
   if (ids.length) query = query.or(`owner_id.eq.${discordUserId},id.in.(${ids.join(',')})`);
   else query = query.eq('owner_id', discordUserId);
   const { data, error } = await query.order('created_at', { ascending: false });

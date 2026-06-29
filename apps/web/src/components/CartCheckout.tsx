@@ -64,7 +64,7 @@ export function CartCheckout() {
         <p className="mt-2 text-sm text-opus-muted">أضف منتجاً للبدء بعملية الشراء.</p>
         <Link
           href="/pricing"
-          className="mt-5 inline-flex rounded-xl bg-opus-accent px-5 py-2.5 font-arabic text-sm font-extrabold text-opus-text transition hover:opacity-90"
+          className="mt-5 inline-flex rounded-xl bg-opus-accent px-5 py-2.5 font-arabic text-sm font-extrabold text-black transition hover:opacity-90"
         >
           تصفّح المنتجات
         </Link>

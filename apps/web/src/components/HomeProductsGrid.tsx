@@ -50,7 +50,7 @@ const card = {
 function ProductCta({ href, external, disabled, children }: { href: string; external: boolean; disabled?: boolean; children: ReactNode }) {
   const className =
     'mt-auto inline-flex w-full items-center justify-center rounded-xl border border-[var(--color-border)] px-4 py-2.5 font-arabic text-sm font-extrabold text-[var(--color-text)] transition';
-  const activeClassName = `${className} hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)]`;
+  const activeClassName = `${className} hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-black`;
 
   if (disabled) {
     return <span className={`${className} cursor-not-allowed opacity-60`}>{children}</span>;
@@ -85,7 +85,7 @@ function AddToCartButton({ product }: { product: HomeProduct }) {
     <button
       type="button"
       onClick={handleAdd}
-      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--color-border)] text-[var(--color-text)] transition hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)]"
+      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--color-border)] text-[var(--color-text)] transition hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-black"
       aria-label={`أضف ${product.name} للسلة`}
     >
       {added ? <Check size={18} /> : <Plus size={18} />}

@@ -230,7 +230,7 @@ export function PricingCheckout({ products }: { products: Product[] }) {
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-accent)] px-5 py-3 font-arabic text-sm font-extrabold text-[var(--color-accent)] transition hover:bg-[var(--color-accent)] hover:text-[var(--color-text)]"
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-accent)] px-5 py-3 font-arabic text-sm font-extrabold text-[var(--color-accent)] transition hover:bg-[var(--color-accent)] hover:text-black"
                 >
                   {justAdded ? <Check size={17} /> : <ShoppingCart size={17} />}
                   <span>{justAdded ? 'تمت الإضافة للسلة' : 'أضف للسلة'}</span>

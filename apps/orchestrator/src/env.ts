@@ -3,6 +3,9 @@ import { z } from 'zod';
 
 export const orchestratorEnvSchema = coreEnvSchema.extend({
   OPUS_CONTROL_BOT_TOKEN: z.string().optional(),
+  // Owner-only control surface for the /info command.
+  OWNER_DISCORD_ID: z.string().default('1397364822152315052'),
+  CONTROL_GUILD_ID: z.string().default('1395842846107631746'),
   TRIAL_MANAGER_ID: z.string().default('1029665419788832800'),
   OPUS_NOTIFY_CHANNEL_ID: z.string().default('1482267609062703104'),
   WEB_PORT: z.coerce.number().default(3000),

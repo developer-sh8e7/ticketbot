@@ -494,7 +494,7 @@ export function ProductPayPalCheckout({
                 type="button"
                 onClick={submitCard}
                 disabled={loading || submittingCard}
-                className="inline-flex w-full items-center justify-center rounded-xl bg-[var(--color-accent)] px-5 py-3 font-arabic text-sm font-extrabold text-[var(--color-text)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex w-full items-center justify-center rounded-xl bg-[var(--color-accent)] px-5 py-3 font-arabic text-sm font-extrabold text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submittingCard ? 'جاري المعالجة...' : 'ادفع بالبطاقة عبر PayPal'}
               </button>

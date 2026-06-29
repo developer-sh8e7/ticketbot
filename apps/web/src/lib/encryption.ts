@@ -138,3 +138,38 @@ export function encryptToken(plaintext: string): string {
 export function decryptToken(encrypted: string): string {
   return decryptField(encrypted);
 }
+
+// ─── Bot-pool token encryption (Fernet, must match @opus/core) ────────────────
+//
+// Bot tokens in `token_pool` are encrypted with Fernet keyed by
+// TOKEN_ENCRYPTION_KEY so the orchestrator (which uses @opus/core decryptToken)
+// can decrypt them. This mirrors packages/core/src/crypto.ts exactly. The web
+// app doesn't depend on @opus/core, so the algorithm is replicated here for the
+// owner "add token" action only.
+
+function deriveFernetKey(rawKey: string): Buffer {
+  const digest = crypto.createHash('sha256').update(rawKey, 'utf-8').digest();
+  return Buffer.from(digest.toString('base64url'), 'base64url');
+}
+
+/** Encrypt a Discord bot token into the Fernet format the orchestrator expects. */
+export function encryptBotToken(plainToken: string): string {
+  const rawKey = env().TOKEN_ENCRYPTION_KEY;
+  if (!rawKey) throw new Error('TOKEN_ENCRYPTION_KEY is not configured');
+  const fk = deriveFernetKey(rawKey);
+  const signingKey = fk.subarray(0, 16);
+  const cryptoKey = fk.subarray(16, 32);
+
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-128-cbc', cryptoKey, iv);
+  cipher.setAutoPadding(true);
+  const ciphertext = Buffer.concat([cipher.update(plainToken, 'utf-8'), cipher.final()]);
+
+  const version = Buffer.from([0x80]);
+  const timestamp = Buffer.alloc(8);
+  timestamp.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 1000)));
+
+  const body = Buffer.concat([version, timestamp, iv, ciphertext]);
+  const hmac = crypto.createHmac('sha256', signingKey).update(body).digest();
+  return Buffer.concat([body, hmac]).toString('base64url');
+}
