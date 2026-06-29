@@ -6,6 +6,7 @@ import type { CheckoutProductSelection } from '@/lib/checkout-products';
 import { sendBuyWebhook } from '@/lib/webhook';
 import { requireCustomer } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
+import { isProvisionable, productArabicName } from '@/lib/provisioning-shared';
 
 type SelectionInput = {
   productId?: unknown;
@@ -68,25 +69,76 @@ export async function POST(req: Request) {
       metadata: {
         items: selections.map((s) => ({ productType: s.product.productType, plan: s.plan.id, duration: s.plan.duration })),
         payerEmail: result.payerEmail,
+        guildId,
+        guildName,
       },
     }, { onConflict: 'paypal_order_id' });
     if (paymentError) throw paymentError;
 
-    // Provision each purchased bot to the chosen server (store server is exempt and always on).
+    // Provision each purchased bot to the chosen server. The payment is already
+    // captured at this point, so a provisioning hiccup must NEVER turn into a
+    // 500 that loses the order — we record what succeeded and what's pending.
+    const pending: string[] = [];
     for (const selection of selections) {
-      if (selection.product.productType === 'custom' || guildId === STORE_GUILD_ID) continue;
+      const productType = selection.product.productType;
+      // Manual/custom products (e.g. HumanGuard, custom bot) aren't pooled bots,
+      // and the store's own server is exempt and always running.
+      if (!isProvisionable(productType) || guildId === STORE_GUILD_ID) continue;
+
+      // Unique per item so multi-item carts don't collide on the subscription's
+      // external_ref unique index.
+      const externalRef = `${result.orderID}:${productType}`;
       const { data: instance, error: provisionError } = await supabase.rpc('provision_instance', {
         p_account_id: account.id,
         p_owner_id: session.discordUserId,
         p_guild_id: guildId,
         p_guild_name: guildName,
-        p_product_type: selection.product.productType,
+        p_product_type: productType,
         p_plan_name: selection.plan.id,
         p_duration_days: selection.plan.durationDays,
-        p_external_ref: result.orderID,
+        p_external_ref: externalRef,
       });
-      if (provisionError) throw provisionError;
-      await supabase.from('payment_events').insert({ provider: 'paypal', event_type: 'provisioned', external_event_id: result.orderID, payload: { instance, productType: selection.product.productType } });
+
+      if (provisionError) {
+        // Out of tokens (lost a stock race) — defer, don't fail the paid order.
+        if (/NO_TOKEN_AVAILABLE/.test(provisionError.message)) {
+          pending.push(productType);
+          await supabase.from('payment_events').insert({
+            provider: 'paypal',
+            event_type: 'provision_pending',
+            external_event_id: result.orderID,
+            // Self-contained so it can be fulfilled later without re-deriving anything.
+            payload: {
+              productType,
+              reason: 'no_token_available',
+              guildId,
+              guildName,
+              ownerId: session.discordUserId,
+              accountId: account.id,
+              planId: selection.plan.id,
+              durationDays: selection.plan.durationDays,
+              externalRef,
+            },
+          });
+          continue;
+        }
+        throw provisionError;
+      }
+      await supabase.from('payment_events').insert({ provider: 'paypal', event_type: 'provisioned', external_event_id: result.orderID, payload: { instance, productType } });
+    }
+
+    // Alert the owner so they can top up the pool; the buyer is told it's coming.
+    if (pending.length > 0) {
+      sendBuyWebhook('provision_pending', {
+        title: '⚠️ دفع مكتمل بانتظار توكن',
+        description: `طلب \`${result.orderID.slice(0, 20)}\` دفع لكن لا يوجد توكن متاح. أضف توكناً للبركة لتفعيله.`,
+        color: 0xf59e0b,
+        fields: [
+          { name: '📦 بانتظار', value: pending.map(productArabicName).join('، '), inline: false },
+          { name: '🏠 السيرفر', value: `\`${guildId}\``, inline: true },
+        ],
+        footer: 'Opus • تفعيل مؤجل',
+      }).catch(() => {});
     }
 
     // DISCORD_BUY_WEB — purchase success
@@ -103,7 +155,7 @@ export async function POST(req: Request) {
       footer: 'Opus • شراء',
     }).catch(() => {});
 
-    return ok(result);
+    return ok({ ...result, provisioning: pending.length > 0 ? 'pending' : 'active', pendingProducts: pending });
   } catch (error) {
     if (error instanceof SyntaxError) return fail('bad_request', 'Invalid JSON body.', 400);
     if (error instanceof PayPalConfigError) return fail('internal_error', 'PayPal Checkout is not configured.', 503);

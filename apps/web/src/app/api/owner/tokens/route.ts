@@ -8,6 +8,7 @@ import { requireOwner } from '@/lib/owner';
 import { supabaseAdmin } from '@/lib/supabase';
 import { encryptBotToken } from '@/lib/encryption';
 import { logWebsiteEvent } from '@/lib/events';
+import { fulfillPendingProvisions } from '@/lib/provisioning-shared';
 import { env } from '@/lib/env';
 
 type Body = { productType?: unknown; applicationId?: unknown; token?: unknown; label?: unknown };
@@ -58,7 +59,10 @@ export async function POST(req: NextRequest) {
       metadata: { productType, applicationId, label },
     }).catch(() => {});
 
-    return ok({ productType, applicationId });
+    // Activate any paid-but-deferred orders that were waiting on this token type.
+    const fulfilled = await fulfillPendingProvisions(productType).catch(() => 0);
+
+    return ok({ productType, applicationId, fulfilledPending: fulfilled });
   } catch (error) {
     console.error('[owner/tokens]', error);
     return internalError();

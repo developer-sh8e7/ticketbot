@@ -232,10 +232,14 @@ function PayPalCart({ items, guildId, guildName, onSuccess }: { items: CartItem[
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderID, guildId: guildRef.current, guildName: guildNameRef.current, items: itemsRef.current.map(itemPayload) }),
       });
-      const json = (await res.json()) as ApiResponse<unknown>;
+      const json = (await res.json()) as ApiResponse<{ provisioning?: string }>;
       if (!json.success) throw new Error(json.error?.message || 'تعذر تأكيد الدفع.');
       setStatus('success');
-      setMessage('تم الدفع والتفعيل بنجاح! تفقّد لوحة التحكم.');
+      setMessage(
+        json.data.provisioning === 'pending'
+          ? 'تم الدفع بنجاح! بوتك قيد التجهيز وسيُفعّل خلال دقائق — ستجده في لوحة التحكم.'
+          : 'تم الدفع والتفعيل بنجاح! بوتك سيظهر في سيرفرك خلال لحظات. تفقّد لوحة التحكم.',
+      );
       onSuccess();
     },
     [onSuccess],

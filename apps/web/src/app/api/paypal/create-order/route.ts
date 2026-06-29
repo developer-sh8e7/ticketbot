@@ -5,6 +5,7 @@ import { createPayPalOrder, findCheckoutProduct, PayPalApiError, PayPalConfigErr
 import type { CheckoutProductSelection } from '@/lib/checkout-products';
 import { sendBuyWebhook } from '@/lib/webhook';
 import { requireCustomer } from '@/lib/auth';
+import { checkTokenStock, productArabicName } from '@/lib/provisioning-shared';
 
 type SelectionInput = {
   productId?: unknown;
@@ -37,6 +38,16 @@ export async function POST(req: Request) {
     const body = (await req.json()) as CreateOrderBody;
     const selections = resolveSelections(body);
     if (!selections) return fail('bad_request', 'Invalid or unavailable product, plan, or duration.', 400);
+
+    // Don't take money for a bot we can't deliver: ensure pooled tokens exist.
+    const shortage = await checkTokenStock(selections.map((s) => s.product.productType));
+    if (shortage) {
+      return fail(
+        'conflict',
+        `نفدت بوتات ${productArabicName(shortage.productType)} مؤقتاً. تواصل مع الدعم وسنوفّرها سريعاً.`,
+        409,
+      );
+    }
 
     const order = await createPayPalOrder(selections);
 
