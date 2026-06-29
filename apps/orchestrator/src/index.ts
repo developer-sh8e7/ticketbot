@@ -53,7 +53,8 @@ async function main() {
     }
   });
 
-  app.listen(env.WEB_PORT, () => log.info(`🌐 Orchestrator webhook على المنفذ ${env.WEB_PORT}`));
+  const port = Number(process.env.PORT) || env.WEB_PORT;
+  app.listen(port, () => log.info(`🌐 Orchestrator webhook على المنفذ ${port}`));
 
   const shutdown = async () => { await manager.destroy(); process.exit(0); };
   process.on('SIGINT', shutdown);
