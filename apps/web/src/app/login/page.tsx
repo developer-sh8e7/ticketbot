@@ -4,6 +4,7 @@ import { PublicFrame } from '@/components/ui';
 const errorMessages: Record<string, string> = {
   oauth_state: 'انتهت جلسة الربط أو لم تتطابق. حاول مرة أخرى.',
   oauth_failed: 'تعذّر تسجيل الدخول عبر Discord. حاول مرة أخرى.',
+  config: 'إعدادات تسجيل الدخول غير مكتملة على الخادم. راجع متغيرات البيئة في Railway.',
 };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {

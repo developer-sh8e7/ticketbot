@@ -41,13 +41,23 @@ let cached: z.infer<typeof envSchema> | null = null;
 
 export function env() {
   if (!cached) {
-    cached = envSchema.parse(process.env);
+    const parsed = envSchema.safeParse(process.env);
+    if (!parsed.success) {
+      // Log variable names + messages (never values) so the real cause is visible in deploy logs.
+      const issues = parsed.error.issues
+        .map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`)
+        .join('; ');
+      console.error('[env] Invalid environment configuration ->', issues);
+      throw new Error(`Invalid environment configuration: ${issues}`);
+    }
+    cached = parsed.data;
     // Production HTTPS enforcement
     if (cached.NODE_ENV === 'production' && !cached.APP_URL.startsWith('https://')) {
-      throw new Error(
+      const msg =
         `APP_URL must use https:// in production (got: ${cached.APP_URL}). ` +
-        'Set NODE_ENV=development for local dev without HTTPS.'
-      );
+        'Set APP_URL=https://opussolutions.up.railway.app in Railway Variables.';
+      console.error('[env]', msg);
+      throw new Error(msg);
     }
   }
   return cached;
