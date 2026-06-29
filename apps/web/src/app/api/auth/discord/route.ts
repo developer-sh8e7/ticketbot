@@ -18,6 +18,9 @@ export async function GET(req: NextRequest) {
     return res;
   } catch (error) {
     console.error('[auth/discord]', error);
-    return NextResponse.redirect(new URL('/login?error=config', req.url));
+    // Behind Railway's proxy req.url is the internal localhost:8080 — use the forwarded host so the user lands on the real domain.
+    const proto = req.headers.get('x-forwarded-proto') ?? 'https';
+    const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? 'localhost';
+    return NextResponse.redirect(new URL('/login?error=config', `${proto}://${host}`));
   }
 }
