@@ -39,7 +39,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <span>تسجيل الدخول عبر Discord</span>
           </a>
           <p className="mt-4 text-xs leading-6 text-opus-muted">
-            نطلب صلاحية <span className="font-bold text-opus-text">identify</span> فقط — لا نصل لرسائلك أو سيرفراتك.
+            نطلب <span className="font-bold text-opus-text">اسمك وإيميلك وقائمة سيرفراتك</span> فقط — لا نصل لرسائلك الخاصة.
           </p>
         </div>
 

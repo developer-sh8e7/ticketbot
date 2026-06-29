@@ -10,7 +10,7 @@ import { notifyManagerSync } from '@/lib/manager-sync';
 import { hashField } from '@/lib/encryption';
 import { updateOwnerPii, lookupActivationCodeByHash } from '@/lib/activation-codes';
 
-type DiscordUser = { id: string; username?: string; avatar?: string | null };
+type DiscordUser = { id: string; username?: string; avatar?: string | null; email?: string | null };
 
 async function exchangeCode(code: string) {
   const e = env();
@@ -56,6 +56,7 @@ export async function GET(req: NextRequest) {
       discord_user_id: user.id,
       discord_username: user.username ?? null,
       avatar_url: user.avatar ?? null,
+      email: user.email ?? null,
       last_login_at: new Date().toISOString(),
     }, { onConflict: 'discord_user_id' });
 

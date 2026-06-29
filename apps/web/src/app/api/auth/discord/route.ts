@@ -9,7 +9,7 @@ export async function GET(_req: NextRequest) {
   url.searchParams.set('client_id', env().DISCORD_CLIENT_ID);
   url.searchParams.set('redirect_uri', env().DISCORD_REDIRECT_URI);
   url.searchParams.set('response_type', 'code');
-  url.searchParams.set('scope', 'identify');
+  url.searchParams.set('scope', 'identify email guilds');
   url.searchParams.set('state', state);
   const res = NextResponse.redirect(url);
   res.cookies.set('opus_oauth_state', state, { httpOnly: true, secure: isProduction(), sameSite: 'lax', path: '/', maxAge: 60 * 10 });
