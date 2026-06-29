@@ -7,10 +7,13 @@ import { LayoutDashboard, LogOut, Menu, ShoppingCart, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useCart } from '@/components/cart/CartProvider';
 
+const SUPPORT_URL = 'https://discord.gg/ZavYFR4qFr';
+
 const links: [string, string][] = [
   ['الرئيسية', '/'],
   ['الأوامر', '/commands'],
   ['الأسعار', '/pricing'],
+  ['الدعم الفني', SUPPORT_URL],
 ];
 
 type SessionUser = { discord_user_id: string; username: string | null; avatar: string | null };
@@ -137,6 +140,8 @@ export function SiteNavbar() {
             <Link
               key={href}
               href={href}
+              target={href === SUPPORT_URL ? '_blank' : undefined}
+              rel={href === SUPPORT_URL ? 'noopener noreferrer' : undefined}
               className="nav-link rounded-lg px-4 py-2 text-sm font-semibold text-opus-muted transition hover:text-opus-text focus:outline-none"
             >
               {label}
@@ -176,6 +181,8 @@ export function SiteNavbar() {
             <Link
               key={href}
               href={href}
+              target={href === SUPPORT_URL ? '_blank' : undefined}
+              rel={href === SUPPORT_URL ? 'noopener noreferrer' : undefined}
               onClick={() => setOpen(false)}
               className="rounded-xl px-4 py-3 font-semibold text-opus-muted transition hover:bg-opus-surface hover:text-opus-text"
             >
