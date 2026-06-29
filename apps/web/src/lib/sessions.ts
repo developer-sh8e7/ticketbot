@@ -3,6 +3,8 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { env, isProduction } from './env';
 import { supabaseAdmin } from './supabase';
+import { encryptField, decryptField } from './encryption';
+import type { DiscordTokenResponse } from './discord';
 
 export const SESSION_COOKIE = 'opus_session';
 
@@ -41,7 +43,27 @@ export async function getSession() {
   return raw ? decode(raw) : null;
 }
 
-export async function createSession(input: { discordUserId: string; username?: string; avatar?: string | null; userAgent?: string | null; ip?: string | null }) {
+/** Build the encrypted Discord-token blob stored in customer_sessions.metadata. */
+function tokenMetadata(token?: DiscordTokenResponse | null) {
+  if (!token?.access_token) return {};
+  return {
+    discord: {
+      at_enc: encryptField(token.access_token),
+      rt_enc: token.refresh_token ? encryptField(token.refresh_token) : null,
+      scope: token.scope ?? null,
+      token_expires_at: new Date(Date.now() + (token.expires_in ?? 0) * 1000).toISOString(),
+    },
+  };
+}
+
+export async function createSession(input: {
+  discordUserId: string;
+  username?: string;
+  avatar?: string | null;
+  userAgent?: string | null;
+  ip?: string | null;
+  discordToken?: DiscordTokenResponse | null;
+}) {
   const sid = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 14);
   const payload: SessionPayload = {
@@ -62,11 +84,40 @@ export async function createSession(input: { discordUserId: string; username?: s
       user_agent: input.userAgent ?? null,
       ip_address: input.ip ?? null,
       expires_at: expiresAt.toISOString(),
-      metadata: {},
+      metadata: tokenMetadata(input.discordToken),
     });
   if (error) throw error;
 
   return encode(payload);
+}
+
+export type SessionDiscordToken = { accessToken: string; refreshToken: string | null; scope: string | null; expiresAt: string | null };
+
+/** Read + decrypt the Discord token stored for a session id. */
+export async function getSessionDiscordToken(sid: string): Promise<SessionDiscordToken | null> {
+  const { data, error } = await supabaseAdmin()
+    .from('customer_sessions')
+    .select('metadata,revoked_at')
+    .eq('id', sid)
+    .maybeSingle();
+  if (error || !data || data.revoked_at) return null;
+  const blob = (data.metadata as { discord?: { at_enc?: string; rt_enc?: string | null; scope?: string | null; token_expires_at?: string | null } })?.discord;
+  if (!blob?.at_enc) return null;
+  try {
+    return {
+      accessToken: decryptField(blob.at_enc),
+      refreshToken: blob.rt_enc ? decryptField(blob.rt_enc) : null,
+      scope: blob.scope ?? null,
+      expiresAt: blob.token_expires_at ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Persist a refreshed Discord token back onto the session row. */
+export async function updateSessionDiscordToken(sid: string, token: DiscordTokenResponse): Promise<void> {
+  await supabaseAdmin().from('customer_sessions').update({ metadata: tokenMetadata(token) }).eq('id', sid);
 }
 
 export function setSessionCookie(res: NextResponse, sessionValue: string) {

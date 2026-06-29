@@ -9,33 +9,7 @@ import { logWebsiteEvent } from '@/lib/events';
 import { notifyManagerSync } from '@/lib/manager-sync';
 import { hashField } from '@/lib/encryption';
 import { updateOwnerPii, lookupActivationCodeByHash } from '@/lib/activation-codes';
-
-type DiscordUser = { id: string; username?: string; avatar?: string | null; email?: string | null };
-
-async function exchangeCode(code: string) {
-  const e = env();
-  const body = new URLSearchParams({
-    client_id: e.DISCORD_CLIENT_ID,
-    client_secret: e.DISCORD_CLIENT_SECRET,
-    grant_type: 'authorization_code',
-    code,
-    redirect_uri: e.DISCORD_REDIRECT_URI,
-  });
-  const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
-    method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body,
-    cache: 'no-store',
-  });
-  if (!tokenRes.ok) throw new Error('Discord token exchange failed');
-  const token = (await tokenRes.json()) as { access_token: string };
-  const userRes = await fetch('https://discord.com/api/users/@me', {
-    headers: { authorization: `Bearer ${token.access_token}` },
-    cache: 'no-store',
-  });
-  if (!userRes.ok) throw new Error('Discord user fetch failed');
-  return (await userRes.json()) as DiscordUser;
-}
+import { exchangeCode, fetchDiscordUser } from '@/lib/discord';
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
@@ -50,7 +24,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=oauth_state', appUrl));
     }
 
-    const user = await exchangeCode(code);
+    const token = await exchangeCode(code);
+    const user = await fetchDiscordUser(token.access_token);
 
     await supabaseAdmin().from('accounts').upsert({
       discord_user_id: user.id,
@@ -82,6 +57,7 @@ export async function GET(req: NextRequest) {
       avatar: user.avatar,
       userAgent: req.headers.get('user-agent'),
       ip: clientIp(req),
+      discordToken: token,
     });
 
     const res = NextResponse.redirect(new URL('/dashboard', appUrl));

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CheckCircle2, Loader2, Send, ShoppingCart, Trash2 } from 'lucide-react';
 import { useCart, type CartDuration, type CartItem } from '@/components/cart/CartProvider';
+import { ServerSelect } from '@/components/ServerSelect';
 
 type SessionUser = { discord_user_id: string; username: string | null };
 type ApiResponse<T> = { success: true; data: T } | { success: false; error?: { message?: string } };
@@ -42,6 +43,7 @@ export function CartCheckout() {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [guildId, setGuildId] = useState('');
+  const [guildName, setGuildName] = useState('');
   const [method, setMethod] = useState<'paypal' | 'manual'>('paypal');
 
   useEffect(() => {
@@ -141,22 +143,21 @@ export function CartCheckout() {
         </section>
       ) : (
         <>
-          {/* Server ID */}
+          {/* Server selector — pulled live from the user's Discord (admin guilds only) */}
           <section className="rounded-2xl border border-opus-border bg-opus-surface p-5">
-            <label className="grid gap-2">
-              <span className="font-arabic text-sm font-bold text-opus-text">معرّف سيرفر Discord (Server ID)</span>
-              <span className="text-xs leading-6 text-opus-muted">
-                فعّل وضع المطوّر في Discord، ثم انسخ معرّف السيرفر الذي تريد تفعيل البوت فيه.
-              </span>
-              <input
-                className="input font-english"
-                value={guildId}
-                onChange={(e) => setGuildId(e.target.value.replace(/\D/g, ''))}
-                placeholder="123456789012345678"
-                dir="ltr"
-                inputMode="numeric"
-              />
-            </label>
+            <div className="mb-3">
+              <h3 className="font-arabic text-sm font-bold text-opus-text">اختر السيرفر</h3>
+              <p className="mt-1 text-xs leading-6 text-opus-muted">
+                نعرض فقط السيرفرات التي تملك فيها صلاحية <span className="font-bold text-opus-text">Administrator</span> لضمان تفعيل البوت بنجاح.
+              </p>
+            </div>
+            <ServerSelect
+              value={guildId}
+              onSelect={(id, name) => {
+                setGuildId(id);
+                setGuildName(name);
+              }}
+            />
           </section>
 
           {/* Payment method tabs */}
@@ -183,7 +184,7 @@ export function CartCheckout() {
             </div>
 
             {method === 'paypal' ? (
-              <PayPalCart items={items} guildId={guildId} onSuccess={clear} />
+              <PayPalCart items={items} guildId={guildId} guildName={guildName} onSuccess={clear} />
             ) : (
               <ManualTransfer total={total} noteText={noteText} />
             )}
@@ -194,20 +195,22 @@ export function CartCheckout() {
   );
 }
 
-function PayPalCart({ items, guildId, onSuccess }: { items: CartItem[]; guildId: string; onSuccess: () => void }) {
+function PayPalCart({ items, guildId, guildName, onSuccess }: { items: CartItem[]; guildId: string; guildName: string; onSuccess: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const guildRef = useRef(guildId);
+  const guildNameRef = useRef(guildName);
   const itemsRef = useRef(items);
   const [status, setStatus] = useState<'loading' | 'ready' | 'capturing' | 'success' | 'error' | 'unconfigured'>('loading');
   const [message, setMessage] = useState('');
 
   guildRef.current = guildId;
+  guildNameRef.current = guildName;
   itemsRef.current = items;
 
   const createOrder = useCallback(async () => {
     if (!guildRef.current) {
       setStatus('error');
-      setMessage('أدخل معرّف السيرفر أولاً.');
+      setMessage('اختر السيرفر أولاً.');
       throw new Error('missing guild');
     }
     const res = await fetch('/api/paypal/create-order', {
@@ -227,7 +230,7 @@ function PayPalCart({ items, guildId, onSuccess }: { items: CartItem[]; guildId:
       const res = await fetch('/api/paypal/capture-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderID, guildId: guildRef.current, items: itemsRef.current.map(itemPayload) }),
+        body: JSON.stringify({ orderID, guildId: guildRef.current, guildName: guildNameRef.current, items: itemsRef.current.map(itemPayload) }),
       });
       const json = (await res.json()) as ApiResponse<unknown>;
       if (!json.success) throw new Error(json.error?.message || 'تعذر تأكيد الدفع.');
@@ -296,7 +299,7 @@ function PayPalCart({ items, guildId, onSuccess }: { items: CartItem[]; guildId:
     <div className="grid gap-3">
       {!guildId ? (
         <p className="rounded-xl border border-[#f59e0b]/40 bg-[#f59e0b]/5 px-4 py-2.5 text-sm text-[#f59e0b]">
-          أدخل معرّف السيرفر بالأعلى لتفعيل الدفع.
+          اختر السيرفر بالأعلى لتفعيل الدفع.
         </p>
       ) : null}
       <div ref={containerRef} className={!guildId ? 'pointer-events-none opacity-40' : ''} />
