@@ -2,19 +2,25 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Bot, Code2, Mic2, ShieldCheck, Ticket, type LucideIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { Bot, Check, Code2, Mic2, Plus, ShieldCheck, Ticket, type LucideIcon } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
 import type { ProductKey } from '@/lib/site-content';
+import { buildCartItem, useCart } from '@/components/cart/CartProvider';
 
 type HomeProduct = {
   key: ProductKey;
+  id: string;
   name: string;
+  productType: string;
   shortDescription: string;
   priceLabel: string;
+  price_monthly: number;
+  price_quarterly: number;
   href: string;
   external: boolean;
   ctaLabel: string;
   disabled?: boolean;
+  purchasable?: boolean;
 };
 
 type HomeProductsGridProps = {
@@ -65,6 +71,28 @@ function ProductCta({ href, external, disabled, children }: { href: string; exte
   );
 }
 
+function AddToCartButton({ product }: { product: HomeProduct }) {
+  const { addItem } = useCart();
+  const [added, setAdded] = useState(false);
+
+  function handleAdd() {
+    addItem(buildCartItem(product, 'monthly'));
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleAdd}
+      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--color-border)] text-[var(--color-text)] transition hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)]"
+      aria-label={`أضف ${product.name} للسلة`}
+    >
+      {added ? <Check size={18} /> : <Plus size={18} />}
+    </button>
+  );
+}
+
 export function HomeProductsGrid({ products }: HomeProductsGridProps) {
   return (
     <motion.section
@@ -107,9 +135,14 @@ export function HomeProductsGrid({ products }: HomeProductsGridProps) {
 
               <p className="mb-6 text-sm leading-7 text-[var(--color-muted)]">{product.shortDescription}</p>
 
-              <ProductCta href={product.href} external={product.external} disabled={product.disabled}>
-                {product.ctaLabel}
-              </ProductCta>
+              <div className="mt-auto flex items-stretch gap-2">
+                <div className="flex-1">
+                  <ProductCta href={product.href} external={product.external} disabled={product.disabled}>
+                    {product.ctaLabel}
+                  </ProductCta>
+                </div>
+                {product.purchasable ? <AddToCartButton product={product} /> : null}
+              </div>
             </motion.article>
           );
         })}

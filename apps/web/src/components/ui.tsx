@@ -52,11 +52,11 @@ export function Footer() {
               ))}
             </div>
           </div>
-          <FooterGroup title="Pages" links={[['Home', '/'], ['Commands', '/commands'], ['Pricing', '/pricing'], ['Dashboard', '/login']]} />
+          <FooterGroup title="Pages" links={[['Home', '/'], ['Commands', '/commands'], ['Pricing', '/pricing'], ['Dashboard', '/dashboard']]} />
           <FooterGroup title="Legal" links={[['Terms of Service', '/terms'], ['Privacy Policy', '/privacy'], ['Cancellations', '/cancellation']]} />
         </div>
         <div className="mt-12 border-t border-[var(--color-border)] pt-6 text-center text-xs text-[var(--color-muted)]">
-          © 2025 Opus Solutions
+          © {new Date().getFullYear()} Opus Solutions
         </div>
       </div>
     </footer>

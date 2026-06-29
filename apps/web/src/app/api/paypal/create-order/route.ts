@@ -2,15 +2,32 @@ export const runtime = 'nodejs';
 
 import { fail, internalError, ok } from '@/lib/api-response';
 import { createPayPalOrder, findCheckoutProduct, PayPalApiError, PayPalConfigError } from '@/lib/paypal';
+import type { CheckoutProductSelection } from '@/lib/checkout-products';
 import { sendBuyWebhook } from '@/lib/webhook';
 import { requireCustomer } from '@/lib/auth';
 
-type CreateOrderBody = {
+type SelectionInput = {
   productId?: unknown;
   productSlug?: unknown;
   planId?: unknown;
   duration?: unknown;
 };
+
+type CreateOrderBody = SelectionInput & {
+  items?: unknown;
+};
+
+/** Resolve a checkout body to one or more validated selections (cart or single). */
+function resolveSelections(body: CreateOrderBody): CheckoutProductSelection[] | null {
+  const raw = Array.isArray(body.items) && body.items.length > 0 ? (body.items as SelectionInput[]) : [body];
+  const selections: CheckoutProductSelection[] = [];
+  for (const input of raw) {
+    const found = findCheckoutProduct(input);
+    if (!found) return null;
+    selections.push(found);
+  }
+  return selections.length > 0 ? selections : null;
+}
 
 export async function POST(req: Request) {
   try {
@@ -18,20 +35,19 @@ export async function POST(req: Request) {
     if (!session) return fail('unauthorized', 'Link your Discord account before purchasing.', 401);
 
     const body = (await req.json()) as CreateOrderBody;
-    const checkoutProduct = findCheckoutProduct(body);
-    if (!checkoutProduct) return fail('bad_request', 'Invalid or unavailable product, plan, or duration.', 400);
+    const selections = resolveSelections(body);
+    if (!selections) return fail('bad_request', 'Invalid or unavailable product, plan, or duration.', 400);
 
-    const order = await createPayPalOrder(checkoutProduct);
+    const order = await createPayPalOrder(selections);
 
     // DISCORD_BUY_WEB — payment attempt
     sendBuyWebhook('order_created', {
       title: '🔄 محاولة شراء',
-      description: `${checkoutProduct.product.name} — ${checkoutProduct.plan.label}`,
+      description: `${order.productName} — ${selections.length} منتج`,
       color: 0xf59e0b,
       fields: [
-        { name: '📦 المنتج', value: checkoutProduct.product.name, inline: true },
-        { name: '📄 المدة', value: checkoutProduct.plan.label, inline: true },
-        { name: '💵 المبلغ', value: `${checkoutProduct.plan.amount} ${checkoutProduct.plan.currency}`, inline: true },
+        { name: '📦 المنتجات', value: selections.map((s) => s.product.name).join('، '), inline: false },
+        { name: '💵 المبلغ', value: `${order.amount} ${order.currency}`, inline: true },
         { name: '🔖 رقم الطلب', value: `\`${order.orderID.slice(0, 20)}\``, inline: true },
       ],
       footer: 'Opus • شراء',

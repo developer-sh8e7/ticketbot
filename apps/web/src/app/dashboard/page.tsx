@@ -53,9 +53,27 @@ export default async function DashboardPage() {
     <DashboardShell title="Overview">
       <div className="grid gap-4">
         {!session ? (
-          <p className="text-opus-muted">سجّل الدخول بكود التفعيل لعرض بيانات بوتك.</p>
+          <div className="rounded-2xl border border-opus-border bg-opus-bg p-8 text-center">
+            <p className="font-arabic text-lg font-bold text-opus-text">سجّل دخولك أولاً</p>
+            <p className="mt-2 text-sm text-opus-muted">اربط حساب Discord لعرض بوتاتك واشتراكاتك.</p>
+            <a
+              href="/api/auth/discord"
+              className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-[#5865F2] px-6 py-3 font-arabic text-sm font-extrabold text-white transition hover:opacity-90"
+            >
+              تسجيل الدخول عبر Discord
+            </a>
+          </div>
         ) : bots.length === 0 ? (
-          <p className="text-opus-muted">لا يوجد بوتات مرتبطة بحسابك بعد. اشترك أولاً لتفعيل بوت.</p>
+          <div className="rounded-2xl border border-opus-border bg-opus-bg p-8 text-center">
+            <p className="font-arabic text-lg font-bold text-opus-text">لا توجد بوتات بعد</p>
+            <p className="mt-2 text-sm text-opus-muted">اشترِ منتجاً لتفعيل أول بوت على سيرفرك.</p>
+            <a
+              href="/pricing"
+              className="mt-4 inline-flex items-center justify-center rounded-xl bg-opus-accent px-6 py-3 font-arabic text-sm font-extrabold text-opus-text transition hover:opacity-90"
+            >
+              تصفّح المنتجات
+            </a>
+          </div>
         ) : (
           <div className="grid gap-4">
             {bots.map((bot) => {

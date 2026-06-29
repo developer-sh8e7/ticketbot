@@ -14,15 +14,21 @@ export default function HomePage() {
   const allProducts = products();
   const productCards = allProducts.map((product) => {
     const isSoon = product.priceLabel.toLowerCase() === 'soon';
+    const isCustom = product.productType === 'custom';
     return {
       key: product.key,
+      id: product.id,
       name: product.name,
+      productType: product.productType,
       shortDescription: product.shortDescription,
       priceLabel: product.priceLabel,
+      price_monthly: product.price_monthly,
+      price_quarterly: product.price_quarterly,
       href: `/pricing?product=${product.key}`,
       external: false,
       ctaLabel: isSoon ? 'Soon' : 'اشترِ الآن',
       disabled: isSoon,
+      purchasable: !isSoon && !isCustom && product.price_monthly > 0,
     };
   });
 

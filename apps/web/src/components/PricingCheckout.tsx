@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Send } from 'lucide-react';
+import { Check, CheckCircle2, Send, ShoppingCart } from 'lucide-react';
 import { ProductPayPalCheckout } from '@/components/ProductPayPalCheckout';
+import { buildCartItem, useCart } from '@/components/cart/CartProvider';
 import type { Product } from '@/lib/site-content';
 
 type BillingPeriod = 'monthly' | 'quarterly';
@@ -110,6 +111,8 @@ function ProductRow({
 }
 
 export function PricingCheckout({ products }: { products: Product[] }) {
+  const { addItem } = useCart();
+  const [justAdded, setJustAdded] = useState(false);
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
   const firstPaid = useMemo(() => products.find(hasPaidPrice) ?? products[0], [products]);
   const [selectedKey, setSelectedKey] = useState(firstPaid?.key);
@@ -128,6 +131,13 @@ export function PricingCheckout({ products }: { products: Product[] }) {
   const paypalHref = selectedProduct ? paypalMeHref(selectedProduct, billingPeriod) : '/pricing';
   const paypalExternal = paypalHref.startsWith('http');
   const noteText = selectedProduct ? `${selectedProduct.name} - Opus Solutions - ${noteSuffix(billingPeriod)}` : '';
+
+  function handleAddToCart() {
+    if (!selectedProduct || !selectedPaid) return;
+    addItem(buildCartItem(selectedProduct, billingPeriod === 'monthly' ? 'monthly' : '3_months'));
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 1500);
+  }
 
   const payPalMeSteps = selectedProduct
     ? selectedProduct.manualActivation
@@ -216,6 +226,16 @@ export function PricingCheckout({ products }: { products: Product[] }) {
                 </div>
                 <p className="font-english text-3xl font-extrabold text-[var(--color-text)]">{selectedPriceLabel}</p>
               </div>
+              {selectedPaid ? (
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-accent)] px-5 py-3 font-arabic text-sm font-extrabold text-[var(--color-accent)] transition hover:bg-[var(--color-accent)] hover:text-[var(--color-text)]"
+                >
+                  {justAdded ? <Check size={17} /> : <ShoppingCart size={17} />}
+                  <span>{justAdded ? 'تمت الإضافة للسلة' : 'أضف للسلة'}</span>
+                </button>
+              ) : null}
             </div>
 
             {selectedPaid ? (

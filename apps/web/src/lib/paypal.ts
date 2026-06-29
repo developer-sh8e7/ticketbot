@@ -123,23 +123,32 @@ function customId(selection: CheckoutProductSelection) {
   return `${selection.product.key}:${selection.plan.id}:${selection.plan.duration}`;
 }
 
-export async function createPayPalOrder(selection: CheckoutProductSelection) {
+function purchaseUnitFor(selection: CheckoutProductSelection) {
   const { product, plan } = selection;
+  return {
+    reference_id: product.id,
+    custom_id: customId(selection),
+    description: `${product.name} - ${plan.label}`.slice(0, 127),
+    amount: {
+      currency_code: plan.currency,
+      value: plan.amount,
+    },
+  };
+}
+
+/**
+ * Create a PayPal order for one or more products (a cart).
+ * Each selection becomes its own purchase_unit (PayPal supports up to 10).
+ */
+export async function createPayPalOrder(selections: CheckoutProductSelection | CheckoutProductSelection[]) {
+  const list = Array.isArray(selections) ? selections : [selections];
+  if (list.length === 0) throw new PayPalApiError('No products selected.');
+
   const order = await paypalApi<PayPalCreateOrderResponse>('/v2/checkout/orders', {
     method: 'POST',
     body: JSON.stringify({
       intent: 'CAPTURE',
-      purchase_units: [
-        {
-          reference_id: product.id,
-          custom_id: customId(selection),
-          description: `${product.name} - ${plan.label}`.slice(0, 127),
-          amount: {
-            currency_code: plan.currency,
-            value: plan.amount,
-          },
-        },
-      ],
+      purchase_units: list.map(purchaseUnitFor),
       application_context: {
         shipping_preference: 'NO_SHIPPING',
         user_action: 'PAY_NOW',
@@ -148,15 +157,17 @@ export async function createPayPalOrder(selection: CheckoutProductSelection) {
   });
 
   if (!order.id) throw new PayPalApiError('PayPal did not return an order ID.');
+  const first = list[0];
   return {
     orderID: order.id,
-    productId: product.id,
-    productSlug: product.key,
-    productName: product.name,
-    planId: plan.id,
-    duration: plan.duration,
-    amount: plan.amount,
-    currency: plan.currency,
+    productId: first.product.id,
+    productSlug: first.product.key,
+    productName: list.length > 1 ? `${first.product.name} +${list.length - 1}` : first.product.name,
+    planId: first.plan.id,
+    duration: first.plan.duration,
+    amount: list.reduce((sum, s) => sum + Number.parseFloat(s.plan.amount), 0).toFixed(2),
+    currency: first.plan.currency,
+    itemCount: list.length,
   };
 }
 
@@ -184,18 +195,7 @@ type PayPalCaptureOrderResponse = {
   };
 };
 
-export async function captureAndVerifyPayPalOrder(orderID: string, selection: CheckoutProductSelection) {
-  if (!orderID.trim()) throw new PayPalApiError('Missing PayPal order ID.');
-
-  const capturedOrder = await paypalApi<PayPalCaptureOrderResponse>(
-    `/v2/checkout/orders/${encodeURIComponent(orderID.trim())}/capture`,
-    { method: 'POST', body: '{}' }
-  );
-
-  if (capturedOrder.status !== 'COMPLETED') {
-    throw new PayPalApiError('PayPal payment was not completed.');
-  }
-
+function verifyUnit(capturedOrder: PayPalCaptureOrderResponse, selection: CheckoutProductSelection) {
   const purchaseUnits = capturedOrder.purchase_units ?? [];
   const matchingUnit = purchaseUnits.find(
     (unit) => unit.reference_id === selection.product.id && unit.custom_id === customId(selection)
@@ -220,7 +220,6 @@ export async function captureAndVerifyPayPalOrder(orderID: string, selection: Ch
   }
 
   return {
-    orderID: capturedOrder.id || orderID,
     captureID: completedCaptures[0]?.id || null,
     productId: selection.product.id,
     productSlug: selection.product.key,
@@ -228,6 +227,38 @@ export async function captureAndVerifyPayPalOrder(orderID: string, selection: Ch
     duration: selection.plan.duration,
     amount: selection.plan.amount,
     currency: expectedCurrency,
+  };
+}
+
+export async function captureAndVerifyPayPalOrder(
+  orderID: string,
+  selections: CheckoutProductSelection | CheckoutProductSelection[],
+) {
+  if (!orderID.trim()) throw new PayPalApiError('Missing PayPal order ID.');
+  const list = Array.isArray(selections) ? selections : [selections];
+  if (list.length === 0) throw new PayPalApiError('No products selected.');
+
+  const capturedOrder = await paypalApi<PayPalCaptureOrderResponse>(
+    `/v2/checkout/orders/${encodeURIComponent(orderID.trim())}/capture`,
+    { method: 'POST', body: '{}' }
+  );
+
+  if (capturedOrder.status !== 'COMPLETED') {
+    throw new PayPalApiError('PayPal payment was not completed.');
+  }
+
+  const verifiedItems = list.map((selection) => verifyUnit(capturedOrder, selection));
+
+  return {
+    orderID: capturedOrder.id || orderID,
+    captureID: verifiedItems[0]?.captureID || null,
+    items: verifiedItems,
+    productId: verifiedItems[0]?.productId,
+    productSlug: verifiedItems[0]?.productSlug,
+    planId: verifiedItems[0]?.planId,
+    duration: verifiedItems[0]?.duration,
+    amount: verifiedItems.reduce((sum, i) => sum + Number.parseFloat(i.amount), 0).toFixed(2),
+    currency: verifiedItems[0]?.currency,
     paymentStatus: capturedOrder.status,
     payerEmail: capturedOrder.payer?.email_address || null,
     timestamp: new Date().toISOString(),

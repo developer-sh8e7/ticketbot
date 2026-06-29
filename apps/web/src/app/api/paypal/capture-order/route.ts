@@ -2,19 +2,37 @@ export const runtime = 'nodejs';
 
 import { fail, internalError, ok } from '@/lib/api-response';
 import { captureAndVerifyPayPalOrder, findCheckoutProduct, PayPalApiError, PayPalConfigError } from '@/lib/paypal';
+import type { CheckoutProductSelection } from '@/lib/checkout-products';
 import { sendBuyWebhook } from '@/lib/webhook';
 import { requireCustomer } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 
-type CaptureOrderBody = {
-  orderID?: unknown;
+type SelectionInput = {
   productId?: unknown;
   productSlug?: unknown;
   planId?: unknown;
   duration?: unknown;
+};
+
+type CaptureOrderBody = SelectionInput & {
+  orderID?: unknown;
+  items?: unknown;
   guildId?: unknown;
   guildName?: unknown;
 };
+
+const STORE_GUILD_ID = '1395842846107631746';
+
+function resolveSelections(body: CaptureOrderBody): CheckoutProductSelection[] | null {
+  const raw = Array.isArray(body.items) && body.items.length > 0 ? (body.items as SelectionInput[]) : [body];
+  const selections: CheckoutProductSelection[] = [];
+  for (const input of raw) {
+    const found = findCheckoutProduct(input);
+    if (!found) return null;
+    selections.push(found);
+  }
+  return selections.length > 0 ? selections : null;
+}
 
 export async function POST(req: Request) {
   try {
@@ -28,58 +46,59 @@ export async function POST(req: Request) {
     const orderID = typeof body.orderID === 'string' ? body.orderID.trim() : '';
     if (!orderID) return fail('bad_request', 'Missing PayPal order ID.', 400);
 
-    const checkoutProduct = findCheckoutProduct(body);
-    if (!checkoutProduct) return fail('bad_request', 'Invalid or unavailable product, plan, or duration.', 400);
+    const selections = resolveSelections(body);
+    if (!selections) return fail('bad_request', 'Invalid or unavailable product, plan, or duration.', 400);
 
-    const result = await captureAndVerifyPayPalOrder(orderID, checkoutProduct);
+    const result = await captureAndVerifyPayPalOrder(orderID, selections);
     const supabase = supabaseAdmin();
     const { data: account } = await supabase.from('accounts').select('id').eq('discord_user_id', session.discordUserId).maybeSingle();
     if (!account?.id) return fail('unauthorized', 'Account link was not found. Login again.', 401);
 
+    const first = selections[0];
     const amountCents = Math.round(Number(result.amount) * 100);
     const { error: paymentError } = await supabase.from('payments').upsert({
       account_id: account.id,
-      product_id: checkoutProduct.product.id,
-      plan_id: checkoutProduct.plan.dbPlanId,
+      product_id: first.product.id,
+      plan_id: first.plan.dbPlanId,
       paypal_order_id: result.orderID,
       paypal_capture_id: result.captureID,
       status: 'captured',
       amount_cents: amountCents,
       currency: result.currency,
-      metadata: { productType: checkoutProduct.product.productType, duration: result.duration, payerEmail: result.payerEmail },
+      metadata: {
+        items: selections.map((s) => ({ productType: s.product.productType, plan: s.plan.id, duration: s.plan.duration })),
+        payerEmail: result.payerEmail,
+      },
     }, { onConflict: 'paypal_order_id' });
     if (paymentError) throw paymentError;
 
-    // سيرفر المتجر مستثنى من الاشتراك ويعمل دائماً — لا يُزوّد عبر الشراء.
-    const STORE_GUILD_ID = '1395842846107631746';
-    if (checkoutProduct.productType !== 'custom' && guildId !== STORE_GUILD_ID) {
-      const durationDays = checkoutProduct.plan.durationDays;
+    // Provision each purchased bot to the chosen server (store server is exempt and always on).
+    for (const selection of selections) {
+      if (selection.product.productType === 'custom' || guildId === STORE_GUILD_ID) continue;
       const { data: instance, error: provisionError } = await supabase.rpc('provision_instance', {
         p_account_id: account.id,
         p_owner_id: session.discordUserId,
         p_guild_id: guildId,
         p_guild_name: guildName,
-        p_product_type: checkoutProduct.productType,
-        p_plan_name: checkoutProduct.plan.id,
-        p_duration_days: durationDays,
+        p_product_type: selection.product.productType,
+        p_plan_name: selection.plan.id,
+        p_duration_days: selection.plan.durationDays,
         p_external_ref: result.orderID,
       });
       if (provisionError) throw provisionError;
-      await supabase.from('payment_events').insert({ provider: 'paypal', event_type: 'provisioned', external_event_id: result.orderID, payload: { instance } });
+      await supabase.from('payment_events').insert({ provider: 'paypal', event_type: 'provisioned', external_event_id: result.orderID, payload: { instance, productType: selection.product.productType } });
     }
 
     // DISCORD_BUY_WEB — purchase success
     sendBuyWebhook('purchase_success', {
       title: '🛒 عملية شراء جديدة',
-      description: `تم شراء **${checkoutProduct.product.name}** — ${checkoutProduct.plan.label}`,
+      description: `تم شراء ${selections.length} منتج`,
       color: 0x00d4aa,
       fields: [
-        { name: '📦 المنتج', value: checkoutProduct.product.name, inline: true },
-        { name: '📄 المدة', value: checkoutProduct.plan.label, inline: true },
+        { name: '📦 المنتجات', value: selections.map((s) => `${s.product.name} (${s.plan.label})`).join('\n'), inline: false },
         { name: '💵 المبلغ', value: `${result.amount} ${result.currency}`, inline: true },
         { name: '🔖 رقم الطلب', value: `\`${result.orderID.slice(0, 20)}\``, inline: true },
         { name: '📧 البريد', value: result.payerEmail ? `\`${result.payerEmail.slice(0, 40)}\`` : '—', inline: true },
-        { name: '🕒 الوقت', value: new Date().toLocaleString('ar-SA'), inline: true },
       ],
       footer: 'Opus • شراء',
     }).catch(() => {});
@@ -92,7 +111,6 @@ export async function POST(req: Request) {
       const msg = error.message;
       console.error('[paypal/capture-order]', msg);
 
-      // DISCORD_BUY_WEB — payment error
       sendBuyWebhook('capture_error', {
         title: '❌ خطأ في الدفع',
         description: `\`${msg}\``,

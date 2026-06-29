@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Cairo, Inter } from 'next/font/google';
 import './globals.css';
 import { VisitLogger } from '@/components/VisitLogger';
+import { CartProvider } from '@/components/cart/CartProvider';
+import { CartDrawer } from '@/components/cart/CartDrawer';
 
 const arabicFont = Cairo({
   subsets: ['arabic'],
@@ -50,9 +52,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ar" dir="rtl">
       <body className={`${arabicFont.variable} ${englishFont.variable}`}>
-        <VisitLogger />
-        <div className="opus-grid" aria-hidden="true" />
-        {children}
+        <CartProvider>
+          <VisitLogger />
+          <div className="opus-grid" aria-hidden="true" />
+          {children}
+          <CartDrawer />
+        </CartProvider>
       </body>
     </html>
   );
