@@ -338,7 +338,7 @@ You are the bridge between user and human support.`;
 
         status = response.status;
         if (response.ok) {
-          const data = await response.json();
+          const data = await response.json() as any;
           aiResponseText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
           ok = true;
         }
@@ -385,7 +385,7 @@ You are the bridge between user and human support.`;
 
             status = res.status;
             if (res.ok) {
-              const data = await res.json();
+              const data = await res.json() as any;
               aiResponseText = data.choices?.[0]?.message?.content?.trim() || '';
               if (aiResponseText) {
                 logger.info(`AI generation succeeded using model: ${modelName}`);

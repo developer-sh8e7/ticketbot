@@ -194,7 +194,7 @@ export function buildSecurityMiddleware(env: Env) {
     limit: 100,
     standardHeaders: true,
     legacyHeaders: false,
-    handler: rateLimitHandler('GLOBAL_RATE_LIMITED'),
+    handler: rateLimitHandler('GLOBAL_RATE_LIMITED') as any,
   });
 
   const sendOtpRateLimiter = rateLimit({
@@ -203,7 +203,7 @@ export function buildSecurityMiddleware(env: Env) {
     skipSuccessfulRequests: false,
     standardHeaders: true,
     legacyHeaders: false,
-    handler: rateLimitHandler('OTP_SEND_RATE_LIMITED'),
+    handler: rateLimitHandler('OTP_SEND_RATE_LIMITED') as any,
   });
 
   const verifyOtpRateLimiter = rateLimit({
@@ -211,7 +211,7 @@ export function buildSecurityMiddleware(env: Env) {
     limit: 10,
     standardHeaders: true,
     legacyHeaders: false,
-    handler: rateLimitHandler('OTP_VERIFY_RATE_LIMITED'),
+    handler: rateLimitHandler('OTP_VERIFY_RATE_LIMITED') as any,
   });
 
   const discordRateLimiter = rateLimit({
@@ -219,10 +219,10 @@ export function buildSecurityMiddleware(env: Env) {
     limit: 20,
     standardHeaders: true,
     legacyHeaders: false,
-    handler: (req, res) => {
+    handler: ((req: Request, res: Response) => {
       securityLog('DISCORD_OAUTH_RATE_LIMITED', req);
       res.status(429).type('text/plain').send('طلبات كثيرة، حاول لاحقاً.');
-    },
+    }) as any,
   });
 
   const requestIdMiddleware = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {

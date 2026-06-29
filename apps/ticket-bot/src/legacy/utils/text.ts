@@ -109,7 +109,7 @@ export async function parseTradeAmountSmartly(input: string): Promise<number | n
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as any;
         responseText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
         ok = true;
       }
@@ -149,7 +149,7 @@ export async function parseTradeAmountSmartly(input: string): Promise<number | n
           });
 
           if (response.ok) {
-            const data = await response.json();
+            const data = await response.json() as any;
             responseText = data.choices?.[0]?.message?.content?.trim() || '';
             if (responseText) {
               logger.info(`Trade amount extraction succeeded using model: ${modelName}`);

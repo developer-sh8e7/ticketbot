@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import bcrypt from 'bcryptjs';
-import express, { type ErrorRequestHandler, type Request, type Response } from 'express';
+import express, { type ErrorRequestHandler, type Request, type RequestHandler, type Response } from 'express';
 import hpp from 'hpp';
 import jwt, { type JwtPayload } from 'jsonwebtoken';
 import morgan from 'morgan';
@@ -238,13 +238,13 @@ app.set('trust proxy', 1);
 app.use(security.requestIdMiddleware);
 app.use(security.helmetMiddleware);
 app.use(security.corsMiddleware);
-app.use(security.globalRateLimiter);
+app.use(security.globalRateLimiter as unknown as RequestHandler);
 app.use(slowDown({
   windowMs: 15 * 60 * 1000,
   delayAfter: 5,
   delayMs: (used) => Math.min((used - 5) * 500, 5000),
-}));
-app.use(hpp());
+}) as unknown as RequestHandler);
+app.use(hpp() as unknown as RequestHandler);
 app.use(express.json({ limit: '2kb' }));
 app.use(security.noStoreAuthRoutes);
 app.use(security.validateJsonContentType);
@@ -307,7 +307,7 @@ app.get('/api/mediator/config', async (_req, res, next) => {
   }
 });
 
-app.get(['/auth/discord', '/api/auth/discord'], security.discordRateLimiter, async (req, res, next) => {
+app.get(['/auth/discord', '/api/auth/discord'], security.discordRateLimiter as unknown as RequestHandler, async (req, res, next) => {
   try {
     const config = await mediatorRepository.getMediatorConfig();
     if (!config.is_open || config.current_count >= config.max_count) {
@@ -340,7 +340,7 @@ app.get(['/auth/discord', '/api/auth/discord'], security.discordRateLimiter, asy
   }
 });
 
-app.get(['/auth/discord/callback', '/api/auth/discord/callback'], security.discordRateLimiter, async (req, res, next) => {
+app.get(['/auth/discord/callback', '/api/auth/discord/callback'], security.discordRateLimiter as unknown as RequestHandler, async (req, res, next) => {
   try {
     const code = String(req.query.code || '');
     const state = String(req.query.state || '');
@@ -514,7 +514,7 @@ app.get('/api/csrf-token', jwtAuth, (req: AuthenticatedRequest, res) => {
 
 app.post(
   '/api/send-otp',
-  security.sendOtpRateLimiter,
+  security.sendOtpRateLimiter as unknown as RequestHandler,
   jwtAuth,
   csrfGuard,
   security.sanitizeInputs,
@@ -626,7 +626,7 @@ app.post(
 
 app.post(
   '/api/verify-otp',
-  security.verifyOtpRateLimiter,
+  security.verifyOtpRateLimiter as unknown as RequestHandler,
   jwtAuth,
   csrfGuard,
   security.sanitizeInputs,

@@ -324,13 +324,13 @@ export async function handleWheelRequest(url: URL, method: string, rawBody?: str
         body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret, grant_type: 'authorization_code', code, redirect_uri: redirectUri })
       });
       if (!tokenRes.ok) throw new Error(await tokenRes.text());
-      const tokenData = await tokenRes.json();
+      const tokenData = await tokenRes.json() as any;
 
       const userRes = await fetch('https://discord.com/api/users/@me', {
         headers: { Authorization: `Bearer ${tokenData.access_token}` },
       });
       if (!userRes.ok) throw new Error(await userRes.text());
-      const discordUser = await userRes.json();
+      const discordUser = await userRes.json() as any;
 
       const avatarUrl = discordUser.avatar
         ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
