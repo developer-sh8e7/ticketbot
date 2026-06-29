@@ -1,10 +1,12 @@
 export const runtime = 'nodejs';
 
+import { NextRequest } from 'next/server';
 import { fail, internalError, ok } from '@/lib/api-response';
 import { createPayPalOrder, findCheckoutProduct, PayPalApiError, PayPalConfigError } from '@/lib/paypal';
 import type { CheckoutProductSelection } from '@/lib/checkout-products';
 import { sendBuyWebhook } from '@/lib/webhook';
 import { requireCustomer } from '@/lib/auth';
+import { rateLimit } from '@/lib/rate-limit';
 import { checkTokenStock, productArabicName } from '@/lib/provisioning-shared';
 
 type SelectionInput = {
@@ -30,10 +32,11 @@ function resolveSelections(body: CreateOrderBody): CheckoutProductSelection[] | 
   return selections.length > 0 ? selections : null;
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const session = await requireCustomer();
     if (!session) return fail('unauthorized', 'Link your Discord account before purchasing.', 401);
+    if (!rateLimit(req, 'paypal:create', 20, 60_000).allowed) return fail('rate_limited', 'محاولات كثيرة. انتظر دقيقة.', 429);
 
     const body = (await req.json()) as CreateOrderBody;
     const selections = resolveSelections(body);

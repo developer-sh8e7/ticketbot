@@ -84,6 +84,29 @@ export async function fetchUserGuilds(accessToken: string): Promise<RawGuild[] |
   return (await res.json()) as RawGuild[];
 }
 
+export type BotApplication = { id: string; name: string; iconUrl: string | null };
+
+/**
+ * Resolve a bot token to its application (id + name) by calling Discord as the
+ * bot. Lets the owner paste only the token when adding to the pool — we derive
+ * the application id and a sensible label automatically. Returns null if the
+ * token is invalid.
+ */
+export async function fetchBotApplication(botToken: string): Promise<BotApplication | null> {
+  const res = await fetch(`${DISCORD_API}/oauth2/applications/@me`, {
+    headers: { authorization: `Bot ${botToken}` },
+    cache: 'no-store',
+  });
+  if (!res.ok) return null;
+  const app = (await res.json()) as { id: string; name?: string; icon?: string | null };
+  if (!app?.id) return null;
+  return {
+    id: app.id,
+    name: app.name ?? 'Bot',
+    iconUrl: app.icon ? `https://cdn.discordapp.com/app-icons/${app.id}/${app.icon}.png?size=64` : null,
+  };
+}
+
 /** Keep only guilds where the user is owner or has the ADMINISTRATOR permission. */
 export function toAdminGuilds(guilds: RawGuild[]): AdminGuild[] {
   return guilds
