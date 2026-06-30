@@ -26,7 +26,10 @@ function daysLeft(expires: string | null): number | null {
   return Math.ceil((new Date(expires).getTime() - Date.now()) / 86_400_000);
 }
 function fmt(d: string | null) {
-  return d ? new Date(d).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+  // Deterministic UTC format — avoids server/client timezone & ICU hydration mismatch.
+  if (!d) return '—';
+  const x = new Date(d);
+  return `${x.getUTCFullYear()}-${String(x.getUTCMonth() + 1).padStart(2, '0')}-${String(x.getUTCDate()).padStart(2, '0')}`;
 }
 
 export function OwnerBotsManager({ bots }: { bots: AdminSubscriber[] }) {

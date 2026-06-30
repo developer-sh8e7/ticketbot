@@ -1,7 +1,7 @@
 export const runtime = 'nodejs';
 
 import { NextRequest } from 'next/server';
-import { fail, internalError, ok } from '@/lib/api-response';
+import { fail, ok } from '@/lib/api-response';
 import { verifyCsrf } from '@/lib/csrf';
 import { rateLimit } from '@/lib/rate-limit';
 import { requireOwner } from '@/lib/owner';
@@ -68,7 +68,9 @@ export async function POST(req: NextRequest) {
 
     return ok({ instanceId: instanceId ?? null, productType, days });
   } catch (error) {
-    console.error('[owner/trial]', error);
-    return internalError();
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('[owner/trial]', msg);
+    // Owner-only route: surface the real cause so the owner can act (e.g. run schema).
+    return fail('internal_error', `تعذّر التفعيل: ${msg}`, 500);
   }
 }

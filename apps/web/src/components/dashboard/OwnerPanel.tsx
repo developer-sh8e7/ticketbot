@@ -237,7 +237,7 @@ export function OwnerPanel({
                       <td className="px-3 py-3">
                         <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-bold ${st.cls}`}>{st.label}</span>
                       </td>
-                      <td className="px-3 py-3 font-english text-xs text-opus-muted">{s.expires_at ? new Date(s.expires_at).toLocaleDateString('en-CA') : '∞'}</td>
+                      <td className="px-3 py-3 font-english text-xs text-opus-muted">{s.expires_at ? new Date(s.expires_at).toLocaleDateString('en-CA', { timeZone: 'UTC' }) : '∞'}</td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-1.5">
                           <input
