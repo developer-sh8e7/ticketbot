@@ -11,14 +11,19 @@ import { Emojis } from "../utils/emojis.js";
 import { Config } from "../config.js";
 import { Logger } from "../utils/logger.js";
 import { checkProfanity, checkSpam, SPAM_CONFIG } from "../utils/profanityFilter.js";
+import { tryDispatchAlias } from "../services/aliasCommands.js";
 
 const SWEAR_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 1 day timeout for swearing
 
 export default {
   name: "messageCreate" as const,
   once: false,
-  async execute(_client: Client, message: Message) {
+  async execute(client: Client, message: Message) {
     if (message.author.bot || !message.guild) return;
+
+    // ── اختصارات الأوامر (مثل "باند @شخص" => /ban) ─────────
+    const commands = (client as any).commands;
+    if (commands && (await tryDispatchAlias(message, commands))) return;
 
     const guildConfig = await getGuildConfig(message.guild.id);
     const isStaff = message.member?.permissions.has(PermissionFlagsBits.ManageMessages);

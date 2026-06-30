@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { Loader2, Pause, Play, Plus } from 'lucide-react';
+import { Loader2, Pause, Play, Plus, Settings } from 'lucide-react';
 import type { AdminSubscriber } from '@/lib/admin-data';
 
 type Filter = 'all' | 'active' | 'expiring' | 'expired' | 'paused';
@@ -169,6 +169,15 @@ export function OwnerBotsManager({ bots }: { bots: AdminSubscriber[] }) {
                     </button>
                   )}
                 </div>
+
+                {b.product_type === 'general' ? (
+                  <a
+                    href={`/dashboard/bot/${b.id}/system`}
+                    className="mt-2 inline-flex items-center gap-1.5 font-arabic text-xs font-bold text-opus-muted transition hover:text-opus-accent-2"
+                  >
+                    <Settings size={13} /> الدخول كمالك — تعديل إعدادات هذا البوت
+                  </a>
+                ) : null}
               </div>
             </div>
           );

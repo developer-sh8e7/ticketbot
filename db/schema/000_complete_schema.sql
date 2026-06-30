@@ -549,3 +549,26 @@ create table if not exists guild_welcome (
   image_config  jsonb   not null default '{}'::jsonb,   -- للوحدة 2 (صورة الويلكم)
   updated_at    timestamptz not null default now()
 );
+
+-- ════════════════════════════════════════════════════════════════
+-- 13) اختصارات الأوامر (بوت السيستم) — كلمة عربية مخصّصة لكل سيرفر
+-- تشغّل نفس منطق أمر سلاش موجود (مثل "باند" => /ban) عبر رسالة عادية.
+-- ════════════════════════════════════════════════════════════════
+create table if not exists guild_command_aliases (
+  id           uuid primary key default gen_random_uuid(),
+  guild_id     text not null,
+  alias        text not null,
+  command_name text not null,
+  created_at   timestamptz not null default now(),
+  unique (guild_id, alias)
+);
+
+create index if not exists idx_guild_command_aliases_guild on guild_command_aliases(guild_id);
+
+-- ════════════════════════════════════════════════════════════════
+-- 14) تخزين صور الترحيب (الخلفية اللي يرفعها العميل) — Bucket عام
+-- للقراءة، الكتابة فقط عبر service role (الموقع).
+-- ════════════════════════════════════════════════════════════════
+insert into storage.buckets (id, name, public)
+values ('welcome-images', 'welcome-images', true)
+on conflict (id) do nothing;

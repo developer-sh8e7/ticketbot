@@ -1,4 +1,5 @@
 import { supabaseAdmin } from './supabase';
+import { isOwnerId } from './owner';
 
 export async function findOwnedBotIds(discordUserId: string) {
   const { data, error } = await supabaseAdmin()
@@ -29,6 +30,13 @@ export async function getOwnedBot(discordUserId: string, botId: string) {
 }
 
 export async function assertOwnedBot(discordUserId: string, botId: string) {
+  // مالك المتجر يقدر يدخل ويتحكم بأي بوت عميل من لوحته (دعم/تعديل مباشر).
+  if (isOwnerId(discordUserId)) {
+    const { data, error } = await supabaseAdmin().from('bot_instances').select(BOT_FIELDS).eq('id', botId).maybeSingle();
+    if (error) throw error;
+    return data ?? null;
+  }
+
   const bot = await getOwnedBot(discordUserId, botId);
   if (!bot) return null;
   return bot;

@@ -4,6 +4,8 @@ import { ArrowRight } from 'lucide-react';
 import { getSession } from '@/lib/sessions';
 import { assertOwnedBot } from '@/lib/dashboard-data';
 import { WelcomeEditor } from '@/components/dashboard/WelcomeEditor';
+import { AliasEditor } from '@/components/dashboard/AliasEditor';
+import { WelcomeImageEditor } from '@/components/dashboard/WelcomeImageEditor';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,10 +32,9 @@ export default async function SystemBotDashboard({ params }: { params: Promise<{
       <div className="mt-6 grid gap-5">
         <WelcomeEditor botId={id} />
 
-        <div className="rounded-2xl border border-dashed border-opus-border bg-opus-surface p-5 text-center">
-          <p className="font-arabic text-sm font-bold text-opus-text">قريباً: صورة الترحيب + الاختصارات</p>
-          <p className="mt-1 font-arabic text-xs text-opus-muted">محرّر صورة ترحيب بصري وأوامر مخصّصة بالعربي.</p>
-        </div>
+        <WelcomeImageEditor botId={id} />
+
+        <AliasEditor botId={id} />
       </div>
     </main>
   );

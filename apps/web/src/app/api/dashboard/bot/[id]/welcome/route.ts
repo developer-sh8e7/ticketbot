@@ -6,6 +6,7 @@ import { verifyCsrf } from '@/lib/csrf';
 import { rateLimit } from '@/lib/rate-limit';
 import { getSession } from '@/lib/sessions';
 import { assertOwnedBot } from '@/lib/dashboard-data';
+import { isOwnerId } from '@/lib/owner';
 import { supabaseAdmin } from '@/lib/supabase';
 import { logWebsiteEvent } from '@/lib/events';
 
@@ -26,7 +27,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const session = await getSession();
     if (!session) return fail('unauthorized', 'Login required', 401);
     const r = await ownedSystemBot(session.discordUserId, id);
-    if (r.error) return r.error;
+    if ('error' in r) return r.error;
 
     const { data } = await supabaseAdmin().from('guild_welcome').select('enabled,channel_id,message,ping_user').eq('guild_id', r.bot.guild_id).maybeSingle();
     return ok({
@@ -50,8 +51,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const session = await getSession();
     if (!session) return fail('unauthorized', 'Login required', 401);
     const r = await ownedSystemBot(session.discordUserId, id);
-    if (r.error) return r.error;
-    if (r.bot.status === 'expired' || r.bot.status === 'cancelled') return fail('forbidden', 'الاشتراك منتهي. جدّد للتعديل.', 403);
+    if ('error' in r) return r.error;
+    const isOwner = isOwnerId(session.discordUserId);
+    if (!isOwner && (r.bot.status === 'expired' || r.bot.status === 'cancelled')) return fail('forbidden', 'الاشتراك منتهي. جدّد للتعديل.', 403);
     if (!rateLimit(req, 'bot:welcome', 20, 60_000).allowed) return fail('rate_limited', 'محاولات كثيرة. انتظر دقيقة.', 429);
 
     const body = (await req.json().catch(() => ({}))) as Body;

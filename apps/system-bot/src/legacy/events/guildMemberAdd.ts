@@ -3,13 +3,14 @@
 //  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
 
-import { Client, GuildMember, EmbedBuilder } from "discord.js";
+import { Client, GuildMember, EmbedBuilder, AttachmentBuilder } from "discord.js";
 import { Colors } from "../utils/embed.js";
 import { Emojis } from "../utils/emojis.js";
 import { Config } from "../config.js";
 import { Logger } from "../utils/logger.js";
 import { getGuildConfig } from "../db/guilds.js";
 import { supabase } from "../db/supabase.js";
+import { buildWelcomeImage, WelcomeImageConfig } from "../services/welcomeImage.js";
 
 /** Replace website welcome placeholders with live member/guild values. */
 function renderWelcome(template: string, member: GuildMember): string {
@@ -73,7 +74,7 @@ export default {
     try {
       const { data: wc } = await supabase
         .from("guild_welcome")
-        .select("enabled,channel_id,message,ping_user")
+        .select("enabled,channel_id,message,ping_user,image_enabled,image_config")
         .eq("guild_id", member.guild.id)
         .maybeSingle();
       if (wc?.enabled && wc.channel_id && wc.message) {
@@ -81,7 +82,19 @@ export default {
         if (channel?.isTextBased()) {
           const rendered = renderWelcome(wc.message, member);
           const content = wc.ping_user ? `<@${member.id}>\n${rendered}` : rendered;
-          await channel.send({ content, allowedMentions: { parse: ["users"] } });
+
+          const files: AttachmentBuilder[] = [];
+          const imageConfig = wc.image_config as WelcomeImageConfig | null;
+          if (wc.image_enabled && imageConfig?.backgroundUrl) {
+            try {
+              const buffer = await buildWelcomeImage(imageConfig, member);
+              files.push(new AttachmentBuilder(buffer, { name: "welcome.png" }));
+            } catch (err) {
+              Logger.error(`Welcome image build failed for guild ${member.guild.id}: ${err}`);
+            }
+          }
+
+          await channel.send({ content, files, allowedMentions: { parse: ["users"] } });
           customWelcomeSent = true;
         }
       }
