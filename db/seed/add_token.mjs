@@ -5,9 +5,11 @@
  *
  * Usage:
  *   TOKEN_ENCRYPTION_KEY=... SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
- *   node db/seed/add_token.mjs <product_type> <application_id> <bot_token> [label]
+ *   node db/seed/add_token.mjs <product_type> <application_id> <bot_token> [label] [reserved_for_discord_id]
  *
  *   product_type: ticket | voice_rooms | general
+ *   reserved_for_discord_id (اختياري): يحجز هذا التوكن لزبون معيّن — لا يُسحب
+ *     إلا عند شرائه هو، ولا يدخل البركة العامة.
  *
  * CRITICAL: TOKEN_ENCRYPTION_KEY here MUST equal the orchestrator's
  * TOKEN_ENCRYPTION_KEY, otherwise the bot can't be decrypted/started.
@@ -15,7 +17,7 @@
 import crypto from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 
-const [, , productType, applicationId, botToken, label] = process.argv;
+const [, , productType, applicationId, botToken, label, reservedForDiscordId] = process.argv;
 const { TOKEN_ENCRYPTION_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = process.env;
 
 if (!productType || !applicationId || !botToken) {
@@ -61,10 +63,12 @@ const { error } = await supabase.from('token_pool').insert({
   bot_token_encrypted: encryptToken(botToken, TOKEN_ENCRYPTION_KEY),
   status: 'available',
   label: label ?? null,
+  reserved_for_discord_id: reservedForDiscordId ?? null,
 });
 
 if (error) {
   console.error('Insert failed:', error.message);
   process.exit(1);
 }
-console.log(`✅ Added ${productType} token (app ${applicationId}) to the pool as 'available'.`);
+const reservedNote = reservedForDiscordId ? ` (محجوز للزبون ${reservedForDiscordId})` : '';
+console.log(`✅ Added ${productType} token (app ${applicationId}) to the pool as 'available'${reservedNote}.`);

@@ -12,9 +12,10 @@ import { fulfillPendingProvisions } from '@/lib/provisioning-shared';
 import { fetchBotApplication } from '@/lib/discord';
 import { env } from '@/lib/env';
 
-type Body = { productType?: unknown; token?: unknown; label?: unknown };
+type Body = { productType?: unknown; token?: unknown; label?: unknown; reservedForDiscordId?: unknown };
 
 const PRODUCT_TYPES = ['ticket', 'voice_rooms', 'general'];
+const SNOWFLAKE = /^\d{17,20}$/;
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,9 +32,11 @@ export async function POST(req: NextRequest) {
     const productType = typeof body.productType === 'string' ? body.productType.trim() : '';
     const token = typeof body.token === 'string' ? body.token.trim() : '';
     const customLabel = typeof body.label === 'string' ? body.label.trim().slice(0, 80) : '';
+    const reservedFor = typeof body.reservedForDiscordId === 'string' ? body.reservedForDiscordId.trim() : '';
 
     if (!PRODUCT_TYPES.includes(productType)) return fail('bad_request', 'نوع المنتج غير صحيح.', 400);
     if (token.length < 50) return fail('bad_request', 'توكن البوت غير صالح. انسخه من Developer Portal → Bot → Reset Token.', 400);
+    if (reservedFor && !SNOWFLAKE.test(reservedFor)) return fail('bad_request', 'معرّف الزبون المحجوز له غير صحيح.', 400);
 
     // The owner only pastes the token; we verify it with Discord and derive the
     // application id + name automatically. Invalid token → clear error.
@@ -49,6 +52,7 @@ export async function POST(req: NextRequest) {
       bot_token_encrypted: encrypted,
       status: 'available',
       label,
+      reserved_for_discord_id: reservedFor || null,
     });
     if (error) {
       if (String(error.message).toLowerCase().includes('duplicate') || String(error.code) === '23505') {
@@ -61,13 +65,13 @@ export async function POST(req: NextRequest) {
       eventType: 'owner_add_token',
       message: 'Owner added a bot token to the pool',
       userId: owner.discordUserId,
-      metadata: { productType, applicationId: app.id, label },
+      metadata: { productType, applicationId: app.id, label, reservedFor: reservedFor || null },
     }).catch(() => {});
 
     // Activate any paid-but-deferred orders that were waiting on this token type.
     const fulfilled = await fulfillPendingProvisions(productType).catch(() => 0);
 
-    return ok({ productType, applicationId: app.id, botName: app.name, fulfilledPending: fulfilled });
+    return ok({ productType, applicationId: app.id, botName: app.name, fulfilledPending: fulfilled, reservedFor: reservedFor || null });
   } catch (error) {
     console.error('[owner/tokens]', error);
     return internalError();

@@ -32,16 +32,30 @@ export type StockShortage = { productType: string; needed: number; available: nu
  * This is a best-effort gate; the atomic claim at capture time is the real guard
  * against double-allocation.
  */
-export async function checkTokenStock(productTypes: string[]): Promise<StockShortage | null> {
+export async function checkTokenStock(productTypes: string[], ownerDiscordId?: string): Promise<StockShortage | null> {
   const needed = new Map<string, number>();
   for (const pt of productTypes) {
     if (isProvisionable(pt)) needed.set(pt, (needed.get(pt) ?? 0) + 1);
   }
   const supabase = supabaseAdmin();
   for (const [productType, count] of needed) {
-    const { data, error } = await supabase.rpc('available_token_count', { p_product_type: productType });
-    if (error) throw error;
-    const available = Number(data) || 0;
+    let available: number;
+    // Count general stock plus any token reserved for this specific buyer.
+    if (ownerDiscordId) {
+      const res = await supabase.rpc('available_token_count_for', { p_product_type: productType, p_owner_id: ownerDiscordId });
+      if (res.error) {
+        // Reservation RPC not migrated yet → fall back to general count so checkout never breaks.
+        const fb = await supabase.rpc('available_token_count', { p_product_type: productType });
+        if (fb.error) throw fb.error;
+        available = Number(fb.data) || 0;
+      } else {
+        available = Number(res.data) || 0;
+      }
+    } else {
+      const { data, error } = await supabase.rpc('available_token_count', { p_product_type: productType });
+      if (error) throw error;
+      available = Number(data) || 0;
+    }
     if (available < count) return { productType, needed: count, available };
   }
   return null;

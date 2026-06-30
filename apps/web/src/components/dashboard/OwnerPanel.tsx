@@ -310,12 +310,13 @@ function AddTokenForm({ busy, onSubmit }: { busy: boolean; onSubmit: (b: Record<
   const [productType, setProductType] = useState('ticket');
   const [token, setToken] = useState('');
   const [label, setLabel] = useState('');
+  const [reservedForDiscordId, setReservedForDiscordId] = useState('');
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        onSubmit({ productType, token, label });
+        onSubmit({ productType, token, label, reservedForDiscordId });
         setToken('');
       }}
       className="mt-5 grid gap-3.5"
@@ -334,6 +335,9 @@ function AddTokenForm({ busy, onSubmit }: { busy: boolean; onSubmit: (b: Record<
       </Field>
       <Field label="وسم (اختياري)" hint="اتركه فارغاً لاستخدام اسم البوت تلقائياً.">
         <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="مثال: بوت احتياطي #3" className={inputCls} />
+      </Field>
+      <Field label="محجوز لزبون (اختياري)" hint="آيدي Discord للزبون. لو عبّأته، هذا التوكن يُربط بهذا الزبون فقط عند شرائه — ولا يدخل البركة العامة.">
+        <input value={reservedForDiscordId} onChange={(e) => setReservedForDiscordId(e.target.value)} placeholder="مثال: 959896496113844254" dir="ltr" className={`${inputCls} font-english`} />
       </Field>
       <PrimaryBtn busy={busy}>
         <Plus size={15} /> إضافة للبركة

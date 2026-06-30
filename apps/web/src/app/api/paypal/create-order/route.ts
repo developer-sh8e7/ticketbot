@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     if (!selections) return fail('bad_request', 'Invalid or unavailable product, plan, or duration.', 400);
 
     // Don't take money for a bot we can't deliver: ensure pooled tokens exist.
-    const shortage = await checkTokenStock(selections.map((s) => s.product.productType));
+    const shortage = await checkTokenStock(selections.map((s) => s.product.productType), session.discordUserId);
     if (shortage) {
       return fail(
         'conflict',
