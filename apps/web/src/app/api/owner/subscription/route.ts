@@ -68,7 +68,11 @@ export async function POST(req: NextRequest) {
 
     return ok({ instanceId: instanceId ?? null, productType, days });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
+    const msg = error instanceof Error
+      ? error.message
+      : (error && typeof error === 'object' && 'message' in error)
+        ? String((error as { message: unknown }).message)
+        : String(error);
     console.error('[owner/subscription]', msg);
     // Owner-only route: surface the real cause so the owner can act (e.g. run schema).
     return fail('internal_error', `تعذّر التفعيل: ${msg}`, 500);
