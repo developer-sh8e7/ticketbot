@@ -1,5 +1,16 @@
 /** @type {import('next').NextConfig} */
 
+// Supabase Storage serves welcome-image backgrounds from the project's own
+// origin (e.g. https://<ref>.supabase.co) — CSP must allow it or the browser
+// silently drops the <img>, which is why uploaded backgrounds never rendered.
+function supabaseOrigin() {
+  try {
+    return process.env.SUPABASE_URL ? new URL(process.env.SUPABASE_URL).origin : '';
+  } catch {
+    return '';
+  }
+}
+
 // Security headers applied to every response. Tuned to allow the few external
 // origins the app legitimately needs (Discord CDN/login, PayPal SDK, imgur, fonts).
 const securityHeaders = [
@@ -17,7 +28,7 @@ const securityHeaders = [
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.paypal.com https://www.paypalobjects.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
-      "img-src 'self' data: https://i.imgur.com https://cdn.discordapp.com https://www.paypalobjects.com",
+      `img-src 'self' data: https://i.imgur.com https://cdn.discordapp.com https://www.paypalobjects.com${supabaseOrigin() ? ` ${supabaseOrigin()}` : ''}`,
       "frame-src https://www.paypal.com https://www.sandbox.paypal.com",
       "connect-src 'self' https://www.paypal.com https://api-m.paypal.com https://api-m.sandbox.paypal.com https://discord.com",
       "form-action 'self' https://discord.com",

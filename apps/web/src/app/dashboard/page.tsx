@@ -51,7 +51,7 @@ function BotCard({ bot }: { bot: OwnedBot }) {
   const inviteUrl = appId && canEditProfile ? botInviteUrl(appId, bot.guild_id) : null;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-opus-border bg-opus-surface">
+    <div className="opus-card overflow-hidden p-0 transition hover:border-opus-accent-2/40">
       {/* Banner + avatar header — shows the bot's identity in every status */}
       <div
         className="h-20 w-full bg-opus-bg"
@@ -185,7 +185,7 @@ export default async function DashboardPage() {
         <div className="mb-6 grid gap-4 sm:grid-cols-2">
           <a
             href="/dashboard/status"
-            className="flex items-center justify-between gap-3 rounded-2xl border border-opus-border bg-opus-surface p-5 transition hover:border-opus-accent"
+            className="opus-card flex items-center justify-between gap-3 p-5 transition hover:border-opus-accent-2/40"
           >
             <div>
               <p className="flex items-center gap-2 font-arabic text-base font-extrabold text-opus-text">
@@ -197,7 +197,7 @@ export default async function DashboardPage() {
           </a>
           <a
             href="/dashboard/bots"
-            className="flex items-center justify-between gap-3 rounded-2xl border border-opus-border bg-opus-surface p-5 transition hover:border-opus-accent"
+            className="opus-card flex items-center justify-between gap-3 p-5 transition hover:border-opus-accent-2/40"
           >
             <div>
               <p className="flex items-center gap-2 font-arabic text-base font-extrabold text-opus-text">
@@ -235,10 +235,10 @@ export default async function DashboardPage() {
       {payments.length > 0 ? (
         <section className="mt-10 grid gap-4">
           <h2 className="font-arabic text-lg font-extrabold text-opus-text">سجل المدفوعات</h2>
-          <div className="overflow-hidden rounded-2xl border border-opus-border">
+          <div className="opus-card overflow-hidden p-0">
             <table className="w-full text-right">
-              <thead className="bg-opus-surface">
-                <tr className="font-arabic text-xs text-opus-muted">
+              <thead className="bg-opus-bg">
+                <tr className="font-arabic text-[11px] uppercase tracking-wide text-opus-muted">
                   <th className="px-4 py-3 font-bold">التاريخ</th>
                   <th className="px-4 py-3 font-bold">المبلغ</th>
                   <th className="px-4 py-3 font-bold">الحالة</th>
@@ -246,7 +246,7 @@ export default async function DashboardPage() {
               </thead>
               <tbody>
                 {payments.map((p, i) => (
-                  <tr key={i} className="border-t border-opus-border font-arabic text-sm text-opus-text">
+                  <tr key={i} className="border-t border-opus-border font-arabic text-sm text-opus-text transition-colors hover:bg-white/[0.02]">
                     <td className="px-4 py-3">{fmtDate(p.created_at)}</td>
                     <td className="px-4 py-3 font-english">{(Number(p.amount_cents) / 100).toFixed(2)} {p.currency}</td>
                     <td className="px-4 py-3">{p.status === 'captured' ? 'مكتمل' : p.status}</td>

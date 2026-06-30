@@ -94,7 +94,7 @@ export function OwnerBotsManager({ bots }: { bots: AdminSubscriber[] }) {
               key={t.id}
               type="button"
               onClick={() => setFilter(t.id)}
-              className={`rounded-xl px-3.5 py-2 font-arabic text-xs font-bold transition ${filter === t.id ? 'bg-opus-accent text-black' : 'border border-opus-border text-opus-text hover:border-opus-accent'}`}
+              className={`rounded-xl px-3.5 py-2 font-arabic text-xs font-bold transition ${filter === t.id ? 'bg-opus-accent text-black' : 'border border-opus-border text-opus-text hover:border-opus-accent-2/50'}`}
             >
               {t.label}
             </button>
@@ -104,7 +104,7 @@ export function OwnerBotsManager({ bots }: { bots: AdminSubscriber[] }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="بحث: اسم، سيرفر، آيدي مالك..."
-          className="w-full max-w-xs rounded-xl border border-opus-border bg-opus-surface px-3 py-2 font-arabic text-sm text-opus-text outline-none focus:border-opus-accent sm:w-64"
+          className="w-full max-w-xs rounded-xl border border-opus-border bg-opus-surface px-3 py-2 font-arabic text-sm text-opus-text outline-none transition focus:border-opus-accent-2 sm:w-64"
         />
       </div>
 
@@ -116,7 +116,7 @@ export function OwnerBotsManager({ bots }: { bots: AdminSubscriber[] }) {
           const meta = STATUS[String(b.status)] ?? { label: b.status ?? '—', dot: 'bg-gray-400' };
           const name = b.bot_name || PRODUCT[String(b.product_type)] || 'بوت';
           return (
-            <div key={b.id} className="overflow-hidden rounded-2xl border border-opus-border bg-opus-surface">
+            <div key={b.id} className="opus-card overflow-hidden p-0 transition hover:border-opus-accent-2/40">
               <div className="h-16 w-full bg-opus-bg" style={b.bot_banner_url ? { backgroundImage: `url(${b.bot_banner_url})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined} />
               <div className="px-5 pb-5">
                 <div className="-mt-7 flex items-end justify-between">

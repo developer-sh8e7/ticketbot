@@ -40,7 +40,7 @@ function timeAgo(iso: string) {
 
 function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string | number; sub?: string }) {
   return (
-    <div className="rounded-2xl border border-opus-border bg-opus-surface p-5">
+    <div className="opus-stat p-5 transition hover:border-opus-accent-2/40">
       <div className="flex items-center gap-2 text-opus-muted">
         {icon}
         <span className="font-arabic text-xs font-bold">{label}</span>
@@ -55,7 +55,7 @@ function VisitsChart({ data }: { data: SiteStatus['visitsByDay'] }) {
   const max = Math.max(1, ...data.map((d) => d.count));
   const peak = data.reduce((s, d) => s + d.count, 0);
   return (
-    <div className="rounded-2xl border border-opus-border bg-opus-surface p-5">
+    <div className="opus-card p-5">
       <div className="flex items-center justify-between">
         <h3 className="font-arabic text-sm font-extrabold text-opus-text">الزيارات — آخر 14 يوم</h3>
         <span className="font-arabic text-xs text-opus-muted">{fmtNum(peak)} زيارة</span>
@@ -136,7 +136,7 @@ export default async function StatusPage() {
       </div>
 
       {status.traffic.visitsTotal === 0 ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-opus-border bg-opus-surface p-6 text-center">
+        <div className="mt-6 rounded-2xl border border-dashed border-opus-border bg-opus-surface/60 p-6 text-center">
           <p className="font-arabic text-sm font-bold text-opus-text">لا توجد بيانات بعد</p>
           <p className="mt-2 font-arabic text-xs leading-6 text-opus-muted">
             الأرقام تبدأ بالتجميع مع أول زيارات. لو ظهرت أصفار رغم وجود زيارات، تأكد أنك شغّلت <span className="font-english">000_complete_schema.sql</span> (يضيف دالة الإحصائيات).
@@ -159,7 +159,7 @@ export default async function StatusPage() {
 
       <section className="mt-4 grid gap-4 lg:grid-cols-2">
         {/* Funnel */}
-        <div className="rounded-2xl border border-opus-border bg-opus-surface p-5">
+        <div className="opus-card p-5">
           <div className="flex items-center gap-2">
             <TrendingDown size={16} className="text-opus-muted" />
             <h3 className="font-arabic text-sm font-extrabold text-opus-text">مسار التحويل (آخر 30 يوم)</h3>
@@ -179,7 +179,7 @@ export default async function StatusPage() {
 
         {/* Checkout health + pages + devices */}
         <div className="grid gap-4">
-          <div className="rounded-2xl border border-opus-border bg-opus-surface p-5">
+          <div className="opus-card p-5">
             <h3 className="font-arabic text-sm font-extrabold text-opus-text">صحة الدفع (آخر 30 يوم)</h3>
             <div className="mt-4 grid grid-cols-2 gap-4">
               <div><p className="font-english text-2xl font-extrabold text-opus-text">{checkoutConv}%</p><p className="font-arabic text-[11px] text-opus-muted">إتمام الدفع</p></div>
@@ -189,7 +189,7 @@ export default async function StatusPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-opus-border bg-opus-surface p-5">
+          <div className="opus-card p-5">
             <h3 className="font-arabic text-sm font-extrabold text-opus-text">الأجهزة</h3>
             <div className="mt-4 grid gap-2.5">
               <Bar label="كمبيوتر" value={status.devices.desktop} max={Math.max(1, status.devices.desktop, status.devices.mobile, status.devices.tablet)} />
@@ -202,7 +202,7 @@ export default async function StatusPage() {
 
       <section className="mt-4 grid gap-4 lg:grid-cols-2">
         {/* Top pages */}
-        <div className="rounded-2xl border border-opus-border bg-opus-surface p-5">
+        <div className="opus-card p-5">
           <h3 className="font-arabic text-sm font-extrabold text-opus-text">أكثر الصفحات زيارة</h3>
           <div className="mt-4 grid gap-2.5">
             {status.topPages.length ? status.topPages.map((p) => <Bar key={p.label} label={p.label} value={p.count} max={maxPage} />) : <p className="font-arabic text-xs text-opus-muted">لا بيانات بعد.</p>}
@@ -218,7 +218,7 @@ export default async function StatusPage() {
         </div>
 
         {/* Recent activity */}
-        <div className="rounded-2xl border border-opus-border bg-opus-surface p-5">
+        <div className="opus-card p-5">
           <div className="flex items-center gap-2">
             <Activity size={16} className="text-opus-muted" />
             <h3 className="font-arabic text-sm font-extrabold text-opus-text">النشاط الأخير</h3>

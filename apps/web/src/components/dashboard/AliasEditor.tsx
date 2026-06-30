@@ -93,13 +93,13 @@ export function AliasEditor({ botId }: { botId: string }) {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center gap-2 rounded-2xl border border-opus-border bg-opus-surface p-8 font-arabic text-sm text-opus-muted"><Loader2 className="animate-spin" size={16} /> جاري التحميل...</div>;
+    return <div className="opus-card flex items-center justify-center gap-2 p-8 font-arabic text-sm text-opus-muted"><Loader2 className="animate-spin" size={16} /> جاري التحميل...</div>;
   }
 
   const input = 'w-full rounded-lg border border-opus-border bg-opus-bg px-3 py-2 font-arabic text-sm text-opus-text outline-none focus:border-opus-accent';
 
   return (
-    <div dir="rtl" className="rounded-2xl border border-opus-border bg-opus-surface p-5">
+    <div dir="rtl" className="opus-card p-5 sm:p-6">
       <h3 className="font-arabic text-base font-extrabold text-opus-text">اختصارات الأوامر</h3>
       <p className="mt-1 font-arabic text-xs text-opus-muted">
         علّم كلمة عربية خاصة بسيرفرك تنفّذ أمراً جاهزاً. مثال: اكتب &quot;باند&quot; كاختصار لأمر /ban، وبعدها أي رسالة تبدأ بـ <span className="font-english">باند @شخص سبب الحظر</span> تنفّذ الحظر مباشرة (لمن عنده صلاحية أصلاً).
@@ -108,7 +108,7 @@ export function AliasEditor({ botId }: { botId: string }) {
       {aliases.length > 0 ? (
         <div className="mt-4 grid gap-2">
           {aliases.map((a) => (
-            <div key={a.id} className="flex items-center justify-between gap-3 rounded-lg border border-opus-border bg-opus-bg px-3 py-2">
+            <div key={a.id} className="flex items-center justify-between gap-3 rounded-lg border border-opus-border bg-opus-bg px-3 py-2 transition-colors hover:border-opus-accent-2/40">
               <div className="font-arabic text-sm text-opus-text">
                 <span className="font-english font-bold text-opus-accent-2">{a.alias}</span>
                 <span className="mx-2 text-opus-muted">←</span>

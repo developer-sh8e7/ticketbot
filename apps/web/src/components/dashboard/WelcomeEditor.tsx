@@ -80,18 +80,21 @@ export function WelcomeEditor({ botId }: { botId: string }) {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center gap-2 rounded-2xl border border-opus-border bg-opus-surface p-8 font-arabic text-sm text-opus-muted"><Loader2 className="animate-spin" size={16} /> جاري التحميل...</div>;
+    return <div className="opus-card flex items-center justify-center gap-2 p-8 font-arabic text-sm text-opus-muted"><Loader2 className="animate-spin" size={16} /> جاري التحميل...</div>;
   }
 
   const input = 'w-full rounded-lg border border-opus-border bg-opus-bg px-3 py-2 font-arabic text-sm text-opus-text outline-none focus:border-opus-accent';
 
   return (
-    <div dir="rtl" className="rounded-2xl border border-opus-border bg-opus-surface p-5">
+    <div dir="rtl" className="opus-card p-5 sm:p-6">
       <div className="flex items-center justify-between">
         <h3 className="font-arabic text-base font-extrabold text-opus-text">رسالة الترحيب (Welcome)</h3>
-        <label className="flex cursor-pointer items-center gap-2 font-arabic text-sm text-opus-text">
-          <input type="checkbox" checked={w.enabled} onChange={(e) => setW((p) => ({ ...p, enabled: e.target.checked }))} className="h-4 w-4 accent-[var(--color-accent)]" />
-          مفعّلة
+        <label className="flex cursor-pointer select-none items-center gap-2.5">
+          <span className="font-arabic text-xs font-bold text-opus-text">مفعّلة</span>
+          <span className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-opus-border bg-opus-bg">
+            <input type="checkbox" checked={w.enabled} onChange={(e) => setW((p) => ({ ...p, enabled: e.target.checked }))} className="peer absolute inset-0 z-10 cursor-pointer opacity-0" />
+            <span className="absolute right-0.5 h-4 w-4 rounded-full bg-opus-muted transition-all duration-200 peer-checked:right-[1.625rem] peer-checked:bg-opus-accent" />
+          </span>
         </label>
       </div>
 

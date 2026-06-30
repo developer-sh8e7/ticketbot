@@ -75,10 +75,10 @@ export default async function StatusInfoPage() {
           <Users size={16} className="text-opus-muted" />
           <h2 className="font-arabic text-base font-extrabold text-opus-text">الحسابات المرتبطة ({info.identifiedCount})</h2>
         </div>
-        <div className="mt-3 overflow-hidden rounded-2xl border border-opus-border">
+        <div className="opus-card mt-3 overflow-hidden p-0">
           <table className="w-full text-right">
-            <thead className="bg-opus-surface">
-              <tr className="font-arabic text-xs text-opus-muted">
+            <thead className="bg-opus-bg">
+              <tr className="font-arabic text-[11px] uppercase tracking-wide text-opus-muted">
                 <th className="px-4 py-3 font-bold">المستخدم</th>
                 <th className="px-4 py-3 font-bold">Discord ID</th>
                 <th className="px-4 py-3 font-bold">البريد</th>
@@ -87,7 +87,7 @@ export default async function StatusInfoPage() {
             </thead>
             <tbody>
               {info.recentUsers.length ? info.recentUsers.map((u) => (
-                <tr key={u.discordId} className="border-t border-opus-border font-arabic text-sm text-opus-text">
+                <tr key={u.discordId} className="border-t border-opus-border font-arabic text-sm text-opus-text transition-colors hover:bg-white/[0.02]">
                   <td className="px-4 py-3">{u.username || '—'}</td>
                   <td className="px-4 py-3 font-english text-xs text-opus-muted">{u.discordId}</td>
                   <td className="px-4 py-3 font-english text-xs text-opus-muted">{u.email || '—'}</td>
@@ -107,10 +107,10 @@ export default async function StatusInfoPage() {
           <Globe size={16} className="text-opus-muted" />
           <h2 className="font-arabic text-base font-extrabold text-opus-text">آخر الزيارات</h2>
         </div>
-        <div className="mt-3 overflow-hidden rounded-2xl border border-opus-border">
+        <div className="opus-card mt-3 overflow-hidden p-0">
           <table className="w-full text-right">
-            <thead className="bg-opus-surface">
-              <tr className="font-arabic text-xs text-opus-muted">
+            <thead className="bg-opus-bg">
+              <tr className="font-arabic text-[11px] uppercase tracking-wide text-opus-muted">
                 <th className="px-4 py-3 font-bold">الصفحة</th>
                 <th className="px-4 py-3 font-bold">الجهاز</th>
                 <th className="px-4 py-3 font-bold">النظام / المتصفح</th>
@@ -121,7 +121,7 @@ export default async function StatusInfoPage() {
             </thead>
             <tbody>
               {info.recentVisitors.length ? info.recentVisitors.map((v, i) => (
-                <tr key={i} className="border-t border-opus-border font-arabic text-sm text-opus-text">
+                <tr key={i} className="border-t border-opus-border font-arabic text-sm text-opus-text transition-colors hover:bg-white/[0.02]">
                   <td className="px-4 py-3">{labelFor(v.path)}</td>
                   <td className="px-4 py-3"><span className="inline-flex items-center gap-1.5"><DeviceIcon device={v.device} /> <span className="text-xs">{v.device}</span></span></td>
                   <td className="px-4 py-3 text-xs text-opus-muted">{v.os} · {v.browser}</td>

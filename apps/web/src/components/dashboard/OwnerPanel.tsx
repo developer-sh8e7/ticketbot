@@ -133,10 +133,14 @@ export function OwnerPanel({
 
   return (
     <section className="mt-14 grid gap-8 border-t border-opus-border pt-10">
-      <div className="flex items-center gap-2.5">
-        <Crown size={20} className="text-amber-400" />
-        <h2 className="font-arabic text-2xl font-extrabold text-opus-text">لوحة الإدارة</h2>
-        <span className="rounded-full border border-opus-border px-2.5 py-0.5 font-arabic text-[11px] text-opus-muted">للمالك فقط</span>
+      <div className="flex items-center gap-3">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-opus-border bg-opus-surface text-opus-accent-2">
+          <Crown size={18} />
+        </span>
+        <div>
+          <h2 className="font-arabic text-xl font-extrabold tracking-tight text-opus-text">لوحة الإدارة</h2>
+          <p className="font-arabic text-[11px] text-opus-muted">مرئية لمالك المتجر فقط</p>
+        </div>
       </div>
 
       {msg ? (
@@ -166,7 +170,7 @@ export function OwnerPanel({
       </div>
 
       {/* Token stock per product — the answer to "how many bots can I still sell" */}
-      <div className="rounded-2xl border border-opus-border bg-opus-surface p-5">
+      <div className="opus-card p-5">
         <SectionHeader icon={<Coins size={18} />} title="مخزون البوتات (التوكنات)" desc="كم بوتاً يمكنك بيعه الآن لكل منتج. لا تدع الرقم يصل صفراً." />
         <div className="mt-4 grid gap-2.5 sm:grid-cols-3">
           {PRODUCTS.map((p) => {
@@ -191,7 +195,7 @@ export function OwnerPanel({
 
       {/* Action cards side by side */}
       <div className="grid items-start gap-5 lg:grid-cols-3">
-        <div className="rounded-2xl border border-opus-border bg-opus-surface p-5">
+        <div className="opus-card p-5">
           <SectionHeader
             icon={<KeyRound size={18} />}
             title="إضافة توكن بوت"
@@ -200,12 +204,12 @@ export function OwnerPanel({
           <AddTokenForm busy={busy === 'add-token'} onSubmit={(b) => run('add-token', () => postJson('/api/owner/tokens', b))} />
         </div>
 
-        <div className="rounded-2xl border border-opus-border bg-opus-surface p-5">
+        <div className="opus-card p-5">
           <SectionHeader icon={<Gift size={18} />} title="منح تجربة مجانية" desc="فعّل بوتاً مجاناً لمدة محددة على سيرفر عميل." />
           <GrantTrialForm busy={busy === 'grant-trial'} onSubmit={(b) => run('grant-trial', () => postJson('/api/owner/trial', b))} />
         </div>
 
-        <div className="rounded-2xl border border-opus-border bg-opus-surface p-5">
+        <div className="opus-card p-5">
           <SectionHeader icon={<CreditCard size={18} />} title="إضافة اشتراك مدفوع" desc="فعّل بوتاً باشتراك مدفوع لمدة محددة على سيرفر عميل." />
           <AddSubscriptionForm busy={busy === 'add-subscription'} onSubmit={(b) => run('add-subscription', () => postJson('/api/owner/subscription', b))} />
         </div>
@@ -235,7 +239,7 @@ export function OwnerPanel({
                 {subscribers.map((s) => {
                   const st = statusMeta[String(s.status)] ?? { label: s.status ?? '—', cls: 'text-opus-muted border-opus-border' };
                   return (
-                    <tr key={s.id} className="border-b border-opus-border/60 font-arabic text-sm text-opus-text">
+                    <tr key={s.id} className="border-b border-opus-border/60 font-arabic text-sm text-opus-text transition-colors hover:bg-white/[0.02]">
                       <td className="px-3 py-3">{productName(String(s.product_type))}</td>
                       <td className="px-3 py-3 font-english text-xs text-opus-muted">{s.guild_name || s.guild_id}</td>
                       <td className="px-3 py-3 font-english text-xs text-opus-muted">{s.owner_id}</td>
@@ -301,12 +305,12 @@ export function OwnerPanel({
 
 function Stat({ icon, label, value, highlight }: { icon: React.ReactNode; label: string; value: string | number; highlight?: boolean }) {
   return (
-    <div className="rounded-xl border border-opus-border bg-opus-surface p-4">
+    <div className="opus-stat p-4 transition hover:border-opus-accent-2/40">
       <div className="flex items-center gap-1.5 text-opus-muted">
         {icon}
         <span className="font-arabic text-xs">{label}</span>
       </div>
-      <p className={`mt-2 font-english text-2xl font-extrabold ${highlight ? 'text-opus-accent-2' : 'text-opus-text'}`}>{value}</p>
+      <p className={`mt-2 font-english text-2xl font-extrabold tracking-tight ${highlight ? 'text-opus-accent-2' : 'text-opus-text'}`}>{value}</p>
     </div>
   );
 }
