@@ -172,16 +172,28 @@ export default async function DashboardPage() {
       badge={owner ? 'مالك المتجر' : 'حساب عميل'}
     >
       {owner ? (
-        <a
-          href="/dashboard/status"
-          className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-opus-border bg-opus-surface p-5 transition hover:border-opus-accent"
-        >
-          <div>
-            <p className="font-arabic text-base font-extrabold text-opus-text">📊 حالة الموقع — Status</p>
-            <p className="mt-1 font-arabic text-xs text-opus-muted">الزيارات، الزوّار، مسار التحويل، صحة الدفع، والنشاط الأخير.</p>
-          </div>
-          <span className="shrink-0 rounded-xl bg-opus-accent px-4 py-2 font-arabic text-sm font-extrabold text-black">افتح اللوحة</span>
-        </a>
+        <div className="mb-6 grid gap-4 sm:grid-cols-2">
+          <a
+            href="/dashboard/status"
+            className="flex items-center justify-between gap-3 rounded-2xl border border-opus-border bg-opus-surface p-5 transition hover:border-opus-accent"
+          >
+            <div>
+              <p className="font-arabic text-base font-extrabold text-opus-text">📊 حالة الموقع — Status</p>
+              <p className="mt-1 font-arabic text-xs text-opus-muted">الزيارات، الزوّار، مسار التحويل، صحة الدفع، والنشاط.</p>
+            </div>
+            <span className="shrink-0 rounded-xl bg-opus-accent px-4 py-2 font-arabic text-sm font-extrabold text-black">افتح</span>
+          </a>
+          <a
+            href="/dashboard/bots"
+            className="flex items-center justify-between gap-3 rounded-2xl border border-opus-border bg-opus-surface p-5 transition hover:border-opus-accent"
+          >
+            <div>
+              <p className="font-arabic text-base font-extrabold text-opus-text">🤖 إدارة كل البوتات — Bots</p>
+              <p className="mt-1 font-arabic text-xs text-opus-muted">كل بوتات العملاء + تمديد/إيقاف/تفعيل أيّ بوت.</p>
+            </div>
+            <span className="shrink-0 rounded-xl bg-opus-accent px-4 py-2 font-arabic text-sm font-extrabold text-black">افتح</span>
+          </a>
+        </div>
       ) : null}
 
       <section className="grid gap-4">

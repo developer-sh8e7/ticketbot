@@ -50,6 +50,55 @@ function refererHost(referer: string): string {
 
 const num = (v: unknown) => (typeof v === 'number' ? v : Number(v) || 0);
 
+// ── Visitor Info view ─────────────────────────────────────────────────────────
+export type VisitorRow = {
+  path: string;
+  ip: string;
+  device: string;
+  browser: string;
+  os: string;
+  source: string;
+  at: string;
+};
+export type IdentifiedUser = {
+  discordId: string;
+  username: string | null;
+  email: string | null;
+  lastLogin: string | null;
+  createdAt: string | null;
+};
+export type VisitorInfo = { recentVisitors: VisitorRow[]; recentUsers: IdentifiedUser[]; identifiedCount: number };
+
+/** Recent raw visits + recently active linked accounts (owner-only). */
+export async function getVisitorInfo(): Promise<VisitorInfo> {
+  const supabase = supabaseAdmin();
+  const [visitsRes, usersRes, countRes] = await Promise.all([
+    supabase.from('website_logs').select('path,ip_anonymized,device_type,browser,os,referer,created_at').order('created_at', { ascending: false }).limit(60),
+    supabase.from('accounts').select('discord_user_id,discord_username,email,last_login_at,created_at').order('last_login_at', { ascending: false, nullsFirst: false }).limit(40),
+    supabase.from('accounts').select('id', { count: 'exact', head: true }),
+  ]);
+
+  const recentVisitors: VisitorRow[] = (visitsRes.data ?? []).map((r: any) => ({
+    path: String(r.path ?? ''),
+    ip: String(r.ip_anonymized ?? '—'),
+    device: String(r.device_type ?? 'unknown'),
+    browser: String(r.browser ?? '—'),
+    os: String(r.os ?? '—'),
+    source: r.referer ? refererHost(String(r.referer)) : 'مباشر',
+    at: String(r.created_at),
+  }));
+
+  const recentUsers: IdentifiedUser[] = (usersRes.data ?? []).map((u: any) => ({
+    discordId: String(u.discord_user_id ?? ''),
+    username: u.discord_username ?? null,
+    email: u.email ?? null,
+    lastLogin: u.last_login_at ?? null,
+    createdAt: u.created_at ?? null,
+  }));
+
+  return { recentVisitors, recentUsers, identifiedCount: countRes.count ?? recentUsers.length };
+}
+
 export async function getSiteStatus(): Promise<SiteStatus> {
   const { data, error } = await supabaseAdmin().rpc('get_site_status');
   if (error || !data || typeof data !== 'object') {

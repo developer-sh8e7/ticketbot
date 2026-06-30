@@ -130,6 +130,11 @@ export default async function StatusPage() {
         </Link>
       </div>
 
+      <div className="mt-5 flex gap-2">
+        <Link href="/dashboard/status" className="rounded-xl bg-opus-accent px-4 py-2 font-arabic text-sm font-bold text-black">نظرة عامة</Link>
+        <Link href="/dashboard/status/info" className="rounded-xl border border-opus-border px-4 py-2 font-arabic text-sm font-bold text-opus-text transition hover:border-opus-accent">Info</Link>
+      </div>
+
       {status.traffic.visitsTotal === 0 ? (
         <div className="mt-6 rounded-2xl border border-dashed border-opus-border bg-opus-surface p-6 text-center">
           <p className="font-arabic text-sm font-bold text-opus-text">لا توجد بيانات بعد</p>

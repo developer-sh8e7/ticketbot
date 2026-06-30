@@ -19,6 +19,8 @@ export type AdminStats = {
 export type AdminSubscriber = {
   id: string;
   bot_name: string | null;
+  bot_avatar_url: string | null;
+  bot_banner_url: string | null;
   product_type: string | null;
   plan_type: string | null;
   status: string | null;
@@ -70,7 +72,7 @@ export async function getAdminStats(): Promise<AdminStats> {
 export async function getSubscribers(limit = 100): Promise<AdminSubscriber[]> {
   const { data, error } = await supabaseAdmin()
     .from('bot_instances')
-    .select('id,bot_name,product_type,plan_type,status,owner_id,guild_id,guild_name,expires_at,last_started_at,created_at')
+    .select('id,bot_name,bot_avatar_url,bot_banner_url,product_type,plan_type,status,owner_id,guild_id,guild_name,expires_at,last_started_at,created_at')
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) throw error;
