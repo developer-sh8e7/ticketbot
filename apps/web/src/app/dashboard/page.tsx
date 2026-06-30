@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { BarChart3, Bot, Settings } from 'lucide-react';
 import { DashboardShell } from '@/components/DashboardShell';
 import { OwnerPanel } from '@/components/dashboard/OwnerPanel';
 import { BotProfileEditor } from '@/components/dashboard/BotProfileEditor';
@@ -136,7 +137,7 @@ function BotCard({ bot }: { bot: OwnedBot }) {
           href={`/dashboard/bot/${bot.id}/system`}
           className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl border border-opus-border px-4 py-2 font-arabic text-sm font-bold text-opus-text transition hover:border-opus-accent"
         >
-          ⚙️ لوحة السيستم (الترحيب والمزيد)
+          <Settings size={15} /> لوحة السيستم (الترحيب والمزيد)
         </a>
       ) : null}
 
@@ -187,7 +188,9 @@ export default async function DashboardPage() {
             className="flex items-center justify-between gap-3 rounded-2xl border border-opus-border bg-opus-surface p-5 transition hover:border-opus-accent"
           >
             <div>
-              <p className="font-arabic text-base font-extrabold text-opus-text">📊 حالة الموقع — Status</p>
+              <p className="flex items-center gap-2 font-arabic text-base font-extrabold text-opus-text">
+                <BarChart3 size={18} className="text-opus-accent-2" /> حالة الموقع — Status
+              </p>
               <p className="mt-1 font-arabic text-xs text-opus-muted">الزيارات، الزوّار، مسار التحويل، صحة الدفع، والنشاط.</p>
             </div>
             <span className="shrink-0 rounded-xl bg-opus-accent px-4 py-2 font-arabic text-sm font-extrabold text-black">افتح</span>
@@ -197,7 +200,9 @@ export default async function DashboardPage() {
             className="flex items-center justify-between gap-3 rounded-2xl border border-opus-border bg-opus-surface p-5 transition hover:border-opus-accent"
           >
             <div>
-              <p className="font-arabic text-base font-extrabold text-opus-text">🤖 إدارة كل البوتات — Bots</p>
+              <p className="flex items-center gap-2 font-arabic text-base font-extrabold text-opus-text">
+                <Bot size={18} className="text-opus-accent-2" /> إدارة كل البوتات — Bots
+              </p>
               <p className="mt-1 font-arabic text-xs text-opus-muted">كل بوتات العملاء + تمديد/إيقاف/تفعيل أيّ بوت.</p>
             </div>
             <span className="shrink-0 rounded-xl bg-opus-accent px-4 py-2 font-arabic text-sm font-extrabold text-black">افتح</span>

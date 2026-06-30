@@ -18,7 +18,7 @@ const EVENT_LABEL: Record<string, string> = {
   owner_add_token: 'إضافة توكن',
   owner_bot_action: 'إجراء على بوت',
   bot_profile_update: 'تعديل بروفايل بوت',
-  unauthorized_owner_access: '⚠ محاولة وصول غير مصرّح',
+  unauthorized_owner_access: 'محاولة وصول غير مصرّح',
   config_update: 'تحديث إعدادات',
 };
 

@@ -189,8 +189,8 @@ export function OwnerPanel({
         </div>
       </div>
 
-      {/* Two action cards side by side */}
-      <div className="grid gap-5 lg:grid-cols-2">
+      {/* Action cards side by side */}
+      <div className="grid items-start gap-5 lg:grid-cols-3">
         <div className="rounded-2xl border border-opus-border bg-opus-surface p-5">
           <SectionHeader
             icon={<KeyRound size={18} />}
@@ -203,6 +203,11 @@ export function OwnerPanel({
         <div className="rounded-2xl border border-opus-border bg-opus-surface p-5">
           <SectionHeader icon={<Gift size={18} />} title="منح تجربة مجانية" desc="فعّل بوتاً مجاناً لمدة محددة على سيرفر عميل." />
           <GrantTrialForm busy={busy === 'grant-trial'} onSubmit={(b) => run('grant-trial', () => postJson('/api/owner/trial', b))} />
+        </div>
+
+        <div className="rounded-2xl border border-opus-border bg-opus-surface p-5">
+          <SectionHeader icon={<CreditCard size={18} />} title="إضافة اشتراك مدفوع" desc="فعّل بوتاً باشتراك مدفوع لمدة محددة على سيرفر عميل." />
+          <AddSubscriptionForm busy={busy === 'add-subscription'} onSubmit={(b) => run('add-subscription', () => postJson('/api/owner/subscription', b))} />
         </div>
       </div>
 
@@ -382,6 +387,47 @@ function GrantTrialForm({ busy, onSubmit }: { busy: boolean; onSubmit: (b: Recor
       </Field>
       <PrimaryBtn busy={busy}>
         <Gift size={15} /> منح التجربة
+      </PrimaryBtn>
+    </form>
+  );
+}
+
+function AddSubscriptionForm({ busy, onSubmit }: { busy: boolean; onSubmit: (b: Record<string, unknown>) => void }) {
+  const [guildId, setGuildId] = useState('');
+  const [ownerId, setOwnerId] = useState('');
+  const [productType, setProductType] = useState('ticket');
+  const [days, setDays] = useState('30');
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit({ guildId, ownerId, productType, days: Number(days) });
+      }}
+      className="mt-5 grid gap-3.5"
+    >
+      <Field label="المنتج">
+        <select value={productType} onChange={(e) => setProductType(e.target.value)} className={inputCls}>
+          {PRODUCTS.map((p) => (
+            <option key={p.value} value={p.value}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="معرّف السيرفر">
+          <input value={guildId} onChange={(e) => setGuildId(e.target.value.replace(/\D/g, ''))} placeholder="Server ID" dir="ltr" className={`${inputCls} font-english`} />
+        </Field>
+        <Field label="مدة الاشتراك">
+          <input value={days} onChange={(e) => setDays(e.target.value.replace(/\D/g, ''))} placeholder="أيام" dir="ltr" className={`${inputCls} font-english`} />
+        </Field>
+      </div>
+      <Field label="Discord ID لصاحب السيرفر">
+        <input value={ownerId} onChange={(e) => setOwnerId(e.target.value.replace(/\D/g, ''))} placeholder="Owner Discord ID" dir="ltr" className={`${inputCls} font-english`} />
+      </Field>
+      <PrimaryBtn busy={busy}>
+        <CreditCard size={15} /> إضافة الاشتراك
       </PrimaryBtn>
     </form>
   );
