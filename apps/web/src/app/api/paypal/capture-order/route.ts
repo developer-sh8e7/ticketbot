@@ -9,6 +9,7 @@ import { requireCustomer } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isProvisionable, productArabicName } from '@/lib/provisioning-shared';
+import { botInviteUrl } from '@/lib/bot-invite';
 
 type SelectionInput = {
   productId?: unknown;
@@ -82,6 +83,7 @@ export async function POST(req: NextRequest) {
     // captured at this point, so a provisioning hiccup must NEVER turn into a
     // 500 that loses the order — we record what succeeded and what's pending.
     const pending: string[] = [];
+    const invites: { productType: string; name: string; url: string }[] = [];
     for (const selection of selections) {
       const productType = selection.product.productType;
       // Manual/custom products (e.g. HumanGuard, custom bot) aren't pooled bots,
@@ -128,6 +130,10 @@ export async function POST(req: NextRequest) {
         throw provisionError;
       }
       await supabase.from('payment_events').insert({ provider: 'paypal', event_type: 'provisioned', external_event_id: result.orderID, payload: { instance, productType } });
+
+      // Build the one-click invite link so the buyer can add the bot immediately.
+      const appId = (instance as { bot_application_id?: string | null } | null)?.bot_application_id;
+      if (appId) invites.push({ productType, name: selection.product.name, url: botInviteUrl(appId, guildId) });
     }
 
     // Alert the owner so they can top up the pool; the buyer is told it's coming.
@@ -158,7 +164,7 @@ export async function POST(req: NextRequest) {
       footer: 'Opus • شراء',
     }).catch(() => {});
 
-    return ok({ ...result, provisioning: pending.length > 0 ? 'pending' : 'active', pendingProducts: pending });
+    return ok({ ...result, provisioning: pending.length > 0 ? 'pending' : 'active', pendingProducts: pending, invites });
   } catch (error) {
     if (error instanceof SyntaxError) return fail('bad_request', 'Invalid JSON body.', 400);
     if (error instanceof PayPalConfigError) return fail('internal_error', 'PayPal Checkout is not configured.', 503);

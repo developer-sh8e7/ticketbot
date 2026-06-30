@@ -5,6 +5,7 @@ import { getSession } from '@/lib/sessions';
 import { getOwnedBots } from '@/lib/dashboard-data';
 import { sessionIsOwner } from '@/lib/owner';
 import { getAdminStats, getSubscribers, getTokenPool } from '@/lib/admin-data';
+import { botInviteUrl } from '@/lib/bot-invite';
 import { supabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
@@ -39,6 +40,8 @@ function BotCard({ bot }: { bot: OwnedBot }) {
   const meta = statusMeta[String(bot.status ?? '')] ?? { label: bot.status ?? '—', dot: 'bg-gray-400', text: 'text-opus-muted' };
   const remaining = daysLeft(bot.expires_at);
   const isPaid = bot.plan_type !== 'trial';
+  const appId = (bot as { bot_application_id?: string | null }).bot_application_id;
+  const inviteUrl = appId && (bot.status === 'active' || bot.status === 'paused') ? botInviteUrl(appId, bot.guild_id) : null;
 
   return (
     <div className="rounded-2xl border border-opus-border bg-opus-surface p-5">
@@ -76,17 +79,34 @@ function BotCard({ bot }: { bot: OwnedBot }) {
         </div>
       </dl>
 
+      {inviteUrl ? (
+        <div className="mt-5 rounded-xl border border-opus-border bg-opus-bg/40 p-4">
+          <p className="font-arabic text-xs font-bold text-opus-text">أضف البوت لسيرفرك</p>
+          <p className="mt-1 font-arabic text-[11px] leading-5 text-opus-muted">
+            انسخ الرابط وافتحه، وافق على الإضافة — البوت يدخل سيرفرك ويشتغل تلقائياً.
+          </p>
+          <a
+            href={inviteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-opus-accent px-4 py-2 font-arabic text-sm font-extrabold text-black transition hover:opacity-90"
+          >
+            إضافة البوت إلى السيرفر
+          </a>
+        </div>
+      ) : null}
+
       {bot.status !== 'active' ? (
         <a
           href="/pricing"
-          className="mt-5 inline-flex rounded-xl bg-opus-accent px-4 py-2 font-arabic text-sm font-extrabold text-black transition hover:opacity-90"
+          className="mt-3 inline-flex rounded-xl bg-opus-accent px-4 py-2 font-arabic text-sm font-extrabold text-black transition hover:opacity-90"
         >
           تجديد الاشتراك
         </a>
       ) : remaining !== null && remaining <= 7 ? (
         <a
           href="/pricing"
-          className="mt-5 inline-flex rounded-xl border border-amber-500/50 px-4 py-2 font-arabic text-sm font-bold text-amber-300 transition hover:bg-amber-500/10"
+          className="mt-3 inline-flex rounded-xl border border-amber-500/50 px-4 py-2 font-arabic text-sm font-bold text-amber-300 transition hover:bg-amber-500/10"
         >
           ينتهي قريباً — جدّد الآن
         </a>

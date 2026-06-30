@@ -202,6 +202,7 @@ function PayPalCart({ items, guildId, guildName, onSuccess }: { items: CartItem[
   const itemsRef = useRef(items);
   const [status, setStatus] = useState<'loading' | 'ready' | 'capturing' | 'success' | 'error' | 'unconfigured'>('loading');
   const [message, setMessage] = useState('');
+  const [invites, setInvites] = useState<{ productType: string; name: string; url: string }[]>([]);
 
   guildRef.current = guildId;
   guildNameRef.current = guildName;
@@ -232,13 +233,14 @@ function PayPalCart({ items, guildId, guildName, onSuccess }: { items: CartItem[
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderID, guildId: guildRef.current, guildName: guildNameRef.current, items: itemsRef.current.map(itemPayload) }),
       });
-      const json = (await res.json()) as ApiResponse<{ provisioning?: string }>;
+      const json = (await res.json()) as ApiResponse<{ provisioning?: string; invites?: { productType: string; name: string; url: string }[] }>;
       if (!json.success) throw new Error(json.error?.message || 'تعذر تأكيد الدفع.');
       setStatus('success');
+      setInvites(json.data.invites ?? []);
       setMessage(
         json.data.provisioning === 'pending'
           ? 'تم الدفع بنجاح! بوتك قيد التجهيز وسيُفعّل خلال دقائق — ستجده في لوحة التحكم.'
-          : 'تم الدفع والتفعيل بنجاح! بوتك سيظهر في سيرفرك خلال لحظات. تفقّد لوحة التحكم.',
+          : 'تم الدفع والتفعيل بنجاح! أضف بوتك لسيرفرك من الزر بالأسفل.',
       );
       onSuccess();
     },
@@ -321,6 +323,30 @@ function PayPalCart({ items, guildId, guildName, onSuccess }: { items: CartItem[
           {message}
         </p>
       ) : null}
+
+      {status === 'success' && invites.length > 0 ? (
+        <div className="grid gap-2 rounded-xl border border-opus-accent-2 bg-opus-bg p-4">
+          <p className="font-arabic text-sm font-extrabold text-opus-text">أضف بوتك لسيرفرك الآن</p>
+          <p className="font-arabic text-xs leading-6 text-opus-muted">
+            افتح الرابط، وافق على الإضافة — البوت يدخل سيرفرك ويشتغل تلقائياً. (لا حاجة لأي توكن)
+          </p>
+          {invites.map((inv) => (
+            <a
+              key={inv.productType}
+              href={inv.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-full items-center justify-center rounded-lg bg-opus-accent px-4 py-2.5 font-arabic text-sm font-extrabold text-black transition hover:opacity-90"
+            >
+              إضافة {inv.name} إلى السيرفر
+            </a>
+          ))}
+          <Link href="/dashboard" className="mt-1 text-center font-arabic text-xs font-bold text-opus-muted underline underline-offset-4 hover:text-opus-text">
+            أو من لوحة التحكم
+          </Link>
+        </div>
+      ) : null}
+
       <p className="text-center text-xs font-semibold text-opus-muted">Powered by PayPal</p>
     </div>
   );
