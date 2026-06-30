@@ -114,6 +114,18 @@ export function PricingCheckout({ products }: { products: Product[] }) {
   const { addItem } = useCart();
   const [justAdded, setJustAdded] = useState(false);
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
+  const [user, setUser] = useState<{ discord_user_id: string } | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/dashboard/me', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { success?: boolean; data?: { discord_user_id: string } } | null) => {
+        if (j && j.success && j.data) setUser(j.data);
+      })
+      .catch(() => {})
+      .finally(() => setAuthChecked(true));
+  }, []);
   const firstPaid = useMemo(() => products.find(hasPaidPrice) ?? products[0], [products]);
   const [selectedKey, setSelectedKey] = useState(firstPaid?.key);
 
@@ -239,6 +251,24 @@ export function PricingCheckout({ products }: { products: Product[] }) {
             </div>
 
             {selectedPaid ? (
+              !authChecked ? (
+                <div className="flex items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-8 font-arabic text-sm text-[var(--color-muted)]">
+                  جاري التحقق...
+                </div>
+              ) : !user ? (
+                <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-6 text-center">
+                  <p className="font-arabic text-base font-bold text-[var(--color-text)]">سجّل دخولك أولاً لإتمام الشراء</p>
+                  <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
+                    لازم تربط حساب Discord قبل الدفع — حتى التحويل عبر PayPal.me — عشان نربط اشتراكك ببوتك تلقائياً ويوصلك فوراً.
+                  </p>
+                  <a
+                    href="/api/auth/discord"
+                    className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-[#5865F2] px-6 py-3 font-arabic text-sm font-extrabold text-white transition hover:opacity-90"
+                  >
+                    تسجيل الدخول عبر Discord
+                  </a>
+                </div>
+              ) : (
               <div className="grid gap-0">
                 <div className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-6">
                   <div className="mb-5">
@@ -288,6 +318,7 @@ export function PricingCheckout({ products }: { products: Product[] }) {
                   </ol>
                 </div>
               </div>
+              )
             ) : (
               <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5 text-center">
                 <p className="font-arabic text-xl font-extrabold text-[var(--color-text)]">قريباً</p>
