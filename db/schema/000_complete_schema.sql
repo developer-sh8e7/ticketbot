@@ -313,9 +313,14 @@ begin
       returning * into v_instance;
     end if;
   else
+    -- insert with placeholders for the NOT NULL columns, then backfill from the
+    -- claimed token (claim must happen after insert: token_pool.claimed_by_instance_id
+    -- has an FK to bot_instances.id).
     insert into bot_instances (product_type, guild_id, guild_name, owner_id, account_id,
+                               bot_name, bot_token_encrypted,
                                plan_type, status, started_at, expires_at)
     values (p_product_type, p_guild_id, p_guild_name, p_owner_id, p_account_id,
+            'Bot', '',
             'paid', 'active', now(), now() + make_interval(days => p_duration_days))
     returning * into v_instance;
 
@@ -325,14 +330,17 @@ begin
     end if;
 
     update bot_instances
-       set token_id = v_token.id, bot_application_id = v_token.bot_application_id
+       set token_id = v_token.id,
+           bot_application_id = v_token.bot_application_id,
+           bot_name = coalesce(v_token.label, 'Bot'),
+           bot_token_encrypted = v_token.bot_token_encrypted
      where id = v_instance.id
     returning * into v_instance;
   end if;
 
-  insert into subscriptions (account_id, owner_id, guild_id, product_type, instance_id,
+  insert into subscriptions (account_id, user_id, owner_id, guild_id, product_type, instance_id,
                              plan_name, status, starts_at, expires_at, external_ref)
-  values (p_account_id, p_owner_id, p_guild_id, p_product_type, v_instance.id,
+  values (p_account_id, p_owner_id, p_owner_id, p_guild_id, p_product_type, v_instance.id,
           p_plan_name, 'active', now(), v_instance.expires_at, p_external_ref)
   on conflict (external_ref) where external_ref is not null
   do update set status = 'active', expires_at = excluded.expires_at, updated_at = now();
