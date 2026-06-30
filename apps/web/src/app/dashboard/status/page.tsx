@@ -53,20 +53,27 @@ function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: s
 
 function VisitsChart({ data }: { data: SiteStatus['visitsByDay'] }) {
   const max = Math.max(1, ...data.map((d) => d.count));
+  const peak = data.reduce((s, d) => s + d.count, 0);
   return (
     <div className="rounded-2xl border border-opus-border bg-opus-surface p-5">
-      <h3 className="font-arabic text-sm font-extrabold text-opus-text">الزيارات — آخر 14 يوم</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="font-arabic text-sm font-extrabold text-opus-text">الزيارات — آخر 14 يوم</h3>
+        <span className="font-arabic text-xs text-opus-muted">{fmtNum(peak)} زيارة</span>
+      </div>
       <div className="mt-5 flex h-40 items-end gap-1.5">
-        {data.map((d) => (
-          <div key={d.date} className="group flex flex-1 flex-col items-center justify-end gap-1.5">
-            <span className="font-english text-[10px] text-opus-muted opacity-0 transition group-hover:opacity-100">{d.count}</span>
-            <div
-              className="w-full rounded-t bg-opus-accent transition-all"
-              style={{ height: `${Math.max(2, (d.count / max) * 100)}%`, opacity: d.count === 0 ? 0.15 : 0.85 }}
-            />
-            <span className="font-english text-[9px] text-opus-muted">{d.date.slice(5)}</span>
-          </div>
-        ))}
+        {data.map((d, i) => {
+          const today = i === data.length - 1;
+          return (
+            <div key={d.date} className="group flex flex-1 flex-col items-center justify-end gap-1.5">
+              <span className="font-english text-[10px] text-opus-text opacity-0 transition group-hover:opacity-100">{d.count}</span>
+              <div
+                className={`w-full rounded-t transition-all ${today ? 'bg-opus-accent ring-1 ring-opus-accent' : 'bg-opus-accent-2'}`}
+                style={{ height: `${Math.max(2, (d.count / max) * 100)}%`, opacity: d.count === 0 ? 0.15 : today ? 1 : 0.7 }}
+              />
+              <span className={`font-english text-[9px] ${today ? 'text-opus-text' : 'text-opus-muted'}`}>{d.date.slice(5)}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -122,6 +129,15 @@ export default async function StatusPage() {
           <ArrowRight size={15} /> رجوع للوحة
         </Link>
       </div>
+
+      {status.traffic.visitsTotal === 0 ? (
+        <div className="mt-6 rounded-2xl border border-dashed border-opus-border bg-opus-surface p-6 text-center">
+          <p className="font-arabic text-sm font-bold text-opus-text">لا توجد بيانات بعد</p>
+          <p className="mt-2 font-arabic text-xs leading-6 text-opus-muted">
+            الأرقام تبدأ بالتجميع مع أول زيارات. لو ظهرت أصفار رغم وجود زيارات، تأكد أنك شغّلت <span className="font-english">000_complete_schema.sql</span> (يضيف دالة الإحصائيات).
+          </p>
+        </div>
+      ) : null}
 
       {/* Top KPIs */}
       <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -431,3 +431,68 @@ insert into plans (id, product_id, name, interval, duration_days, amount_cents, 
   ('general-monthly','general-system-bot','Monthly','monthly',30,1299,'USD'),
   ('general-quarterly','general-system-bot','Quarterly','quarterly',90,3599,'USD')
 on conflict (id) do update set amount_cents = excluded.amount_cents, duration_days = excluded.duration_days;
+
+-- ════════════════════════════════════════════════════════════════
+-- 11) تحليلات الموقع (Status) — تجميع دقيق في SQL (بلا سقف صفوف)
+-- plpgsql لتأجيل التحقق: website_logs/website_events تُطبَّق من product-schemas.
+-- يُستدعى من لوحة المالك فقط (analytics-data.ts).
+-- ════════════════════════════════════════════════════════════════
+create or replace function get_site_status()
+returns jsonb
+language plpgsql
+stable
+as $$
+declare
+  result jsonb;
+begin
+  select jsonb_build_object(
+    'traffic', jsonb_build_object(
+      'visits24h',   (select count(*) from website_logs where created_at >= now() - interval '24 hours'),
+      'visits7d',    (select count(*) from website_logs where created_at >= now() - interval '7 days'),
+      'visits30d',   (select count(*) from website_logs where created_at >= now() - interval '30 days'),
+      'visitsTotal', (select count(*) from website_logs),
+      'unique7d',    (select count(distinct ip_anonymized) from website_logs where created_at >= now() - interval '7 days'),
+      'unique30d',   (select count(distinct ip_anonymized) from website_logs where created_at >= now() - interval '30 days')
+    ),
+    'visitsByDay', (
+      select coalesce(jsonb_agg(jsonb_build_object('date', to_char(d.day,'YYYY-MM-DD'), 'count', coalesce(c.cnt,0)) order by d.day), '[]')
+      from generate_series((current_date - interval '13 days')::date, current_date, interval '1 day') as d(day)
+      left join (
+        select created_at::date as day, count(*) cnt from website_logs
+        where created_at >= current_date - interval '13 days' group by 1
+      ) c on c.day = d.day::date
+    ),
+    'topPages', (
+      select coalesce(jsonb_agg(jsonb_build_object('path', path, 'count', cnt) order by cnt desc), '[]')
+      from (select path, count(*) cnt from website_logs where created_at >= now() - interval '30 days' group by path order by cnt desc limit 8) p
+    ),
+    'devices', jsonb_build_object(
+      'desktop', (select count(*) from website_logs where created_at >= now() - interval '30 days' and device_type='desktop'),
+      'mobile',  (select count(*) from website_logs where created_at >= now() - interval '30 days' and device_type='mobile'),
+      'tablet',  (select count(*) from website_logs where created_at >= now() - interval '30 days' and device_type='tablet')
+    ),
+    'topReferers', (
+      select coalesce(jsonb_agg(jsonb_build_object('referer', referer, 'count', cnt) order by cnt desc), '[]')
+      from (select referer, count(*) cnt from website_logs where created_at >= now() - interval '30 days' and referer is not null and referer <> '' group by referer order by cnt desc limit 5) r
+    ),
+    'funnel', jsonb_build_object(
+      'visitors',      (select count(distinct ip_anonymized) from website_logs where created_at >= now() - interval '30 days'),
+      'viewedPricing', (select count(distinct ip_anonymized) from website_logs where created_at >= now() - interval '30 days' and (path like '/pricing%' or path like '/product%')),
+      'reachedCart',   (select count(distinct ip_anonymized) from website_logs where created_at >= now() - interval '30 days' and path like '/cart%'),
+      'loggedIn',      (select count(distinct ip_anonymized) from website_logs where created_at >= now() - interval '30 days' and path like '/dashboard%'),
+      'purchases',     (select count(*) from payments where status='captured' and created_at >= now() - interval '30 days')
+    ),
+    'events30d', jsonb_build_object(
+      'orderCreated',    (select count(*) from website_events where created_at >= now() - interval '30 days' and event_type='order_created'),
+      'purchaseSuccess', (select count(*) from website_events where created_at >= now() - interval '30 days' and event_type='purchase_success'),
+      'captureError',    (select count(*) from website_events where created_at >= now() - interval '30 days' and event_type in ('capture_error','order_create_error')),
+      'pending',         (select count(*) from website_events where created_at >= now() - interval '30 days' and event_type='provision_pending')
+    ),
+    'recentEvents', (
+      select coalesce(jsonb_agg(jsonb_build_object('type', event_type, 'at', created_at) order by created_at desc), '[]')
+      from (select event_type, created_at from website_events order by created_at desc limit 15) e
+    )
+  ) into result;
+  return result;
+end;
+$$;

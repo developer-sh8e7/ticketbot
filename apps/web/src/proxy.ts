@@ -23,10 +23,18 @@ export function proxy(req: NextRequest) {
     });
   }
 
-  // Log visits to Supabase only (fire-and-forget, no webhook)
+  // Log visits to Supabase only (fire-and-forget, no webhook).
+  // Skip link prefetches so a hover doesn't inflate the count — only real
+  // page views (full loads + soft navigations) are recorded.
   const pathname = req.nextUrl.pathname;
+  const secPurpose = req.headers.get('sec-purpose') || '';
+  const isPrefetch =
+    req.headers.get('next-router-prefetch') === '1' ||
+    req.headers.get('purpose') === 'prefetch' ||
+    secPurpose.includes('prefetch');
   if (
     req.method === 'GET' &&
+    !isPrefetch &&
     !pathname.startsWith('/_next/') &&
     !pathname.startsWith('/api/') &&
     !pathname.startsWith('/.well-known/') &&
