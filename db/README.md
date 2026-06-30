@@ -2,15 +2,16 @@
 
 ## تطبيق السكيمة
 
-طبّق الملفات بالترتيب في محرر SQL في Supabase (أو عبر `psql`):
+طبّق الملف الموحّد في محرر SQL في Supabase (أو عبر `psql`):
 
 ```
-db/schema/0001_core.sql                    -- accounts, server_configs, service_events
-db/schema/0002_token_pool.sql              -- token_pool + claim_token/release_token (السحب الذرّي)
-db/schema/0003_instances_subscriptions.sql -- bot_instances, subscriptions, provision_instance
+db/schema/000_complete_schema.sql          -- كل شيء: accounts, server_configs, token_pool
+                                           -- + claim_token/release_token (السحب الذرّي)
+                                           -- + bot_instances, subscriptions, provision_instance
+                                           -- + products, plans, payments
 ```
 
-> الترتيب مهم: `0003` يضيف مفتاحاً أجنبياً من `token_pool` إلى `bot_instances`.
+> ملف واحد يجمع كل السكيمة بالترتيب الصحيح (آمن لإعادة التشغيل — `create ... if not exists` / `create or replace`).
 
 ## تعبئة بركة التوكنات
 

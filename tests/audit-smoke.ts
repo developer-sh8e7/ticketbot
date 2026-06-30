@@ -15,9 +15,7 @@ const requiredFiles = [
   'apps/voice-rooms-bot/src/legacy/services/tempRoomService.ts',
   'apps/voice-rooms-bot/src/legacy/services/voice247Service.ts',
   'db/seed/config_1413059459630104626.json',
-  'db/schema/0002_token_pool.sql',
-  'db/schema/0003_instances_subscriptions.sql',
-  'db/schema/0004_commerce_products_payments.sql',
+  'db/schema/000_complete_schema.sql',
 ];
 for (const file of requiredFiles) assert(existsSync(`${root}/${file}`), `missing ${file}`);
 
@@ -34,14 +32,12 @@ assert(!captureRoute.includes('temp-rooms-monthly'), 'capture route has stale ha
 assert(captureRoute.includes('requireCustomer'), 'capture route must require login');
 assert(captureRoute.includes('guildId'), 'capture route must require guild');
 
-const tokenSql = readFileSync(`${root}/db/schema/0002_token_pool.sql`, 'utf8');
-assert(/for update skip locked/i.test(tokenSql), 'claim_token must use FOR UPDATE SKIP LOCKED');
-assert(/unique index[\s\S]*claimed_by_instance_id/i.test(tokenSql), 'token unique claimed_by_instance_id index missing');
-assert(/bot_token_encrypted/i.test(tokenSql), 'encrypted token column missing');
-
-const provisionSql = readFileSync(`${root}/db/schema/0003_instances_subscriptions.sql`, 'utf8');
-assert(/provision_instance/i.test(provisionSql), 'provision_instance missing');
-assert(/where guild_id = p_guild_id and product_type = p_product_type/i.test(provisionSql), 'renewal lookup must reuse guild/product instance');
+const schemaSql = readFileSync(`${root}/db/schema/000_complete_schema.sql`, 'utf8');
+assert(/for update skip locked/i.test(schemaSql), 'claim_token must use FOR UPDATE SKIP LOCKED');
+assert(/unique index[\s\S]*claimed_by_instance_id/i.test(schemaSql), 'token unique claimed_by_instance_id index missing');
+assert(/bot_token_encrypted/i.test(schemaSql), 'encrypted token column missing');
+assert(/provision_instance/i.test(schemaSql), 'provision_instance missing');
+assert(/where guild_id = p_guild_id and product_type = p_product_type/i.test(schemaSql), 'renewal lookup must reuse guild/product instance');
 
 const ticketCfg = readFileSync(`${root}/../Ticket/config/config_1413059459630104626.json`);
 const migratedCfg = readFileSync(`${root}/db/seed/config_1413059459630104626.json`);

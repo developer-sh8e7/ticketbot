@@ -244,7 +244,9 @@ begin
   if found then
     update bot_instances
        set status = 'active',
+           owner_id = p_owner_id,                       -- المشتري الدافع يملك النسخة (يراها في لوحته)
            account_id = coalesce(p_account_id, account_id),
+           guild_name = coalesce(p_guild_name, guild_name),
            expires_at = now() + make_interval(days => p_duration_days),
            updated_at = now()
      where id = v_instance.id

@@ -31,7 +31,7 @@
 | `src/web/server.ts` + `src/web/security/middleware.ts` + `src/web/phone.ts` | `apps/orchestrator/src/index.ts` (Express webhook) + `web/*` | ✅ أساس + 🔁 |
 | `src/services/verificationWebhookService.ts` | `apps/orchestrator/src/web/verification.ts` | 🔁 |
 | `src/commands/{buildCommands,registerCommands,productCommandRegistry}.ts` | helpers مشتركة + تسجيل لكل بوت | 🔁 |
-| — (بركة التوكنات الذرّية) | `apps/orchestrator/src/tokenPool.ts` + `db/schema/0002_token_pool.sql` | 🆕 |
+| — (بركة التوكنات الذرّية) | `apps/orchestrator/src/tokenPool.ts` + `db/schema/000_complete_schema.sql` | 🆕 |
 | — (تفعيل + ربط إجباري) | `apps/orchestrator/src/provisioning.ts` | 🆕 |
 | — (سجل المنتج→المصنع) | `apps/orchestrator/src/botRegistry.ts` | 🆕 |
 

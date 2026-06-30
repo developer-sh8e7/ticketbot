@@ -40,7 +40,27 @@ function decode(value: string): SessionPayload | null {
 export async function getSession() {
   const jar = await cookies();
   const raw = jar.get(SESSION_COOKIE)?.value;
-  return raw ? decode(raw) : null;
+  const payload = raw ? decode(raw) : null;
+  if (!payload) return null;
+  // Enforce server-side revocation: a signed cookie alone is not enough — logout
+  // (and admin revoke) mark the row revoked, and that must invalidate the token
+  // even though it's still cryptographically valid until its 14-day expiry.
+  // Fail-open on a DB/network blip so a transient Supabase error can't log
+  // everyone out; fail-closed only on an explicit revocation/expiry.
+  try {
+    const { data, error } = await supabaseAdmin()
+      .from('customer_sessions')
+      .select('revoked_at,expires_at')
+      .eq('id', payload.sid)
+      .maybeSingle();
+    if (error) return payload;
+    if (!data) return null;
+    if (data.revoked_at) return null;
+    if (data.expires_at && new Date(data.expires_at).getTime() < Date.now()) return null;
+  } catch {
+    return payload;
+  }
+  return payload;
 }
 
 /** Build the encrypted Discord-token blob stored in customer_sessions.metadata. */

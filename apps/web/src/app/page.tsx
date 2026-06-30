@@ -7,11 +7,16 @@ import { MotionSection } from '@/components/MotionSection';
 import { PremiumStatsSection } from '@/components/PremiumStatsSection';
 import { PublicFrame } from '@/components/ui';
 import { primaryFeatures, products } from '@/lib/site-content';
+import { getPublicStock } from '@/lib/public-stock';
 
 const featureIcons = [Ticket, SlidersHorizontal, ShieldCheck] as const;
 
-export default function HomePage() {
+// Live token stock is read per request, so the store always shows real availability.
+export const dynamic = 'force-dynamic';
+
+export default async function HomePage() {
   const allProducts = products();
+  const stock = await getPublicStock();
   const productCards = allProducts.map((product) => {
     const isSoon = product.priceLabel.toLowerCase() === 'soon';
     const isCustom = product.productType === 'custom';
@@ -21,9 +26,14 @@ export default function HomePage() {
       name: product.name,
       productType: product.productType,
       shortDescription: product.shortDescription,
+      description: product.description,
       priceLabel: product.priceLabel,
       price_monthly: product.price_monthly,
       price_quarterly: product.price_quarterly,
+      features: product.features,
+      badge: product.badge,
+      stockStatus: stock[product.productType],
+      detailHref: `/product/${product.key}`,
       href: `/pricing?product=${product.key}`,
       external: false,
       ctaLabel: isSoon ? 'Soon' : 'اشترِ الآن',

@@ -4,7 +4,7 @@
 Package manager: npm (root `packageManager` is `npm@11.10.1`).
 
 1. `npm install`
-2. Apply SQL in order: `db/schema/0001_core.sql` → `0004_commerce_products_payments.sql`, then needed files from `db/product-schemas` and `db/source-ticket-sql`.
+2. Apply SQL: `db/schema/000_complete_schema.sql` (single consolidated schema), then needed files from `db/product-schemas` and `db/source-ticket-sql`.
 3. Copy `.env.example` to `.env` and fill Supabase, Discord OAuth, PayPal, token encryption and session secrets.
 4. Start web: `npm run dev:web`.
 5. Start orchestrator: `npm run dev:orchestrator`.
