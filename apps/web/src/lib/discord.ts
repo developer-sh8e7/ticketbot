@@ -107,6 +107,50 @@ export async function fetchBotApplication(botToken: string): Promise<BotApplicat
   };
 }
 
+export type BotProfile = { id: string; username: string; avatarUrl: string | null; bannerUrl: string | null };
+
+function rawUserToProfile(u: { id: string; username?: string; avatar?: string | null; banner?: string | null }): BotProfile {
+  return {
+    id: u.id,
+    username: u.username ?? 'Bot',
+    avatarUrl: u.avatar ? `https://cdn.discordapp.com/avatars/${u.id}/${u.avatar}.png?size=256` : null,
+    bannerUrl: u.banner ? `https://cdn.discordapp.com/banners/${u.id}/${u.banner}.png?size=600` : null,
+  };
+}
+
+/** Read the bot's own profile (name/avatar/banner) using its token. */
+export async function getBotProfile(botToken: string): Promise<BotProfile | null> {
+  const res = await fetch(`${DISCORD_API}/users/@me`, { headers: { authorization: `Bot ${botToken}` }, cache: 'no-store' });
+  if (!res.ok) return null;
+  return rawUserToProfile(await res.json());
+}
+
+export type BotProfileUpdate = { username?: string; avatar?: string | null; banner?: string | null };
+
+/**
+ * Update the bot's profile via PATCH /users/@me. Only username/avatar/banner are
+ * touched — never the bio/description or anything else. avatar/banner are data
+ * URIs (or null to clear). Returns { ok, profile } or { ok:false, status }.
+ */
+export async function updateBotProfile(
+  botToken: string,
+  update: BotProfileUpdate,
+): Promise<{ ok: true; profile: BotProfile } | { ok: false; status: number }> {
+  const body: Record<string, unknown> = {};
+  if (update.username !== undefined) body.username = update.username;
+  if (update.avatar !== undefined) body.avatar = update.avatar;
+  if (update.banner !== undefined) body.banner = update.banner;
+
+  const res = await fetch(`${DISCORD_API}/users/@me`, {
+    method: 'PATCH',
+    headers: { authorization: `Bot ${botToken}`, 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+    cache: 'no-store',
+  });
+  if (!res.ok) return { ok: false, status: res.status };
+  return { ok: true, profile: rawUserToProfile(await res.json()) };
+}
+
 /** Keep only guilds where the user is owner or has the ADMINISTRATOR permission. */
 export function toAdminGuilds(guilds: RawGuild[]): AdminGuild[] {
   return guilds

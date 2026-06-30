@@ -11,7 +11,7 @@ export async function findOwnedBotIds(discordUserId: string) {
 }
 
 const BOT_FIELDS =
-  'id,bot_user_id,bot_application_id,bot_name,guild_id,guild_name,owner_id,product_type,plan_type,status,expires_at,last_started_at,last_stopped_at,created_at,updated_at';
+  'id,bot_user_id,bot_application_id,bot_name,bot_avatar_url,bot_banner_url,guild_id,guild_name,owner_id,product_type,plan_type,status,expires_at,last_started_at,last_stopped_at,created_at,updated_at';
 
 export async function getOwnedBots(discordUserId: string) {
   const ids = await findOwnedBotIds(discordUserId);

@@ -152,6 +152,29 @@ function deriveFernetKey(rawKey: string): Buffer {
   return Buffer.from(digest.toString('base64url'), 'base64url');
 }
 
+/** Decrypt a Fernet-encrypted bot token (mirrors packages/core/src/crypto.ts decryptToken). */
+export function decryptBotToken(encryptedToken: string): string {
+  const rawKey = env().TOKEN_ENCRYPTION_KEY;
+  if (!rawKey) throw new Error('TOKEN_ENCRYPTION_KEY is not configured');
+  const fk = deriveFernetKey(rawKey);
+  const signingKey = fk.subarray(0, 16);
+  const cryptoKey = fk.subarray(16, 32);
+
+  const raw = Buffer.from(encryptedToken, 'base64url');
+  if (raw.length < 57) throw new Error('Fernet token too short');
+  if (raw.readUInt8(0) !== 0x80) throw new Error('Unsupported Fernet version');
+
+  const iv = raw.subarray(9, 25);
+  const ciphertext = raw.subarray(25, raw.length - 32);
+  const hmacActual = raw.subarray(raw.length - 32);
+  const hmacExpected = crypto.createHmac('sha256', signingKey).update(raw.subarray(0, raw.length - 32)).digest();
+  if (!crypto.timingSafeEqual(hmacActual, hmacExpected)) throw new Error('Fernet HMAC verification failed');
+
+  const decipher = crypto.createDecipheriv('aes-128-cbc', cryptoKey, iv);
+  decipher.setAutoPadding(true);
+  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf-8');
+}
+
 /** Encrypt a Discord bot token into the Fernet format the orchestrator expects. */
 export function encryptBotToken(plainToken: string): string {
   const rawKey = env().TOKEN_ENCRYPTION_KEY;

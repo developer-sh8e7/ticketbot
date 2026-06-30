@@ -135,6 +135,8 @@ create table if not exists bot_instances (
   bot_application_id text,
   bot_user_id        text,
   bot_name           text,
+  bot_avatar_url     text,                              -- صورة البوت (يحدّثها الزبون)
+  bot_banner_url     text,                              -- بنر البوت (يحدّثها الزبون)
   guild_id           text not null,
   guild_name         text,
   owner_id           text not null,
@@ -149,6 +151,10 @@ create table if not exists bot_instances (
   created_at         timestamptz not null default now(),
   updated_at         timestamptz not null default now()
 );
+
+-- ترقية الجداول القائمة (آمن لإعادة التشغيل):
+alter table bot_instances add column if not exists bot_avatar_url text;
+alter table bot_instances add column if not exists bot_banner_url text;
 
 create unique index if not exists uq_active_instance_per_guild_product
   on bot_instances(guild_id, product_type)

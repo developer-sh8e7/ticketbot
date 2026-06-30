@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { DashboardShell } from '@/components/DashboardShell';
 import { OwnerPanel } from '@/components/dashboard/OwnerPanel';
+import { BotProfileEditor } from '@/components/dashboard/BotProfileEditor';
 import { getSession } from '@/lib/sessions';
 import { getOwnedBots } from '@/lib/dashboard-data';
 import { sessionIsOwner } from '@/lib/owner';
@@ -41,22 +42,40 @@ function BotCard({ bot }: { bot: OwnedBot }) {
   const remaining = daysLeft(bot.expires_at);
   const isPaid = bot.plan_type !== 'trial';
   const appId = (bot as { bot_application_id?: string | null }).bot_application_id;
-  const inviteUrl = appId && (bot.status === 'active' || bot.status === 'paused') ? botInviteUrl(appId, bot.guild_id) : null;
+  const avatarUrl = (bot as { bot_avatar_url?: string | null }).bot_avatar_url;
+  const bannerUrl = (bot as { bot_banner_url?: string | null }).bot_banner_url;
+  const productLabel = productLabels[String(bot.product_type)] ?? bot.product_type ?? 'بوت';
+  const botName = bot.bot_name || productLabel;
+  const canEditProfile = bot.status === 'active' || bot.status === 'paused';
+  const inviteUrl = appId && canEditProfile ? botInviteUrl(appId, bot.guild_id) : null;
 
   return (
-    <div className="rounded-2xl border border-opus-border bg-opus-surface p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="font-arabic text-lg font-extrabold text-opus-text">
-            {productLabels[String(bot.product_type)] ?? bot.product_type ?? 'بوت'}
-          </p>
-          <p className="mt-0.5 font-english text-xs text-opus-muted">{bot.bot_name || bot.guild_name || bot.guild_id}</p>
+    <div className="overflow-hidden rounded-2xl border border-opus-border bg-opus-surface">
+      {/* Banner + avatar header — shows the bot's identity in every status */}
+      <div
+        className="h-20 w-full bg-opus-bg"
+        style={bannerUrl ? { backgroundImage: `url(${bannerUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
+      />
+      <div className="px-5 pb-5">
+        <div className="-mt-8 flex items-end justify-between gap-3">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-opus-surface bg-opus-bg">
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt={botName} className="h-full w-full object-cover" />
+            ) : (
+              <span className="font-arabic text-xl font-extrabold text-opus-muted">{botName.slice(0, 1)}</span>
+            )}
+          </div>
+          <span className={`mb-1 inline-flex items-center gap-2 rounded-full border border-opus-border bg-opus-surface px-3 py-1 font-arabic text-xs font-bold ${meta.text}`}>
+            <span className={`inline-block h-2 w-2 rounded-full ${meta.dot}`} />
+            {meta.label}
+          </span>
         </div>
-        <span className={`inline-flex items-center gap-2 rounded-full border border-opus-border px-3 py-1 font-arabic text-xs font-bold ${meta.text}`}>
-          <span className={`inline-block h-2 w-2 rounded-full ${meta.dot}`} />
-          {meta.label}
-        </span>
-      </div>
+
+        <div className="mt-3">
+          <p className="font-arabic text-lg font-extrabold text-opus-text">{botName}</p>
+          <p className="mt-0.5 font-english text-xs text-opus-muted">{productLabel} · {bot.guild_name || bot.guild_id}</p>
+        </div>
 
       <dl className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <div>
@@ -111,6 +130,9 @@ function BotCard({ bot }: { bot: OwnedBot }) {
           ينتهي قريباً — جدّد الآن
         </a>
       ) : null}
+
+      {canEditProfile ? <BotProfileEditor botId={bot.id} /> : null}
+      </div>
     </div>
   );
 }
