@@ -9,6 +9,17 @@ import { Emojis } from "../utils/emojis.js";
 import { Config } from "../config.js";
 import { Logger } from "../utils/logger.js";
 import { getGuildConfig } from "../db/guilds.js";
+import { supabase } from "../db/supabase.js";
+
+/** Replace website welcome placeholders with live member/guild values. */
+function renderWelcome(template: string, member: GuildMember): string {
+  return template
+    .replace(/@user-new/g, `<@${member.id}>`)
+    .replace(/@owner/g, `<@${member.guild.ownerId}>`)
+    .replace(/\{server\}/g, member.guild.name)
+    .replace(/\{count\}/g, String(member.guild.memberCount))
+    .replace(/\{user\}/g, member.user.username);
+}
 
 export default {
   name: "guildMemberAdd" as const,
@@ -56,8 +67,30 @@ export default {
       }
     }
 
-    // ── Welcome Message ───────────────────────────────────
-    if (dbConfig.modules.welcome_enabled && dbConfig.channels.welcome_channel) {
+    // ── Custom Welcome (configured from the website) ──────
+    // Takes priority over the default embed when enabled for this guild.
+    let customWelcomeSent = false;
+    try {
+      const { data: wc } = await supabase
+        .from("guild_welcome")
+        .select("enabled,channel_id,message,ping_user")
+        .eq("guild_id", member.guild.id)
+        .maybeSingle();
+      if (wc?.enabled && wc.channel_id && wc.message) {
+        const channel = member.guild.channels.cache.get(wc.channel_id);
+        if (channel?.isTextBased()) {
+          const rendered = renderWelcome(wc.message, member);
+          const content = wc.ping_user ? `<@${member.id}>\n${rendered}` : rendered;
+          await channel.send({ content, allowedMentions: { parse: ["users"] } });
+          customWelcomeSent = true;
+        }
+      }
+    } catch (err) {
+      Logger.error(`Custom welcome failed: ${err}`);
+    }
+
+    // ── Welcome Message (default) ─────────────────────────
+    if (!customWelcomeSent && dbConfig.modules.welcome_enabled && dbConfig.channels.welcome_channel) {
       const channel = member.guild.channels.cache.get(dbConfig.channels.welcome_channel);
       if (channel?.isTextBased()) {
         const embed = new EmbedBuilder()

@@ -131,6 +131,15 @@ function BotCard({ bot }: { bot: OwnedBot }) {
         </a>
       ) : null}
 
+      {bot.product_type === 'general' && canEditProfile ? (
+        <a
+          href={`/dashboard/bot/${bot.id}/system`}
+          className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl border border-opus-border px-4 py-2 font-arabic text-sm font-bold text-opus-text transition hover:border-opus-accent"
+        >
+          ⚙️ لوحة السيستم (الترحيب والمزيد)
+        </a>
+      ) : null}
+
       {canEditProfile ? <BotProfileEditor botId={bot.id} /> : null}
       </div>
     </div>

@@ -496,3 +496,18 @@ begin
   return result;
 end;
 $$;
+
+-- ════════════════════════════════════════════════════════════════
+-- 12) إعداد الويلكم لبوت السيستم (يحرّره العميل من الموقع، يقرؤه البوت)
+-- جسر الإعدادات: الموقع يكتب هنا، وبوت system يقرأ منه في guildMemberAdd.
+-- ════════════════════════════════════════════════════════════════
+create table if not exists guild_welcome (
+  guild_id      text primary key,
+  enabled       boolean not null default false,
+  channel_id    text,
+  message       text,
+  ping_user     boolean not null default true,
+  image_enabled boolean not null default false,
+  image_config  jsonb   not null default '{}'::jsonb,   -- للوحدة 2 (صورة الويلكم)
+  updated_at    timestamptz not null default now()
+);
