@@ -2,7 +2,7 @@
 //  Opus System Bot — Entry Point (V2)
 // ══════════════════════════════════════════════════════════════
 
-import { Client, GatewayIntentBits, Partials, Collection } from "discord.js";
+import { Client, GatewayIntentBits, Partials, Collection, REST, Routes } from "discord.js";
 import { Config } from "./config.js";
 import { Logger } from "./utils/logger.js";
 import { Command } from "./types.js";
@@ -155,8 +155,29 @@ process.on("unhandledRejection", (error) => {
   Logger.error(`Unhandled Rejection: ${error}`);
 });
 
+// Register this instance's slash commands with Discord for its own guild.
+// Each deployed bot is a separate Discord application (its own client id), so
+// commands must be (re)registered per instance — the old deploy-commands.ts
+// script was a manual, one-off dev tool and was never invoked for tenant
+// bots spawned by the orchestrator, which is why new servers had no commands.
+// client.application.id is always correct for THIS bot, no env var needed.
+async function deployGuildCommands() {
+  if (!client.application || !Config.guildId) return;
+  const commandData = allCommands.map((c) => c.data.toJSON());
+  try {
+    await new REST({ version: "10" }).setToken(Config.token).put(
+      Routes.applicationGuildCommands(client.application.id, Config.guildId),
+      { body: commandData },
+    );
+    Logger.success(`Deployed ${commandData.length} slash commands to guild ${Config.guildId}`);
+  } catch (err) {
+    Logger.error(`Failed to auto-deploy slash commands: ${err}`);
+  }
+}
+
 // Start the bot
-client.login(Config.token).catch((err) => {
-  Logger.error(`Failed to login: ${err}`);
-});
-// Trigger deployment
+client.login(Config.token)
+  .then(deployGuildCommands)
+  .catch((err) => {
+    Logger.error(`Failed to login: ${err}`);
+  });
