@@ -151,6 +151,36 @@ export async function updateBotProfile(
   return { ok: true, profile: rawUserToProfile(await res.json()) };
 }
 
+export type BotGuildTextChannel = { id: string; name: string; type: number; position: number; parentId: string | null; parentName: string | null };
+
+type RawGuildChannel = { id: string; name?: string; type: number; position?: number; parent_id?: string | null };
+const GUILD_TEXT_CHANNEL_TYPES = new Set([0, 5]); // text + announcement
+
+/** List visible text channels in a guild using the bot token; returns null when the bot cannot access that guild. */
+export async function fetchBotGuildTextChannels(botToken: string, guildId: string): Promise<BotGuildTextChannel[] | null> {
+  const res = await fetch(`${DISCORD_API}/guilds/${guildId}/channels`, {
+    headers: { authorization: `Bot ${botToken}` },
+    cache: 'no-store',
+  });
+  if (res.status === 401 || res.status === 403 || res.status === 404) return null;
+  if (!res.ok) throw new Error(`Discord guild channels fetch failed (${res.status})`);
+
+  const raw = (await res.json()) as RawGuildChannel[];
+  const categories = new Map(raw.filter((c) => c.type === 4).map((c) => [c.id, c.name ?? 'Category']));
+
+  return raw
+    .filter((c) => GUILD_TEXT_CHANNEL_TYPES.has(c.type))
+    .map((c) => ({
+      id: c.id,
+      name: c.name ?? c.id,
+      type: c.type,
+      position: c.position ?? 0,
+      parentId: c.parent_id ?? null,
+      parentName: c.parent_id ? categories.get(c.parent_id) ?? null : null,
+    }))
+    .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name, 'ar'));
+}
+
 /** Keep only guilds where the user is owner or has the ADMINISTRATOR permission. */
 export function toAdminGuilds(guilds: RawGuild[]): AdminGuild[] {
   return guilds

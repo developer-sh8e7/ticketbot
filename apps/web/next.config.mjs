@@ -28,7 +28,7 @@ const securityHeaders = [
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.paypal.com https://www.paypalobjects.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
-      `img-src 'self' data: https://i.imgur.com https://cdn.discordapp.com https://www.paypalobjects.com${supabaseOrigin() ? ` ${supabaseOrigin()}` : ''}`,
+      `img-src 'self' data: blob: https://i.imgur.com https://cdn.discordapp.com https://www.paypalobjects.com https://*.supabase.co${supabaseOrigin() ? ` ${supabaseOrigin()}` : ''}`,
       "frame-src https://www.paypal.com https://www.sandbox.paypal.com",
       "connect-src 'self' https://www.paypal.com https://api-m.paypal.com https://api-m.sandbox.paypal.com https://discord.com",
       "form-action 'self' https://discord.com",

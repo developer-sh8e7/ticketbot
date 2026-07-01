@@ -9,6 +9,7 @@ type TextCfg = { xPct: number; yPct: number; fontSizePct: number; color: string 
 type Config = { imageEnabled: boolean; backgroundUrl: string | null; avatar: Avatar; text: TextCfg };
 
 type Drag = 'avatar-move' | 'avatar-resize' | 'text-move' | null;
+const MAX_BYTES = 5 * 1024 * 1024;
 
 function csrf() {
   const m = document.cookie.match(/(?:^|;\s*)opus_csrf=([^;]+)/);
@@ -27,6 +28,7 @@ export function WelcomeImageEditor({ botId }: { botId: string }) {
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [dropActive, setDropActive] = useState(false);
   const [activeHandle, setActiveHandle] = useState<Drag>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<Drag>(null);
@@ -47,10 +49,20 @@ export function WelcomeImageEditor({ botId }: { botId: string }) {
       .finally(() => setLoading(false));
   }, [botId]);
 
+  useEffect(() => {
+    return () => {
+      if (fileUrlRef.current) URL.revokeObjectURL(fileUrlRef.current);
+    };
+  }, []);
+
   function onPickFile(f?: File) {
     if (!f) return;
     if (!f.type.startsWith('image/')) {
       setMsg({ kind: 'err', text: 'اختر ملف صورة (PNG أو JPEG أو WEBP).' });
+      return;
+    }
+    if (f.size > MAX_BYTES) {
+      setMsg({ kind: 'err', text: 'الصورة كبيرة جداً (الحد الأقصى 5 ميجابايت).' });
       return;
     }
     if (fileUrlRef.current) URL.revokeObjectURL(fileUrlRef.current);
@@ -58,6 +70,7 @@ export function WelcomeImageEditor({ botId }: { botId: string }) {
     fileUrlRef.current = url;
     setFile(f);
     setBgUrl(url);
+    setImageError(null);
     setMsg(null);
   }
 
@@ -126,9 +139,20 @@ export function WelcomeImageEditor({ botId }: { botId: string }) {
         headers: { 'x-csrf-token': csrf() },
         body: form,
       });
-      const j = (await res.json()) as ApiResponse<{ saved: boolean }>;
-      setMsg(j.success ? { kind: 'ok', text: 'تم الحفظ! يطبّقه البوت خلال لحظات.' } : { kind: 'err', text: j.error?.message || 'تعذّر الحفظ.' });
-      if (j.success) setFile(null);
+      const j = (await res.json()) as ApiResponse<{ saved: boolean; backgroundUrl: string | null; avatar: Avatar; text: TextCfg }>;
+      if (j.success) {
+        setMsg({ kind: 'ok', text: 'تم الحفظ! يطبّقه البوت خلال لحظات.' });
+        if (j.data.backgroundUrl) setBgUrl(j.data.backgroundUrl);
+        setAvatar(j.data.avatar);
+        setText(j.data.text);
+        setFile(null);
+        if (fileUrlRef.current) {
+          URL.revokeObjectURL(fileUrlRef.current);
+          fileUrlRef.current = null;
+        }
+      } else {
+        setMsg({ kind: 'err', text: j.error?.message || 'تعذّر الحفظ.' });
+      }
     } catch {
       setMsg({ kind: 'err', text: 'تعذّر الاتصال.' });
     } finally {
@@ -186,16 +210,22 @@ export function WelcomeImageEditor({ botId }: { botId: string }) {
               <ImageUp size={13} /> تغيير الخلفية
               <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => onPickFile(e.target.files?.[0])} />
             </label>
+            <span className="rounded-full border border-opus-border bg-opus-bg px-2.5 py-1 font-arabic text-[11px] font-bold text-opus-muted">معاينة مباشرة</span>
             <span className="font-arabic text-[11px] text-opus-muted">اسحب الدائرة لمكان الصورة، واسحب طرفها للتحجيم، واسحب الاسم لمكانه</span>
           </div>
 
           <div
             ref={containerRef}
-            className="relative mt-3 w-full select-none overflow-hidden rounded-xl border border-opus-border bg-opus-bg"
+            className="relative mt-3 min-h-[220px] w-full select-none overflow-hidden rounded-xl border border-opus-border bg-opus-bg"
             style={{ touchAction: 'none' }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={bgUrl} alt="خلفية الترحيب" className="block w-full" draggable={false} onLoad={measure} />
+            <img src={bgUrl} alt="خلفية الترحيب" className="block w-full" draggable={false} onLoad={() => { measure(); setImageError(null); }} onError={() => setImageError('تعذّر عرض الخلفية. أعد رفعها أو جرّب صورة PNG/JPEG أصغر.')} />
+            {imageError ? (
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-opus-bg/90 p-6 text-center font-arabic text-xs leading-6 text-[#f59e0b]">
+                {imageError}
+              </div>
+            ) : null}
 
             <div
               onPointerDown={(e) => startDrag('avatar-move', e)}
