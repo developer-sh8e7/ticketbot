@@ -1,124 +1,170 @@
 // ══════════════════════════════════════════════════════════════
-//  بطاقة بروفايل بصيغة صورة — تحاكي شكل بروفايل Discord الحقيقي:
-//  بنر فوق + أفاتار دائري متداخل مع الحافة + شارات + الاسم.
-//  تُستخدم من /avatar بدل الـ embed التقليدي.
+//  بطاقة بروفايل بصيغة صورة — تحاكي بروفايل Discord الحقيقي:
+//  بنر فوق + أفاتار دائري متداخل مع الحافة + الاسم + شارات.
+//  مبنية بـ @napi-rs/canvas مع خط مرفق (Tajawal) يدعم العربي
+//  والإنجليزي — فالنص يظهر دائماً بشكل صحيح بلا مربّعات.
 // ══════════════════════════════════════════════════════════════
 
-import sharp from "sharp";
+import { fileURLToPath } from "node:url";
+import { createCanvas, loadImage, GlobalFonts, type SKRSContext2D } from "@napi-rs/canvas";
 import { User, GuildMember } from "discord.js";
 
-const WIDTH = 700;
-const HEIGHT = 380;
-const BANNER_HEIGHT = 190;
-const AVATAR_SIZE = 168;
-const AVATAR_BORDER = 8;
-const PANEL_BG = "#1e1f22";
-const FALLBACK_BANNER = ["#3a3d44", "#232428"]; // تدرج محايد لمن ما عنده بنر
+// خط عربي/لاتيني مرفق داخل المشروع — يُسجَّل مرة واحدة عند التحميل.
+function fontPath(file: string): string {
+  return fileURLToPath(new URL(`../../../assets/fonts/${file}`, import.meta.url));
+}
+try {
+  GlobalFonts.registerFromPath(fontPath("Tajawal-Bold.ttf"), "TajawalBold");
+  GlobalFonts.registerFromPath(fontPath("Tajawal-Regular.ttf"), "TajawalReg");
+} catch {
+  /* في التطوير قد يختلف المسار — الرسم يكمل بخط النظام الاحتياطي */
+}
 
-async function fetchBuffer(url: string): Promise<Buffer> {
+const W = 720;
+const H = 400;
+const RADIUS = 24;
+const BANNER_H = 168;
+const PANEL = "#1e1f22";
+const AVATAR = 148;
+const RING = 8;
+const AVATAR_X = 44;
+const AVATAR_CY = BANNER_H; // مركز الأفاتار على خط انتهاء البنر (تداخل)
+
+async function fetchImage(url: string) {
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch image asset (${res.status}): ${url}`);
-  return Buffer.from(await res.arrayBuffer());
+  if (!res.ok) throw new Error(`asset fetch ${res.status}: ${url}`);
+  return loadImage(Buffer.from(await res.arrayBuffer()));
 }
 
-function escapeXml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+/** يرسم صورة بأسلوب cover داخل مستطيل مقصوص. */
+function drawCover(ctx: SKRSContext2D, img: Awaited<ReturnType<typeof loadImage>>, x: number, y: number, w: number, h: number) {
+  const scale = Math.max(w / img.width, h / img.height);
+  const dw = img.width * scale;
+  const dh = img.height * scale;
+  ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
 }
 
-/** يحوّل بايت اللمسات العامة (public flags) لشارات نصية مختصرة — Discord ما يعطي بوتات صورة الشارة الرسمية. */
+/** الشارات العامة التي يكشفها Discord للبوتات. Nitro يُستدل عليه بالصورة المتحركة. */
 function badgesFor(user: User): string[] {
   const flags = user.flags?.toArray() ?? [];
-  const badges: string[] = [];
-  if (flags.includes("Staff")) badges.push("Staff");
-  if (flags.includes("Partner")) badges.push("Partner");
-  if (flags.includes("Hypesquad")) badges.push("HypeSquad");
-  if (flags.includes("BugHunterLevel1") || flags.includes("BugHunterLevel2")) badges.push("Bug Hunter");
-  if (flags.includes("CertifiedModerator")) badges.push("Mod");
-  if (flags.includes("ActiveDeveloper")) badges.push("Developer");
-  if (flags.includes("PremiumEarlySupporter")) badges.push("Early Supporter");
-  // Discord ما يكشف حالة Nitro مباشرة لبوت — الأفاتار/البنر المتحرك مؤشر عملي عليها.
-  if (user.avatar?.startsWith("a_") || user.banner?.startsWith("a_")) badges.push("Nitro");
-  return badges;
-}
-
-function badgesSvg(badges: string[], startX: number, y: number): string {
-  if (badges.length === 0) return "";
-  const chipH = 26;
-  let x = startX;
-  const chips = badges.map((label) => {
-    const w = Math.max(50, label.length * 8 + 20);
-    const chip = `<rect x="${x}" y="${y}" width="${w}" height="${chipH}" rx="13" fill="#2b2d31" stroke="#3f4147" stroke-width="1"/>` +
-      `<text x="${x + w / 2}" y="${y + chipH / 2 + 5}" font-size="12" font-weight="700" fill="#dbdee1" text-anchor="middle" font-family="sans-serif">${escapeXml(label)}</text>`;
-    x += w + 8;
-    return chip;
-  });
-  return chips.join("");
+  const out: string[] = [];
+  if (flags.includes("Staff")) out.push("Staff");
+  if (flags.includes("Partner")) out.push("Partner");
+  if (flags.includes("Hypesquad")) out.push("HypeSquad");
+  if (flags.includes("HypeSquadOnlineHouse1")) out.push("Bravery");
+  if (flags.includes("HypeSquadOnlineHouse2")) out.push("Brilliance");
+  if (flags.includes("HypeSquadOnlineHouse3")) out.push("Balance");
+  if (flags.includes("BugHunterLevel1") || flags.includes("BugHunterLevel2")) out.push("Bug Hunter");
+  if (flags.includes("CertifiedModerator")) out.push("Mod");
+  if (flags.includes("ActiveDeveloper")) out.push("Developer");
+  if (flags.includes("VerifiedDeveloper")) out.push("Verified Dev");
+  if (flags.includes("PremiumEarlySupporter")) out.push("Early Supporter");
+  if (user.avatar?.startsWith("a_") || user.banner?.startsWith("a_")) out.push("Nitro");
+  return out;
 }
 
 export async function buildProfileCard(user: User, member: GuildMember | null): Promise<Buffer> {
-  // ── البنر (خلفية علوية) ──
-  let bannerLayer: Buffer;
+  const canvas = createCanvas(W, H);
+  const ctx = canvas.getContext("2d");
+
+  // ── لوحة البطاقة بحواف دائرية ──
+  ctx.beginPath();
+  ctx.roundRect(0, 0, W, H, RADIUS);
+  ctx.fillStyle = PANEL;
+  ctx.fill();
+  ctx.save();
+  ctx.clip(); // كل ما يُرسم بعده يبقى داخل الحواف الدائرية
+
+  // ── البنر ──
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, W, BANNER_H);
+  ctx.clip();
   if (user.banner) {
-    const bannerUrl = user.bannerURL({ extension: "png", size: 1024 })!;
-    const raw = await fetchBuffer(bannerUrl);
-    bannerLayer = await sharp(raw).resize(WIDTH, BANNER_HEIGHT, { fit: "cover" }).png().toBuffer();
+    try {
+      const banner = await fetchImage(user.bannerURL({ extension: "png", size: 1024 })!);
+      drawCover(ctx, banner, 0, 0, W, BANNER_H);
+    } catch {
+      paintGradientBanner(ctx, user);
+    }
   } else {
-    const [c1, c2] = user.accentColor
-      ? [`#${user.accentColor.toString(16).padStart(6, "0")}`, PANEL_BG]
-      : FALLBACK_BANNER;
-    const gradient = `<svg width="${WIDTH}" height="${BANNER_HEIGHT}">
-      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="${c1}"/><stop offset="100%" stop-color="${c2}"/>
-      </linearGradient></defs>
-      <rect width="${WIDTH}" height="${BANNER_HEIGHT}" fill="url(#g)"/>
-    </svg>`;
-    bannerLayer = await sharp(Buffer.from(gradient)).png().toBuffer();
+    paintGradientBanner(ctx, user);
+  }
+  ctx.restore();
+
+  // ── حلقة الأفاتار (بلون اللوحة لتفصله عن البنر) ثم الأفاتار الدائري ──
+  ctx.beginPath();
+  ctx.arc(AVATAR_X + AVATAR / 2, AVATAR_CY, AVATAR / 2 + RING, 0, Math.PI * 2);
+  ctx.fillStyle = PANEL;
+  ctx.fill();
+
+  try {
+    const avatar = await fetchImage(user.displayAvatarURL({ extension: "png", size: 256 }));
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(AVATAR_X + AVATAR / 2, AVATAR_CY, AVATAR / 2, 0, Math.PI * 2);
+    ctx.clip();
+    drawCover(ctx, avatar, AVATAR_X, AVATAR_CY - AVATAR / 2, AVATAR, AVATAR);
+    ctx.restore();
+  } catch {
+    /* لو فشل تحميل الأفاتار نترك الحلقة فقط */
   }
 
-  // ── لوحة أساسية (خلفية داكنة + البنر بالأعلى) ──
-  const base = sharp({ create: { width: WIDTH, height: HEIGHT, channels: 4, background: PANEL_BG } });
-
-  // ── الأفاتار الدائري متداخل مع الحافة (حلقة بلون الخلفية تفصله عن البنر) ──
-  const avatarUrl = user.displayAvatarURL({ extension: "png", size: 256 });
-  const avatarRaw = await fetchBuffer(avatarUrl);
-  const ringSize = AVATAR_SIZE + AVATAR_BORDER * 2;
-  const ringMask = Buffer.from(`<svg width="${ringSize}" height="${ringSize}"><circle cx="${ringSize / 2}" cy="${ringSize / 2}" r="${ringSize / 2}" fill="#fff"/></svg>`);
-  const ring = await sharp({ create: { width: ringSize, height: ringSize, channels: 4, background: PANEL_BG } })
-    .composite([{ input: ringMask, blend: "dest-in" }])
-    .png()
-    .toBuffer();
-
-  const avatarMask = Buffer.from(`<svg width="${AVATAR_SIZE}" height="${AVATAR_SIZE}"><circle cx="${AVATAR_SIZE / 2}" cy="${AVATAR_SIZE / 2}" r="${AVATAR_SIZE / 2}" fill="#fff"/></svg>`);
-  const avatarCircle = await sharp(avatarRaw)
-    .resize(AVATAR_SIZE, AVATAR_SIZE, { fit: "cover" })
-    .composite([{ input: avatarMask, blend: "dest-in" }])
-    .png()
-    .toBuffer();
-
-  const avatarLeft = 36;
-  const avatarTop = BANNER_HEIGHT - ringSize / 2;
-
-  // ── الاسم + الشارات ──
+  // ── الاسم + المعرّف ──
   const displayName = member?.nickname ?? user.globalName ?? user.username;
+  const nameY = AVATAR_CY + AVATAR / 2 + 24;
+
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#f2f3f5";
+  ctx.font = "34px TajawalBold";
+  ctx.fillText(truncate(ctx, displayName, W - AVATAR_X * 2), AVATAR_X, nameY + 30);
+
+  ctx.fillStyle = "#b5bac1";
+  ctx.font = "18px TajawalReg";
+  ctx.fillText(`@${user.username}`, AVATAR_X, nameY + 58);
+
+  // ── الشارات ──
   const badges = badgesFor(user);
-  const textY = avatarTop + ringSize + 44;
-  const badgesY = textY + 20;
+  if (badges.length) drawBadges(ctx, badges, AVATAR_X, nameY + 78);
 
-  const textSvg = `<svg width="${WIDTH}" height="${HEIGHT}">
-    <text x="${avatarLeft}" y="${textY}" font-size="30" font-weight="800" fill="#f2f3f5" font-family="sans-serif">${escapeXml(displayName)}</text>
-    <text x="${avatarLeft}" y="${textY + 26}" font-size="15" fill="#949ba4" font-family="sans-serif">@${escapeXml(user.username)}</text>
-    ${badgesSvg(badges, avatarLeft, badgesY + 14)}
-  </svg>`;
+  ctx.restore();
+  return canvas.toBuffer("image/png");
+}
 
-  const composed = await base
-    .composite([
-      { input: bannerLayer, left: 0, top: 0 },
-      { input: ring, left: avatarLeft - AVATAR_BORDER, top: avatarTop },
-      { input: avatarCircle, left: avatarLeft, top: avatarTop + AVATAR_BORDER },
-      { input: Buffer.from(textSvg), left: 0, top: 0 },
-    ])
-    .png()
-    .toBuffer();
+function paintGradientBanner(ctx: SKRSContext2D, user: User) {
+  const accent = user.accentColor ? `#${user.accentColor.toString(16).padStart(6, "0")}` : "#5865f2";
+  const g = ctx.createLinearGradient(0, 0, W, BANNER_H);
+  g.addColorStop(0, accent);
+  g.addColorStop(1, "#232428");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, BANNER_H);
+}
 
-  return composed;
+function drawBadges(ctx: SKRSContext2D, badges: string[], startX: number, y: number) {
+  const h = 30;
+  let x = startX;
+  ctx.font = "14px TajawalBold";
+  for (const label of badges) {
+    const w = Math.ceil(ctx.measureText(label).width) + 26;
+    if (x + w > W - 24) break; // ما نتجاوز حافة البطاقة
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, 15);
+    ctx.fillStyle = "#2b2d31";
+    ctx.fill();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "#3f4147";
+    ctx.stroke();
+    ctx.fillStyle = "#dbdee1";
+    ctx.textBaseline = "middle";
+    ctx.fillText(label, x + 13, y + h / 2 + 1);
+    ctx.textBaseline = "alphabetic";
+    x += w + 8;
+  }
+}
+
+function truncate(ctx: SKRSContext2D, text: string, maxWidth: number): string {
+  if (ctx.measureText(text).width <= maxWidth) return text;
+  let s = text;
+  while (s.length > 1 && ctx.measureText(s + "…").width > maxWidth) s = s.slice(0, -1);
+  return s + "…";
 }
