@@ -1,43 +1,45 @@
-﻿// ══════════════════════════════════════════════════════════════
-//  /avatar — Display a user's avatar
-//  V2 — Application Emojis, no Unicode emojis
+// ══════════════════════════════════════════════════════════════
+//  /avatar — Full Discord-style profile card (banner + avatar +
+//  badges), sent as a plain public image reply with download
+//  buttons — no embed, not ephemeral.
 // ══════════════════════════════════════════════════════════════
 
-import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import { Command } from "../../types.js";
-import { Colors } from "../../utils/embed.js";
-import { Emojis } from "../../utils/emojis.js";
-import { Config } from "../../config.js";
+import { buildProfileCard } from "../../services/profileCard.js";
 
 const command: Command = {
   data: new SlashCommandBuilder()
     .setName("avatar")
-    .setDescription("Display a user's avatar")
-    .addUserOption((o) => o.setName("user").setDescription("The user to get the avatar of")),
+    .setDescription("Display a user's full profile card")
+    .addUserOption((o) => o.setName("user").setDescription("The user to inspect")),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    const target = interaction.options.getUser("user") ?? interaction.user;
-    const member = interaction.guild?.members.cache.get(target.id);
+    await interaction.deferReply();
+    const targetPartial = interaction.options.getUser("user") ?? interaction.user;
+    // Force fetch: banner/accentColor are not populated on cached/partial users.
+    const target = await targetPartial.fetch(true).catch(() => targetPartial);
+    const member = interaction.guild?.members.cache.get(target.id) ?? null;
 
-    const globalAvatar = target.displayAvatarURL({ size: 4096 });
-    const serverAvatar = member?.displayAvatarURL({ size: 4096 });
+    const card = await buildProfileCard(target, member);
+    const attachment = new AttachmentBuilder(card, { name: "profile.png" });
 
-    const embed = new EmbedBuilder()
-      .setTitle(`${Emojis.avatar}  ${target.tag}'s Avatar`)
-      .setColor(Colors.primary)
-      .setImage(serverAvatar ?? globalAvatar)
-      .setDescription(
-        [
-          `[Global Avatar](${globalAvatar})`,
-          serverAvatar && serverAvatar !== globalAvatar ? `[Server Avatar](${serverAvatar})` : null,
-        ]
-          .filter(Boolean)
-          .join(" • "),
-      )
-      .setFooter({ text: Config.embed.footer })
-      .setTimestamp();
+    const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setLabel("Download image")
+        .setStyle(ButtonStyle.Link)
+        .setURL(target.displayAvatarURL({ extension: "png", size: 4096 })),
+    );
+    if (target.banner) {
+      buttons.addComponents(
+        new ButtonBuilder()
+          .setLabel("Download banner")
+          .setStyle(ButtonStyle.Link)
+          .setURL(target.bannerURL({ extension: "png", size: 4096 })!),
+      );
+    }
 
-    await interaction.reply({ embeds: [embed] });
+    await interaction.editReply({ files: [attachment], components: [buttons] });
   },
 };
 
