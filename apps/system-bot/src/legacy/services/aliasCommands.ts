@@ -14,8 +14,8 @@ import { supabase } from "../db/supabase.js";
 
 /** فقط أوامر المودريشن البسيطة قابلة للاختصار حالياً (تطابق قائمة الداشبورد). */
 export const ALIASABLE_COMMANDS = new Set([
-  "ban", "kick", "timeout", "warn", "clear", "unban",
-  "slowmode", "lock", "unlock", "nuke", "role", "hide", "show",
+  "ban", "softban", "kick", "timeout", "mute", "unmute", "warn", "warnings", "clearwarns", "clear", "unban",
+  "slowmode", "lock", "unlock", "nuke", "role", "nick", "hide", "show",
 ]);
 
 // Discord ApplicationCommandOptionType (subset نحتاجه فقط)

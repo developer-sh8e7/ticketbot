@@ -152,8 +152,10 @@ export async function updateBotProfile(
 }
 
 export type BotGuildTextChannel = { id: string; name: string; type: number; position: number; parentId: string | null; parentName: string | null };
+export type BotGuildRole = { id: string; name: string; position: number; color: number; managed: boolean };
 
 type RawGuildChannel = { id: string; name?: string; type: number; position?: number; parent_id?: string | null };
+type RawGuildRole = { id: string; name?: string; position?: number; color?: number; managed?: boolean };
 const GUILD_TEXT_CHANNEL_TYPES = new Set([0, 5]); // text + announcement
 
 /** List visible text channels in a guild using the bot token; returns null when the bot cannot access that guild. */
@@ -179,6 +181,28 @@ export async function fetchBotGuildTextChannels(botToken: string, guildId: strin
       parentName: c.parent_id ? categories.get(c.parent_id) ?? null : null,
     }))
     .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name, 'ar'));
+}
+
+/** List guild roles using the bot token; returns null when the bot cannot access that guild. */
+export async function fetchBotGuildRoles(botToken: string, guildId: string): Promise<BotGuildRole[] | null> {
+  const res = await fetch(`${DISCORD_API}/guilds/${guildId}/roles`, {
+    headers: { authorization: `Bot ${botToken}` },
+    cache: 'no-store',
+  });
+  if (res.status === 401 || res.status === 403 || res.status === 404) return null;
+  if (!res.ok) throw new Error(`Discord guild roles fetch failed (${res.status})`);
+
+  const raw = (await res.json()) as RawGuildRole[];
+  return raw
+    .filter((r) => r.id !== guildId)
+    .map((r) => ({
+      id: r.id,
+      name: r.name ?? r.id,
+      position: r.position ?? 0,
+      color: r.color ?? 0,
+      managed: Boolean(r.managed),
+    }))
+    .sort((a, b) => b.position - a.position || a.name.localeCompare(b.name, 'ar'));
 }
 
 /** Keep only guilds where the user is owner or has the ADMINISTRATOR permission. */

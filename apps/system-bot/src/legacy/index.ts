@@ -9,9 +9,14 @@ import { Command } from "./types.js";
 
 // Import all commands manually (avoids fs/path issues in some compiled environments)
 import banCommand from "./commands/moderation/ban.js";
+import softbanCommand from "./commands/moderation/softban.js";
 import kickCommand from "./commands/moderation/kick.js";
 import timeoutCommand from "./commands/moderation/timeout.js";
+import muteCommand from "./commands/moderation/mute.js";
+import unmuteCommand from "./commands/moderation/unmute.js";
 import warnCommand from "./commands/moderation/warn.js";
+import warningsCommand from "./commands/moderation/warnings.js";
+import clearwarnsCommand from "./commands/moderation/clearwarns.js";
 import clearCommand from "./commands/moderation/clear.js";
 import unbanCommand from "./commands/moderation/unban.js";
 import slowmodeCommand from "./commands/moderation/slowmode.js";
@@ -26,6 +31,7 @@ import helpCommand from "./commands/info/help.js";
 import profileCommand from "./commands/info/profile.js";
 
 import roleCommand from "./commands/moderation/role.js";
+import nickCommand from "./commands/moderation/nick.js";
 import hideCommand from "./commands/moderation/hide.js";
 import showCommand from "./commands/moderation/show.js";
 
@@ -67,9 +73,14 @@ import voiceStateUpdateEvent from "./events/voiceStateUpdate.js";
 
 const allCommands = [
   banCommand,
+  softbanCommand,
   kickCommand,
   timeoutCommand,
+  muteCommand,
+  unmuteCommand,
   warnCommand,
+  warningsCommand,
+  clearwarnsCommand,
   clearCommand,
   unbanCommand,
   slowmodeCommand,
@@ -91,6 +102,7 @@ const allCommands = [
   protectionCommand, // NEW Unified Command
 
   roleCommand,
+  nickCommand,
   hideCommand,
   showCommand,
 

@@ -6,13 +6,14 @@ import { assertOwnedBot } from '@/lib/dashboard-data';
 import { WelcomeEditor } from '@/components/dashboard/WelcomeEditor';
 import { AliasEditor } from '@/components/dashboard/AliasEditor';
 import { WelcomeImageEditor } from '@/components/dashboard/WelcomeImageEditor';
+import { CommandPermissionsEditor } from '@/components/dashboard/CommandPermissionsEditor';
 
 export const dynamic = 'force-dynamic';
 
 const quickCards = [
   { icon: MessageSquare, title: 'رسالة الترحيب', text: 'اختيار الروم من القائمة + متغيرات جاهزة.' },
   { icon: ImageIcon, title: 'صورة الترحيب', text: 'اسحب الأفاتار والاسم فوق الخلفية مباشرة.' },
-  { icon: Hash, title: 'اختصارات الأوامر', text: 'حوّل كلمات سيرفرك لأوامر جاهزة.' },
+  { icon: Hash, title: 'صلاحيات الأوامر', text: 'تحكم بمن يستخدم ban/kick وكل أوامر السيستم.' },
 ];
 
 export default async function SystemBotDashboard({ params }: { params: Promise<{ id: string }> }) {
@@ -54,6 +55,8 @@ export default async function SystemBotDashboard({ params }: { params: Promise<{
         <WelcomeEditor botId={id} />
 
         <WelcomeImageEditor botId={id} />
+
+        <CommandPermissionsEditor botId={id} />
 
         <AliasEditor botId={id} />
       </div>

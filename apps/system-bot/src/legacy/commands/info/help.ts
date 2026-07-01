@@ -24,7 +24,7 @@ const command: Command = {
       .addFields(
         {
           name: `${Emojis.shield} Moderation`,
-          value: "`ban`, `kick`, `timeout`, `warn`, `clear`, `unban`, `slowmode`, `lock`, `unlock`, `nuke`, `role`, `hide`, `show`",
+          value: "`ban`, `softban`, `kick`, `timeout`, `mute`, `unmute`, `warn`, `warnings`, `clearwarns`, `clear`, `unban`, `slowmode`, `lock`, `unlock`, `nuke`, `role`, `nick`, `hide`, `show`",
         },
         {
           name: `${Emojis.settings} Settings & Protection`,

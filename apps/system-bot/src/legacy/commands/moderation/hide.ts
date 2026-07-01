@@ -1,50 +1,33 @@
 ﻿// ══════════════════════════════════════════════════════════════
 //  /hide — Hide a channel from @everyone
-//  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
 
-import {
-  SlashCommandBuilder,
-  ChatInputCommandInteraction,
-  PermissionFlagsBits,
-  GuildMember,
-  TextChannel,
-} from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction, TextChannel } from "discord.js";
 import { Command } from "../../types.js";
 import { errorEmbed, successEmbed } from "../../utils/embed.js";
-import { isModerator, noPermission } from "../../utils/permissions.js";
+import { requireCommandAccess } from "../../utils/permissions.js";
+import { BOT_PERMISSIONS, ensureBotPermission } from "../../utils/moderation.js";
 
 const command: Command = {
   data: new SlashCommandBuilder()
     .setName("hide")
     .setDescription("Hide the current channel from everyone")
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+    .addChannelOption((o) => o.setName("channel").setDescription("Channel to hide")),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    const member = interaction.member as GuildMember;
-    if (!isModerator(member)) return noPermission(interaction);
+    if (!(await requireCommandAccess(interaction, "hide"))) return;
+    if (!(await ensureBotPermission(interaction, BOT_PERMISSIONS.channels, "Hide"))) return;
 
-    const channel = interaction.channel as TextChannel;
-    if (!channel.isTextBased()) {
-      return interaction.reply({
-        embeds: [errorEmbed("Error", "This command can only be used in text channels.")],
-        ephemeral: true,
-      });
+    const channel = (interaction.options.getChannel("channel") as TextChannel) ?? (interaction.channel as TextChannel);
+    if (!channel || !("permissionOverwrites" in channel)) {
+      return interaction.reply({ embeds: [errorEmbed("Error", "This command can only be used in text channels.")], ephemeral: true });
     }
 
     try {
-      await channel.permissionOverwrites.edit(interaction.guild!.roles.everyone, {
-        ViewChannel: false,
-      });
-
-      return interaction.reply({
-        embeds: [successEmbed("Channel Hidden", "The channel is now hidden from `@everyone`.")],
-      });
-    } catch (err) {
-      return interaction.reply({
-        embeds: [errorEmbed("Error", "Failed to hide the channel.")],
-        ephemeral: true,
-      });
+      await channel.permissionOverwrites.edit(interaction.guild!.roles.everyone, { ViewChannel: false }, { reason: `Hidden by ${interaction.user.tag}` });
+      return interaction.reply({ embeds: [successEmbed("Channel Hidden", `${channel} is now hidden from @everyone.`)] });
+    } catch {
+      return interaction.reply({ embeds: [errorEmbed("Error", "فشل إخفاء الروم. تأكد أن البوت عنده Manage Channels.")], ephemeral: true });
     }
   },
 };

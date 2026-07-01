@@ -1,18 +1,12 @@
 ﻿// ══════════════════════════════════════════════════════════════
 //  /ban — Ban a member from the server
-//  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
 
-import {
-  SlashCommandBuilder,
-  ChatInputCommandInteraction,
-  PermissionFlagsBits,
-  GuildMember,
-} from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
 import { Command } from "../../types.js";
 import { modEmbed, errorEmbed, successEmbed } from "../../utils/embed.js";
-import { Emojis } from "../../utils/emojis.js";
-import { isModerator, noPermission } from "../../utils/permissions.js";
+import { requireCommandAccess } from "../../utils/permissions.js";
+import { BOT_PERMISSIONS, ensureBotPermission, ensureCanModerateTarget, fetchMember } from "../../utils/moderation.js";
 import { getGuildConfig } from "../../db/guilds.js";
 
 const command: Command = {
@@ -27,28 +21,20 @@ const command: Command = {
         .setDescription("Days of messages to delete (0-7)")
         .setMinValue(0)
         .setMaxValue(7),
-    )
-    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+    ),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    const member = interaction.member as GuildMember;
-    if (!isModerator(member)) return noPermission(interaction);
+    if (!(await requireCommandAccess(interaction, "ban"))) return;
+    if (!(await ensureBotPermission(interaction, BOT_PERMISSIONS.ban, "Ban"))) return;
 
     const target = interaction.options.getUser("user", true);
     const reason = interaction.options.getString("reason") ?? "No reason provided";
     const days = interaction.options.getInteger("days") ?? 0;
-    const targetMember = interaction.guild?.members.cache.get(target.id);
+    const targetMember = await fetchMember(interaction, target.id);
 
-    // Hierarchy check
-    if (targetMember && member.roles.highest.position <= targetMember.roles.highest.position) {
-      return interaction.reply({
-        embeds: [errorEmbed("Cannot Ban", "This user has a higher or equal role than you.")],
-        ephemeral: true,
-      });
-    }
+    if (targetMember && !(await ensureCanModerateTarget(interaction, targetMember, "Ban"))) return;
 
     try {
-      // DM the user before banning
       try {
         await target.send({
           embeds: [
@@ -60,7 +46,7 @@ const command: Command = {
         });
       } catch {}
 
-      await interaction.guild?.members.ban(target, {
+      await interaction.guild?.members.ban(target.id, {
         reason: `${reason} | By: ${interaction.user.tag}`,
         deleteMessageDays: days,
       });
@@ -74,7 +60,6 @@ const command: Command = {
         ],
       });
 
-      // Send to logs channel
       const dbConfig = await getGuildConfig(interaction.guildId!);
       const logsChannel = interaction.guild?.channels.cache.get(dbConfig.channels.logs_channel ?? "");
       if (logsChannel?.isTextBased()) {
@@ -89,7 +74,7 @@ const command: Command = {
       }
     } catch {
       await interaction.reply({
-        embeds: [errorEmbed("Ban Failed", "I couldn't ban this user. Check my permissions and role hierarchy.")],
+        embeds: [errorEmbed("Ban Failed", "فشل الباند. تأكد أن رتبة البوت فوق رتبة العضو وأن عنده Ban Members.")],
         ephemeral: true,
       });
     }

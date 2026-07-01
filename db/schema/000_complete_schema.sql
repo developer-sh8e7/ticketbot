@@ -566,6 +566,34 @@ create table if not exists guild_command_aliases (
 create index if not exists idx_guild_command_aliases_guild on guild_command_aliases(guild_id);
 
 -- ════════════════════════════════════════════════════════════════
+-- إعدادات صلاحيات أوامر السيستم من الداشبورد: تفعيل/تعطيل الأمر،
+-- والسماح لرتب أو أشخاص محددين بدون الاعتماد على جداول legacy.
+-- ════════════════════════════════════════════════════════════════
+create table if not exists guild_command_settings (
+  guild_id         text not null,
+  command_name     text not null,
+  enabled          boolean not null default true,
+  allowed_role_ids jsonb not null default '[]'::jsonb,
+  allowed_user_ids jsonb not null default '[]'::jsonb,
+  updated_at       timestamptz not null default now(),
+  primary key (guild_id, command_name)
+);
+
+create index if not exists idx_guild_command_settings_guild on guild_command_settings(guild_id);
+
+-- تحذيرات الأعضاء التي ينشئها /warn ويعرضها /warnings.
+create table if not exists guild_warnings (
+  id           uuid primary key default gen_random_uuid(),
+  guild_id     text not null,
+  user_id      text not null,
+  moderator_id text not null,
+  reason       text not null,
+  created_at   timestamptz not null default now()
+);
+
+create index if not exists idx_guild_warnings_member on guild_warnings(guild_id, user_id, created_at desc);
+
+-- ════════════════════════════════════════════════════════════════
 -- 14) تخزين صور الترحيب (الخلفية اللي يرفعها العميل) — Bucket عام
 -- للقراءة، الكتابة فقط عبر service role (الموقع).
 -- ════════════════════════════════════════════════════════════════

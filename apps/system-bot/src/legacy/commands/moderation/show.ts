@@ -1,50 +1,33 @@
 ﻿// ══════════════════════════════════════════════════════════════
 //  /show — Show a channel to @everyone
-//  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
 
-import {
-  SlashCommandBuilder,
-  ChatInputCommandInteraction,
-  PermissionFlagsBits,
-  GuildMember,
-  TextChannel,
-} from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction, TextChannel } from "discord.js";
 import { Command } from "../../types.js";
 import { errorEmbed, successEmbed } from "../../utils/embed.js";
-import { isModerator, noPermission } from "../../utils/permissions.js";
+import { requireCommandAccess } from "../../utils/permissions.js";
+import { BOT_PERMISSIONS, ensureBotPermission } from "../../utils/moderation.js";
 
 const command: Command = {
   data: new SlashCommandBuilder()
     .setName("show")
-    .setDescription("Show the current channel to everyone")
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+    .setDescription("Show a channel to everyone")
+    .addChannelOption((o) => o.setName("channel").setDescription("Channel to show")),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    const member = interaction.member as GuildMember;
-    if (!isModerator(member)) return noPermission(interaction);
+    if (!(await requireCommandAccess(interaction, "show"))) return;
+    if (!(await ensureBotPermission(interaction, BOT_PERMISSIONS.channels, "Show"))) return;
 
-    const channel = interaction.channel as TextChannel;
-    if (!channel.isTextBased()) {
-      return interaction.reply({
-        embeds: [errorEmbed("Error", "This command can only be used in text channels.")],
-        ephemeral: true,
-      });
+    const channel = (interaction.options.getChannel("channel") as TextChannel) ?? (interaction.channel as TextChannel);
+    if (!channel || !("permissionOverwrites" in channel)) {
+      return interaction.reply({ embeds: [errorEmbed("Error", "This command can only be used in text channels.")], ephemeral: true });
     }
 
     try {
-      await channel.permissionOverwrites.edit(interaction.guild!.roles.everyone, {
-        ViewChannel: true,
-      });
-
-      return interaction.reply({
-        embeds: [successEmbed("Channel Visible", "The channel is now visible to `@everyone`.")],
-      });
-    } catch (err) {
-      return interaction.reply({
-        embeds: [errorEmbed("Error", "Failed to show the channel.")],
-        ephemeral: true,
-      });
+      await channel.permissionOverwrites.edit(interaction.guild!.roles.everyone, { ViewChannel: null }, { reason: `Shown by ${interaction.user.tag}` });
+      return interaction.reply({ embeds: [successEmbed("Channel Visible", `${channel} is now visible to @everyone.`)] });
+    } catch {
+      return interaction.reply({ embeds: [errorEmbed("Error", "فشل إظهار الروم. تأكد أن البوت عنده Manage Channels.")], ephemeral: true });
     }
   },
 };

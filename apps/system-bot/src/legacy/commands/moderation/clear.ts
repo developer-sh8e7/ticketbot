@@ -1,18 +1,12 @@
 ﻿// ══════════════════════════════════════════════════════════════
 //  /clear — Bulk delete messages
-//  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
 
-import {
-  SlashCommandBuilder,
-  ChatInputCommandInteraction,
-  PermissionFlagsBits,
-  GuildMember,
-  TextChannel,
-} from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction, TextChannel } from "discord.js";
 import { Command } from "../../types.js";
 import { errorEmbed, successEmbed } from "../../utils/embed.js";
-import { isModerator, noPermission } from "../../utils/permissions.js";
+import { requireCommandAccess } from "../../utils/permissions.js";
+import { BOT_PERMISSIONS, ensureBotPermission } from "../../utils/moderation.js";
 
 const command: Command = {
   data: new SlashCommandBuilder()
@@ -26,47 +20,36 @@ const command: Command = {
         .setMaxValue(100)
         .setRequired(true),
     )
-    .addUserOption((o) => o.setName("user").setDescription("Only delete messages from this user"))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
+    .addUserOption((o) => o.setName("user").setDescription("Only delete messages from this user")),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    const member = interaction.member as GuildMember;
-    if (!isModerator(member)) return noPermission(interaction);
+    if (!(await requireCommandAccess(interaction, "clear"))) return;
+    if (!(await ensureBotPermission(interaction, BOT_PERMISSIONS.messages, "Clear"))) return;
 
     const amount = interaction.options.getInteger("amount", true);
     const targetUser = interaction.options.getUser("user");
     const channel = interaction.channel as TextChannel;
 
+    if (!channel || !("bulkDelete" in channel)) {
+      return interaction.reply({ embeds: [errorEmbed("Clear Failed", "هذا الأمر يعمل داخل الرومات النصية فقط.")], ephemeral: true });
+    }
+
     try {
       let messages = await channel.messages.fetch({ limit: amount });
+      if (targetUser) messages = messages.filter((m) => m.author.id === targetUser.id);
 
-      if (targetUser) {
-        messages = messages.filter((m) => m.author.id === targetUser.id);
-      }
-
-      // Filter out messages older than 14 days (Discord API limitation)
       const twoWeeksAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
       messages = messages.filter((m) => m.createdTimestamp > twoWeeksAgo);
 
       const deleted = await channel.bulkDelete(messages, true);
-
-      const reply = await interaction.reply({
-        embeds: [
-          successEmbed(
-            "Messages Cleared",
-            `**Deleted:** ${deleted.size} message(s)${targetUser ? `\n**From:** ${targetUser.tag}` : ""}`,
-          ),
-        ],
-        ephemeral: true,
-      });
-
-      // Auto-delete reply after 5 seconds
-      setTimeout(() => reply.delete().catch(() => {}), 5000);
-    } catch {
       await interaction.reply({
-        embeds: [errorEmbed("Clear Failed", "I couldn't delete messages. Check my permissions.")],
+        embeds: [successEmbed("Messages Cleared", `**Deleted:** ${deleted.size} message(s)${targetUser ? `\n**From:** ${targetUser.tag}` : ""}`)],
         ephemeral: true,
       });
+
+      setTimeout(() => interaction.deleteReply().catch(() => {}), 5000);
+    } catch {
+      await interaction.reply({ embeds: [errorEmbed("Clear Failed", "ما قدرت أحذف الرسائل. تأكد أن البوت عنده Manage Messages.")], ephemeral: true });
     }
   },
 };

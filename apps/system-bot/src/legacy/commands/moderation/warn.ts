@@ -1,33 +1,27 @@
 ﻿// ══════════════════════════════════════════════════════════════
 //  /warn — Warn a member
-//  V2 — Application Emojis, no Unicode emojis
 // ══════════════════════════════════════════════════════════════
 
-import {
-  SlashCommandBuilder,
-  ChatInputCommandInteraction,
-  PermissionFlagsBits,
-  GuildMember,
-} from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
 import { Command } from "../../types.js";
 import { modEmbed, errorEmbed, successEmbed } from "../../utils/embed.js";
-import { isModerator, noPermission } from "../../utils/permissions.js";
+import { requireCommandAccess } from "../../utils/permissions.js";
 import { getGuildConfig } from "../../db/guilds.js";
+import { addWarning } from "../../services/warnings.js";
 
 const command: Command = {
   data: new SlashCommandBuilder()
     .setName("warn")
     .setDescription("Warn a member")
     .addUserOption((o) => o.setName("user").setDescription("The user to warn").setRequired(true))
-    .addStringOption((o) => o.setName("reason").setDescription("Reason for the warning").setRequired(true))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+    .addStringOption((o) => o.setName("reason").setDescription("Reason for the warning").setRequired(true)),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    const member = interaction.member as GuildMember;
-    if (!isModerator(member)) return noPermission(interaction);
+    if (!(await requireCommandAccess(interaction, "warn"))) return;
 
     const target = interaction.options.getUser("user", true);
     const reason = interaction.options.getString("reason", true);
+    const totalWarnings = await addWarning(interaction.guildId!, target.id, interaction.user.id, reason);
 
     try {
       try {
@@ -45,7 +39,7 @@ const command: Command = {
         embeds: [
           successEmbed(
             "Member Warned",
-            `**User:** ${target.tag} (\`${target.id}\`)\n**Reason:** ${reason}`,
+            `**User:** ${target.tag} (\`${target.id}\`)\n**Reason:** ${reason}${totalWarnings === null ? "" : `\n**Total Warnings:** ${totalWarnings}`}`,
           ).setThumbnail(target.displayAvatarURL()),
         ],
       });
@@ -63,10 +57,7 @@ const command: Command = {
         });
       }
     } catch {
-      await interaction.reply({
-        embeds: [errorEmbed("Warn Failed", "Something went wrong.")],
-        ephemeral: true,
-      });
+      await interaction.reply({ embeds: [errorEmbed("Warn Failed", "Something went wrong.")], ephemeral: true });
     }
   },
 };
