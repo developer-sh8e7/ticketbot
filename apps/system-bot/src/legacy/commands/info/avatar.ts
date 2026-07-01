@@ -19,7 +19,11 @@ const command: Command = {
     const targetPartial = interaction.options.getUser("user") ?? interaction.user;
     // Force fetch: banner/accentColor are not populated on cached/partial users.
     const target = await targetPartial.fetch(true).catch(() => targetPartial);
-    const member = interaction.guild?.members.cache.get(target.id) ?? null;
+    // Fetch the member (roles, join date, presence) — presence needs the
+    // GuildPresences intent; if it's off, member.presence is simply null.
+    const member = interaction.guild
+      ? await interaction.guild.members.fetch({ user: target.id, withPresences: true }).catch(() => null)
+      : null;
 
     const card = await buildProfileCard(target, member);
     const attachment = new AttachmentBuilder(card, { name: "profile.png" });
