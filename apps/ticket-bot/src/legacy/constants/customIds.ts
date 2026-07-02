@@ -18,7 +18,11 @@ export const TICKET_BUTTON_IDS = {
   pin: 'ticket:btn:pin',
   stats: 'ticket:btn:stats',
   proof: 'ticket:btn:proof',
+  tradeInfo: 'ticket:btn:trade-info',
 } as const;
+
+/** Category key whose tickets get the extra "trade info" button (middleman/وسيط مضمون). */
+export const TRADE_INFO_CATEGORY_KEY = 'middleman';
 
 export const TRIAL_MANAGER_ID = process.env.TRIAL_MANAGER_ID || '1029665419788832800';
 

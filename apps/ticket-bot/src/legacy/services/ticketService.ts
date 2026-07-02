@@ -478,7 +478,7 @@ export class TicketService {
 
     const embeds = await buildTicketEmbeds(interaction.guild, this.config, ticket);
     const files = await buildTicketFiles(this.config);
-    const components = buildTicketActionRows(this.config, ticket.claimed_by !== null);
+    const components = buildTicketActionRows(this.config, ticket.claimed_by !== null, ticket.category_key);
     const storedPanelId =
       typeof ticket.metadata.control_message_id === 'string'
         ? ticket.metadata.control_message_id
@@ -732,7 +732,7 @@ export class TicketService {
           : await created.send({
               embeds: await buildTicketEmbeds(interaction.guild, this.config, createdTicket),
               files: await buildTicketFiles(this.config),
-              components: buildTicketActionRows(this.config),
+              components: buildTicketActionRows(this.config, false, category.key),
               allowedMentions: { parse: [] },
             });
 
@@ -950,6 +950,9 @@ export class TicketService {
       case TICKET_BUTTON_IDS.proof:
         await this.handleProofButton(interaction);
         return;
+      case TICKET_BUTTON_IDS.tradeInfo:
+        await this.handleTradeInfoButton(interaction);
+        return;
       default:
         return;
     }
@@ -996,6 +999,40 @@ export class TicketService {
       logger.error('Failed to close ticket', error instanceof Error ? error.message : error);
       await safeEditReply(interaction, [buildErrorEmbed(this.config, 'تعذر إغلاق التذكرة حالياً.')]);
     }
+  }
+
+  /** يعرض إجابات فتح التذكرة (Epic ID، وش راح يعطي، وش بياخذ، التيب...) — زر "معلومات التريد"، فئة middleman فقط. */
+  private async handleTradeInfoButton(interaction: ButtonInteraction): Promise<void> {
+    const context = await this.resolveTicketContext(interaction);
+    if (!context) {
+      return;
+    }
+
+    const isCreator = context.ticket.creator_id === interaction.user.id;
+    const isManager = canManageTicket(context.member, context.config);
+
+    if (!isCreator && !isManager) {
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, this.config.ticket.messages.noPermission)]);
+      return;
+    }
+
+    const answers = context.ticket.answers ?? [];
+    if (answers.length === 0) {
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'لا توجد معلومات تريد مسجّلة لهذه التذكرة.')]);
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(hexToDecimal(this.config.bot.embedColor))
+      .setTitle('معلومات التريد')
+      .setFooter({ text: this.config.bot.footerText })
+      .setTimestamp();
+
+    for (const answer of answers) {
+      embed.addFields({ name: answer.label, value: answer.value || '—', inline: false });
+    }
+
+    await safeEditReply(interaction, [embed]);
   }
 
   private async handleAddMemberButton(interaction: ButtonInteraction): Promise<void> {
@@ -1046,7 +1083,7 @@ export class TicketService {
       });
 
       const nowClaimed = newClaimerId !== null;
-      const newComponents = buildTicketActionRows(this.config, nowClaimed);
+      const newComponents = buildTicketActionRows(this.config, nowClaimed, context.ticket.category_key);
       await interaction.message.edit({ components: newComponents }).catch(() => null);
 
       const message = isClaimedBySelf
@@ -2059,7 +2096,7 @@ export class TicketService {
       const sentMessage = await created.send({
         embeds: welcomeEmbeds,
         files: await buildTicketFiles(this.config),
-        components: buildTicketActionRows(this.config),
+        components: buildTicketActionRows(this.config, false, updatedTicket.category_key),
         allowedMentions: { parse: [] },
       });
 

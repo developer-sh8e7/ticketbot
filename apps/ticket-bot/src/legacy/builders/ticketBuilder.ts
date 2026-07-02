@@ -6,7 +6,7 @@ import {
   EmbedBuilder,
   type Guild,
 } from 'discord.js';
-import { TICKET_BUTTON_IDS } from '../constants/customIds.js';
+import { TICKET_BUTTON_IDS, TRADE_INFO_CATEGORY_KEY } from '../constants/customIds.js';
 import type { TicketRecord } from '../database/types.js';
 import type { AppConfig, TicketControlConfig } from '../types/config.js';
 import { buttonStyleFromName } from '../utils/discord.js';
@@ -77,7 +77,11 @@ export async function buildTicketEmbeds(
   return [];
 }
 
-export function buildTicketActionRows(config: AppConfig, isClaimed = false): ActionRowBuilder<ButtonBuilder>[] {
+export function buildTicketActionRows(
+  config: AppConfig,
+  isClaimed = false,
+  categoryKey?: string,
+): ActionRowBuilder<ButtonBuilder>[] {
   const claimConfig: TicketControlConfig = isClaimed
     ? { ...config.ticket.controls.claim, label: 'إلغاء الاستلام', style: 'Danger' }
     : config.ticket.controls.claim;
@@ -93,6 +97,16 @@ export function buildTicketActionRows(config: AppConfig, isClaimed = false): Act
   const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
     buildButton(TICKET_BUTTON_IDS.stats, config.ticket.controls.stats),
   );
+
+  // زر "معلومات التريد" — فقط لفئة الوسيط المضمون (middleman)، بلا إيموجي.
+  if (categoryKey === TRADE_INFO_CATEGORY_KEY) {
+    row2.addComponents(
+      new ButtonBuilder()
+        .setCustomId(TICKET_BUTTON_IDS.tradeInfo)
+        .setLabel('معلومات التريد')
+        .setStyle(ButtonStyle.Secondary),
+    );
+  }
 
   return [row1, row2];
 }
