@@ -31,7 +31,9 @@ import { logger } from '../utils/logger.js';
 const DEFAULT_CATEGORY_NAME = 'الرومات المؤقتة';
 const DEFAULT_JOIN_NAME = '➕・إنشاء روم';
 const DEFAULT_CONTROL_NAME = 'لوحة-تحكم';
-const DEFAULT_ROOM_TEMPLATE = 'روم {username}';
+const DEFAULT_ROOM_TEMPLATE = '{username}';
+const DEFAULT_USER_LIMIT = 99;
+const DEFAULT_ADMIN_BYPASS = true;
 const PANEL_IMAGE = 'https://i.imgur.com/BiQetZY.png';
 const MAX_NAME_LENGTH = 100;
 const BTN_COOLDOWN_MS = 1500;
@@ -111,10 +113,10 @@ function defaultTempRooms(config: AppConfig): AppConfig['tempRooms'] {
     controlChannelId: existing?.controlChannelId ?? '',
     controlMessageId: existing?.controlMessageId ?? '',
     defaultRoomName: existing?.defaultRoomName ?? DEFAULT_ROOM_TEMPLATE,
-    defaultUserLimit: existing?.defaultUserLimit ?? 0,
+    defaultUserLimit: existing?.defaultUserLimit ?? DEFAULT_USER_LIMIT,
     transferOwnershipOnOwnerLeave: existing?.transferOwnershipOnOwnerLeave ?? true,
     deleteWhenEmpty: existing?.deleteWhenEmpty ?? true,
-    adminBypass: existing?.adminBypass ?? false,
+    adminBypass: existing?.adminBypass ?? DEFAULT_ADMIN_BYPASS,
     maxRooms: existing?.maxRooms ?? 50,
     panelImageUrl: existing?.panelImageUrl ?? PANEL_IMAGE,
     rooms: existing?.rooms ?? {},
@@ -325,8 +327,8 @@ export class TempRoomService {
     const joinName = sanitizeChannelName(interaction.options.getString('trigger-name') || DEFAULT_JOIN_NAME);
     const controlName = sanitizeChannelName(interaction.options.getString('control-name') || DEFAULT_CONTROL_NAME);
     const roomTemplate = sanitizeChannelName(interaction.options.getString('room-template') || DEFAULT_ROOM_TEMPLATE) || DEFAULT_ROOM_TEMPLATE;
-    const defaultUserLimit = interaction.options.getInteger('user-limit') ?? 0;
-    const adminBypass = interaction.options.getBoolean('admin-bypass') ?? false;
+    const defaultUserLimit = interaction.options.getInteger('user-limit') ?? DEFAULT_USER_LIMIT;
+    const adminBypass = interaction.options.getBoolean('admin-bypass') ?? DEFAULT_ADMIN_BYPASS;
 
     try {
       let config = this.getConfig(guild.id);

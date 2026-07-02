@@ -409,11 +409,6 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
     return;
   }
 
-  if (interaction.commandName === 'setup-room') {
-    await tempRoomService.handleSetupCommand(interaction);
-    return;
-  }
-
   if (interaction.commandName === 'panel-mm') {
     if (!isAuthorizedAdmin(interaction.user.id)) {
       await safeReply(interaction, [buildErrorEmbed(configStore.current, '❌ ليس لديك الصلاحية لاستخدام هذا الأمر.')]);

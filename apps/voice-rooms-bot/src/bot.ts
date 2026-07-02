@@ -10,18 +10,12 @@ import { Voice247Service } from './legacy/services/voice247Service.js';
 
 const log = createLogger('voice-rooms-bot');
 
-// The /temp-room setup command definition (matches the id checked in the
-// interaction handler and the options read by TempRoomService.handleSetupCommand).
-const tempRoomCommand = new SlashCommandBuilder()
-  .setName('temp-room')
-  .setDescription('إعداد نظام الرومات الصوتية المؤقتة')
-  .setDefaultMemberPermissions(String(PermissionFlagsBits.ManageChannels))
-  .addStringOption((o) => o.setName('category').setDescription('اسم تصنيف الرومات المؤقتة'))
-  .addStringOption((o) => o.setName('trigger-name').setDescription('اسم روم الإنشاء (join to create)'))
-  .addStringOption((o) => o.setName('control-name').setDescription('اسم روم لوحة التحكم'))
-  .addStringOption((o) => o.setName('room-template').setDescription('قالب اسم الروم — استخدم {username}'))
-  .addIntegerOption((o) => o.setName('user-limit').setDescription('حد الأعضاء الافتراضي (0 = بلا حد)').setMinValue(0).setMaxValue(99))
-  .addBooleanOption((o) => o.setName('admin-bypass').setDescription('السماح للأدمن بتجاوز قيود الروم'));
+// The /setup-room setup command lives on the TempRooms bot only.
+// It intentionally has no options: TempRoomService applies the required defaults.
+const setupRoomCommand = new SlashCommandBuilder()
+  .setName('setup-room')
+  .setDescription('إعداد نظام الرومات الصوتية المؤقتة تلقائياً')
+  .setDefaultMemberPermissions(String(PermissionFlagsBits.ManageChannels));
 
 /**
  * A fresh guild has no saved config, so options.config is empty and the strict
@@ -61,16 +55,16 @@ export const createVoiceRoomsBot: BotFactory = (options: BotRuntimeOptions): Run
       });
       client.once(Events.ClientReady, async (ready) => {
         log.info(`Voice rooms bot ready: ${ready.user.tag} → guild ${options.guildId}`);
-        // Register the /temp-room command for this guild using the bot's OWN
+        // Register the /setup-room command for this guild using the bot's OWN
         // application id (guild-scoped = instant, and avoids the 20012 error).
         try {
           await new REST({ version: '10' }).setToken(options.token).put(
             Routes.applicationGuildCommands(ready.application.id, options.guildId),
-            { body: [tempRoomCommand.toJSON()] },
+            { body: [setupRoomCommand.toJSON()] },
           );
-          log.info(`Registered /temp-room for guild ${options.guildId}`);
+          log.info(`Registered /setup-room for guild ${options.guildId}`);
         } catch (error) {
-          log.error(`Failed to register /temp-room: ${String(error)}`);
+          log.error(`Failed to register /setup-room: ${String(error)}`);
         }
         await tempRooms?.recoverAll(ready).catch((error) => log.error(String(error)));
         await voice247?.recoverAll(ready).catch((error) => log.error(String(error)));
@@ -84,7 +78,7 @@ export const createVoiceRoomsBot: BotFactory = (options: BotRuntimeOptions): Run
         if (interaction.guildId !== options.guildId) return;
         if (!interaction.isButton() && !interaction.isStringSelectMenu() && !interaction.isUserSelectMenu() && !interaction.isModalSubmit() && !interaction.isChatInputCommand()) return;
         const id = 'customId' in interaction ? interaction.customId : interaction.commandName;
-        if (interaction.isChatInputCommand() && id === 'temp-room') {
+        if (interaction.isChatInputCommand() && id === 'setup-room') {
           await tempRooms?.handleSetupCommand(interaction).catch((error) => log.error(String(error)));
         } else if (interaction.isButton() && tempRooms?.isTempButton(id)) {
           await tempRooms.handleButton(interaction).catch((error) => log.error(String(error)));

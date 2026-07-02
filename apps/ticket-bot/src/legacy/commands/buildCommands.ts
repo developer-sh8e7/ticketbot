@@ -143,50 +143,6 @@ export function buildCommandDefinitions(config: AppConfig, options: BuildCommand
 
   commands.push(
     new SlashCommandBuilder()
-      .setName('setup-room')
-      .setDescription('إعداد نظام الرومات الصوتية المؤقتة')
-      .addStringOption((option) =>
-        option
-          .setName('category')
-          .setDescription('اسم كاتجوري الرومات المؤقتة')
-          .setRequired(false),
-      )
-      .addStringOption((option) =>
-        option
-          .setName('trigger-name')
-          .setDescription('اسم روم الإنشاء')
-          .setRequired(false),
-      )
-      .addStringOption((option) =>
-        option
-          .setName('control-name')
-          .setDescription('اسم قناة لوحة التحكم')
-          .setRequired(false),
-      )
-      .addStringOption((option) =>
-        option
-          .setName('room-template')
-          .setDescription('قالب اسم الروم، مثال: روم {username}')
-          .setRequired(false),
-      )
-      .addIntegerOption((option) =>
-        option
-          .setName('user-limit')
-          .setDescription('الحد الافتراضي للروم: 0 بدون حد، 1-99')
-          .setMinValue(0)
-          .setMaxValue(99)
-          .setRequired(false),
-      )
-      .addBooleanOption((option) =>
-        option
-          .setName('admin-bypass')
-          .setDescription('السماح للأدمن بالتحكم في روم مؤقت عند دخوله')
-          .setRequired(false),
-      ) as unknown as SlashCommandBuilder,
-  );
-
-  commands.push(
-    new SlashCommandBuilder()
       .setName('panel-mm')
       .setDescription('فتح لوحة التحكم الكاملة بالوسطاء (للإدارة فقط)') as SlashCommandBuilder
   );

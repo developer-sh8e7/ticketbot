@@ -20,6 +20,7 @@ import {
   type TextChannel,
 } from 'discord.js';
 import { buildAddMemberModal, buildOpenTicketModal, buildRemoveMemberModal } from '../builders/modalBuilder.js';
+import { buildPanelComponents, buildPanelFiles } from '../builders/panelBuilder.js';
 import {
   buildAlreadyOpenEmbed,
   buildErrorEmbed,
@@ -116,6 +117,19 @@ export class TicketService {
 
   private isFreeTrialCategory(category: TicketCategoryConfig): boolean {
     return category.key === 'free_trial' || category.key === 'trial' || category.customId === 'open_free_trial_ticket';
+  }
+
+  private async refreshSourcePanelMessage(message: Message): Promise<void> {
+    if (!message.editable) return;
+    const mediatorConfig = await this.mediatorRepository.getMediatorConfig().catch(() => undefined);
+    await message.edit({
+      content: this.config.panel.defaultMention.trim() || undefined,
+      embeds: [],
+      files: await buildPanelFiles(this.config),
+      attachments: [],
+      components: buildPanelComponents(this.config, mediatorConfig),
+      allowedMentions: { parse: [] },
+    });
   }
 
   private buildTrialActionRows(): ActionRowBuilder<ButtonBuilder>[] {
@@ -526,7 +540,10 @@ export class TicketService {
     const category = this.getEnabledCategory(categoryKey);
 
     if (!category) {
-      await safeReply(interaction, [buildErrorEmbed(this.config, 'التصنيف المحدد غير موجود أو معطل.')]);
+      await this.refreshSourcePanelMessage(interaction.message).catch((error) => {
+        logger.warn('Failed to refresh stale ticket panel after unknown category selection.', error instanceof Error ? error.message : error);
+      });
+      await safeReply(interaction, [buildErrorEmbed(this.config, 'تم تحديث لوحة التذاكر لأن الخيارات كانت قديمة. اختر نوع التذكرة مرة ثانية.')]);
       return;
     }
 

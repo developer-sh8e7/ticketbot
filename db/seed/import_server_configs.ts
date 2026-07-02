@@ -1,9 +1,9 @@
 /**
  * يستورد إعدادات السيرفر الخاص (1413059459630104626) إلى جدول server_configs.
- * هذا السيرفر زبون عادي يمرّ بنفس النظام، لكن له إعدادات تكتات خاصة محفوظة مسبقاً.
+ * هذا السيرفر زبون عادي يمرّ بنفس النظام، لكن له إعدادات تكتات/TempRooms خاصة محفوظة مسبقاً.
  * تشغيل: tsx db/seed/import_server_configs.ts
  *
- * يحافظ على كل ما في الـ config الأصلي ويربطه بالمنتج 'ticket'.
+ * يحافظ على كل ما في الـ config الأصلي ويربطه بكل المنتجات التي قد يشغلها نظام الأوتو.
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -15,6 +15,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const SPECIAL = [
   { guildId: '1413059459630104626', productType: 'ticket', file: 'config_1413059459630104626.json' },
+  { guildId: '1413059459630104626', productType: 'voice_rooms', file: 'config_1413059459630104626.json' },
+  { guildId: '1413059459630104626', productType: 'general', file: 'config_1413059459630104626.json' },
 ] as const;
 
 async function main() {

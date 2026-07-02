@@ -61,13 +61,22 @@ const defaultModules: GuildModules = { welcome_enabled: true, leave_enabled: tru
  * Ensures the guild exists in the database.
  */
 async function ensureGuild(guildId: string, ownerId: string = "unknown") {
-  const { data } = await supabase.from("guilds").select("id").eq("id", guildId).single();
-  if (!data) {
-    await supabase.from("guilds").insert({ id: guildId, owner_id: ownerId });
-    await supabase.from("guild_channels").insert({ guild_id: guildId });
-    await supabase.from("guild_roles").insert({ guild_id: guildId });
-    await supabase.from("guild_modules").insert({ guild_id: guildId });
-  }
+  const guildRow: { id: string; owner_discord_user_id?: string } = { id: guildId };
+  if (ownerId !== "unknown") guildRow.owner_discord_user_id = ownerId;
+
+  const { error: guildError } = await supabase
+    .from("guilds")
+    .upsert(guildRow, { onConflict: "id" });
+  if (guildError) throw guildError;
+
+  const [channelsRes, rolesRes, modulesRes] = await Promise.all([
+    supabase.from("guild_channels").upsert({ guild_id: guildId }, { onConflict: "guild_id" }),
+    supabase.from("guild_roles").upsert({ guild_id: guildId }, { onConflict: "guild_id" }),
+    supabase.from("guild_modules").upsert({ guild_id: guildId }, { onConflict: "guild_id" }),
+  ]);
+
+  const error = channelsRes.error ?? rolesRes.error ?? modulesRes.error;
+  if (error) throw error;
 }
 
 /**

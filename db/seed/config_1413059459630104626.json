@@ -51,8 +51,8 @@
     ]
   },
   "images": {
-    "panelBannerUrl": "https://i.imgur.com/MP8Asr5.png",
-    "ticketBannerUrl": "https://placehold.co/1200x400/1a0533/8b5cf6?text=Welcome+Ticket",
+    "panelBannerUrl": "https://i.imgur.com/ajJ2iut.png",
+    "ticketBannerUrl": "https://i.imgur.com/61VOe9U.png",
     "thumbnailUrl": "https://placehold.co/256x256/1a0533/8b5cf6?text=T"
   },
   "naming": {
@@ -295,11 +295,11 @@
     "joinChannelId": "",
     "controlChannelId": "",
     "controlMessageId": "",
-    "defaultRoomName": "روم {username}",
-    "defaultUserLimit": 0,
+    "defaultRoomName": "{username}",
+    "defaultUserLimit": 99,
     "transferOwnershipOnOwnerLeave": true,
     "deleteWhenEmpty": true,
-    "adminBypass": false,
+    "adminBypass": true,
     "maxRooms": 50,
     "panelImageUrl": "https://i.imgur.com/BiQetZY.png",
     "rooms": {}
