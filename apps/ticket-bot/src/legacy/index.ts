@@ -159,8 +159,12 @@ const voice247Service = new Voice247Service(configStore);
 async function syncCommands(): Promise<void> {
   const config = configStore.current;
 
-  if (!env.DISCORD_TOKEN || !env.DISCORD_CLIENT_ID) {
-    logger.warn('Skipping command registration because DISCORD_TOKEN or DISCORD_CLIENT_ID is missing.');
+  // Register with THIS bot's own application id (client id), never the shared
+  // website DISCORD_CLIENT_ID — using another app's id yields DiscordAPIError
+  // 20012 "not authorized to perform this action on this application".
+  const appId = client.application?.id ?? client.user?.id;
+  if (!env.DISCORD_TOKEN || !appId) {
+    logger.warn('Skipping command registration because the bot token or application id is missing.');
     return;
   }
 
@@ -174,7 +178,7 @@ async function syncCommands(): Promise<void> {
     const guildConfig = configStore.get(guild.id);
     if (guildConfig.commands.guildScoped) {
       try {
-        await registerCommands(env.DISCORD_TOKEN, env.DISCORD_CLIENT_ID, guildConfig, {
+        await registerCommands(env.DISCORD_TOKEN, appId, guildConfig, {
           includeOpusCommands: isOpusRuntime(),
         });
         logger.info(`Commands registered for guild ${guild.id}`);

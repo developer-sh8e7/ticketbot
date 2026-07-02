@@ -7,6 +7,12 @@ import { createLogger, type BotFactory, type BotRuntimeOptions, type RunningBot 
 
 const log = createLogger('ticket-bot');
 
+// The legacy ticket worker starts its own Express health server on process.env.PORT.
+// In production Railway sets PORT=8080 — the same port the orchestrator binds — so
+// the inherited value made the worker grab 8080 and crash the orchestrator with
+// EADDRINUSE (restart loop). Give each ticket worker its own unique internal port.
+let nextHealthPort = 3101;
+
 /**
  * A fresh guild has no saved server_configs row, so options.config is empty and
  * the legacy loader's strict schema would reject it and crash the worker (the
@@ -62,6 +68,8 @@ export const createTicketBot: BotFactory = (options: BotRuntimeOptions): Running
           SUPABASE_URL: options.supabaseUrl,
           SUPABASE_SERVICE_ROLE_KEY: options.supabaseServiceRoleKey,
           CONFIG_PATH: configPath,
+          // Unique internal health port — must not collide with the orchestrator's 8080.
+          PORT: String(nextHealthPort++),
         },
         stdio: ['ignore', 'pipe', 'pipe'],
       });
