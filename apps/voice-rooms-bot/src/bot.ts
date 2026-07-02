@@ -1,6 +1,7 @@
-import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { Client, Events, GatewayIntentBits, Partials } from 'discord.js';
 import { createLogger, type BotFactory, type BotRuntimeOptions, type RunningBot } from '@opus/core';
 import { ConfigStore } from './legacy/services/configStore.js';
@@ -8,6 +9,19 @@ import { TempRoomService } from './legacy/services/tempRoomService.js';
 import { Voice247Service } from './legacy/services/voice247Service.js';
 
 const log = createLogger('voice-rooms-bot');
+
+/**
+ * A fresh guild has no saved config, so options.config is empty and the strict
+ * config loader would throw and crash the bot (it then shows offline). Fall
+ * back to a bundled, schema-valid default with the target guild id filled in.
+ */
+function resolveConfig(config: Record<string, unknown> | undefined, guildId: string): Record<string, unknown> {
+  if (config && Object.keys(config).length > 0) return config;
+  const defaultPath = fileURLToPath(new URL('../assets/default-config.json', import.meta.url));
+  const def = JSON.parse(readFileSync(defaultPath, 'utf8')) as Record<string, unknown>;
+  if (def.guild && typeof def.guild === 'object') (def.guild as Record<string, unknown>).id = guildId;
+  return def;
+}
 
 /** Voice/TempRooms Bot factory using the original TempRoomService and Voice247Service logic. */
 export const createVoiceRoomsBot: BotFactory = (options: BotRuntimeOptions): RunningBot => {
@@ -23,7 +37,8 @@ export const createVoiceRoomsBot: BotFactory = (options: BotRuntimeOptions): Run
     instanceId: options.instanceId,
     async start() {
       mkdirSync(runtimeDir, { recursive: true });
-      writeFileSync(configPath, JSON.stringify(options.config ?? {}, null, 2), 'utf8');
+      const config = resolveConfig(options.config as Record<string, unknown> | undefined, options.guildId);
+      writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
       configStore = new ConfigStore(configPath);
       tempRooms = new TempRoomService(configStore);
       voice247 = new Voice247Service(configStore);

@@ -1,10 +1,25 @@
 import { spawn, type ChildProcess } from 'node:child_process';
-import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { createLogger, type BotFactory, type BotRuntimeOptions, type RunningBot } from '@opus/core';
 
 const log = createLogger('ticket-bot');
+
+/**
+ * A fresh guild has no saved server_configs row, so options.config is empty and
+ * the legacy loader's strict schema would reject it and crash the worker (the
+ * bot then shows offline). Fall back to a bundled, schema-valid default config
+ * (store-specific IDs stripped) with the target guild id filled in.
+ */
+function resolveConfig(config: Record<string, unknown> | undefined, guildId: string): Record<string, unknown> {
+  if (config && Object.keys(config).length > 0) return config;
+  const defaultPath = fileURLToPath(new URL('../assets/default-config.json', import.meta.url));
+  const def = JSON.parse(readFileSync(defaultPath, 'utf8')) as Record<string, unknown>;
+  if (def.guild && typeof def.guild === 'object') (def.guild as Record<string, unknown>).id = guildId;
+  return def;
+}
 
 function legacyEntry(): string {
   return process.env.NODE_ENV === 'production' || import.meta.url.includes('/dist/')
@@ -34,7 +49,8 @@ export const createTicketBot: BotFactory = (options: BotRuntimeOptions): Running
     instanceId: options.instanceId,
     async start() {
       mkdirSync(runtimeDir, { recursive: true });
-      writeFileSync(configPath, JSON.stringify(options.config ?? {}, null, 2), 'utf8');
+      const config = resolveConfig(options.config as Record<string, unknown> | undefined, options.guildId);
+      writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
       const entry = legacyEntry();
       const { cmd, args } = commandFor(entry);
       child = spawn(cmd, args, {

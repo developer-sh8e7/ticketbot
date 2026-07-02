@@ -1,0 +1,226 @@
+{
+  "bot": {
+    "presence": {
+      "status": "online",
+      "activityType": "Listening",
+      "activityName": "لطلباتكم واستفساراتكم"
+    },
+    "locale": "ar",
+    "timezone": "Asia/Riyadh",
+    "embedColor": "#808080",
+    "errorColor": "#ef4444",
+    "successColor": "#22c55e",
+    "footerText": "",
+    "footerIconUrl": ""
+  },
+  "guild": {
+    "id": "1395842846107631746",
+    "categoryId": "",
+    "archiveCategoryId": "",
+    "logChannelId": "",
+    "transcriptChannelId": "",
+    "supportRoleIds": [],
+    "managerRoleIds": [],
+    "mentionRolesOnOpen": []
+  },
+  "images": {
+    "panelBannerUrl": "https://i.imgur.com/BXilqQs.png",
+    "ticketBannerUrl": "https://i.imgur.com/VVXx9Dp.png",
+    "thumbnailUrl": ""
+  },
+  "naming": {
+    "ticketChannelPrefix": "ticket",
+    "maxChannelNameLength": 90,
+    "includeCategorySlug": false,
+    "zeroPadLength": 4,
+    "topicTemplate": "Ticket #{ticketNumber} | User: {userTag}"
+  },
+  "limits": {
+    "allowOnlyOneOpenTicketPerUser": true,
+    "maxQuestionsPerCategory": 5,
+    "maxAnswerLength": 400,
+    "maxCategoryOptions": 25,
+    "pinSummaryMessageOnCreate": false
+  },
+  "panel": {
+    "channelId": "",
+    "messageId": "",
+    "title": "",
+    "subtitle": "",
+    "description": "",
+    "menuPlaceholder": "اختر نوع التذكرة...",
+    "menuCustomId": "ticket:open-select",
+    "defaultMention": "",
+    "showNumbers": false,
+    "accentText": ""
+  },
+  "ticket": {
+    "welcomeTitle": "تم فتح التذكرة بنجاح",
+    "welcomeDescription": "أهلاً بك. يرجى كتابة تفاصيل طلبك أو استفسارك بوضوح، وسيقوم فريق الدعم الفني بالرد عليك في أقرب وقت ممكن.",
+    "summaryTitle": "معلومات التذكرة",
+    "controls": {
+      "close": {
+        "label": "إغلاق",
+        "style": "Secondary",
+        "emojiId": "1505356484471685201"
+      },
+      "add": {
+        "label": "إضافة",
+        "style": "Secondary",
+        "emojiId": "1505357680842375319"
+      },
+      "remove": {
+        "label": "إزالة",
+        "style": "Secondary",
+        "emojiId": "1505357865072984115"
+      },
+      "claim": {
+        "label": "استلام",
+        "style": "Secondary",
+        "emojiId": "1505361811258609705"
+      },
+      "pin": {
+        "label": "تثبيت",
+        "style": "Secondary",
+        "emojiId": "1505361828186816592"
+      },
+      "stats": {
+        "label": "إحصائيات",
+        "style": "Secondary",
+        "emojiId": "1505361794510622823",
+        "allowedRoleIds": []
+      }
+    },
+    "messages": {
+      "alreadyOpen": "لديك بالفعل تذكرة مفتوحة.",
+      "created": "تم إنشاء تذكرتك بنجاح.",
+      "closed": "تم إغلاق التذكرة.",
+      "claimed": "تم استلام التذكرة بواسطة",
+      "unclaimed": "تم إلغاء استلام التذكرة.",
+      "addedMember": "تمت إضافة العضو إلى التذكرة.",
+      "removedMember": "تمت إزالة العضو من التذكرة.",
+      "noPermission": "ليس لديك الصلاحية لاستخدام هذا الزر.",
+      "notInTicket": "هذا الزر يعمل داخل قنوات التذاكر فقط."
+    }
+  },
+  "emojis": {
+    "panelIcon": "",
+    "ticketIcon": "",
+    "infoIcon": "",
+    "epicIcon": "",
+    "categories": {
+      "purchase": "1505361775510556763",
+      "support": "1505361752303599645",
+      "free_trial": "1517615903678795908",
+      "general_inquiry": "1505361752303599645"
+    }
+  },
+  "categories": [
+    {
+      "key": "purchase",
+      "enabled": true,
+      "label": "عملية شراء",
+      "description": "لشراء منتج من المتجر.",
+      "channelNameTemplate": "شراء-{ticketNumber}",
+      "supportRoleIds": [],
+      "questions": []
+    },
+    {
+      "key": "support",
+      "enabled": true,
+      "label": "تواصل مع الدعم الفني",
+      "description": "لأي مشكلة تحتاج دعم فني.",
+      "channelNameTemplate": "دعم-{ticketNumber}",
+      "supportRoleIds": [],
+      "questions": []
+    },
+    {
+      "key": "free_trial",
+      "customId": "open_free_trial_ticket",
+      "enabled": true,
+      "label": "تجربة مجانية",
+      "description": "جرب أحد منتجات Opus Solutions قبل الشراء",
+      "channelNameTemplate": "trial-{ticketNumber}",
+      "supportRoleIds": [],
+      "questions": []
+    },
+    {
+      "key": "general_inquiry",
+      "enabled": true,
+      "label": "استفسار عام",
+      "description": "للاستفسارات العامة قبل الطلب.",
+      "channelNameTemplate": "استفسار-{ticketNumber}",
+      "supportRoleIds": [],
+      "questions": []
+    }
+  ],
+  "commands": {
+    "registerOnStartup": true,
+    "guildScoped": true,
+    "names": {
+      "panelSend": "ticket-panel-send",
+      "panelRefresh": "ticket-panel-refresh",
+      "configReload": "ticket-config-reload",
+      "emojiRefresh": "ticket-emoji-refresh",
+      "ticketClose": "ticket-close",
+      "ticketStats": "ticket-stats"
+    }
+  },
+  "roleProtection": {
+    "enabled": true,
+    "protectedRoleId": "1483237139637469417",
+    "protectedRoleName": "STB | Member",
+    "excludedRoleId": "1483022301908832388",
+    "syncIntervalMinutes": 10
+  },
+  "roleManagement": {
+    "enabled": true,
+    "ownerId": "1397364822152315052",
+    "allowedRoleIds": [
+      "1483022301908832388",
+      "1484730388898123806",
+      "1483208475227193555",
+      "1483212750074417212",
+      "1483208671126356118",
+      "1486862867767492890",
+      "1506083939679469769",
+      "1496651113003352188",
+      "1505310496004378766",
+      "1506346113580667111",
+      "1504574828579913798",
+      "1498410561287753848",
+      "1505377527257104495",
+      "1504574981953294437",
+      "1484749681371385927"
+    ],
+    "blockedRoleIds": [
+      "1506010306407694346",
+      "1483209015961063595"
+    ],
+    "dailyLimitedRoleId": "1483022301908832388",
+    "dailyLimitedRoleLimit": 5
+  },
+  "features": {
+    "applicationsPanel": false,
+    "tempRoomsPanel": true
+  },
+  "tempRooms": {
+    "enabled": false,
+    "categoryId": "",
+    "joinChannelId": "",
+    "controlChannelId": "",
+    "controlMessageId": "",
+    "defaultRoomName": "روم {username}",
+    "defaultUserLimit": 0,
+    "transferOwnershipOnOwnerLeave": true,
+    "deleteWhenEmpty": true,
+    "adminBypass": false,
+    "maxRooms": 50,
+    "panelImageUrl": "https://i.imgur.com/BiQetZY.png",
+    "rooms": {}
+  },
+  "voice247": {
+    "enabled": false,
+    "channelId": ""
+  }
+}
