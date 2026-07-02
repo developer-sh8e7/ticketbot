@@ -34,6 +34,57 @@ export type AdminSubscriber = {
 
 export type TokenPoolRow = { product_type: string; status: string; count: number };
 
+/** A stored bot token in the pool — shown in the owner Bots dashboard even before anyone buys it. */
+export type PoolBot = {
+  id: string;
+  productType: string | null;
+  label: string | null;
+  applicationId: string | null;
+  status: string | null;
+  reservedFor: string | null;
+  instanceId: string | null;
+  instanceGuildId: string | null;
+  instanceGuildName: string | null;
+  instanceStatus: string | null;
+};
+
+/**
+ * Every token stored in the pool, with the running instance it powers (if any).
+ * Lets the owner see and act on bots they've stored even before a customer buys.
+ */
+export async function getPoolBots(): Promise<PoolBot[]> {
+  const supabase = supabaseAdmin();
+  const { data: tokens, error } = await supabase
+    .from('token_pool')
+    .select('id,product_type,label,bot_application_id,status,reserved_for_discord_id,claimed_by_instance_id')
+    .order('created_at', { ascending: true })
+    .limit(500);
+  if (error) throw error;
+
+  const instanceIds = (tokens ?? []).map((t) => t.claimed_by_instance_id).filter(Boolean) as string[];
+  const instanceById = new Map<string, { guild_id: string | null; guild_name: string | null; status: string | null }>();
+  if (instanceIds.length) {
+    const { data: insts } = await supabase.from('bot_instances').select('id,guild_id,guild_name,status').in('id', instanceIds);
+    for (const i of insts ?? []) instanceById.set(i.id as string, { guild_id: i.guild_id, guild_name: i.guild_name, status: i.status });
+  }
+
+  return (tokens ?? []).map((t) => {
+    const inst = t.claimed_by_instance_id ? instanceById.get(t.claimed_by_instance_id as string) : null;
+    return {
+      id: t.id as string,
+      productType: t.product_type,
+      label: t.label,
+      applicationId: t.bot_application_id,
+      status: t.status,
+      reservedFor: t.reserved_for_discord_id,
+      instanceId: (t.claimed_by_instance_id as string) ?? null,
+      instanceGuildId: inst?.guild_id ?? null,
+      instanceGuildName: inst?.guild_name ?? null,
+      instanceStatus: inst?.status ?? null,
+    };
+  });
+}
+
 export async function getAdminStats(): Promise<AdminStats> {
   const supabase = supabaseAdmin();
 
