@@ -4,6 +4,8 @@
  * after a server-side owner check (see lib/owner.ts).
  */
 import { supabaseAdmin } from './supabase';
+import { decryptBotToken } from './encryption';
+import { getBotProfile, getBotGuilds } from './discord';
 
 export type AdminStats = {
   totalAccounts: number;
@@ -46,6 +48,11 @@ export type PoolBot = {
   instanceGuildId: string | null;
   instanceGuildName: string | null;
   instanceStatus: string | null;
+  // Live bot profile + servers (fetched from Discord using the bot token).
+  name: string | null;
+  avatarUrl: string | null;
+  bannerUrl: string | null;
+  guilds: { id: string; name: string; iconUrl: string | null }[];
 };
 
 /**
@@ -56,9 +63,9 @@ export async function getPoolBots(): Promise<PoolBot[]> {
   const supabase = supabaseAdmin();
   const { data: tokens, error } = await supabase
     .from('token_pool')
-    .select('id,product_type,label,bot_application_id,status,reserved_for_discord_id,claimed_by_instance_id')
+    .select('id,product_type,label,bot_application_id,status,reserved_for_discord_id,claimed_by_instance_id,bot_token_encrypted')
     .order('created_at', { ascending: true })
-    .limit(500);
+    .limit(60);
   if (error) throw error;
 
   const instanceIds = (tokens ?? []).map((t) => t.claimed_by_instance_id).filter(Boolean) as string[];
@@ -68,21 +75,44 @@ export async function getPoolBots(): Promise<PoolBot[]> {
     for (const i of insts ?? []) instanceById.set(i.id as string, { guild_id: i.guild_id, guild_name: i.guild_name, status: i.status });
   }
 
-  return (tokens ?? []).map((t) => {
-    const inst = t.claimed_by_instance_id ? instanceById.get(t.claimed_by_instance_id as string) : null;
-    return {
-      id: t.id as string,
-      productType: t.product_type,
-      label: t.label,
-      applicationId: t.bot_application_id,
-      status: t.status,
-      reservedFor: t.reserved_for_discord_id,
-      instanceId: (t.claimed_by_instance_id as string) ?? null,
-      instanceGuildId: inst?.guild_id ?? null,
-      instanceGuildName: inst?.guild_name ?? null,
-      instanceStatus: inst?.status ?? null,
-    };
-  });
+  // Fetch each bot's live profile + servers from Discord (owner-only page, few tokens).
+  return Promise.all(
+    (tokens ?? []).map(async (t): Promise<PoolBot> => {
+      const inst = t.claimed_by_instance_id ? instanceById.get(t.claimed_by_instance_id as string) : null;
+      let name: string | null = t.label;
+      let avatarUrl: string | null = null;
+      let bannerUrl: string | null = null;
+      let guilds: { id: string; name: string; iconUrl: string | null }[] = [];
+      try {
+        const token = decryptBotToken(t.bot_token_encrypted as string);
+        const [profile, botGuilds] = await Promise.all([getBotProfile(token), getBotGuilds(token)]);
+        if (profile) {
+          name = profile.username;
+          avatarUrl = profile.avatarUrl;
+          bannerUrl = profile.bannerUrl;
+        }
+        guilds = botGuilds;
+      } catch {
+        /* token undecryptable or Discord unavailable — fall back to label/initials */
+      }
+      return {
+        id: t.id as string,
+        productType: t.product_type,
+        label: t.label,
+        applicationId: t.bot_application_id,
+        status: t.status,
+        reservedFor: t.reserved_for_discord_id,
+        instanceId: (t.claimed_by_instance_id as string) ?? null,
+        instanceGuildId: inst?.guild_id ?? null,
+        instanceGuildName: inst?.guild_name ?? null,
+        instanceStatus: inst?.status ?? null,
+        name,
+        avatarUrl,
+        bannerUrl,
+        guilds,
+      };
+    }),
+  );
 }
 
 export async function getAdminStats(): Promise<AdminStats> {

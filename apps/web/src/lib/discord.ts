@@ -125,6 +125,20 @@ export async function getBotProfile(botToken: string): Promise<BotProfile | null
   return rawUserToProfile(await res.json());
 }
 
+export type BotGuild = { id: string; name: string; iconUrl: string | null };
+
+/** List the guilds this bot is actually a member of (id + name + icon). */
+export async function getBotGuilds(botToken: string): Promise<BotGuild[]> {
+  const res = await fetch(`${DISCORD_API}/users/@me/guilds`, { headers: { authorization: `Bot ${botToken}` }, cache: 'no-store' });
+  if (!res.ok) return [];
+  const guilds = (await res.json()) as { id: string; name: string; icon: string | null }[];
+  return guilds.map((g) => ({
+    id: g.id,
+    name: g.name,
+    iconUrl: g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png?size=64` : null,
+  }));
+}
+
 export type BotProfileUpdate = { username?: string; avatar?: string | null; banner?: string | null };
 
 /**

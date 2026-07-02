@@ -91,28 +91,60 @@ export function StoredBotsPanel({ bots }: { bots: PoolBot[] }) {
       {bots.map((bot) => {
         const st = statusInfo(bot);
         const running = Boolean(bot.instanceId);
+        const botName = bot.name || bot.label || PRODUCT[String(bot.productType)] || 'بوت';
         return (
-          <div key={bot.id} className="opus-card p-4">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="font-arabic text-sm font-extrabold text-opus-text">{bot.label || PRODUCT[String(bot.productType)] || 'بوت'}</p>
-                <p className="font-english text-[11px] text-opus-muted">{PRODUCT[String(bot.productType)] ?? bot.productType}</p>
+          <div key={bot.id} className="opus-card overflow-hidden p-0">
+            {/* بنر + صورة البوت — نفس هوية بروفايل البوت */}
+            <div
+              className="h-16 w-full bg-opus-bg"
+              style={bot.bannerUrl ? { backgroundImage: `url(${bot.bannerUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
+            />
+            <div className="px-4 pb-4">
+              <div className="-mt-7 flex items-end justify-between gap-2">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-opus-surface bg-opus-bg">
+                  {bot.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={bot.avatarUrl} alt={botName} className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="font-arabic text-lg font-extrabold text-opus-muted">{botName.slice(0, 1)}</span>
+                  )}
+                </div>
+                <span className="mb-1 inline-flex shrink-0 items-center gap-1.5 rounded-full border border-opus-border bg-opus-surface px-2.5 py-1 font-arabic text-[11px] font-bold text-opus-text">
+                  <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} /> {st.label}
+                </span>
               </div>
-              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-opus-border px-2.5 py-1 font-arabic text-[11px] font-bold text-opus-text">
-                <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} /> {st.label}
-              </span>
-            </div>
 
-            {bot.reservedFor ? (
-              <p className="mt-2 font-arabic text-[11px] text-opus-muted">
-                محجوز لـ <span className="font-english text-opus-text">{bot.reservedFor}</span>
-              </p>
-            ) : null}
-            {running && bot.instanceGuildId ? (
-              <p className="mt-2 font-arabic text-[11px] text-opus-muted">
-                على سيرفر <span className="font-english text-opus-text">{bot.instanceGuildName || bot.instanceGuildId}</span>
-              </p>
-            ) : null}
+              <p className="mt-2 font-arabic text-sm font-extrabold text-opus-text">{botName}</p>
+              <p className="font-english text-[11px] text-opus-muted">{PRODUCT[String(bot.productType)] ?? bot.productType}</p>
+
+              {bot.reservedFor ? (
+                <p className="mt-2 font-arabic text-[11px] text-opus-muted">
+                  محجوز لـ <span className="font-english text-opus-text">{bot.reservedFor}</span>
+                </p>
+              ) : null}
+
+              {/* السيرفرات التي البوت داخلها فعلياً (اسم + أيقونة) */}
+              {bot.guilds.length ? (
+                <div className="mt-3">
+                  <p className="font-arabic text-[11px] font-bold text-opus-muted">في السيرفرات</p>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {bot.guilds.slice(0, 4).map((g) => (
+                      <span key={g.id} className="inline-flex items-center gap-1.5 rounded-full border border-opus-border bg-opus-bg px-2 py-1">
+                        {g.iconUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={g.iconUrl} alt={g.name} className="h-4 w-4 rounded-full object-cover" />
+                        ) : (
+                          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-opus-border font-arabic text-[9px] text-opus-text">{g.name.slice(0, 1)}</span>
+                        )}
+                        <span className="max-w-[120px] truncate font-arabic text-[11px] text-opus-text">{g.name}</span>
+                      </span>
+                    ))}
+                    {bot.guilds.length > 4 ? <span className="font-arabic text-[11px] text-opus-muted">+{bot.guilds.length - 4}</span> : null}
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-3 font-arabic text-[11px] text-opus-muted">البوت غير موجود في أي سيرفر بعد.</p>
+              )}
 
             <div className="mt-3 flex flex-wrap gap-2">
               {bot.applicationId ? (
@@ -161,6 +193,7 @@ export function StoredBotsPanel({ bots }: { bots: PoolBot[] }) {
                 أضف البوت للسيرفر أولاً، ثم اضغط «تشغيل» بنفس آيدي السيرفر ليصبح أونلاين ويشتغل.
               </p>
             ) : null}
+            </div>
           </div>
         );
       })}
