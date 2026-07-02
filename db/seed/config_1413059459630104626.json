@@ -165,11 +165,38 @@
       "questions": [
         {
           "key": "epic_id",
-          "label": "ايديك EPIC",
+          "label": "Epic : ايديك = اسمك",
           "style": "Short",
           "placeholder": "اكتب ايدي الـ EPIC الخاص بك",
           "required": true,
           "minLength": 3,
+          "maxLength": 100
+        },
+        {
+          "key": "trade_give",
+          "label": "وش راح تعطي؟ (تفاصيل التبادل)",
+          "style": "Paragraph",
+          "placeholder": "أنا راح اخذ اغراض من الطرف الثاني",
+          "required": true,
+          "minLength": 3,
+          "maxLength": 400
+        },
+        {
+          "key": "trade_receive",
+          "label": "وش بتاخذ من الطرف الثاني؟",
+          "style": "Paragraph",
+          "placeholder": "أنا راح اخذ اغراض من الطرف الثاني",
+          "required": true,
+          "minLength": 3,
+          "maxLength": 400
+        },
+        {
+          "key": "tip",
+          "label": "التيب (Tip) - هدية مالية للوسيط (اختياري)",
+          "style": "Short",
+          "placeholder": "10$ دولار - دراقون",
+          "required": false,
+          "minLength": 0,
           "maxLength": 100
         }
       ]
