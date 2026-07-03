@@ -586,6 +586,100 @@ async function sendPanel(message: Message, actor: GuildMember) {
   await message.reply({ embeds: [jailPanelEmbed(actor)], components: jailDraftComponents(draftId) });
 }
 
+async function memberOptionLabel(guild: Guild, userId: string): Promise<string> {
+  const member = guild.members.cache.get(userId) ?? await guild.members.fetch(userId).catch(() => null);
+  return (member?.user.tag ?? member?.displayName ?? userId).slice(0, 90);
+}
+
+async function activeJailOptions(guild: Guild) {
+  const { data, error } = await supabase
+    .from("guild_jail_prisoners")
+    .select("user_id,jailed_by_id,reason,expires_at")
+    .eq("guild_id", guild.id)
+    .is("released_at", null)
+    .order("expires_at", { ascending: true })
+    .limit(25);
+  if (error) throw new Error("تعذّر جلب السجناء النشطين.");
+  const rows = data ?? [];
+  return Promise.all(rows.map(async (row) => ({
+    label: await memberOptionLabel(guild, String(row.user_id)),
+    value: String(row.user_id),
+    description: `ينتهي ${new Date(row.expires_at).toLocaleString("ar")} · ${(row.reason ?? "بدون سبب").slice(0, 45)}`.slice(0, 100),
+  })));
+}
+
+async function delegateOptions(guild: Guild) {
+  const { data, error } = await supabase
+    .from("guild_jail_delegates")
+    .select("user_id,granted_by_id,created_at")
+    .eq("guild_id", guild.id)
+    .is("revoked_at", null)
+    .order("created_at", { ascending: false })
+    .limit(25);
+  if (error) throw new Error("تعذّر جلب التفويضات النشطة.");
+  const rows = data ?? [];
+  return Promise.all(rows.map(async (row) => ({
+    label: await memberOptionLabel(guild, String(row.user_id)),
+    value: String(row.user_id),
+    description: `مفوّض بواسطة ${row.granted_by_id}`.slice(0, 100),
+  })));
+}
+
+async function releaseWorkflow(guild: Guild, actor: GuildMember) {
+  const options = await activeJailOptions(guild);
+  if (options.length === 0) return { embeds: [infoEmbed("إطلاق سراح", "لا يوجد سجناء نشطين حالياً.")], components: [] };
+  const draftId = createDraft(guild.id, actor.id);
+  const embed = new EmbedBuilder()
+    .setTitle("إطلاق سراح")
+    .setDescription("اختر المسجون من القائمة، ثم اضغط زر كتابة السبب لإطلاقه بشكل مرتب.")
+    .setColor(Colors.success)
+    .setFooter({ text: Config.embed.footer })
+    .setTimestamp();
+  return {
+    embeds: [embed],
+    components: [
+      new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(new StringSelectMenuBuilder().setCustomId(`jail:releaseTarget:${draftId}`).setPlaceholder("اختر المسجون المراد إطلاقه").addOptions(options)),
+      new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder().setCustomId(`jail:releaseReason:${draftId}`).setLabel("اكتب سبب الإطلاق ونفّذ").setStyle(ButtonStyle.Success)),
+    ],
+  };
+}
+
+function delegateWorkflow(guild: Guild, actor: GuildMember) {
+  const draftId = createDraft(guild.id, actor.id);
+  const embed = new EmbedBuilder()
+    .setTitle("تفويض استخدام السجن")
+    .setDescription("اختر العضو من القائمة ثم اضغط تأكيد. ملاحظة: المفوّض يقدر يسجن فقط، ولا يقدر يعطي/يسحب تفويض.")
+    .setColor(Colors.info)
+    .setFooter({ text: Config.embed.footer })
+    .setTimestamp();
+  return {
+    embeds: [embed],
+    components: [
+      new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(new UserSelectMenuBuilder().setCustomId(`jail:delegateTarget:${draftId}`).setPlaceholder("اختر العضو المراد تفويضه").setMinValues(1).setMaxValues(1)),
+      new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder().setCustomId(`jail:delegateConfirm:${draftId}`).setLabel("تأكيد التفويض").setStyle(ButtonStyle.Primary)),
+    ],
+  };
+}
+
+async function revokeWorkflow(guild: Guild, actor: GuildMember) {
+  const options = await delegateOptions(guild);
+  if (options.length === 0) return { embeds: [infoEmbed("سحب تفويض", "لا يوجد تفويضات Discord نشطة حالياً.")], components: [] };
+  const draftId = createDraft(guild.id, actor.id);
+  const embed = new EmbedBuilder()
+    .setTitle("سحب تفويض")
+    .setDescription("اختر المفوّض من القائمة ثم اضغط تأكيد سحب التفويض.")
+    .setColor(Colors.warning)
+    .setFooter({ text: Config.embed.footer })
+    .setTimestamp();
+  return {
+    embeds: [embed],
+    components: [
+      new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(new StringSelectMenuBuilder().setCustomId(`jail:revokeTarget:${draftId}`).setPlaceholder("اختر التفويض المراد سحبه").addOptions(options)),
+      new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder().setCustomId(`jail:revokeConfirm:${draftId}`).setLabel("تأكيد سحب التفويض").setStyle(ButtonStyle.Danger)),
+    ],
+  };
+}
+
 async function replyMessage(message: Message, ok: boolean, text: string) {
   await message.reply({ embeds: [ok ? successEmbed("نظام السجن", text) : errorEmbed("نظام السجن", text)] }).catch(() => null);
 }
@@ -667,6 +761,15 @@ function jailReasonModal(draftId: string) {
     ));
 }
 
+function releaseReasonModal(draftId: string) {
+  return new ModalBuilder()
+    .setCustomId(`jail:modal:release-session:${draftId}`)
+    .setTitle("سبب إطلاق السراح")
+    .addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(
+      new TextInputBuilder().setCustomId("reason").setLabel("سبب الإطلاق المبكر").setStyle(TextInputStyle.Paragraph).setRequired(true).setMinLength(3).setMaxLength(300),
+    ));
+}
+
 function jailModal(kind: "jail" | "release" | "delegate" | "revoke") {
   const modal = new ModalBuilder().setCustomId(`jail:modal:${kind}`).setTitle(kind === "jail" ? "سجن عضو" : kind === "release" ? "إطلاق سراح" : kind === "delegate" ? "تفويض عضو" : "سحب تفويض");
   modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(
@@ -714,9 +817,14 @@ export async function handleJailInteraction(interaction: Interaction): Promise<b
         await interaction.reply({ embeds: [errorEmbed("نظام السجن", "هذه القائمة خاصة بالشخص الذي فتح أمر سجن أو انتهت صلاحيتها.")], ephemeral: true });
         return true;
       }
-      if (type === "target" && interaction.isUserSelectMenu()) {
+      if ((type === "target" || type === "delegateTarget") && interaction.isUserSelectMenu()) {
         draft.targetId = interaction.values[0];
         await interaction.reply({ content: `تم اختيار العضو: <@${draft.targetId}>`, ephemeral: true, allowedMentions: { users: [draft.targetId!] } });
+        return true;
+      }
+      if ((type === "releaseTarget" || type === "revokeTarget") && interaction.isStringSelectMenu()) {
+        draft.targetId = interaction.values[0];
+        await interaction.reply({ content: `تم الاختيار: <@${draft.targetId}>`, ephemeral: true, allowedMentions: { users: [draft.targetId!] } });
         return true;
       }
       if (type === "duration" && interaction.isStringSelectMenu()) {
@@ -756,8 +864,60 @@ export async function handleJailInteraction(interaction: Interaction): Promise<b
         await interaction.showModal(jailReasonModal(draftId));
         return true;
       }
-      const kind = interaction.customId.replace("jail:open:", "") as "release" | "delegate" | "revoke";
-      await interaction.showModal(jailModal(kind));
+      if (interaction.customId === "jail:open:release") {
+        await interaction.reply({ ...(await releaseWorkflow(interaction.guild!, allowed.member)), ephemeral: true });
+        return true;
+      }
+      if (interaction.customId === "jail:open:delegate") {
+        if (!canManageJailDelegates(allowed.member, allowed.config)) {
+          await interaction.reply({ embeds: [errorEmbed("نظام السجن", "التفويض مسموح فقط لمن تم تحديده من داشبورد الموقع.")], ephemeral: true });
+          return true;
+        }
+        await interaction.reply({ ...delegateWorkflow(interaction.guild!, allowed.member), ephemeral: true });
+        return true;
+      }
+      if (interaction.customId === "jail:open:revoke") {
+        if (!canManageJailDelegates(allowed.member, allowed.config)) {
+          await interaction.reply({ embeds: [errorEmbed("نظام السجن", "سحب التفويض مسموح فقط لمن تم تحديده من داشبورد الموقع.")], ephemeral: true });
+          return true;
+        }
+        await interaction.reply({ ...(await revokeWorkflow(interaction.guild!, allowed.member)), ephemeral: true });
+        return true;
+      }
+      if (interaction.customId.startsWith("jail:releaseReason:")) {
+        const draftId = interaction.customId.replace("jail:releaseReason:", "");
+        const draft = getDraft(draftId);
+        if (!draft || draft.guildId !== interaction.guildId || draft.actorId !== interaction.user.id) {
+          await interaction.reply({ embeds: [errorEmbed("نظام السجن", "هذا الطلب خاص بالشخص الذي فتح إجراء الإطلاق أو انتهت صلاحيته.")], ephemeral: true });
+          return true;
+        }
+        if (!draft.targetId) {
+          await interaction.reply({ embeds: [errorEmbed("نظام السجن", "اختر المسجون من القائمة أولاً.")], ephemeral: true });
+          return true;
+        }
+        await interaction.showModal(releaseReasonModal(draftId));
+        return true;
+      }
+      if (interaction.customId.startsWith("jail:delegateConfirm:")) {
+        const draftId = interaction.customId.replace("jail:delegateConfirm:", "");
+        const draft = getDraft(draftId);
+        if (!draft || draft.guildId !== interaction.guildId || draft.actorId !== interaction.user.id) throw new Error("طلب التفويض انتهت صلاحيته.");
+        if (!draft.targetId) throw new Error("اختر العضو المراد تفويضه أولاً.");
+        const text = await grantDelegate(interaction.guild!, allowed.member, draft.targetId, allowed.config);
+        jailDrafts.delete(draftId);
+        await interaction.reply({ embeds: [successEmbed("نظام السجن", text)], ephemeral: true });
+        return true;
+      }
+      if (interaction.customId.startsWith("jail:revokeConfirm:")) {
+        const draftId = interaction.customId.replace("jail:revokeConfirm:", "");
+        const draft = getDraft(draftId);
+        if (!draft || draft.guildId !== interaction.guildId || draft.actorId !== interaction.user.id) throw new Error("طلب سحب التفويض انتهت صلاحيته.");
+        if (!draft.targetId) throw new Error("اختر التفويض المراد سحبه أولاً.");
+        const text = await revokeDelegate(interaction.guild!, allowed.member, draft.targetId, allowed.config);
+        jailDrafts.delete(draftId);
+        await interaction.reply({ embeds: [successEmbed("نظام السجن", text)], ephemeral: true });
+        return true;
+      }
       return true;
     }
 
@@ -774,6 +934,17 @@ export async function handleJailInteraction(interaction: Interaction): Promise<b
       const text = await jailMember(interaction.guild!, allowed.member, draft.targetId, draft.durationMs, interaction.fields.getTextInputValue("reason").trim());
       jailDrafts.delete(draftId);
       await interaction.editReply({ embeds: [successEmbed("نظام السجن", text)] });
+      return true;
+    }
+
+    if (interaction.customId.startsWith("jail:modal:release-session:")) {
+      const draftId = interaction.customId.replace("jail:modal:release-session:", "");
+      const draft = getDraft(draftId);
+      if (!draft || draft.guildId !== interaction.guildId || draft.actorId !== interaction.user.id) throw new Error("طلب الإطلاق انتهت صلاحيته.");
+      if (!draft.targetId) throw new Error("اختر المسجون من القائمة أولاً.");
+      const r = await releaseJail(interaction.guild!, draft.targetId, interaction.user.id, interaction.fields.getTextInputValue("reason").trim(), "manual_release");
+      jailDrafts.delete(draftId);
+      await interaction.editReply({ embeds: [r.released ? successEmbed("نظام السجن", r.text) : errorEmbed("نظام السجن", r.text)] });
       return true;
     }
 
