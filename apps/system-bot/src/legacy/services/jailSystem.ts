@@ -13,9 +13,13 @@ import {
   ModalBuilder,
   ModalSubmitInteraction,
   PermissionFlagsBits,
+  StringSelectMenuBuilder,
+  StringSelectMenuInteraction,
   TextChannel,
   TextInputBuilder,
   TextInputStyle,
+  UserSelectMenuBuilder,
+  UserSelectMenuInteraction,
 } from "discord.js";
 import { supabase } from "../db/supabase.js";
 import { Config } from "../config.js";
@@ -30,11 +34,26 @@ const SCHEDULER_MS = 30_000;
 const MAX_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 const MIN_DURATION_MS = 60 * 60 * 1000;
 const MAX_DELEGATES = 50;
+const JAIL_QUOTA_WINDOW_MS = 5 * 60 * 60 * 1000;
+const JAIL_QUOTA_MAX = 10;
+const DRAFT_TTL_MS = 10 * 60 * 1000;
 const SNOWFLAKE = /^\d{17,20}$/;
 
+const DURATION_OPTIONS = [
+  { label: "ساعة واحدة", value: "1h", ms: 1 * 60 * 60 * 1000 },
+  { label: "ساعتين", value: "2h", ms: 2 * 60 * 60 * 1000 },
+  { label: "3 ساعات", value: "3h", ms: 3 * 60 * 60 * 1000 },
+  { label: "6 ساعات", value: "6h", ms: 6 * 60 * 60 * 1000 },
+  { label: "12 ساعة", value: "12h", ms: 12 * 60 * 60 * 1000 },
+  { label: "يوم", value: "1d", ms: 24 * 60 * 60 * 1000 },
+  { label: "يومين", value: "2d", ms: 2 * 24 * 60 * 60 * 1000 },
+  { label: "3 أيام", value: "3d", ms: 3 * 24 * 60 * 60 * 1000 },
+  { label: "أسبوع", value: "7d", ms: 7 * 24 * 60 * 60 * 1000 },
+] as const;
+
 const jailConfigCache = new Map<string, { config: JailConfig; expiresAt: number }>();
-const commandRate = new Map<string, number[]>();
 const jailRoleDenySync = new Map<string, number>();
+const jailDrafts = new Map<string, JailDraft>();
 let schedulerStarted = false;
 
 type JailConfig = {
@@ -58,12 +77,48 @@ type JailRecord = {
   expires_at: string;
 };
 
+type JailDraft = {
+  guildId: string;
+  actorId: string;
+  targetId?: string;
+  durationMs?: number;
+  createdAt: number;
+};
+
 function asStringArray(value: unknown): string[] {
   return Array.isArray(value) ? Array.from(new Set(value.map((v) => String(v)).filter((v) => SNOWFLAKE.test(v)))).slice(0, 80) : [];
 }
 
 function defaultConfig(): JailConfig {
   return { enabled: false, allowedRoleIds: [], allowedUserIds: [] };
+}
+
+function createDraft(guildId: string, actorId: string): string {
+  cleanupDrafts();
+  const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+  jailDrafts.set(id, { guildId, actorId, createdAt: Date.now() });
+  return id;
+}
+
+function getDraft(id: string): JailDraft | null {
+  const draft = jailDrafts.get(id);
+  if (!draft) return null;
+  if (Date.now() - draft.createdAt > DRAFT_TTL_MS) {
+    jailDrafts.delete(id);
+    return null;
+  }
+  return draft;
+}
+
+function cleanupDrafts() {
+  const now = Date.now();
+  for (const [id, draft] of jailDrafts) {
+    if (now - draft.createdAt > DRAFT_TTL_MS) jailDrafts.delete(id);
+  }
+}
+
+function getDurationByValue(value: string): number | null {
+  return DURATION_OPTIONS.find((option) => option.value === value)?.ms ?? null;
 }
 
 function getJailFromConfigData(configData: unknown): JailConfig {
@@ -146,6 +201,11 @@ async function isJailAuthorized(member: GuildMember, config: JailConfig): Promis
   if (member.id === member.guild.ownerId || isOwner(member.id)) return true;
   if (memberMatchesDashboardAllow(member, config)) return true;
   return isDelegate(member.guild.id, member.id);
+}
+
+function canManageJailDelegates(member: GuildMember, config: JailConfig): boolean {
+  if (!config.enabled) return false;
+  return member.id === member.guild.ownerId || isOwner(member.id) || memberMatchesDashboardAllow(member, config);
 }
 
 async function activeDelegates(guildId: string): Promise<string[]> {
@@ -276,19 +336,6 @@ function durationText(ms: number): string {
   return `${hours} ساعة`;
 }
 
-function isRateLimited(guildId: string, userId: string): boolean {
-  const key = `${guildId}:${userId}`;
-  const now = Date.now();
-  const recent = (commandRate.get(key) ?? []).filter((t) => now - t < 60_000);
-  if (recent.length >= 5) {
-    commandRate.set(key, recent);
-    return true;
-  }
-  recent.push(now);
-  commandRate.set(key, recent);
-  return false;
-}
-
 async function activeJail(guildId: string, userId: string): Promise<JailRecord | null> {
   const { data, error } = await supabase
     .from("guild_jail_prisoners")
@@ -318,6 +365,74 @@ async function canActOnTarget(actor: GuildMember, target: GuildMember, config: J
   return null;
 }
 
+async function ensureJailQuota(guildId: string, actorId: string) {
+  const since = new Date(Date.now() - JAIL_QUOTA_WINDOW_MS).toISOString();
+  const { count, error } = await supabase
+    .from("guild_jail_audit")
+    .select("id", { count: "exact", head: true })
+    .eq("guild_id", guildId)
+    .eq("actor_id", actorId)
+    .eq("action", "jail")
+    .gte("created_at", since);
+  if (error) throw new Error("تعذّر التحقق من حد السجن المؤقت. جرّب بعد قليل.");
+  if ((count ?? 0) >= JAIL_QUOTA_MAX) throw new Error(`وصلت للحد: ${JAIL_QUOTA_MAX} سجناء كل 5 ساعات لكل مفوّض.`);
+}
+
+async function controlLogChannel(guild: Guild, config?: JailConfig): Promise<TextChannel | null> {
+  const jailConfig = config ?? await getJailConfig(guild.id, true);
+  const { channel } = await ensureJailResources(guild, jailConfig);
+  if (channel) return channel;
+  const fallback = guild.channels.cache.find((c) => c.type === ChannelType.GuildText && c.name === CONTROL_CHANNEL_NAME);
+  return fallback?.type === ChannelType.GuildText ? fallback as TextChannel : null;
+}
+
+async function sendJailLog(guild: Guild, input: { actor: GuildMember; target: GuildMember; durationMs: number; reason: string; expiresAt: string; originalRoleCount: number }) {
+  const channel = await controlLogChannel(guild);
+  if (!channel) return;
+  const expiresUnix = Math.floor(new Date(input.expiresAt).getTime() / 1000);
+  const nowUnix = Math.floor(Date.now() / 1000);
+  const embed = new EmbedBuilder()
+    .setAuthor({ name: `${input.actor.user.tag} سجن عضو`, iconURL: input.actor.displayAvatarURL() })
+    .setTitle("سجل سجن جديد")
+    .setDescription(`${input.target} تم سجنه بواسطة ${input.actor}`)
+    .addFields(
+      { name: "المسجون", value: `${input.target}\n\`${input.target.id}\``, inline: true },
+      { name: "بواسطة", value: `${input.actor}\n\`${input.actor.id}\``, inline: true },
+      { name: "المدة", value: durationText(input.durationMs), inline: true },
+      { name: "وقت السجن", value: `<t:${nowUnix}:F>`, inline: true },
+      { name: "ينتهي", value: `<t:${expiresUnix}:F>\n<t:${expiresUnix}:R>`, inline: true },
+      { name: "عدد الرتب المحفوظة", value: String(input.originalRoleCount), inline: true },
+      { name: "السبب", value: input.reason.slice(0, 1000), inline: false },
+    )
+    .setThumbnail(input.target.displayAvatarURL({ size: 256 }))
+    .setColor(Colors.error)
+    .setFooter({ text: Config.embed.footer })
+    .setTimestamp();
+  await channel.send({ content: `${input.target} ${input.actor}`, embeds: [embed], allowedMentions: { users: [input.target.id, input.actor.id] } }).catch(() => null);
+}
+
+async function sendReleaseLog(guild: Guild, input: { targetId: string; actorId: string | null; reason: string; kind: string; skippedRoleIds: string[] }) {
+  const channel = await controlLogChannel(guild);
+  if (!channel) return;
+  const target = await guild.members.fetch(input.targetId).catch(() => null);
+  const actor = input.actorId ? await guild.members.fetch(input.actorId).catch(() => null) : null;
+  const title = input.kind === "expired" ? "إطلاق تلقائي — انتهت المدة" : "إطلاق سراح";
+  const embed = new EmbedBuilder()
+    .setTitle(title)
+    .setDescription(`<@${input.targetId}> تم فك سجنه${actor ? ` بواسطة ${actor}` : " تلقائياً"}.`)
+    .addFields(
+      { name: "العضو", value: `<@${input.targetId}>\n\`${input.targetId}\``, inline: true },
+      { name: "بواسطة", value: actor ? `${actor}\n\`${actor.id}\`` : "SystemBot", inline: true },
+      { name: "السبب", value: input.reason.slice(0, 1000), inline: false },
+    )
+    .setThumbnail(target?.displayAvatarURL({ size: 256 }) ?? null)
+    .setColor(input.kind === "expired" ? Colors.success : Colors.warning)
+    .setFooter({ text: Config.embed.footer })
+    .setTimestamp();
+  if (input.skippedRoleIds.length) embed.addFields({ name: "رتب لم ترجع", value: input.skippedRoleIds.join(", ").slice(0, 1000), inline: false });
+  await channel.send({ content: `<@${input.targetId}>${actor ? ` ${actor}` : ""}`, embeds: [embed], allowedMentions: { users: [input.targetId, ...(actor ? [actor.id] : [])] } }).catch(() => null);
+}
+
 async function jailMember(guild: Guild, actor: GuildMember, targetId: string, durationMs: number, reason: string): Promise<string> {
   const config = await getJailConfig(guild.id, true);
   const { role } = await ensureJailResources(guild, config);
@@ -329,6 +444,7 @@ async function jailMember(guild: Guild, actor: GuildMember, targetId: string, du
   if (denyReason) throw new Error(denyReason);
   if (await activeJail(guild.id, target.id)) throw new Error("هذا العضو مسجون حالياً بالفعل.");
   if (!reason || reason.trim().length < 3) throw new Error("اكتب سبب واضح للسجن (3 أحرف على الأقل). هذا يمنع إساءة الاستخدام.");
+  await ensureJailQuota(guild.id, actor.id);
 
   const originalRoleIds = target.roles.cache.filter((r) => r.id !== guild.id && r.id !== role.id).map((r) => r.id);
   const expiresAt = new Date(Date.now() + durationMs).toISOString();
@@ -351,6 +467,7 @@ async function jailMember(guild: Guild, actor: GuildMember, targetId: string, du
   }
 
   await audit(guild.id, "jail", actor.id, target.id, reason, { durationMs, expiresAt, originalRoleCount: originalRoleIds.length });
+  await sendJailLog(guild, { actor, target, durationMs, reason, expiresAt, originalRoleCount: originalRoleIds.length });
   await target.send({ embeds: [infoEmbed("تم سجنك", `تم تطبيق رتبة **${JAIL_ROLE_NAME}** في سيرفر **${guild.name}** لمدة **${durationText(durationMs)}**.\n**السبب:** ${reason}`)] }).catch(() => null);
   return `${target} تم سجنه لمدة **${durationText(durationMs)}**. تنتهي: <t:${Math.floor(new Date(expiresAt).getTime() / 1000)}:R>`;
 }
@@ -389,10 +506,13 @@ async function releaseJail(guild: Guild, targetId: string, actorId: string | nul
   if (error) throw new Error("تمت محاولة الإطلاق لكن فشل تحديث قاعدة البيانات.");
 
   await audit(guild.id, kind === "expired" ? "auto_release" : "release", actorId, targetId, reason, { skippedRoleIds, memberPresent: Boolean(target) });
+  await sendReleaseLog(guild, { targetId, actorId, reason, kind, skippedRoleIds });
   return { text: `تم إطلاق سراح <@${targetId}>.${skippedRoleIds.length ? `\nتنبيه: بعض الرتب لم ترجع لأنها محذوفة/غير قابلة للإدارة: ${skippedRoleIds.join(", ")}` : ""}`, released: true };
 }
 
-async function grantDelegate(guild: Guild, actor: GuildMember, targetId: string): Promise<string> {
+async function grantDelegate(guild: Guild, actor: GuildMember, targetId: string, config?: JailConfig): Promise<string> {
+  const jailConfig = config ?? await getJailConfig(guild.id, true);
+  if (!canManageJailDelegates(actor, jailConfig)) throw new Error("التفويض والسحب مسموح فقط لمن تم تحديده من داشبورد الموقع، وليس للمفوّضين من Discord.");
   if (targetId === actor.id) throw new Error("لا تحتاج تفويض نفسك.");
   const target = await guild.members.fetch(targetId).catch(() => null);
   if (!target) throw new Error("ما لقيت العضو داخل السيرفر.");
@@ -408,7 +528,9 @@ async function grantDelegate(guild: Guild, actor: GuildMember, targetId: string)
   return `تم تفويض ${target} لاستخدام نظام السجن.`;
 }
 
-async function revokeDelegate(guild: Guild, actor: GuildMember, targetId: string): Promise<string> {
+async function revokeDelegate(guild: Guild, actor: GuildMember, targetId: string, config?: JailConfig): Promise<string> {
+  const jailConfig = config ?? await getJailConfig(guild.id, true);
+  if (!canManageJailDelegates(actor, jailConfig)) throw new Error("سحب التفويض مسموح فقط لمن تم تحديده من داشبورد الموقع، وليس للمفوّضين من Discord.");
   const { error, count } = await supabase
     .from("guild_jail_delegates")
     .update({ revoked_at: new Date().toISOString(), revoked_by_id: actor.id }, { count: "exact" })
@@ -422,25 +544,46 @@ async function revokeDelegate(guild: Guild, actor: GuildMember, targetId: string
   return `تم سحب تفويض <@${targetId}>.`;
 }
 
-async function sendPanel(message: Message) {
-  const embed = new EmbedBuilder()
-    .setTitle("نظام السجن")
-    .setDescription([
-      "استخدم الأزرار لإدارة السجن بدون بريفكس.",
-      "**المدة:** من ساعة واحدة إلى أسبوع كحد أقصى.",
-      "كل عملية تُحفظ في سجل التدقيق وتظهر للمالك في الداشبورد.",
-    ].join("\n"))
-    .setColor(Colors.info)
-    .setFooter({ text: Config.embed.footer })
-    .setTimestamp();
-  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId("jail:open:jail").setLabel("سجن عضو").setStyle(ButtonStyle.Danger),
+function jailDraftComponents(draftId: string) {
+  const targetRow = new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
+    new UserSelectMenuBuilder()
+      .setCustomId(`jail:target:${draftId}`)
+      .setPlaceholder("اختر العضو المراد سجنه")
+      .setMinValues(1)
+      .setMaxValues(1),
+  );
+  const durationRow = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId(`jail:duration:${draftId}`)
+      .setPlaceholder("اختر مدة السجن")
+      .addOptions(DURATION_OPTIONS.map((option) => ({ label: option.label, value: option.value, description: `سجن لمدة ${option.label}` }))),
+  );
+  const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId(`jail:reason:${draftId}`).setLabel("اكتب السبب ونفّذ السجن").setStyle(ButtonStyle.Danger),
     new ButtonBuilder().setCustomId("jail:open:release").setLabel("إطلاق سراح").setStyle(ButtonStyle.Success),
     new ButtonBuilder().setCustomId("jail:open:delegate").setLabel("تفويض").setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId("jail:open:revoke").setLabel("سحب تفويض").setStyle(ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId("jail:list").setLabel("السجناء").setStyle(ButtonStyle.Secondary),
   );
-  await message.reply({ embeds: [embed], components: [row] });
+  return [targetRow, durationRow, actionRow];
+}
+
+function jailPanelEmbed(actor: GuildMember) {
+  return new EmbedBuilder()
+    .setTitle("نظام السجن")
+    .setDescription([
+      `${actor} اختر العضو والمدة من القوائم، ثم اضغط زر السبب والتنفيذ.`,
+      `الحد: **${JAIL_QUOTA_MAX} سجناء لكل مفوّض كل 5 ساعات**.`,
+      `روم **${CONTROL_CHANNEL_NAME}** صار لوق مرتب لكل عمليات السجن والإطلاق.`,
+    ].join("\n"))
+    .setColor(Colors.info)
+    .setFooter({ text: Config.embed.footer })
+    .setTimestamp();
+}
+
+async function sendPanel(message: Message, actor: GuildMember) {
+  const draftId = createDraft(message.guild!.id, actor.id);
+  await message.reply({ embeds: [jailPanelEmbed(actor)], components: jailDraftComponents(draftId) });
 }
 
 async function replyMessage(message: Message, ok: boolean, text: string) {
@@ -449,39 +592,39 @@ async function replyMessage(message: Message, ok: boolean, text: string) {
 
 export async function handleJailMessage(client: Client, message: Message): Promise<boolean> {
   if (message.author.bot || !message.guild || !message.member) return false;
+  const content = message.content.trim();
+  if (!content) return false;
+
   const config = await getJailConfig(message.guild.id);
   if (!config.enabled) return false;
   const inControlChannel = message.channel.id === config.controlChannelId || ("name" in message.channel && message.channel.name === CONTROL_CHANNEL_NAME);
-  if (!inControlChannel) return false;
+  const [cmd, ...rest] = content.split(/\s+/);
+
+  if (content !== "سجن" && !inControlChannel) return false;
 
   if (!(await isJailAuthorized(message.member, config))) {
     await replyMessage(message, false, "ما عندك تفويض لاستخدام نظام السجن.");
     return true;
   }
-  if (isRateLimited(message.guild.id, message.author.id)) {
-    await replyMessage(message, false, "محاولات كثيرة خلال دقيقة. انتظر قليلاً.");
-    return true;
-  }
 
-  const content = message.content.trim();
   try {
     if (content === "سجن") {
       await ensureJailResources(message.guild, config);
-      await sendPanel(message);
+      await sendPanel(message, message.member);
       return true;
     }
-    const [cmd, ...rest] = content.split(/\s+/);
+
     const arg = rest.join(" ");
     if (cmd === "تفويض") {
       const id = extractSnowflake(arg);
       if (!id) throw new Error("اكتب ID أو منشن العضو المراد تفويضه.");
-      await replyMessage(message, true, await grantDelegate(message.guild, message.member, id));
+      await replyMessage(message, true, await grantDelegate(message.guild, message.member, id, config));
       return true;
     }
     if (["سحب-تفويض", "سحب", "الغاء-تفويض", "إلغاء-تفويض"].includes(cmd ?? "")) {
       const id = extractSnowflake(arg);
       if (!id) throw new Error("اكتب ID أو منشن العضو المراد سحب تفويضه.");
-      await replyMessage(message, true, await revokeDelegate(message.guild, message.member, id));
+      await replyMessage(message, true, await revokeDelegate(message.guild, message.member, id, config));
       return true;
     }
     if (["إطلاق", "اطلاق", "فك"].includes(cmd ?? "")) {
@@ -515,6 +658,15 @@ async function listActiveJailsMessage(message: Message) {
   await replyMessage(message, true, lines || "لا يوجد سجناء نشطين.");
 }
 
+function jailReasonModal(draftId: string) {
+  return new ModalBuilder()
+    .setCustomId(`jail:modal:session:${draftId}`)
+    .setTitle("سبب السجن")
+    .addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(
+      new TextInputBuilder().setCustomId("reason").setLabel("ليش انسجن؟").setStyle(TextInputStyle.Paragraph).setRequired(true).setMinLength(3).setMaxLength(500),
+    ));
+}
+
 function jailModal(kind: "jail" | "release" | "delegate" | "revoke") {
   const modal = new ModalBuilder().setCustomId(`jail:modal:${kind}`).setTitle(kind === "jail" ? "سجن عضو" : kind === "release" ? "إطلاق سراح" : kind === "delegate" ? "تفويض عضو" : "سحب تفويض");
   modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(
@@ -531,7 +683,7 @@ function jailModal(kind: "jail" | "release" | "delegate" | "revoke") {
   return modal;
 }
 
-async function assertInteractionAllowed(interaction: ButtonInteraction | ModalSubmitInteraction): Promise<{ member: GuildMember; config: JailConfig } | null> {
+async function assertInteractionAllowed(interaction: ButtonInteraction | ModalSubmitInteraction | StringSelectMenuInteraction | UserSelectMenuInteraction): Promise<{ member: GuildMember; config: JailConfig } | null> {
   if (!interaction.guild || !(interaction.member instanceof GuildMember)) {
     await interaction.reply({ embeds: [errorEmbed("نظام السجن", "هذه العملية تعمل داخل السيرفر فقط.")], ephemeral: true });
     return null;
@@ -539,10 +691,6 @@ async function assertInteractionAllowed(interaction: ButtonInteraction | ModalSu
   const config = await getJailConfig(interaction.guild.id, true);
   if (!config.enabled) {
     await interaction.reply({ embeds: [errorEmbed("نظام السجن", "نظام السجن غير مفعل من الداشبورد.")], ephemeral: true });
-    return null;
-  }
-  if (interaction.channelId !== config.controlChannelId) {
-    await interaction.reply({ embeds: [errorEmbed("نظام السجن", `استخدم روم ${CONTROL_CHANNEL_NAME} فقط.`)], ephemeral: true });
     return null;
   }
   if (!(await isJailAuthorized(interaction.member, config))) {
@@ -553,10 +701,33 @@ async function assertInteractionAllowed(interaction: ButtonInteraction | ModalSu
 }
 
 export async function handleJailInteraction(interaction: Interaction): Promise<boolean> {
-  if (!interaction.isButton() && !interaction.isModalSubmit()) return false;
+  if (!interaction.isButton() && !interaction.isModalSubmit() && !interaction.isStringSelectMenu() && !interaction.isUserSelectMenu()) return false;
   if (!interaction.customId.startsWith("jail:")) return false;
 
   try {
+    if (interaction.isUserSelectMenu() || interaction.isStringSelectMenu()) {
+      const allowed = await assertInteractionAllowed(interaction);
+      if (!allowed) return true;
+      const [, type, draftId] = interaction.customId.split(":");
+      const draft = draftId ? getDraft(draftId) : null;
+      if (!draft || draft.guildId !== interaction.guildId || draft.actorId !== interaction.user.id) {
+        await interaction.reply({ embeds: [errorEmbed("نظام السجن", "هذه القائمة خاصة بالشخص الذي فتح أمر سجن أو انتهت صلاحيتها.")], ephemeral: true });
+        return true;
+      }
+      if (type === "target" && interaction.isUserSelectMenu()) {
+        draft.targetId = interaction.values[0];
+        await interaction.reply({ content: `تم اختيار العضو: <@${draft.targetId}>`, ephemeral: true, allowedMentions: { users: [draft.targetId!] } });
+        return true;
+      }
+      if (type === "duration" && interaction.isStringSelectMenu()) {
+        const duration = getDurationByValue(interaction.values[0] ?? "");
+        if (!duration) throw new Error("مدة غير صحيحة.");
+        draft.durationMs = duration;
+        await interaction.reply({ content: `تم اختيار المدة: ${durationText(duration)}`, ephemeral: true });
+        return true;
+      }
+    }
+
     if (interaction.isButton()) {
       const allowed = await assertInteractionAllowed(interaction);
       if (!allowed) return true;
@@ -566,14 +737,46 @@ export async function handleJailInteraction(interaction: Interaction): Promise<b
         await interaction.reply({ embeds: [infoEmbed("السجناء النشطون", text)], ephemeral: true });
         return true;
       }
-      const kind = interaction.customId.replace("jail:open:", "") as "jail" | "release" | "delegate" | "revoke";
+      if (interaction.customId === "jail:open:jail") {
+        const draftId = createDraft(interaction.guildId!, interaction.user.id);
+        await interaction.reply({ embeds: [jailPanelEmbed(allowed.member)], components: jailDraftComponents(draftId), ephemeral: true });
+        return true;
+      }
+      if (interaction.customId.startsWith("jail:reason:")) {
+        const draftId = interaction.customId.replace("jail:reason:", "");
+        const draft = getDraft(draftId);
+        if (!draft || draft.guildId !== interaction.guildId || draft.actorId !== interaction.user.id) {
+          await interaction.reply({ embeds: [errorEmbed("نظام السجن", "هذا الطلب خاص بالشخص الذي فتح أمر سجن أو انتهت صلاحيته.")], ephemeral: true });
+          return true;
+        }
+        if (!draft.targetId || !draft.durationMs) {
+          await interaction.reply({ embeds: [errorEmbed("نظام السجن", "اختر العضو والمدة أولاً من القوائم.")], ephemeral: true });
+          return true;
+        }
+        await interaction.showModal(jailReasonModal(draftId));
+        return true;
+      }
+      const kind = interaction.customId.replace("jail:open:", "") as "release" | "delegate" | "revoke";
       await interaction.showModal(jailModal(kind));
       return true;
     }
 
+    if (!interaction.isModalSubmit()) return true;
     const allowed = await assertInteractionAllowed(interaction);
     if (!allowed) return true;
     await interaction.deferReply({ ephemeral: true });
+
+    if (interaction.customId.startsWith("jail:modal:session:")) {
+      const draftId = interaction.customId.replace("jail:modal:session:", "");
+      const draft = getDraft(draftId);
+      if (!draft || draft.guildId !== interaction.guildId || draft.actorId !== interaction.user.id) throw new Error("طلب السجن انتهت صلاحيته. اكتب سجن من جديد.");
+      if (!draft.targetId || !draft.durationMs) throw new Error("اختر العضو والمدة أولاً من القوائم.");
+      const text = await jailMember(interaction.guild!, allowed.member, draft.targetId, draft.durationMs, interaction.fields.getTextInputValue("reason").trim());
+      jailDrafts.delete(draftId);
+      await interaction.editReply({ embeds: [successEmbed("نظام السجن", text)] });
+      return true;
+    }
+
     const targetId = extractSnowflake(interaction.fields.getTextInputValue("target"));
     if (!targetId) throw new Error("User ID غير صحيح.");
     const kind = interaction.customId.replace("jail:modal:", "");
@@ -586,9 +789,9 @@ export async function handleJailInteraction(interaction: Interaction): Promise<b
       const r = await releaseJail(interaction.guild!, targetId, interaction.user.id, interaction.fields.getTextInputValue("reason").trim(), "manual_release");
       text = r.text;
     } else if (kind === "delegate") {
-      text = await grantDelegate(interaction.guild!, allowed.member, targetId);
+      text = await grantDelegate(interaction.guild!, allowed.member, targetId, allowed.config);
     } else if (kind === "revoke") {
-      text = await revokeDelegate(interaction.guild!, allowed.member, targetId);
+      text = await revokeDelegate(interaction.guild!, allowed.member, targetId, allowed.config);
     }
     await interaction.editReply({ embeds: [successEmbed("نظام السجن", text)] });
   } catch (err) {
