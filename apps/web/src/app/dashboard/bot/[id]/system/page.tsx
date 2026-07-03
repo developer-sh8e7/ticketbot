@@ -1,12 +1,13 @@
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowRight, Hash, Image as ImageIcon, MessageSquare, Sparkles } from 'lucide-react';
+import { ArrowRight, Gavel, Hash, Image as ImageIcon, MessageSquare, Sparkles } from 'lucide-react';
 import { getSession } from '@/lib/sessions';
 import { assertOwnedBot } from '@/lib/dashboard-data';
 import { WelcomeEditor } from '@/components/dashboard/WelcomeEditor';
 import { AliasEditor } from '@/components/dashboard/AliasEditor';
 import { WelcomeImageEditor } from '@/components/dashboard/WelcomeImageEditor';
 import { CommandPermissionsEditor } from '@/components/dashboard/CommandPermissionsEditor';
+import { JailSystemEditor } from '@/components/dashboard/JailSystemEditor';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +15,7 @@ const quickCards = [
   { icon: MessageSquare, title: 'رسالة الترحيب', text: 'اختيار الروم من القائمة + متغيرات جاهزة.' },
   { icon: ImageIcon, title: 'صورة الترحيب', text: 'اسحب الأفاتار والاسم فوق الخلفية مباشرة.' },
   { icon: Hash, title: 'صلاحيات الأوامر', text: 'تحكم بمن يستخدم ban/kick وكل أوامر السيستم.' },
+  { icon: Gavel, title: 'نظام السجن', text: 'روم سجن-تحكم، رتبة مسجون، وسجل تدقيق كامل.' },
 ];
 
 export default async function SystemBotDashboard({ params }: { params: Promise<{ id: string }> }) {
@@ -40,7 +42,7 @@ export default async function SystemBotDashboard({ params }: { params: Promise<{
           </Link>
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        <div className="mt-5 grid gap-3 sm:grid-cols-4">
           {quickCards.map(({ icon: Icon, title, text }) => (
             <div key={title} className="rounded-2xl border border-opus-border bg-opus-bg/45 p-4">
               <Icon size={18} className="text-opus-accent-2" />
@@ -57,6 +59,8 @@ export default async function SystemBotDashboard({ params }: { params: Promise<{
         <WelcomeImageEditor botId={id} />
 
         <CommandPermissionsEditor botId={id} />
+
+        <JailSystemEditor botId={id} />
 
         <AliasEditor botId={id} />
       </div>

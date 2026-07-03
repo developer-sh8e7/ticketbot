@@ -30,6 +30,7 @@ export const createSystemBot: BotFactory = (options: BotRuntimeOptions): Running
           BOT_TOKEN: options.token,
           CLIENT_ID: String(config.clientId ?? process.env.DISCORD_CLIENT_ID ?? process.env.CLIENT_ID ?? ''),
           GUILD_ID: options.guildId,
+          INSTANCE_ID: options.instanceId,
           SUPABASE_URL: options.supabaseUrl,
           SUPABASE_KEY: options.supabaseServiceRoleKey,
         },

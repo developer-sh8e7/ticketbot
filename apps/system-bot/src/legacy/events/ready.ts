@@ -5,6 +5,7 @@
 
 import { Client, ActivityType } from "discord.js";
 import { Logger } from "../utils/logger.js";
+import { startJailRuntime } from "../services/jailSystem.js";
 
 export default {
   name: "clientReady" as const,
@@ -37,5 +38,7 @@ export default {
 
     setStatus();
     setInterval(setStatus, 15_000);
+
+    startJailRuntime(client);
   },
 };

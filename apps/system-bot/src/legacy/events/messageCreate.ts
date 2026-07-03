@@ -12,6 +12,7 @@ import { Config } from "../config.js";
 import { Logger } from "../utils/logger.js";
 import { checkProfanity, checkSpam, SPAM_CONFIG } from "../utils/profanityFilter.js";
 import { tryDispatchAlias } from "../services/aliasCommands.js";
+import { handleJailMessage } from "../services/jailSystem.js";
 
 const SWEAR_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 1 day timeout for swearing
 
@@ -20,6 +21,9 @@ export default {
   once: false,
   async execute(client: Client, message: Message) {
     if (message.author.bot || !message.guild) return;
+
+    // ── نظام السجن بدون بريفكس داخل روم سجن-تحكم ─────────
+    if (await handleJailMessage(client, message)) return;
 
     // ── اختصارات الأوامر (مثل "باند @شخص" => /ban) ─────────
     const commands = (client as any).commands;
