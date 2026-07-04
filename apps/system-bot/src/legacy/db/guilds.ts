@@ -125,21 +125,19 @@ export async function updateGuildSetting(
   table: "guilds" | "guild_channels" | "guild_roles" | "guild_modules",
   updates: any
 ) {
-  try {
-    // If updating standard tables, we usually update by guild_id
-    const matchCol = table === "guilds" ? "id" : "guild_id";
-    await ensureGuild(guildId);
-    
-    const { error } = await supabase.from(table).update(updates).eq(matchCol, guildId);
-    if (error) throw error;
-    
-    // Invalidate cache
-    cache.delete(guildId);
-    return true;
-  } catch (err: any) {
-    Logger.error(`Failed to update ${table} for guild ${guildId}: ${err?.message || JSON.stringify(err)}`);
-    return false;
+  // If updating standard tables, we usually update by guild_id
+  const matchCol = table === "guilds" ? "id" : "guild_id";
+  await ensureGuild(guildId);
+
+  const { error } = await supabase.from(table).update(updates).eq(matchCol, guildId);
+  if (error) {
+    Logger.error(`Failed to update ${table} for guild ${guildId}: ${error.message}`);
+    throw error;
   }
+
+  // Invalidate cache
+  cache.delete(guildId);
+  return true;
 }
 
 /**
