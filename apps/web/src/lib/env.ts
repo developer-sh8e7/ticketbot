@@ -55,7 +55,7 @@ export function env() {
     if (cached.NODE_ENV === 'production' && !cached.APP_URL.startsWith('https://')) {
       const msg =
         `APP_URL must use https:// in production (got: ${cached.APP_URL}). ` +
-        'Set APP_URL=https://opussolutions.up.railway.app in Railway Variables.';
+        'Set APP_URL=https://opussolutions.xyz in Railway Variables.';
       console.error('[env]', msg);
       throw new Error(msg);
     }

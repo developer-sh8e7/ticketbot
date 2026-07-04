@@ -74,7 +74,7 @@ export default function CancellationPage() {
         <Section title="4. How to Cancel">
           <p>To cancel your subscription:</p>
           <ol className="list-inside list-decimal space-y-1.5">
-            <li>Log in to your customer dashboard at <a href="https://opussolutions.up.railway.app/login" target="_blank" rel="noopener noreferrer" className="text-opus-accent underline underline-offset-2">https://opussolutions.up.railway.app/login</a>.</li>
+            <li>Log in to your customer dashboard at <a href="https://opussolutions.xyz/login" target="_blank" rel="noopener noreferrer" className="text-opus-accent underline underline-offset-2">https://opussolutions.xyz/login</a>.</li>
             <li>Navigate to the Billing page.</li>
             <li>Click the cancellation link or button next to your active subscription.</li>
             <li>Confirm the cancellation when prompted.</li>
