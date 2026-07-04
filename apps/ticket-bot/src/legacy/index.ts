@@ -334,6 +334,11 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
     return;
   }
 
+  if (interaction.commandName === 'setup-color') {
+    await ticketService.handleSetupColorCommand(interaction);
+    return;
+  }
+
   if (interaction.commandName === 'clear') {
     if (!interaction.inCachedGuild()) {
       await safeReply(interaction, [buildErrorEmbed(configStore.current, 'هذا الأمر يعمل داخل السيرفر فقط.')]);
@@ -848,6 +853,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       if (interaction.customId.startsWith('wait:btn:')) {
         await ticketService.handleWaitButton(interaction);
+        trackLifecycleHealth();
+        return;
+      }
+
+      if (interaction.customId.startsWith('color_ticket_')) {
+        await ticketService.handleColorTicketButton(interaction);
         trackLifecycleHealth();
         return;
       }

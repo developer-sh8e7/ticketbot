@@ -1,5 +1,6 @@
-import { ChannelType, SlashCommandBuilder } from 'discord.js';
+import { ChannelType, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 import type { AppConfig } from '../types/config.js';
+import { COLOR_GUILD_ID } from '../constants/colorTickets.js';
 
 export interface BuildCommandOptions {
   includeOpusCommands?: boolean;
@@ -223,6 +224,18 @@ export function buildCommandDefinitions(config: AppConfig, options: BuildCommand
           .setRequired(true),
       ) as unknown as SlashCommandBuilder,
   );
+
+  // Color ("الوان البيوت") setup — provisions the 18 color categories.
+  // Registered ONLY for the one server that uses this feature.
+  if (config.guild?.id === COLOR_GUILD_ID) {
+    commands.push(
+      new SlashCommandBuilder()
+        .setName('setup-color')
+        .setDescription('إنشاء كاتقوريات الألوان الـ18 (للأدمن فقط)')
+        .setDMPermission(false)
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator) as SlashCommandBuilder,
+    );
+  }
 
   if (options.includeOpusCommands) {
     commands.push(

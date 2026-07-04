@@ -38,6 +38,14 @@ import {
   extractOpenTicketCategoryKey,
   isAuthorizedAdmin,
 } from '../constants/customIds.js';
+import {
+  COLOR_GUILD_ID,
+  COLOR_TICKET_BUTTON_PREFIX,
+  COLOR_TICKETS,
+  FORBIDDEN_COLOR_CATEGORY_NAMES,
+  getColorBySlug,
+  type ColorTicketDef,
+} from '../constants/colorTickets.js';
 import { DuplicateOpenTicketError, TicketRepository } from '../database/ticketRepository.js';
 import { MediatorRepository } from '../database/mediatorRepository.js';
 import type { TicketRecord } from '../database/types.js';
@@ -305,6 +313,307 @@ export class TicketService {
     ];
   }
 
+  // ── Color ("الوان البيوت") tickets — server COLOR_GUILD_ID only ──────────
+
+  /** The 18 color buttons, laid out 5 per row (rows of 5,5,5,3). */
+  private buildColorButtonRows(): ActionRowBuilder<ButtonBuilder>[] {
+    const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+    for (let i = 0; i < COLOR_TICKETS.length; i += 5) {
+      const row = new ActionRowBuilder<ButtonBuilder>();
+      for (const color of COLOR_TICKETS.slice(i, i + 5)) {
+        const button = new ButtonBuilder()
+          .setCustomId(`${COLOR_TICKET_BUTTON_PREFIX}${color.slug}`)
+          .setLabel(color.buttonLabel)
+          .setStyle(ButtonStyle.Secondary);
+        if (color.emojiId) {
+          button.setEmoji({ id: color.emojiId });
+        }
+        row.addComponents(button);
+      }
+      rows.push(row);
+    }
+    return rows;
+  }
+
+  /** Shown when a user picks "الوان البيوت" from the panel dropdown. */
+  private async showColorButtons(interaction: StringSelectMenuInteraction): Promise<void> {
+    await interaction.reply({
+      embeds: [buildSuccessEmbed(this.config, 'الوان البيوت', 'اختر اللون الذي تريد فتح تذكرة له بالضغط على الزر المناسب:')],
+      components: this.buildColorButtonRows(),
+      flags: MessageFlags.Ephemeral,
+    }).catch(() => null);
+  }
+
+  /** Handle a click on one of the 18 color buttons → open a ticket under that color's category. */
+  public async handleColorTicketButton(interaction: ButtonInteraction): Promise<void> {
+    if (!interaction.inCachedGuild()) return;
+    if (interaction.guildId !== COLOR_GUILD_ID) {
+      await safeReply(interaction, [buildErrorEmbed(this.config, 'هذه الميزة غير متاحة في هذا السيرفر.')]);
+      return;
+    }
+
+    const slug = interaction.customId.slice(COLOR_TICKET_BUTTON_PREFIX.length);
+    const color = getColorBySlug(slug);
+    if (!color) {
+      await safeReply(interaction, [buildErrorEmbed(this.config, 'هذا اللون غير معروف.')]);
+      return;
+    }
+
+    const userId = interaction.user.id;
+    if (this.activeCreations.has(userId)) {
+      await safeReply(interaction, [buildErrorEmbed(this.config, '⚠️ يرجى الانتظار، يتم حالياً إنشاء تذكرتك...')]);
+      return;
+    }
+    this.activeCreations.add(userId);
+
+    try {
+      if (!(await safeDeferReply(interaction, `color:${color.slug}`))) {
+        return;
+      }
+
+      const guild = interaction.guild;
+      const category = guild.channels.cache.find(
+        (channel) => channel.type === ChannelType.GuildCategory && channel.name === color.categoryName,
+      );
+      if (!category) {
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, `لم يتم إنشاء كاتقوري هذا اللون بعد. اطلب من الإدارة تشغيل الأمر /setup-color أولاً.`)]);
+        return;
+      }
+
+      const existing = await this.findExistingOpenTicket(interaction.guildId, interaction.user.id);
+      if (existing?.channel_id) {
+        const existingChannel = await guild.channels.fetch(existing.channel_id).catch(() => null);
+        if (!existingChannel) {
+          await this.ticketRepository.closeByChannel(existing.channel_id, {
+            closed_by: interaction.user.id,
+            closed_by_tag: interaction.user.tag,
+            close_reason: 'Auto-closed: channel no longer exists',
+          }).catch(() => null);
+        } else {
+          await safeEditReply(interaction, [buildAlreadyOpenEmbed(this.config, existing.channel_id)]);
+          return;
+        }
+      }
+
+      let createdChannel: TextChannel | null = null;
+      let createdTicket: TicketRecord | null = null;
+
+      try {
+        const ticketNumber = await this.ticketRepository.nextTicketNumber();
+        const paddedNumber = padTicketNumber(ticketNumber, this.config.naming.zeroPadLength);
+        const channelName = normalizeChannelName(`لون-${color.channelColor}-${paddedNumber}`, this.config.naming.maxChannelNameLength);
+
+        const created = await guild.channels.create({
+          name: channelName,
+          type: ChannelType.GuildText,
+          parent: category.id,
+          topic: `Ticket #${ticketNumber} | Color: ${color.channelColor} | User: ${interaction.user.tag} (${interaction.user.id})`,
+          permissionOverwrites: this.buildColorPermissionOverwrites(guild, interaction.user.id, color),
+        });
+
+        if (!isGuildTextChannelType(created) || created.type !== ChannelType.GuildText) {
+          throw new Error('Created channel is not a guild text channel.');
+        }
+        createdChannel = created;
+
+        createdTicket = await this.ticketRepository.createTicket({
+          ticket_number: ticketNumber,
+          guild_id: interaction.guildId,
+          channel_id: created.id,
+          channel_name: created.name,
+          creator_id: interaction.user.id,
+          creator_tag: interaction.user.tag,
+          category_key: 'house_unlock',
+          category_label: `لون ${color.channelColor}`,
+          participant_ids: [],
+          answers: [],
+          metadata: {
+            panelChannelId: this.config.panel.channelId,
+            openedByAvatarUrl: interaction.user.displayAvatarURL(),
+            color_slug: color.slug,
+            color_role_id: color.roleId,
+          },
+        });
+
+        const sentMessage = await created.send({
+          content: guild.roles.cache.has(color.roleId) ? `${interaction.user} <@&${color.roleId}>` : `${interaction.user}`,
+          embeds: await buildTicketEmbeds(guild, this.config, createdTicket),
+          files: await buildTicketFiles(this.config),
+          components: buildTicketActionRows(this.config, false, 'house_unlock'),
+          allowedMentions: { users: [interaction.user.id], roles: guild.roles.cache.has(color.roleId) ? [color.roleId] : [] },
+        });
+
+        await this.ticketRepository.updateMetadata(created.id, {
+          ...createdTicket.metadata,
+          control_message_id: sentMessage.id,
+        }).then((updatedTicket) => {
+          createdTicket = updatedTicket;
+        }).catch(() => null);
+
+        if (this.config.limits.pinSummaryMessageOnCreate) {
+          await sentMessage.pin().catch(() => null);
+        }
+
+        await this.sendLog(guild, this.buildOpenLogEmbed(createdTicket, created.id));
+
+        await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'تم إنشاء التذكرة', `${this.config.ticket.messages.created} <#${created.id}>`)]);
+      } catch (error) {
+        logger.error('Failed to open color ticket', error instanceof Error ? error.message : error);
+
+        if (createdTicket) {
+          await this.ticketRepository.deleteTicketById(createdTicket.id).catch(() => null);
+        }
+        if (createdChannel) {
+          await createdChannel.delete().catch(() => null);
+        }
+
+        if (error instanceof DuplicateOpenTicketError) {
+          const duplicate = await this.ticketRepository.findOpenByCreator(interaction.guildId, interaction.user.id);
+          const existingChannelId = duplicate?.channel_id || interaction.channelId || interaction.channel?.id;
+          if (existingChannelId) {
+            await safeEditReply(interaction, [buildAlreadyOpenEmbed(this.config, existingChannelId)]);
+            return;
+          }
+        }
+
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, 'حدث خطأ أثناء إنشاء التذكرة.')]);
+      }
+    } finally {
+      this.activeCreations.delete(userId);
+    }
+  }
+
+  /** Overwrites for a color ticket: everyone hidden; owner + color role + staff can write; bot manages. */
+  private buildColorPermissionOverwrites(guild: Guild, openerId: string, color: ColorTicketDef) {
+    const memberAllow = [
+      PermissionFlagsBits.ViewChannel,
+      PermissionFlagsBits.SendMessages,
+      PermissionFlagsBits.ReadMessageHistory,
+      PermissionFlagsBits.AttachFiles,
+      PermissionFlagsBits.EmbedLinks,
+      PermissionFlagsBits.AddReactions,
+      PermissionFlagsBits.UseExternalEmojis,
+    ];
+    const staffAllow = [...memberAllow, PermissionFlagsBits.ManageMessages];
+    const botMemberId = guild.members.me?.id;
+
+    const overwrites: Array<{ id: string; allow?: bigint[]; deny?: bigint[] }> = [
+      { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
+      { id: openerId, allow: memberAllow },
+    ];
+
+    if (guild.roles.cache.has(color.roleId)) {
+      overwrites.push({ id: color.roleId, allow: memberAllow });
+    }
+
+    if (botMemberId) {
+      overwrites.push({
+        id: botMemberId,
+        allow: [...staffAllow, PermissionFlagsBits.ManageChannels],
+      });
+    }
+
+    // Keep every existing staff/manager role's access intact.
+    const staffRoleIds = uniqueStrings([
+      ...this.config.guild.supportRoleIds,
+      ...this.config.guild.managerRoleIds,
+    ]).filter((roleId) => roleId !== color.roleId && guild.roles.cache.has(roleId));
+    for (const roleId of staffRoleIds) {
+      overwrites.push({ id: roleId, allow: staffAllow });
+    }
+
+    return overwrites;
+  }
+
+  /**
+   * /setup-color — provision ONLY the 18 color categories (idempotent, strict).
+   * Deletes the mistaken "Tickets Gold" category and never creates anything else.
+   */
+  public async handleSetupColorCommand(interaction: ChatInputCommandInteraction): Promise<void> {
+    if (!interaction.inCachedGuild() || !interaction.member) {
+      await safeReply(interaction, [buildErrorEmbed(this.config, 'هذا الأمر يعمل داخل السيرفر فقط.')]);
+      return;
+    }
+    if (interaction.guildId !== COLOR_GUILD_ID) {
+      await safeReply(interaction, [buildErrorEmbed(this.config, 'هذا الأمر غير متاح في هذا السيرفر.')]);
+      return;
+    }
+    if (!(interaction.member as GuildMember).permissions.has(PermissionFlagsBits.Administrator)) {
+      await safeReply(interaction, [buildErrorEmbed(this.config, '❌ هذا الأمر مخصص للأدمن فقط (يتطلب صلاحية Administrator).')]);
+      return;
+    }
+
+    if (!(await safeDeferReply(interaction, 'setup-color'))) {
+      return;
+    }
+
+    const guild = interaction.guild;
+    const me = guild.members.me;
+    if (!me?.permissions.has(PermissionFlagsBits.ManageChannels)) {
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ البوت يفتقد صلاحية **إدارة القنوات (Manage Channels)** المطلوبة لإنشاء الكاتقوريات. أعطِ البوت هذه الصلاحية ثم أعد المحاولة.')]);
+      return;
+    }
+    if (!me.permissions.has(PermissionFlagsBits.ManageRoles)) {
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, '❌ البوت يفتقد صلاحية **إدارة الرتب (Manage Roles)** المطلوبة لضبط صلاحيات قنوات التذاكر. أعطِ البوت هذه الصلاحية ثم أعد المحاولة.')]);
+      return;
+    }
+
+    try {
+      const allChannels = await guild.channels.fetch();
+      const categories = [...allChannels.values()].filter(
+        (channel): channel is NonNullable<typeof channel> => channel !== null && channel.type === ChannelType.GuildCategory,
+      );
+
+      // Delete the mistaken "Tickets Gold" category if present.
+      let goldDeleted = false;
+      for (const category of categories) {
+        if (FORBIDDEN_COLOR_CATEGORY_NAMES.includes(category.name)) {
+          await category.delete('setup-color: removing mistaken Tickets Gold category').catch((err) => {
+            logger.warn(`Failed to delete forbidden category ${category.name}`, err instanceof Error ? err.message : err);
+          });
+          goldDeleted = true;
+        }
+      }
+
+      let createdCount = 0;
+      let reusedCount = 0;
+      const failed: string[] = [];
+
+      for (const color of COLOR_TICKETS) {
+        const existing = categories.find(
+          (category) => category.type === ChannelType.GuildCategory && category.name === color.categoryName,
+        );
+        if (existing) {
+          reusedCount += 1;
+          continue;
+        }
+        try {
+          await guild.channels.create({ name: color.categoryName, type: ChannelType.GuildCategory });
+          createdCount += 1;
+        } catch (err) {
+          logger.error(`Failed to create color category ${color.categoryName}`, err instanceof Error ? err.message : err);
+          failed.push(color.categoryName);
+        }
+      }
+
+      const lines = [
+        `• كاتقوريات جديدة أُنشئت: **${createdCount}**`,
+        `• كاتقوريات موجودة أُعيد استخدامها: **${reusedCount}**`,
+        `• حذف Tickets Gold: **${goldDeleted ? 'تم الحذف' : 'غير موجودة'}**`,
+        `• إجمالي كاتقوريات الألوان: **${createdCount + reusedCount}/18**`,
+      ];
+      if (failed.length > 0) {
+        lines.push(`• تعذّر إنشاء: ${failed.join('، ')}`);
+        await safeEditReply(interaction, [buildErrorEmbed(this.config, `إعداد كاتقوريات الألوان:\n${lines.join('\n')}`)]);
+      } else {
+        await safeEditReply(interaction, [buildSuccessEmbed(this.config, 'إعداد كاتقوريات الألوان', lines.join('\n'))]);
+      }
+    } catch (error) {
+      logger.error('Failed to run setup-color', error instanceof Error ? error.message : error);
+      await safeEditReply(interaction, [buildErrorEmbed(this.config, 'تعذر إعداد كاتقوريات الألوان حالياً.')]);
+    }
+  }
+
   private async sendLog(
     guild: Guild,
     embed: EmbedBuilder,
@@ -557,6 +866,12 @@ export class TicketService {
         ],
         flags: MessageFlags.Ephemeral,
       });
+      return;
+    }
+
+    // "الوان البيوت": no more free-text typing — show the 18 color buttons instead.
+    if (category.key === 'house_unlock') {
+      await this.showColorButtons(interaction);
       return;
     }
 
