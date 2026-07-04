@@ -1,9 +1,9 @@
 export const site = {
   name: 'Opus Solutions',
-  supportDiscordUrl: 'https://discord.gg/ahGvNTKyuv',
+  supportDiscordUrl: 'https://discord.gg/WRL',
   xUrl: '#',
   socialX: '#',
-  socialDiscord: 'https://discord.gg/ahGvNTKyuv',
+  socialDiscord: 'https://discord.gg/WRL',
   socialYoutube: '#',
   socialEmail: '#',
   tagline: 'حلول بوتات Discord عربية لإدارة وتنمية سيرفراتك.'

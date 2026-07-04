@@ -7,7 +7,7 @@ import { LayoutDashboard, LogOut, Menu, ShoppingCart, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useCart } from '@/components/cart/CartProvider';
 
-const SUPPORT_URL = 'https://discord.gg/ZavYFR4qFr';
+const SUPPORT_URL = 'https://discord.gg/WRL';
 
 const links: [string, string][] = [
   ['الرئيسية', '/'],

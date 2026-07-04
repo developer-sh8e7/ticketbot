@@ -4,8 +4,8 @@ import { PublicFrame } from '@/components/ui';
 export const metadata: Metadata = { title: 'Terms of Service' };
 
 const DiscordLink = () => (
-  <a href="https://discord.gg/ahGvNTKyuv" target="_blank" rel="noopener noreferrer" className="text-opus-accent underline underline-offset-2 hover:text-opus-text">
-    https://discord.gg/ahGvNTKyuv
+  <a href="https://discord.gg/WRL" target="_blank" rel="noopener noreferrer" className="text-opus-accent underline underline-offset-2 hover:text-opus-text">
+    https://discord.gg/WRL
   </a>
 );
 
