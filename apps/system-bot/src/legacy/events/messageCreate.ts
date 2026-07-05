@@ -16,6 +16,20 @@ import { handleJailMessage } from "../services/jailSystem.js";
 import { handleSetupBotsMessage } from "../services/setupBots.js";
 
 const SWEAR_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 1 day timeout for swearing
+const SEPARATOR_GUILD_ID = "1395842846107631746";
+const SEPARATOR_TRIGGER = "فاصل";
+const SEPARATOR_IMAGE_URL = "https://i.imgur.com/joUieT6.png";
+let separatorImageCache: Buffer | null = null;
+
+async function getSeparatorImage(): Promise<Buffer> {
+  if (separatorImageCache) return separatorImageCache;
+
+  const response = await fetch(SEPARATOR_IMAGE_URL);
+  if (!response.ok) throw new Error(`Failed to fetch separator image: HTTP ${response.status}`);
+
+  separatorImageCache = Buffer.from(await response.arrayBuffer());
+  return separatorImageCache;
+}
 
 export default {
   name: "messageCreate" as const,
@@ -28,6 +42,21 @@ export default {
 
     // ── أمر !setup-bots (لوحة عرض البوتات — سيرفر محدد فقط) ─────────
     if (await handleSetupBotsMessage(message)) return;
+
+    // ── فاصل ───────────────────────────────────────────────
+    if (
+      message.guild.id === SEPARATOR_GUILD_ID &&
+      message.content.trim() === SEPARATOR_TRIGGER &&
+      message.channel.isTextBased() &&
+      "send" in message.channel
+    ) {
+      try {
+        await message.channel.send({ files: [{ attachment: await getSeparatorImage(), name: "fasel.png" }] });
+      } catch (err) {
+        Logger.error(`Failed to send separator image: ${err}`);
+      }
+      return;
+    }
 
     // ── اختصارات الأوامر (مثل "باند @شخص" => /ban) ─────────
     const commands = (client as any).commands;
