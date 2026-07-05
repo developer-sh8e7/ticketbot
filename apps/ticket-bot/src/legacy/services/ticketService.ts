@@ -86,6 +86,10 @@ const MIDDLEMAN_ROLE_ID = '1506010306407694346';
 const MIDDLEMAN_ROLE_NAME = 'وسيط مضمون';
 const MIDDLEMAN_LABEL = 'مضمون';
 
+// Guild-specific: DM this user whenever a ticket is opened in this one server.
+const TICKET_OPEN_DM_GUILD_ID = '1395842846107631746';
+const TICKET_OPEN_DM_USER_ID = '1397364822152315052';
+
 export class TicketService {
   private readonly configStore: ConfigStore;
   private readonly ticketRepository: TicketRepository;
@@ -1116,6 +1120,29 @@ export class TicketService {
             }
           } catch (dmError) {
             logger.error('Failed to send DM notification to admin 1397364822152315052', dmError);
+          }
+        }
+
+        // Guild-specific: DM a fixed user whenever ANY ticket opens in this server
+        // (skip mediator_apply — it already DMs the same user with richer details above).
+        if (interaction.guildId === TICKET_OPEN_DM_GUILD_ID && category.key !== 'mediator_apply') {
+          try {
+            const notifyUser = await interaction.client.users.fetch(TICKET_OPEN_DM_USER_ID);
+            const dmEmbed = new EmbedBuilder()
+              .setColor(hexToDecimal(this.config.bot.embedColor))
+              .setTitle('🔔 تم فتح تذكرة جديدة')
+              .setDescription(
+                `قام العضو **${interaction.user.tag}** (${interaction.user}) بفتح تذكرة.\n\n` +
+                `• **معرف العضو**: \`${interaction.user.id}\`\n` +
+                `• **نوع التذكرة**: ${category.label}\n` +
+                `• **رقم التذكرة**: \`#${ticketNumber}\`\n` +
+                `• **الرابط**: <#${created.id}>`,
+              )
+              .setTimestamp();
+            await notifyUser.send({ embeds: [dmEmbed] });
+            logger.info(`Sent ticket-open DM notification to ${TICKET_OPEN_DM_USER_ID}`);
+          } catch (dmError) {
+            logger.error(`Failed to send ticket-open DM to ${TICKET_OPEN_DM_USER_ID}`, dmError instanceof Error ? dmError.message : dmError);
           }
         }
 
