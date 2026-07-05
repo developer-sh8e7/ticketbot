@@ -3,8 +3,8 @@
  * مصدر الحقيقة الوحيد لأنواع المنتجات والحالات.
  */
 
-/** أنواع المنتجات = البوتات الثلاثة المنفصلة + امتدادات مستقبلية */
-export const PRODUCT_TYPES = ['ticket', 'voice_rooms', 'general'] as const;
+/** أنواع المنتجات = البوتات المنفصلة + امتدادات مستقبلية */
+export const PRODUCT_TYPES = ['ticket', 'voice_rooms', 'general', 'broadcast'] as const;
 export type ProductType = (typeof PRODUCT_TYPES)[number];
 
 /** حالة نسخة البوت / الاشتراك */

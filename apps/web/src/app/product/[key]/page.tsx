@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowRight, Bot, Check, Code2, Mic2, ShieldCheck, Ticket, type LucideIcon } from 'lucide-react';
+import { ArrowRight, Bot, Check, Code2, Megaphone, Mic2, ShieldCheck, Ticket, type LucideIcon } from 'lucide-react';
 import { PublicFrame } from '@/components/ui';
 import { ProductBuyRow } from '@/components/ProductBuyRow';
 import { products, site, type ProductKey } from '@/lib/site-content';
@@ -10,6 +10,7 @@ const icons: Record<ProductKey, LucideIcon> = {
   ticket: Ticket,
   voice_rooms: Mic2,
   general: Bot,
+  broadcast: Megaphone,
   humanguard: ShieldCheck,
   custom: Code2,
 };

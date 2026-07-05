@@ -40,7 +40,7 @@ create table if not exists guilds (
 create table if not exists server_configs (
   id           uuid primary key default gen_random_uuid(),
   guild_id     text not null,
-  product_type text not null check (product_type in ('ticket','voice_rooms','general')),
+  product_type text not null check (product_type in ('ticket','voice_rooms','general','broadcast')),
   config_data  jsonb not null default '{}'::jsonb,
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now(),
@@ -97,7 +97,7 @@ create index if not exists idx_service_events_created on service_events(created_
 -- ── 5) بركة التوكنات (مشفّرة) ──
 create table if not exists token_pool (
   id                     uuid primary key default gen_random_uuid(),
-  product_type           text not null check (product_type in ('ticket','voice_rooms','general')),
+  product_type           text not null check (product_type in ('ticket','voice_rooms','general','broadcast')),
   bot_application_id     text not null,
   bot_token_encrypted    text not null,
   status                 text not null default 'available'
@@ -130,7 +130,7 @@ create index if not exists idx_token_pool_reserved
 -- ── 6) نسخ البوتات المُشغّلة ──
 create table if not exists bot_instances (
   id                 uuid primary key default gen_random_uuid(),
-  product_type       text not null check (product_type in ('ticket','voice_rooms','general')),
+  product_type       text not null check (product_type in ('ticket','voice_rooms','general','broadcast')),
   token_id           uuid references token_pool(id),
   bot_application_id text,
   bot_user_id        text,
@@ -175,7 +175,7 @@ create table if not exists subscriptions (
   account_id   uuid references accounts(id) on delete set null,
   owner_id     text not null,
   guild_id     text not null,
-  product_type text not null check (product_type in ('ticket','voice_rooms','general')),
+  product_type text not null check (product_type in ('ticket','voice_rooms','general','broadcast')),
   instance_id  uuid references bot_instances(id) on delete set null,
   plan_name    text not null default 'monthly',
   status       text not null default 'active'
@@ -352,7 +352,7 @@ $$;
 -- ── 10) المنتجات والباقات (التجارة) ──
 create table if not exists products (
   id text primary key,
-  product_type text unique check (product_type in ('ticket','voice_rooms','general')),
+  product_type text unique check (product_type in ('ticket','voice_rooms','general','broadcast')),
   name text not null,
   description text not null,
   is_custom boolean not null default false,
@@ -375,7 +375,7 @@ create table if not exists plans (
 
 create table if not exists product_configs (
   id uuid primary key default gen_random_uuid(),
-  product_type text not null check (product_type in ('ticket','voice_rooms','general')),
+  product_type text not null check (product_type in ('ticket','voice_rooms','general','broadcast')),
   key text not null,
   value jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
@@ -385,7 +385,7 @@ create table if not exists product_configs (
 
 create table if not exists feature_flags (
   id uuid primary key default gen_random_uuid(),
-  product_type text check (product_type in ('ticket','voice_rooms','general')),
+  product_type text check (product_type in ('ticket','voice_rooms','general','broadcast')),
   key text not null,
   enabled boolean not null default false,
   metadata jsonb not null default '{}'::jsonb,
@@ -398,31 +398,31 @@ create table if not exists feature_flags (
 -- جدول يطابق القيم الحالية حتى لو الجدول كان موجوداً من قبل بقيد قديم مختلف.
 alter table server_configs  drop constraint if exists server_configs_product_type_check;
 alter table server_configs  add constraint server_configs_product_type_check
-  check (product_type in ('ticket','voice_rooms','general'));
+  check (product_type in ('ticket','voice_rooms','general','broadcast'));
 
 alter table token_pool      drop constraint if exists token_pool_product_type_check;
 alter table token_pool      add constraint token_pool_product_type_check
-  check (product_type in ('ticket','voice_rooms','general'));
+  check (product_type in ('ticket','voice_rooms','general','broadcast'));
 
 alter table bot_instances   drop constraint if exists bot_instances_product_type_check;
 alter table bot_instances   add constraint bot_instances_product_type_check
-  check (product_type in ('ticket','voice_rooms','general'));
+  check (product_type in ('ticket','voice_rooms','general','broadcast'));
 
 alter table subscriptions   drop constraint if exists subscriptions_product_type_check;
 alter table subscriptions   add constraint subscriptions_product_type_check
-  check (product_type in ('ticket','voice_rooms','general'));
+  check (product_type in ('ticket','voice_rooms','general','broadcast'));
 
 alter table products        drop constraint if exists products_product_type_check;
 alter table products        add constraint products_product_type_check
-  check (product_type in ('ticket','voice_rooms','general'));
+  check (product_type in ('ticket','voice_rooms','general','broadcast'));
 
 alter table product_configs drop constraint if exists product_configs_product_type_check;
 alter table product_configs add constraint product_configs_product_type_check
-  check (product_type in ('ticket','voice_rooms','general'));
+  check (product_type in ('ticket','voice_rooms','general','broadcast'));
 
 alter table feature_flags   drop constraint if exists feature_flags_product_type_check;
 alter table feature_flags   add constraint feature_flags_product_type_check
-  check (product_type in ('ticket','voice_rooms','general'));
+  check (product_type in ('ticket','voice_rooms','general','broadcast'));
 
 create table if not exists payments (
   id uuid primary key default gen_random_uuid(),
@@ -458,6 +458,7 @@ insert into products (id, product_type, name, description, is_custom) values
   ('ticket-bot','ticket','Ticket Bot','Advanced Discord ticketing, panels, transcripts, mediators and escalation.', false),
   ('voice-rooms-bot','voice_rooms','TempRooms Bot','Join-to-create temporary voice rooms with owner control panel.', false),
   ('general-system-bot','general','General/System Bot','Moderation, logs, levels, economy and utility systems.', false),
+  ('broadcast-bot','broadcast','Broadcast Bot','DM a message to all server members or a specific role, with a live progress bar.', false),
   ('custom-bot', null, 'Custom Bot','A bespoke Discord bot built with the developers for your idea.', true)
 on conflict (id) do update set name = excluded.name, description = excluded.description, is_custom = excluded.is_custom;
 
@@ -467,7 +468,9 @@ insert into plans (id, product_id, name, interval, duration_days, amount_cents, 
   ('voice-rooms-monthly','voice-rooms-bot','Monthly','monthly',30,799,'USD'),
   ('voice-rooms-quarterly','voice-rooms-bot','Quarterly','quarterly',90,2199,'USD'),
   ('general-monthly','general-system-bot','Monthly','monthly',30,1299,'USD'),
-  ('general-quarterly','general-system-bot','Quarterly','quarterly',90,3599,'USD')
+  ('general-quarterly','general-system-bot','Quarterly','quarterly',90,3599,'USD'),
+  ('broadcast-monthly','broadcast-bot','Monthly','monthly',30,300,'USD'),
+  ('broadcast-quarterly','broadcast-bot','Quarterly','quarterly',90,900,'USD')
 on conflict (id) do update set amount_cents = excluded.amount_cents, duration_days = excluded.duration_days;
 
 -- ════════════════════════════════════════════════════════════════

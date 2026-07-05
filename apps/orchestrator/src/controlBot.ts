@@ -18,6 +18,7 @@ const PRODUCT_LABELS: Record<string, string> = {
   ticket: 'التذاكر',
   voice_rooms: 'الغرف المؤقتة',
   general: 'الإدارة',
+  broadcast: 'البرودكاست',
 };
 
 function fmt(value: string | null | undefined): string {

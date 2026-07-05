@@ -53,7 +53,7 @@ export function formatActivationCode(productType: string): string {
   return `OPUS-${prefix}-XXXX-XXXX`;
 }
 
-export type ProductKey = 'ticket' | 'voice_rooms' | 'general' | 'humanguard' | 'custom';
+export type ProductKey = 'ticket' | 'voice_rooms' | 'general' | 'broadcast' | 'humanguard' | 'custom';
 
 export type Product = {
   key: ProductKey;
@@ -123,6 +123,21 @@ export function products(): Product[] {
       activationCodePrefix: 'SYSTEM',
       productType: 'general',
       features: ['أوامر إدارة ومودريشن', 'لوقات وترحيب ومغادرة', 'مستويات واقتصاد', 'حماية وروابط وسبام', 'ألعاب وأوامر معلومات'],
+    },
+    {
+      key: 'broadcast',
+      id: 'broadcast-bot',
+      name: 'Broadcast Bot',
+      icon: 'Megaphone',
+      shortName: 'البرودكاست',
+      shortDescription: 'أرسل رسالة خاصة لكل أعضاء سيرفرك أو رتبة محددة بضغطة واحدة.',
+      description: 'بوت البرودكاست يرسل رسالتك في الخاص لأعضاء سيرفرك (الكل أو رتبة محددة) عبر أمر !رسالة، مع استثناء من تريد، تأكيد قبل الإرسال، وشريط تقدم مباشر يوضح كم وصلت الرسالة.',
+      priceLabel: '$3 / شهر',
+      price_monthly: 3.0,
+      price_quarterly: 9.0,
+      activationCodePrefix: 'BROADCAST',
+      productType: 'broadcast',
+      features: ['أمر !رسالة تفاعلي', 'استهداف الكل أو رتبة معينة', 'قائمة استثناء للأعضاء', 'تأكيد قبل الإرسال', 'شريط تقدم مباشر ودقيق'],
     },
     {
       key: 'humanguard',
