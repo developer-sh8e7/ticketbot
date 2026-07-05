@@ -2,7 +2,7 @@
 //  Opus System Bot — Entry Point (V2)
 // ══════════════════════════════════════════════════════════════
 
-import { Client, GatewayIntentBits, Partials, Collection, REST, Routes } from "discord.js";
+import { Client, GatewayIntentBits, Partials, Collection, REST, Routes, type Guild } from "discord.js";
 import { Config } from "./config.js";
 import { Logger } from "./utils/logger.js";
 import { Command } from "./types.js";
@@ -173,17 +173,53 @@ process.on("unhandledRejection", (error) => {
 // script was a manual, one-off dev tool and was never invoked for tenant
 // bots spawned by the orchestrator, which is why new servers had no commands.
 // client.application.id is always correct for THIS bot, no env var needed.
+function inviteUrl(): string | null {
+  const applicationId = client.application?.id ?? Config.clientId;
+  if (!applicationId) return null;
+
+  const params = new URLSearchParams({
+    client_id: applicationId,
+    permissions: "8",
+    scope: "bot applications.commands",
+  });
+  if (Config.guildId) params.set("guild_id", Config.guildId);
+
+  return `https://discord.com/api/oauth2/authorize?${params.toString()}`;
+}
+
+async function getTargetGuild(): Promise<Guild | null> {
+  if (!Config.guildId) return null;
+
+  const cached = client.guilds.cache.get(Config.guildId);
+  if (cached) return cached;
+
+  try {
+    return await client.guilds.fetch(Config.guildId);
+  } catch {
+    Logger.warn(`Guild ${Config.guildId} is not accessible by this bot; skipping guild slash-command deploy.`);
+    const url = inviteUrl();
+    if (url) Logger.warn(`Invite/re-authorize the bot with this URL, then restart: ${url}`);
+    return null;
+  }
+}
+
 async function deployGuildCommands() {
   if (!client.application || !Config.guildId) return;
+
+  const guild = await getTargetGuild();
+  if (!guild) return;
+
   const commandData = allCommands.map((c) => c.data.toJSON());
   try {
     await new REST({ version: "10" }).setToken(Config.token).put(
-      Routes.applicationGuildCommands(client.application.id, Config.guildId),
+      Routes.applicationGuildCommands(client.application.id, guild.id),
       { body: commandData },
     );
-    Logger.success(`Deployed ${commandData.length} slash commands to guild ${Config.guildId}`);
+    Logger.success(`Deployed ${commandData.length} slash commands to guild ${guild.id}`);
   } catch (err) {
     Logger.error(`Failed to auto-deploy slash commands: ${err}`);
+    const url = inviteUrl();
+    if (url) Logger.warn(`If Discord reports Missing Access, re-authorize the bot with: ${url}`);
   }
 }
 
