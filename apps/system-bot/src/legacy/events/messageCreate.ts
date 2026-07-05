@@ -16,15 +16,21 @@ import { handleJailMessage } from "../services/jailSystem.js";
 import { handleSetupBotsMessage } from "../services/setupBots.js";
 
 const SWEAR_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 1 day timeout for swearing
-const SEPARATOR_GUILD_ID = "1395842846107631746";
+const STORE_GUILD_ID = "1395842846107631746";
+const AUTO_SEPARATOR_CHANNEL_ID = "1517613203004326049";
 const SEPARATOR_TRIGGER = "فاصل";
 const SEPARATOR_IMAGE_URL = "https://i.imgur.com/joUieT6.png";
 const WEBSITE_TRIGGER = "موقع";
 const WEBSITE_IMAGE_URL = "https://i.imgur.com/s2FnZTb.png";
 const WEBSITE_URL = "https://opussolutions.xyz/";
 const WEBSITE_BUTTON_EMOJI_ID = "1441206063188672602";
+const TICKET_CHANNEL_TRIGGER = "مواقع-1";
+const TICKET_CHANNEL_IMAGE_URL = "https://i.imgur.com/PcGAYyr.png";
+const TICKET_CHANNEL_URL = "https://discord.com/channels/1395842846107631746/1396403268388655145";
+const TICKET_CHANNEL_BUTTON_EMOJI_ID = "1505361775510556763";
 let separatorImageCache: Buffer | null = null;
 let websiteImageCache: Buffer | null = null;
+let ticketChannelImageCache: Buffer | null = null;
 
 async function fetchCachedImage(url: string, current: Buffer | null, label: string): Promise<Buffer> {
   if (current) return current;
@@ -45,6 +51,11 @@ async function getWebsiteImage(): Promise<Buffer> {
   return websiteImageCache;
 }
 
+async function getTicketChannelImage(): Promise<Buffer> {
+  ticketChannelImageCache = await fetchCachedImage(TICKET_CHANNEL_IMAGE_URL, ticketChannelImageCache, "ticket channel");
+  return ticketChannelImageCache;
+}
+
 export default {
   name: "messageCreate" as const,
   once: false,
@@ -57,9 +68,24 @@ export default {
     // ── أمر !setup-bots (لوحة عرض البوتات — سيرفر محدد فقط) ─────────
     if (await handleSetupBotsMessage(message)) return;
 
+    // ── فاصل تلقائي في روم محدد ───────────────────────────
+    if (
+      message.guild.id === STORE_GUILD_ID &&
+      message.channel.id === AUTO_SEPARATOR_CHANNEL_ID &&
+      message.channel.isTextBased() &&
+      "send" in message.channel
+    ) {
+      try {
+        await message.channel.send({ files: [{ attachment: await getSeparatorImage(), name: "fasel.png" }] });
+      } catch (err) {
+        Logger.error(`Failed to send separator image: ${err}`);
+      }
+      return;
+    }
+
     // ── فاصل ───────────────────────────────────────────────
     if (
-      message.guild.id === SEPARATOR_GUILD_ID &&
+      message.guild.id === STORE_GUILD_ID &&
       message.content.trim() === SEPARATOR_TRIGGER &&
       message.channel.isTextBased() &&
       "send" in message.channel
@@ -74,7 +100,7 @@ export default {
 
     // ── موقع ───────────────────────────────────────────────
     if (
-      message.guild.id === SEPARATOR_GUILD_ID &&
+      message.guild.id === STORE_GUILD_ID &&
       message.content.trim() === WEBSITE_TRIGGER &&
       message.channel.isTextBased() &&
       "send" in message.channel
@@ -94,6 +120,32 @@ export default {
         });
       } catch (err) {
         Logger.error(`Failed to send website image: ${err}`);
+      }
+      return;
+    }
+
+    // ── مواقع-1 ───────────────────────────────────────────
+    if (
+      message.guild.id === STORE_GUILD_ID &&
+      message.content.trim() === TICKET_CHANNEL_TRIGGER &&
+      message.channel.isTextBased() &&
+      "send" in message.channel
+    ) {
+      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setStyle(ButtonStyle.Link)
+          .setURL(TICKET_CHANNEL_URL)
+          .setLabel("التكت")
+          .setEmoji({ id: TICKET_CHANNEL_BUTTON_EMOJI_ID, name: "ticket" }),
+      );
+
+      try {
+        await message.channel.send({
+          files: [{ attachment: await getTicketChannelImage(), name: "ticket-channel.png" }],
+          components: [row],
+        });
+      } catch (err) {
+        Logger.error(`Failed to send ticket channel image: ${err}`);
       }
       return;
     }
