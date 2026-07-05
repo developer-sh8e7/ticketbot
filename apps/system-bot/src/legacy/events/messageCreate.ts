@@ -3,7 +3,7 @@
 //  V2 — Application Emojis, Advanced Profanity Filter
 // ══════════════════════════════════════════════════════════════
 
-import { Client, Message, PermissionFlagsBits, EmbedBuilder } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Client, Message, PermissionFlagsBits, EmbedBuilder } from "discord.js";
 import { getMemberData, updateMemberData } from "../db/members.js";
 import { getGuildConfig } from "../db/guilds.js";
 import { filterEmbed, errorEmbed, Colors } from "../utils/embed.js";
@@ -19,16 +19,30 @@ const SWEAR_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 1 day timeout for swearing
 const SEPARATOR_GUILD_ID = "1395842846107631746";
 const SEPARATOR_TRIGGER = "فاصل";
 const SEPARATOR_IMAGE_URL = "https://i.imgur.com/joUieT6.png";
+const WEBSITE_TRIGGER = "موقع";
+const WEBSITE_IMAGE_URL = "https://i.imgur.com/s2FnZTb.png";
+const WEBSITE_URL = "https://opussolutions.xyz/";
+const WEBSITE_BUTTON_EMOJI_ID = "1441206063188672602";
 let separatorImageCache: Buffer | null = null;
+let websiteImageCache: Buffer | null = null;
+
+async function fetchCachedImage(url: string, current: Buffer | null, label: string): Promise<Buffer> {
+  if (current) return current;
+
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Failed to fetch ${label} image: HTTP ${response.status}`);
+
+  return Buffer.from(await response.arrayBuffer());
+}
 
 async function getSeparatorImage(): Promise<Buffer> {
-  if (separatorImageCache) return separatorImageCache;
-
-  const response = await fetch(SEPARATOR_IMAGE_URL);
-  if (!response.ok) throw new Error(`Failed to fetch separator image: HTTP ${response.status}`);
-
-  separatorImageCache = Buffer.from(await response.arrayBuffer());
+  separatorImageCache = await fetchCachedImage(SEPARATOR_IMAGE_URL, separatorImageCache, "separator");
   return separatorImageCache;
+}
+
+async function getWebsiteImage(): Promise<Buffer> {
+  websiteImageCache = await fetchCachedImage(WEBSITE_IMAGE_URL, websiteImageCache, "website");
+  return websiteImageCache;
 }
 
 export default {
@@ -54,6 +68,32 @@ export default {
         await message.channel.send({ files: [{ attachment: await getSeparatorImage(), name: "fasel.png" }] });
       } catch (err) {
         Logger.error(`Failed to send separator image: ${err}`);
+      }
+      return;
+    }
+
+    // ── موقع ───────────────────────────────────────────────
+    if (
+      message.guild.id === SEPARATOR_GUILD_ID &&
+      message.content.trim() === WEBSITE_TRIGGER &&
+      message.channel.isTextBased() &&
+      "send" in message.channel
+    ) {
+      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setStyle(ButtonStyle.Link)
+          .setURL(WEBSITE_URL)
+          .setLabel("الموقع")
+          .setEmoji({ id: WEBSITE_BUTTON_EMOJI_ID, name: "opus" }),
+      );
+
+      try {
+        await message.channel.send({
+          files: [{ attachment: await getWebsiteImage(), name: "website.png" }],
+          components: [row],
+        });
+      } catch (err) {
+        Logger.error(`Failed to send website image: ${err}`);
       }
       return;
     }
