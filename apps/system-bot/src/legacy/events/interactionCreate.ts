@@ -7,12 +7,14 @@ import { Client, Interaction } from "discord.js";
 import { errorEmbed } from "../utils/embed.js";
 import { Logger } from "../utils/logger.js";
 import { handleJailInteraction } from "../services/jailSystem.js";
+import { handleSetupBotsInteraction } from "../services/setupBots.js";
 
 export default {
   name: "interactionCreate" as const,
   once: false,
   async execute(client: Client, interaction: Interaction) {
     if (await handleJailInteraction(interaction)) return;
+    if (await handleSetupBotsInteraction(interaction)) return;
 
     if (interaction.isChatInputCommand()) {
       const command = (client as any).commands?.get(interaction.commandName);

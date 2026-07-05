@@ -62,6 +62,8 @@ import topCommand from "./commands/levels/top.js";
 import rollCommand from "./commands/fun/roll.js";
 import coinflipCommand from "./commands/fun/coinflip.js";
 
+import { setupBotsCommand } from "./services/setupBots.js";
+
 // Import Events
 import readyEvent from "./events/ready.js";
 import messageCreateEvent from "./events/messageCreate.js";
@@ -116,6 +118,9 @@ const allCommands = [
   profileCommand,
   rollCommand,
   coinflipCommand,
+
+  // Guild-specific: only registered for the one server that uses it.
+  ...(Config.guildId === "1395842846107631746" ? [setupBotsCommand] : []),
 ];
 
 const allEvents = [
