@@ -34,7 +34,7 @@ values (
     },
     "guild": {
       "id": "1395842846107631746",
-      "categoryId": "1396465861379883146",
+      "categoryId": "1523357377359908995",
       "archiveCategoryId": "1496476170349183037",
       "logChannelId": "1496476170349183037",
       "transcriptChannelId": "1496476170349183037",
