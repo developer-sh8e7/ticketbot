@@ -8,16 +8,15 @@ import {
   ActionRowBuilder,
   AttachmentBuilder,
   ChannelType,
-  ChatInputCommandInteraction,
   Interaction,
+  Message,
   MessageFlags,
   PermissionFlagsBits,
-  SlashCommandBuilder,
   StringSelectMenuBuilder,
 } from "discord.js";
-import { Command } from "../types.js";
 import { Logger } from "../utils/logger.js";
 
+const COMMAND = "!setup-bots";
 const GUILD_ID = "1395842846107631746";
 const POST_CHANNEL_ID = "1523230388154138714"; // where the panel is posted
 const REQUEST_CHANNEL_ID = "1396403268388655145"; // "to order, go to" room
@@ -49,56 +48,51 @@ function sar(usd: number): string {
   return (usd * USD_TO_SAR).toFixed(2);
 }
 
-export const setupBotsCommand: Command = {
-  data: new SlashCommandBuilder()
-    .setName("setup-bots")
-    .setDescription("نشر لوحة عرض البوتات مع الأسعار (للأدمن)")
-    .setDMPermission(false)
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator) as SlashCommandBuilder,
+/** Handles the `!setup-bots` prefix command. Returns true if it consumed the message. */
+export async function handleSetupBotsMessage(message: Message): Promise<boolean> {
+  if (message.content.trim() !== COMMAND) return false;
+  if (message.guildId !== GUILD_ID) return false; // command only exists for this server
 
-  async execute(interaction: ChatInputCommandInteraction) {
-    if (interaction.guildId !== GUILD_ID) {
-      await interaction.reply({ content: "هذا الأمر غير متاح في هذا السيرفر.", flags: MessageFlags.Ephemeral });
-      return;
-    }
+  if (!message.member?.permissions.has(PermissionFlagsBits.Administrator)) {
+    await message.reply("❌ هذا الأمر للأدمن فقط.").catch(() => null);
+    return true;
+  }
 
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  const channel = await message.client.channels.fetch(POST_CHANNEL_ID).catch(() => null);
+  if (!channel || channel.type !== ChannelType.GuildText) {
+    await message.reply(`تعذّر العثور على الروم <#${POST_CHANNEL_ID}> أو ليس روم نصي.`).catch(() => null);
+    return true;
+  }
 
-    const channel = await interaction.client.channels.fetch(POST_CHANNEL_ID).catch(() => null);
-    if (!channel || channel.type !== ChannelType.GuildText) {
-      await interaction.editReply({ content: `تعذّر العثور على الروم <#${POST_CHANNEL_ID}> أو ليس روم نصي.` });
-      return;
-    }
+  const select = new StringSelectMenuBuilder()
+    .setCustomId(SELECT_ID)
+    .setPlaceholder("قم باختيار نوع البوت لعرض التفاصيل")
+    .addOptions(
+      BOTS.map((bot) => ({
+        label: bot.nameEn,
+        description: bot.nameAr,
+        value: bot.value,
+        emoji: { id: OPTION_EMOJI_ID },
+      })),
+    );
 
-    const select = new StringSelectMenuBuilder()
-      .setCustomId(SELECT_ID)
-      .setPlaceholder("قم باختيار نوع البوت لعرض التفاصيل")
-      .addOptions(
-        BOTS.map((bot) => ({
-          label: bot.nameEn,
-          description: bot.nameAr,
-          value: bot.value,
-          emoji: { id: OPTION_EMOJI_ID },
-        })),
-      );
+  const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
 
-    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
+  try {
+    // Send the image as a file attachment so there is NO embed at all.
+    const res = await fetch(IMAGE_URL);
+    if (!res.ok) throw new Error(`image fetch ${res.status}`);
+    const buffer = Buffer.from(await res.arrayBuffer());
+    const image = new AttachmentBuilder(buffer, { name: "bots.png" });
 
-    try {
-      // Send the image as a file attachment so there is NO embed at all.
-      const res = await fetch(IMAGE_URL);
-      if (!res.ok) throw new Error(`image fetch ${res.status}`);
-      const buffer = Buffer.from(await res.arrayBuffer());
-      const image = new AttachmentBuilder(buffer, { name: "bots.png" });
-
-      await channel.send({ files: [image], components: [row] });
-      await interaction.editReply({ content: `تم نشر لوحة البوتات في <#${POST_CHANNEL_ID}> ✅` });
-    } catch (err) {
-      Logger.error(`Failed to post setup-bots panel: ${err}`);
-      await interaction.editReply({ content: "تعذّر نشر اللوحة (فشل تحميل الصورة أو صلاحيات الإرسال)." });
-    }
-  },
-};
+    await channel.send({ files: [image], components: [row] });
+    await message.reply(`تم نشر لوحة البوتات في <#${POST_CHANNEL_ID}> ✅`).catch(() => null);
+  } catch (err) {
+    Logger.error(`Failed to post setup-bots panel: ${err}`);
+    await message.reply("تعذّر نشر اللوحة (فشل تحميل الصورة أو صلاحيات الإرسال).").catch(() => null);
+  }
+  return true;
+}
 
 /** Handles the bot-details dropdown. Returns true if it consumed the interaction. */
 export async function handleSetupBotsInteraction(interaction: Interaction): Promise<boolean> {
