@@ -27,6 +27,7 @@ export const createBroadcastBot: BotFactory = (options: BotRuntimeOptions): Runn
         cwd: new URL('..', import.meta.url).pathname,
         env: {
           ...process.env,
+          BROADCAST_SPAWNED: '1',
           BOT_TOKEN: options.token,
           CLIENT_ID: String(config.clientId ?? process.env.DISCORD_CLIENT_ID ?? process.env.CLIENT_ID ?? ''),
           GUILD_ID: options.guildId,

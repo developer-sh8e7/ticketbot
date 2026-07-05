@@ -332,8 +332,12 @@ export async function startRuntime(): Promise<void> {
   await client.login(token);
 }
 
-// This file is spawned as a child process (by the factory) — run immediately.
-startRuntime().catch((error) => {
-  console.error('[broadcast-bot] fatal:', error instanceof Error ? error.message : error);
-  process.exit(1);
-});
+// Only self-start when the factory spawned this file as its own child process
+// (the orchestrator/sold path). The standalone owner entry imports startRuntime
+// and calls it in-process, so it must NOT auto-run here.
+if (process.env.BROADCAST_SPAWNED === '1') {
+  startRuntime().catch((error) => {
+    console.error('[broadcast-bot] fatal:', error instanceof Error ? error.message : error);
+    process.exit(1);
+  });
+}
