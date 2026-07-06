@@ -123,7 +123,7 @@ export function JailSystemEditor({ botId }: { botId: string }) {
             </span>
             <h3 className="mt-3 font-arabic text-lg font-extrabold text-opus-text">إدارة السجن من الداشبورد</h3>
             <p className="mt-1 max-w-2xl font-arabic text-xs leading-6 text-opus-muted">
-              فعّل الميزة وحدد الرتب/الأشخاص المسموحين. داخل Discord يظهر روم خاص باسم <span className="font-english">سجن-تحكم</span> وأمر فتح اللوحة: <b>!سجن</b>.
+              فعّل الميزة وحدد الرتب/الأشخاص المسموحين. داخل Discord يظهر روم خاص باسم <span className="font-english">سجن-تحكم</span> وأمر بدون بريفكس: <b>سجن</b>.
             </p>
           </div>
           <label className="flex cursor-pointer select-none items-center gap-2.5 rounded-2xl border border-opus-border bg-opus-bg px-3 py-2">
