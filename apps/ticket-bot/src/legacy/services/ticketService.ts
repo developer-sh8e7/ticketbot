@@ -39,11 +39,16 @@ import {
   isAuthorizedAdmin,
 } from '../constants/customIds.js';
 import {
+  ALL_COLOR_TICKETS,
   COLOR_GUILD_ID,
   COLOR_TICKET_BUTTON_PREFIX,
   COLOR_TICKETS,
   FORBIDDEN_COLOR_CATEGORY_NAMES,
-  getColorBySlug,
+  JUMP_COLOR_TICKET_BUTTON_PREFIX,
+  JUMP_MAP_COLOR_TICKETS,
+  JUMP_MAP_HOUSE_COLOR_CATEGORY_KEY,
+  STANDARD_HOUSE_COLOR_CATEGORY_KEY,
+  getColorTicketSelectionFromCustomId,
   type ColorTicketDef,
 } from '../constants/colorTickets.js';
 import { DuplicateOpenTicketError, TicketRepository } from '../database/ticketRepository.js';
@@ -319,14 +324,17 @@ export class TicketService {
 
   // ── Color ("الوان البيوت") tickets — server COLOR_GUILD_ID only ──────────
 
-  /** The 18 color buttons, laid out 5 per row (rows of 5,5,5,3). */
-  private buildColorButtonRows(): ActionRowBuilder<ButtonBuilder>[] {
+  /** Color buttons, laid out 5 per row. */
+  private buildColorButtonRows(
+    colors: ColorTicketDef[],
+    customIdPrefix: string,
+  ): ActionRowBuilder<ButtonBuilder>[] {
     const rows: ActionRowBuilder<ButtonBuilder>[] = [];
-    for (let i = 0; i < COLOR_TICKETS.length; i += 5) {
+    for (let i = 0; i < colors.length; i += 5) {
       const row = new ActionRowBuilder<ButtonBuilder>();
-      for (const color of COLOR_TICKETS.slice(i, i + 5)) {
+      for (const color of colors.slice(i, i + 5)) {
         const button = new ButtonBuilder()
-          .setCustomId(`${COLOR_TICKET_BUTTON_PREFIX}${color.slug}`)
+          .setCustomId(`${customIdPrefix}${color.slug}`)
           .setLabel(color.buttonLabel)
           .setStyle(ButtonStyle.Secondary);
         if (color.emojiId) {
@@ -339,16 +347,21 @@ export class TicketService {
     return rows;
   }
 
-  /** Shown when a user picks "الوان البيوت" from the panel dropdown. */
-  private async showColorButtons(interaction: StringSelectMenuInteraction): Promise<void> {
+  /** Shown when a user picks one of the house-color options from the panel dropdown. */
+  private async showColorButtons(
+    interaction: StringSelectMenuInteraction,
+    title: string,
+    colors: ColorTicketDef[],
+    customIdPrefix: string,
+  ): Promise<void> {
     await interaction.reply({
-      embeds: [buildSuccessEmbed(this.config, 'الوان البيوت', 'اختر اللون الذي تريد فتح تذكرة له بالضغط على الزر المناسب:')],
-      components: this.buildColorButtonRows(),
+      embeds: [buildSuccessEmbed(this.config, title, 'اختر اللون الذي تريد فتح تذكرة له بالضغط على الزر المناسب:')],
+      components: this.buildColorButtonRows(colors, customIdPrefix),
       flags: MessageFlags.Ephemeral,
     }).catch(() => null);
   }
 
-  /** Handle a click on one of the 18 color buttons → open a ticket under that color's category. */
+  /** Handle a click on one of the color buttons → open a ticket under that color's category. */
   public async handleColorTicketButton(interaction: ButtonInteraction): Promise<void> {
     if (!interaction.inCachedGuild()) return;
     if (interaction.guildId !== COLOR_GUILD_ID) {
@@ -356,12 +369,12 @@ export class TicketService {
       return;
     }
 
-    const slug = interaction.customId.slice(COLOR_TICKET_BUTTON_PREFIX.length);
-    const color = getColorBySlug(slug);
-    if (!color) {
+    const selection = getColorTicketSelectionFromCustomId(interaction.customId);
+    if (!selection) {
       await safeReply(interaction, [buildErrorEmbed(this.config, 'هذا اللون غير معروف.')]);
       return;
     }
+    const { color, categoryKey } = selection;
 
     const userId = interaction.user.id;
     if (this.activeCreations.has(userId)) {
@@ -371,7 +384,7 @@ export class TicketService {
     this.activeCreations.add(userId);
 
     try {
-      if (!(await safeDeferReply(interaction, `color:${color.slug}`))) {
+      if (!(await safeDeferReply(interaction, `color:${categoryKey}:${color.slug}`))) {
         return;
       }
 
@@ -427,7 +440,7 @@ export class TicketService {
           channel_name: created.name,
           creator_id: interaction.user.id,
           creator_tag: interaction.user.tag,
-          category_key: 'house_unlock',
+          category_key: categoryKey,
           category_label: `لون ${color.channelColor}`,
           participant_ids: [],
           answers: [],
@@ -436,6 +449,7 @@ export class TicketService {
             openedByAvatarUrl: interaction.user.displayAvatarURL(),
             color_slug: color.slug,
             color_role_id: color.roleId,
+            color_category_key: categoryKey,
           },
         });
 
@@ -443,7 +457,7 @@ export class TicketService {
           content: guild.roles.cache.has(color.roleId) ? `${interaction.user} <@&${color.roleId}>` : `${interaction.user}`,
           embeds: await buildTicketEmbeds(guild, this.config, createdTicket),
           files: await buildTicketFiles(this.config),
-          components: buildTicketActionRows(this.config, false, 'house_unlock'),
+          components: buildTicketActionRows(this.config, false, categoryKey),
           allowedMentions: { users: [interaction.user.id], roles: guild.roles.cache.has(color.roleId) ? [color.roleId] : [] },
         });
 
@@ -530,8 +544,8 @@ export class TicketService {
   }
 
   /**
-   * /setup-color — provision ONLY the 18 color categories (idempotent, strict).
-   * Deletes the mistaken "Tickets Gold" category and never creates anything else.
+   * /setup-color — provision ONLY the configured color categories (idempotent, strict).
+   * Deletes the mistaken "Tickets Gold" category and creates missing color categories only.
    */
   public async handleSetupColorCommand(interaction: ChatInputCommandInteraction): Promise<void> {
     if (!interaction.inCachedGuild() || !interaction.member) {
@@ -582,21 +596,21 @@ export class TicketService {
       let createdCount = 0;
       let reusedCount = 0;
       const failed: string[] = [];
+      const plannedCategoryNames = uniqueStrings(ALL_COLOR_TICKETS.map((color) => color.categoryName));
+      const existingCategoryNames = new Set(categories.map((category) => category.name));
 
-      for (const color of COLOR_TICKETS) {
-        const existing = categories.find(
-          (category) => category.type === ChannelType.GuildCategory && category.name === color.categoryName,
-        );
-        if (existing) {
+      for (const categoryName of plannedCategoryNames) {
+        if (existingCategoryNames.has(categoryName)) {
           reusedCount += 1;
           continue;
         }
         try {
-          await guild.channels.create({ name: color.categoryName, type: ChannelType.GuildCategory });
+          await guild.channels.create({ name: categoryName, type: ChannelType.GuildCategory });
+          existingCategoryNames.add(categoryName);
           createdCount += 1;
         } catch (err) {
-          logger.error(`Failed to create color category ${color.categoryName}`, err instanceof Error ? err.message : err);
-          failed.push(color.categoryName);
+          logger.error(`Failed to create color category ${categoryName}`, err instanceof Error ? err.message : err);
+          failed.push(categoryName);
         }
       }
 
@@ -604,7 +618,7 @@ export class TicketService {
         `• كاتقوريات جديدة أُنشئت: **${createdCount}**`,
         `• كاتقوريات موجودة أُعيد استخدامها: **${reusedCount}**`,
         `• حذف Tickets Gold: **${goldDeleted ? 'تم الحذف' : 'غير موجودة'}**`,
-        `• إجمالي كاتقوريات الألوان: **${createdCount + reusedCount}/18**`,
+        `• إجمالي كاتقوريات الألوان: **${createdCount + reusedCount}/${plannedCategoryNames.length}**`,
       ];
       if (failed.length > 0) {
         lines.push(`• تعذّر إنشاء: ${failed.join('، ')}`);
@@ -873,9 +887,14 @@ export class TicketService {
       return;
     }
 
-    // "الوان البيوت": no more free-text typing — show the 18 color buttons instead.
-    if (category.key === 'house_unlock') {
-      await this.showColorButtons(interaction);
+    // House colors: no free-text typing — show fixed color buttons instead.
+    if (category.key === STANDARD_HOUSE_COLOR_CATEGORY_KEY) {
+      await this.showColorButtons(interaction, 'اللوان البيوت', COLOR_TICKETS, COLOR_TICKET_BUTTON_PREFIX);
+      return;
+    }
+
+    if (category.key === JUMP_MAP_HOUSE_COLOR_CATEGORY_KEY) {
+      await this.showColorButtons(interaction, 'اللوان البيوت (ماب النطة)', JUMP_MAP_COLOR_TICKETS, JUMP_COLOR_TICKET_BUTTON_PREFIX);
       return;
     }
 

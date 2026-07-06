@@ -8,8 +8,13 @@
 // Only this guild ever provisions/uses the color ticket system.
 export const COLOR_GUILD_ID = '1413059459630104626';
 
-// Button custom_id shape: color_ticket_<slug>  (e.g. color_ticket_neon)
+// Button custom_id shapes:
+// - color_ticket_<slug>      (regular house colors)
+// - jump_color_ticket_<slug> ("ماب النطة" house colors)
+export const STANDARD_HOUSE_COLOR_CATEGORY_KEY = 'house_unlock';
+export const JUMP_MAP_HOUSE_COLOR_CATEGORY_KEY = 'house_unlock_jump';
 export const COLOR_TICKET_BUTTON_PREFIX = 'color_ticket_';
+export const JUMP_COLOR_TICKET_BUTTON_PREFIX = 'jump_color_ticket_';
 
 // Categories that were created by mistake in the past and must never exist.
 // /setup-color deletes any matching category and never recreates it.
@@ -43,8 +48,36 @@ export const COLOR_TICKETS: ColorTicketDef[] = [
   { slug: 'neon', categoryName: 'Tickets Neon .:', buttonLabel: 'لـون・النيون', emojiId: '1509800145104011375', roleId: '1509656348831387881', channelColor: 'نيون' },
   { slug: 'gothic', categoryName: 'Tickets Gothic .:', buttonLabel: 'لـون・القوثيك', emojiId: '1522966188769153214', roleId: '1513240867052458035', channelColor: 'قوثيك' },
   { slug: 'ice_fire', categoryName: 'Tickets Ice Fire .:', buttonLabel: 'لـون・الآيس-فاير', emojiId: '1509799313864392886', roleId: '1514697732638380072', channelColor: 'ايس-فاير' },
+  { slug: 'football', categoryName: 'Tickets Football .:', buttonLabel: 'لـون・الفوتبول', emojiId: '1522966224521138186', roleId: '1523426437917577337', channelColor: 'فوتبول' },
 ];
 
-export function getColorBySlug(slug: string): ColorTicketDef | undefined {
-  return COLOR_TICKETS.find((color) => color.slug === slug);
+export const JUMP_MAP_COLOR_TICKETS: ColorTicketDef[] = [
+  { slug: 'cyber', categoryName: 'Tickets Jump Cyber .:', buttonLabel: 'لون・سايبر', emojiId: '1509798027211047012', roleId: '1520245827526721566', channelColor: 'سايبر' },
+  { slug: 'aqua', categoryName: 'Tickets Jump Aqua .:', buttonLabel: 'لون・اكوا', emojiId: '1509797157836685373', roleId: '1519160928807948298', channelColor: 'اكوا' },
+  { slug: 'candy', categoryName: 'Tickets Jump Candy .:', buttonLabel: 'لون・كاندي', emojiId: '1523697811173146796', roleId: '1520245672815624232', channelColor: 'كاندي' },
+  { slug: 'party', categoryName: 'Tickets Jump Party .:', buttonLabel: 'لون・البارتي', emojiId: '1509797507641774111', roleId: '1520134074512179271', channelColor: 'بارتي' },
+  { slug: 'lava', categoryName: 'Tickets Jump Lava .:', buttonLabel: 'لون・اللافا', emojiId: '1509798442484891758', roleId: '1519161212804399104', channelColor: 'لافا' },
+];
+
+export const ALL_COLOR_TICKETS: ColorTicketDef[] = [...COLOR_TICKETS, ...JUMP_MAP_COLOR_TICKETS];
+
+export interface ColorTicketSelection {
+  color: ColorTicketDef;
+  categoryKey: string;
+}
+
+export function getColorTicketSelectionFromCustomId(customId: string): ColorTicketSelection | undefined {
+  if (customId.startsWith(COLOR_TICKET_BUTTON_PREFIX)) {
+    const slug = customId.slice(COLOR_TICKET_BUTTON_PREFIX.length);
+    const color = COLOR_TICKETS.find((item) => item.slug === slug);
+    return color ? { color, categoryKey: STANDARD_HOUSE_COLOR_CATEGORY_KEY } : undefined;
+  }
+
+  if (customId.startsWith(JUMP_COLOR_TICKET_BUTTON_PREFIX)) {
+    const slug = customId.slice(JUMP_COLOR_TICKET_BUTTON_PREFIX.length);
+    const color = JUMP_MAP_COLOR_TICKETS.find((item) => item.slug === slug);
+    return color ? { color, categoryKey: JUMP_MAP_HOUSE_COLOR_CATEGORY_KEY } : undefined;
+  }
+
+  return undefined;
 }

@@ -33,6 +33,7 @@ import {
   isOpenTicketModal,
   isAuthorizedAdmin,
 } from './constants/customIds.js';
+import { COLOR_TICKET_BUTTON_PREFIX, JUMP_COLOR_TICKET_BUTTON_PREFIX } from './constants/colorTickets.js';
 import { createSupabaseClient } from './database/supabase.js';
 import { InfrastructureRepository } from './database/infrastructureRepository.js';
 import { TicketRepository } from './database/ticketRepository.js';
@@ -857,7 +858,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
         return;
       }
 
-      if (interaction.customId.startsWith('color_ticket_')) {
+      if (
+        interaction.customId.startsWith(COLOR_TICKET_BUTTON_PREFIX)
+        || interaction.customId.startsWith(JUMP_COLOR_TICKET_BUTTON_PREFIX)
+      ) {
         await ticketService.handleColorTicketButton(interaction);
         trackLifecycleHealth();
         return;

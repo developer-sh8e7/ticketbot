@@ -225,13 +225,13 @@ export function buildCommandDefinitions(config: AppConfig, options: BuildCommand
       ) as unknown as SlashCommandBuilder,
   );
 
-  // Color ("الوان البيوت") setup — provisions the 18 color categories.
+  // Color ("الوان البيوت") setup — provisions any missing configured color categories.
   // Registered ONLY for the one server that uses this feature.
   if (config.guild?.id === COLOR_GUILD_ID) {
     commands.push(
       new SlashCommandBuilder()
         .setName('setup-color')
-        .setDescription('إنشاء كاتقوريات الألوان الـ18 (للأدمن فقط)')
+        .setDescription('إنشاء كاتقوريات الألوان الناقصة (للأدمن فقط)')
         .setDMPermission(false)
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator) as SlashCommandBuilder,
     );

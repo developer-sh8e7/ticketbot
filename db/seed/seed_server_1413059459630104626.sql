@@ -162,7 +162,8 @@ with cfg as (
     "categories": {
       "middleman": "",
       "house_unlock": "",
-      "purchase": ""
+      "purchase": "",
+      "house_unlock_jump": "1523691612771979446"
     }
   },
   "categories": [
@@ -238,6 +239,36 @@ with cfg as (
           "label": "لون البيت الي تبي تفتحه",
           "style": "Short",
           "placeholder": "مثال: دريمي",
+          "required": true,
+          "minLength": 2,
+          "maxLength": 50
+        }
+      ]
+    },
+    {
+      "key": "house_unlock_jump",
+      "enabled": true,
+      "label": "اللوان البيوت (ماب النطة)",
+      "description": "لطلب خدمة اللوان البيوت (ماب النطة)، افتح تذكرة هنا.",
+      "channelNameTemplate": "لون-{houseColor}-{ticketNumber}",
+      "supportRoleIds": [
+        "1483209015961063595"
+      ],
+      "questions": [
+        {
+          "key": "epic_id",
+          "label": "ايديك EPIC",
+          "style": "Short",
+          "placeholder": "اكتب ايدي الـ EPIC الخاص بك",
+          "required": true,
+          "minLength": 3,
+          "maxLength": 100
+        },
+        {
+          "key": "house_color",
+          "label": "لون البيت الي تبي تفتحه",
+          "style": "Short",
+          "placeholder": "مثال: سايبر",
           "required": true,
           "minLength": 2,
           "maxLength": 50
