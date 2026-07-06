@@ -78,10 +78,10 @@ notify pgrst, 'reload schema';
 -- شغّله من Supabase SQL editor بعد db/schema/000_complete_schema.sql.
 -- ════════════════════════════════════════════════════════════════
 
-insert into guilds (id, name)
-values ('1413059459630104626', 'STB الــعــرب')
+insert into guilds (id, name, prefix)
+values ('1413059459630104626', 'STB الــعــرب', '<')
 on conflict (id) do update
-  set name = coalesce(excluded.name, guilds.name), updated_at = now();
+  set name = coalesce(excluded.name, guilds.name), prefix = excluded.prefix, updated_at = now();
 
 insert into guild_channels (guild_id) values ('1413059459630104626') on conflict (guild_id) do nothing;
 insert into guild_roles (guild_id) values ('1413059459630104626') on conflict (guild_id) do nothing;

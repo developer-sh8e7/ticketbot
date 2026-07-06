@@ -22,10 +22,12 @@ import {
   UserSelectMenuInteraction,
 } from "discord.js";
 import { supabase } from "../db/supabase.js";
+import { getGuildConfig } from "../db/guilds.js";
 import { Config } from "../config.js";
 import { Logger } from "../utils/logger.js";
 import { Colors, errorEmbed, infoEmbed, successEmbed } from "../utils/embed.js";
 import { isOwner } from "../utils/permissions.js";
+import { stripMessageCommandPrefix } from "../utils/prefix.js";
 
 const CONTROL_CHANNEL_NAME = "سجن-تحكم";
 const JAIL_ROLE_NAME = "مسجون";
@@ -686,11 +688,15 @@ async function replyMessage(message: Message, ok: boolean, text: string) {
 
 export async function handleJailMessage(client: Client, message: Message): Promise<boolean> {
   if (message.author.bot || !message.guild || !message.member) return false;
-  const content = message.content.trim();
-  if (!content) return false;
+  const rawContent = message.content.trim();
+  if (!rawContent) return false;
 
   const config = await getJailConfig(message.guild.id);
   if (!config.enabled) return false;
+  const guildConfig = await getGuildConfig(message.guild.id);
+  const content = stripMessageCommandPrefix(rawContent, [guildConfig.settings.prefix, "<"]);
+  if (!content) return false;
+
   const inControlChannel = message.channel.id === config.controlChannelId || ("name" in message.channel && message.channel.name === CONTROL_CHANNEL_NAME);
   const [cmd, ...rest] = content.split(/\s+/);
 

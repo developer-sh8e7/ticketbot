@@ -11,6 +11,8 @@ import { Message, Collection, ChatInputCommandInteraction } from "discord.js";
 import { Command } from "../types.js";
 import { Logger } from "../utils/logger.js";
 import { supabase } from "../db/supabase.js";
+import { getGuildConfig } from "../db/guilds.js";
+import { stripMessageCommandPrefix } from "../utils/prefix.js";
 
 /** فقط أوامر المودريشن البسيطة قابلة للاختصار حالياً (تطابق قائمة الداشبورد). */
 export const ALIASABLE_COMMANDS = new Set([
@@ -117,7 +119,11 @@ function buildFakeOptions(optionDefs: OptionDef[], remainder: string, message: M
 export async function tryDispatchAlias(message: Message, commands: Collection<string, Command>): Promise<boolean> {
   if (!message.guild || message.author.bot) return false;
 
-  const content = message.content.trim();
+  const rawContent = message.content.trim();
+  if (!rawContent) return false;
+
+  const guildConfig = await getGuildConfig(message.guild.id);
+  const content = stripMessageCommandPrefix(rawContent, [guildConfig.settings.prefix, "<"]);
   if (!content) return false;
 
   const firstSpace = content.indexOf(" ");
