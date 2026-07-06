@@ -22,7 +22,6 @@ import {
   UserSelectMenuInteraction,
 } from "discord.js";
 import { supabase } from "../db/supabase.js";
-import { getGuildConfig } from "../db/guilds.js";
 import { Config } from "../config.js";
 import { Logger } from "../utils/logger.js";
 import { Colors, errorEmbed, infoEmbed, successEmbed } from "../utils/embed.js";
@@ -693,14 +692,16 @@ export async function handleJailMessage(client: Client, message: Message): Promi
 
   const config = await getJailConfig(message.guild.id);
   if (!config.enabled) return false;
-  const guildConfig = await getGuildConfig(message.guild.id);
-  const content = stripMessageCommandPrefix(rawContent, [guildConfig.settings.prefix, "<"]);
-  if (!content) return false;
+  const prefixedContent = stripMessageCommandPrefix(rawContent, ["!"]);
+  if (!prefixedContent) return false;
+  const usedJailPrefix = prefixedContent !== rawContent;
+  const content = usedJailPrefix ? prefixedContent : rawContent;
 
   const inControlChannel = message.channel.id === config.controlChannelId || ("name" in message.channel && message.channel.name === CONTROL_CHANNEL_NAME);
   const [cmd, ...rest] = content.split(/\s+/);
 
   if (content !== "سجن" && !inControlChannel) return false;
+  if (content === "سجن" && !inControlChannel && !usedJailPrefix) return false;
 
   if (!(await isJailAuthorized(message.member, config))) {
     await replyMessage(message, false, "ما عندك تفويض لاستخدام نظام السجن.");

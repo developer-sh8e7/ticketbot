@@ -123,7 +123,7 @@ export async function tryDispatchAlias(message: Message, commands: Collection<st
   if (!rawContent) return false;
 
   const guildConfig = await getGuildConfig(message.guild.id);
-  const content = stripMessageCommandPrefix(rawContent, [guildConfig.settings.prefix, "<"]);
+  const content = stripMessageCommandPrefix(rawContent, [guildConfig.settings.prefix, "!"]);
   if (!content) return false;
 
   const firstSpace = content.indexOf(" ");

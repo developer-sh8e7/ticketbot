@@ -17,8 +17,8 @@ export function stripMessageCommandPrefix(
     const remainder = trimmed.slice(prefix.length);
     if (!remainder) return "";
 
-    // Allow both "< سجن" and "<سجن", but don't treat Discord mentions
-    // like <@123>, <#123>, <@&123>, or custom emojis as prefix commands.
+    // Allow both "! سجن" and "!سجن", while avoiding false positives
+    // for symbols followed by punctuation (for example Discord mention syntax).
     if (/^\s/.test(remainder) || /^[\p{L}\p{N}_-]/u.test(remainder)) {
       return remainder.trimStart();
     }

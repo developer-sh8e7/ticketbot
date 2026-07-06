@@ -79,7 +79,7 @@ notify pgrst, 'reload schema';
 -- ════════════════════════════════════════════════════════════════
 
 insert into guilds (id, name, prefix)
-values ('1413059459630104626', 'STB الــعــرب', '<')
+values ('1413059459630104626', 'STB الــعــرب', '!')
 on conflict (id) do update
   set name = coalesce(excluded.name, guilds.name), prefix = excluded.prefix, updated_at = now();
 
