@@ -244,8 +244,6 @@ export class TempRoomService {
   }
 
   private async buildPanelPayload(config: AppConfig) {
-    const image = await fetchImage(config.tempRooms.panelImageUrl || PANEL_IMAGE);
-    const attachment = new AttachmentBuilder(image, { name: 'temp-rooms-panel.png' });
     const g = config.guild.id;
 
     // Discord renders buttons left-to-right. To make the visual order Arabic RTL,
@@ -272,13 +270,26 @@ export class TempRoomService {
       ),
     ];
 
-    return {
-      content: '',
-      embeds: [],
-      files: [attachment],
-      attachments: [],
-      components: rows,
-    };
+    try {
+      const image = await fetchImage(config.tempRooms.panelImageUrl || PANEL_IMAGE);
+      const attachment = new AttachmentBuilder(image, { name: 'temp-rooms-panel.png' });
+      return {
+        content: '',
+        embeds: [],
+        files: [attachment],
+        attachments: [],
+        components: rows,
+      };
+    } catch (error) {
+      logger.warn('[tempRooms] panel image unavailable, sending controls without image', error instanceof Error ? error.message : error);
+      return {
+        content: 'لوحة تحكم الرومات المؤقتة',
+        embeds: [],
+        files: [],
+        attachments: [],
+        components: rows,
+      };
+    }
   }
 
   private missingSetupPermissions(guild: Guild): string[] {
@@ -294,6 +305,83 @@ export class TempRoomService {
       [PermissionFlagsBits.ReadMessageHistory, 'Read Message History'],
     ];
     return required.filter(([perm]) => !me.permissions.has(perm)).map(([, label]) => label);
+  }
+
+  private missingRuntimePermissions(guild: Guild, joinChannel?: VoiceBasedChannel | null): string[] {
+    const me = guild.members.me;
+    if (!me) return ['BotMember'];
+    const missing: string[] = [];
+    if (!me.permissions.has(PermissionFlagsBits.ManageChannels)) missing.push('Manage Channels');
+    if (!me.permissions.has(PermissionFlagsBits.MoveMembers)) missing.push('Move Members');
+    if (joinChannel) {
+      const channelPerms = joinChannel.permissionsFor(me);
+      if (!channelPerms?.has(PermissionFlagsBits.ViewChannel)) missing.push('View Channel on trigger channel');
+      if (!channelPerms?.has(PermissionFlagsBits.Connect)) missing.push('Connect on trigger channel');
+    }
+    return uniq(missing);
+  }
+
+  private isDefaultJoinChannel(channel: VoiceBasedChannel | null): channel is VoiceChannel {
+    return channel?.type === ChannelType.GuildVoice && sanitizeChannelName(channel.name) === DEFAULT_JOIN_NAME;
+  }
+
+  private async maybeRecoverJoinChannel(guild: Guild, config: AppConfig, channel: VoiceBasedChannel | null): Promise<AppConfig> {
+    if (!config.features.tempRoomsPanel || !this.isDefaultJoinChannel(channel)) return config;
+    if (config.tempRooms.enabled && config.tempRooms.joinChannelId === channel.id) return config;
+
+    if (config.tempRooms.joinChannelId && config.tempRooms.joinChannelId !== channel.id) {
+      const savedJoin = await guild.channels.fetch(config.tempRooms.joinChannelId).catch(() => null);
+      if (savedJoin?.type === ChannelType.GuildVoice) return config;
+    }
+
+    logger.warn(`[tempRooms] recovered join-to-create channel from existing default channel ${channel.id} in guild ${guild.id}`);
+    return this.saveTempRooms(guild.id, (tempRooms) => ({
+      ...tempRooms,
+      enabled: true,
+      categoryId: tempRooms.categoryId || channel.parentId || '',
+      joinChannelId: channel.id,
+      defaultRoomName: tempRooms.defaultRoomName || DEFAULT_ROOM_TEMPLATE,
+      defaultUserLimit: tempRooms.defaultUserLimit ?? DEFAULT_USER_LIMIT,
+      adminBypass: tempRooms.adminBypass ?? DEFAULT_ADMIN_BYPASS,
+      panelImageUrl: tempRooms.panelImageUrl || PANEL_IMAGE,
+    }));
+  }
+
+  private async resolveCreateParent(guild: Guild, config: AppConfig, joinChannel: VoiceBasedChannel | null): Promise<{ config: AppConfig; parent?: string }> {
+    if (config.tempRooms.categoryId) {
+      const category = await guild.channels.fetch(config.tempRooms.categoryId).catch(() => null);
+      if (category?.type === ChannelType.GuildCategory) {
+        const me = guild.members.me;
+        const categoryPerms = me ? category.permissionsFor(me) : null;
+        if (categoryPerms?.has(PermissionFlagsBits.ManageChannels)) return { config, parent: category.id };
+        logger.warn(`[tempRooms] configured category ${category.id} denies Manage Channels in guild ${guild.id}; creating room without parent`);
+        return { config };
+      }
+    }
+
+    const fallbackCategoryId = joinChannel?.parentId ?? '';
+    if (fallbackCategoryId !== config.tempRooms.categoryId) {
+      config = this.saveTempRooms(guild.id, (tempRooms) => ({ ...tempRooms, categoryId: fallbackCategoryId }));
+    }
+    return { config, parent: fallbackCategoryId || undefined };
+  }
+
+  private async pruneStaleRooms(guild: Guild, config: AppConfig): Promise<AppConfig> {
+    const entries = Object.entries(config.tempRooms.rooms);
+    if (entries.length === 0) return config;
+
+    const rooms = { ...config.tempRooms.rooms };
+    let changed = false;
+    for (const [channelId] of entries) {
+      const channel = await guild.channels.fetch(channelId).catch(() => null);
+      if (!channel || channel.type !== ChannelType.GuildVoice) {
+        delete rooms[channelId];
+        changed = true;
+      }
+    }
+
+    if (!changed) return config;
+    return this.saveTempRooms(guild.id, (tempRooms) => ({ ...tempRooms, rooms }));
   }
 
   public async handleSetupCommand(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -400,15 +488,15 @@ export class TempRoomService {
     const tempRooms = defaultTempRooms(config);
     if (!tempRooms.enabled) return;
 
-    const category = tempRooms.categoryId ? await guild.channels.fetch(tempRooms.categoryId).catch(() => null) : null;
-    const join = tempRooms.joinChannelId ? await guild.channels.fetch(tempRooms.joinChannelId).catch(() => null) : null;
+    config = await this.pruneStaleRooms(guild, config);
     const control = tempRooms.controlChannelId ? await guild.channels.fetch(tempRooms.controlChannelId).catch(() => null) : null;
-    if (!category || !join || !control || control.type !== ChannelType.GuildText) return;
 
-    let message = tempRooms.controlMessageId ? await control.messages.fetch(tempRooms.controlMessageId).catch(() => null) : null;
-    if (!message) {
-      message = await control.send(await this.buildPanelPayload(config));
-      config = this.saveTempRooms(guild.id, (rooms) => ({ ...rooms, controlMessageId: message!.id }));
+    if (control?.type === ChannelType.GuildText) {
+      let message = tempRooms.controlMessageId ? await control.messages.fetch(tempRooms.controlMessageId).catch(() => null) : null;
+      if (!message) {
+        message = await control.send(await this.buildPanelPayload(config));
+        config = this.saveTempRooms(guild.id, (rooms) => ({ ...rooms, controlMessageId: message!.id }));
+      }
     }
 
     for (const [channelId, state] of Object.entries(config.tempRooms.rooms)) {
@@ -423,11 +511,15 @@ export class TempRoomService {
 
   public async handleVoiceStateUpdate(oldState: VoiceState, newState: VoiceState): Promise<void> {
     const guild = newState.guild ?? oldState.guild;
-    const config = this.configStore.getOrNull(guild.id) ?? this.getConfig(guild.id);
-    if (!config.tempRooms?.enabled) return;
+    let config = this.configStore.getOrNull(guild.id) ?? this.getConfig(guild.id);
 
     const member = newState.member ?? oldState.member;
     if (member?.user.bot) return;
+
+    if (newState.channelId && member) {
+      config = await this.maybeRecoverJoinChannel(guild, config, newState.channel);
+    }
+    if (!config.tempRooms?.enabled) return;
 
     if (newState.channelId === config.tempRooms.joinChannelId && member) {
       await this.handleJoinToCreate(newState, member);
@@ -459,6 +551,12 @@ export class TempRoomService {
 
     try {
       let config = this.getConfig(guild.id);
+      const missing = this.missingRuntimePermissions(guild, state.channel);
+      if (missing.length > 0) {
+        logger.warn(`[tempRooms] cannot create room in guild ${guild.id}; missing permissions: ${missing.join(', ')}`);
+        return;
+      }
+
       const existing = this.findRoomByOwner(config, member.id);
       if (existing) {
         const channel = await guild.channels.fetch(existing[0]).catch(() => null);
@@ -470,12 +568,15 @@ export class TempRoomService {
         config = this.getConfig(guild.id);
       }
 
+      const parentResult = await this.resolveCreateParent(guild, config, state.channel);
+      config = await this.pruneStaleRooms(guild, parentResult.config);
+
       if (Object.keys(config.tempRooms.rooms).length >= config.tempRooms.maxRooms) {
         await member.voice.disconnect('Temporary rooms limit reached').catch(() => null);
         return;
       }
 
-      const parent = config.tempRooms.categoryId || undefined;
+      const parent = parentResult.parent;
       const name = applyRoomTemplate(config.tempRooms.defaultRoomName, member);
       const created = await guild.channels.create({
         name,
@@ -513,7 +614,6 @@ export class TempRoomService {
   private async cleanupOrTransfer(guild: Guild, channel: VoiceBasedChannel, state: TempRoomState): Promise<void> {
     const config = this.getConfig(guild.id);
     if (!config.tempRooms.rooms[channel.id]) return;
-    if (config.tempRooms.categoryId && channel.parentId !== config.tempRooms.categoryId) return;
 
     const humans = channel.members.filter((m) => !m.user.bot);
     if (humans.size === 0) {
@@ -733,9 +833,13 @@ export class TempRoomService {
       await this.reply(interaction, 'العضو المحدد غير موجود داخل رومك.');
       return;
     }
-    await target.voice.disconnect('Kicked from temporary room').catch(async () => {
-      await this.reply(interaction, 'ما قدرت أطرد العضو بسبب الصلاحيات أو ترتيب الرتب.');
-    });
+    const disconnected = await target.voice.disconnect('Kicked from temporary room')
+      .then(() => true)
+      .catch(async () => {
+        await this.reply(interaction, 'ما قدرت أطرد العضو بسبب الصلاحيات أو ترتيب الرتب.');
+        return false;
+      });
+    if (!disconnected) return;
     await this.reply(interaction, 'تم طرد العضو من رومك.');
   }
 

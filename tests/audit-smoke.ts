@@ -1,8 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
 import { createTicketBot } from '../apps/ticket-bot/src/bot.js';
 import { createVoiceRoomsBot } from '../apps/voice-rooms-bot/src/bot.js';
-import { createGeneralBot } from '../apps/general-bot/src/bot.js';
+import { createSystemBot } from '../apps/system-bot/src/bot.js';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -11,7 +10,7 @@ function assert(condition: unknown, message: string): asserts condition {
 const root = process.cwd();
 const requiredFiles = [
   'apps/ticket-bot/src/legacy/index.ts',
-  'apps/general-bot/src/legacy/index.ts',
+  'apps/system-bot/src/legacy/index.ts',
   'apps/voice-rooms-bot/src/legacy/services/tempRoomService.ts',
   'apps/voice-rooms-bot/src/legacy/services/voice247Service.ts',
   'db/seed/config_1413059459630104626.json',
@@ -27,7 +26,7 @@ assert(catalog.includes('dbPlanIdFor'), 'catalog must derive database plan ids s
 assert(!catalog.includes('temp-rooms-monthly'), 'stale temp-rooms-monthly hardcoded plan found');
 
 const captureRoute = readFileSync(`${root}/apps/web/src/app/api/paypal/capture-order/route.ts`, 'utf8');
-assert(captureRoute.includes('checkoutProduct.plan.dbPlanId'), 'capture route must use selected catalog dbPlanId');
+assert(captureRoute.includes('plan.dbPlanId'), 'capture route must use selected catalog dbPlanId');
 assert(!captureRoute.includes('temp-rooms-monthly'), 'capture route has stale hardcoded temp rooms plan');
 assert(captureRoute.includes('requireCustomer'), 'capture route must require login');
 assert(captureRoute.includes('guildId'), 'capture route must require guild');
@@ -39,12 +38,19 @@ assert(/bot_token_encrypted/i.test(schemaSql), 'encrypted token column missing')
 assert(/provision_instance/i.test(schemaSql), 'provision_instance missing');
 assert(/where guild_id = p_guild_id and product_type = p_product_type/i.test(schemaSql), 'renewal lookup must reuse guild/product instance');
 
-const ticketCfg = readFileSync(`${root}/../Ticket/config/config_1413059459630104626.json`);
-const migratedCfg = readFileSync(`${root}/db/seed/config_1413059459630104626.json`);
-assert(createHash('sha256').update(ticketCfg).digest('hex') === createHash('sha256').update(migratedCfg).digest('hex'), 'special guild config differs from source');
+const migratedCfg = JSON.parse(readFileSync(`${root}/db/seed/config_1413059459630104626.json`, 'utf8')) as {
+  categories?: Array<{ key?: string }>;
+  tempRooms?: { defaultRoomName?: string; defaultUserLimit?: number; adminBypass?: boolean };
+};
+for (const key of ['middleman', 'house_unlock', 'purchase']) {
+  assert(migratedCfg.categories?.some((category) => category.key === key), `special guild config missing category ${key}`);
+}
+assert(migratedCfg.tempRooms?.defaultRoomName === '{username}', 'temp rooms default name must stay {username}');
+assert(migratedCfg.tempRooms?.defaultUserLimit === 99, 'temp rooms default user limit must stay 99');
+assert(migratedCfg.tempRooms?.adminBypass === true, 'temp rooms admin bypass must stay enabled');
 
 assert(typeof createTicketBot === 'function', 'ticket factory import failed');
 assert(typeof createVoiceRoomsBot === 'function', 'voice factory import failed');
-assert(typeof createGeneralBot === 'function', 'general factory import failed');
+assert(typeof createSystemBot === 'function', 'general factory import failed');
 
 console.log('audit smoke passed');

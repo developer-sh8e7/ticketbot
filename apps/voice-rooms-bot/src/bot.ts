@@ -2,11 +2,13 @@ import { mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { createClient } from '@supabase/supabase-js';
 import { Client, Events, GatewayIntentBits, Partials, REST, Routes, SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { createLogger, type BotFactory, type BotRuntimeOptions, type RunningBot } from '@opus/core';
 import { ConfigStore } from './legacy/services/configStore.js';
 import { TempRoomService } from './legacy/services/tempRoomService.js';
 import { Voice247Service } from './legacy/services/voice247Service.js';
+import type { AppConfig } from './legacy/types/config.js';
 
 const log = createLogger('voice-rooms-bot');
 
@@ -30,6 +32,10 @@ function resolveConfig(config: Record<string, unknown> | undefined, guildId: str
   return def;
 }
 
+function cloneConfig(config: AppConfig): Record<string, unknown> {
+  return JSON.parse(JSON.stringify(config)) as Record<string, unknown>;
+}
+
 /** Voice/TempRooms Bot factory using the original TempRoomService and Voice247Service logic. */
 export const createVoiceRoomsBot: BotFactory = (options: BotRuntimeOptions): RunningBot => {
   const runtimeDir = join(tmpdir(), 'opus-solutions', options.instanceId);
@@ -38,6 +44,29 @@ export const createVoiceRoomsBot: BotFactory = (options: BotRuntimeOptions): Run
   let configStore: ConfigStore | null = null;
   let tempRooms: TempRoomService | null = null;
   let voice247: Voice247Service | null = null;
+  const supabase = options.supabaseUrl && options.supabaseServiceRoleKey
+    ? createClient(options.supabaseUrl, options.supabaseServiceRoleKey)
+    : null;
+  let persistChain: Promise<void> = Promise.resolve();
+
+  const persistConfig = (guildId: string, config: AppConfig): void => {
+    if (!supabase) return;
+    const snapshot = cloneConfig(config);
+    persistChain = persistChain
+      .then(async () => {
+        const { error } = await supabase.from('server_configs').upsert(
+          {
+            guild_id: guildId,
+            product_type: 'voice_rooms',
+            config_data: snapshot,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'guild_id,product_type' },
+        );
+        if (error) throw error;
+      })
+      .catch((error) => log.error(`Failed to persist voice_rooms config for guild ${guildId}: ${error instanceof Error ? error.message : String(error)}`));
+  };
 
   return {
     productType: 'voice_rooms',
@@ -46,7 +75,7 @@ export const createVoiceRoomsBot: BotFactory = (options: BotRuntimeOptions): Run
       mkdirSync(runtimeDir, { recursive: true });
       const config = resolveConfig(options.config as Record<string, unknown> | undefined, options.guildId);
       writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
-      configStore = new ConfigStore(configPath);
+      configStore = new ConfigStore(configPath, persistConfig);
       tempRooms = new TempRoomService(configStore);
       voice247 = new Voice247Service(configStore);
       client = new Client({
@@ -92,6 +121,7 @@ export const createVoiceRoomsBot: BotFactory = (options: BotRuntimeOptions): Run
       return { botUserId: client.user?.id ?? '' };
     },
     async stop() {
+      await persistChain.catch(() => undefined);
       await client?.destroy();
       client = null;
       rmSync(runtimeDir, { recursive: true, force: true });

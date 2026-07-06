@@ -3,6 +3,8 @@ import path from 'node:path';
 import { loadConfig } from '../config/loadConfig.js';
 import type { AppConfig, GuildConfig, PanelConfig } from '../types/config.js';
 
+type PersistConfig = (guildId: string, config: AppConfig) => void | Promise<void>;
+
 export class ConfigStore {
   private configs: Map<string, AppConfig> = new Map();
   private configPaths: Map<string, string> = new Map();
@@ -10,7 +12,7 @@ export class ConfigStore {
   private readonly rootPath: string;
   private readonly isDirectory: boolean;
 
-  public constructor(configPath: string) {
+  public constructor(configPath: string, private readonly onSave?: PersistConfig) {
     this.rootPath = configPath;
     this.isDirectory = fs.existsSync(configPath) && fs.statSync(configPath).isDirectory();
 
@@ -100,6 +102,17 @@ export class ConfigStore {
     return this.defaultConfig;
   }
 
+  private persist(guildId: string, config: AppConfig): void {
+    if (!this.onSave) return;
+    try {
+      void Promise.resolve(this.onSave(guildId, config)).catch((error) => {
+        console.error(`[ConfigStore] Failed to persist config for guild ${guildId}:`, error);
+      });
+    } catch (error) {
+      console.error(`[ConfigStore] Failed to persist config for guild ${guildId}:`, error);
+    }
+  }
+
   public save(guildId: string): void {
     const config = this.get(guildId);
     const configPath = this.configPaths.get(guildId) ?? this.configPaths.get(config.guild.id || 'default') ?? this.rootPath;
@@ -113,6 +126,7 @@ export class ConfigStore {
     }
     fs.writeFileSync(tmpPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8');
     fs.renameSync(tmpPath, configPath);
+    this.persist(guildId, config);
   }
 
   public update(guildId: string, updater: (config: AppConfig) => AppConfig): AppConfig {
