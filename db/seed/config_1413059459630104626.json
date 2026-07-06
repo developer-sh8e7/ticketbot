@@ -365,5 +365,15 @@
   "voice247": {
     "enabled": false,
     "channelId": ""
+  },
+  "jail": {
+    "enabled": true,
+    "allowedRoleIds": [],
+    "allowedUserIds": [
+      "1397364822152315052"
+    ],
+    "controlChannelId": "",
+    "jailRoleId": "",
+    "updatedAt": null
   }
 }

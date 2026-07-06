@@ -378,6 +378,16 @@ with cfg as (
   "voice247": {
     "enabled": false,
     "channelId": ""
+  },
+  "jail": {
+    "enabled": true,
+    "allowedRoleIds": [],
+    "allowedUserIds": [
+      "1397364822152315052"
+    ],
+    "controlChannelId": "",
+    "jailRoleId": "",
+    "updatedAt": null
   }
 }$config$::jsonb as data
 ), products(product_type) as (

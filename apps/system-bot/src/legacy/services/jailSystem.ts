@@ -690,18 +690,24 @@ export async function handleJailMessage(client: Client, message: Message): Promi
   const rawContent = message.content.trim();
   if (!rawContent) return false;
 
-  const config = await getJailConfig(message.guild.id);
-  if (!config.enabled) return false;
   const prefixedContent = stripMessageCommandPrefix(rawContent, ["!"]);
   if (!prefixedContent) return false;
   const usedJailPrefix = prefixedContent !== rawContent;
   const content = usedJailPrefix ? prefixedContent : rawContent;
 
+  const config = await getJailConfig(message.guild.id);
   const inControlChannel = message.channel.id === config.controlChannelId || ("name" in message.channel && message.channel.name === CONTROL_CHANNEL_NAME);
   const [cmd, ...rest] = content.split(/\s+/);
 
   if (content !== "سجن" && !inControlChannel) return false;
   if (content === "سجن" && !inControlChannel && !usedJailPrefix) return false;
+
+  Logger.info(`[JAIL_MESSAGE] guild=${message.guild.id} channel=${message.channel.id} user=${message.author.id} raw="${rawContent.slice(0, 40)}" enabled=${config.enabled} inControl=${inControlChannel}`);
+
+  if (!config.enabled) {
+    await replyMessage(message, false, "نظام السجن غير مفعل من الداشبورد أو لم تُحفظ إعداداته بعد.");
+    return true;
+  }
 
   if (!(await isJailAuthorized(message.member, config))) {
     await replyMessage(message, false, "ما عندك تفويض لاستخدام نظام السجن.");
