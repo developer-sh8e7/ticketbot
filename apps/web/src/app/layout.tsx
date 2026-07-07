@@ -22,8 +22,15 @@ const englishFont = Inter({
   fallback: ['system-ui', 'Arial', 'sans-serif'],
 });
 
+function metadataBaseUrl() {
+  const appUrl = process.env.APP_URL?.trim();
+  const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+  const fallback = vercelUrl ? (/^https?:\/\//i.test(vercelUrl) ? vercelUrl : `https://${vercelUrl}`) : 'http://localhost:3000';
+  return new URL(appUrl || fallback);
+}
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.APP_URL || 'http://localhost:3000'),
+  metadataBase: metadataBaseUrl(),
   title: {
     default: 'Opus Solutions — بوتات Discord عربية احترافية',
     template: '%s — Opus Solutions',

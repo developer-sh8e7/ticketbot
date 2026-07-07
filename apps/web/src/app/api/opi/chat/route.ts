@@ -9,12 +9,11 @@ import { fail, ok } from '@/lib/api-response';
 import { rateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
-// Vercel: default function timeout (10s) is shorter than our 20s NVIDIA wait
-export const maxDuration = 30;
+export const maxDuration = 10;
 
 const NVIDIA_CHAT_URL = 'https://integrate.api.nvidia.com/v1/chat/completions';
 const MODEL = 'deepseek-ai/deepseek-v4-flash';
-const REQUEST_TIMEOUT_MS = 20_000;
+const REQUEST_TIMEOUT_MS = 8_000;
 
 // Friendly, in-character fallback messages (shown to the visitor as if Opi said them)
 const BUSY_MESSAGE = 'أعتذر منك، دماغي مزحوم شوي الحين. عطني لحظات وجرّب مرة ثانية.';
@@ -66,7 +65,7 @@ export async function POST(req: NextRequest) {
   const apiKey = process.env.NVIDIA_API_KEY;
   if (!apiKey) {
     console.error('[opi] NVIDIA_API_KEY is not set');
-    return fail('internal_error', BUSY_MESSAGE, 500);
+    return ok({ reply: BUSY_MESSAGE });
   }
 
   let raw: unknown;
@@ -99,21 +98,21 @@ export async function POST(req: NextRequest) {
       signal: controller.signal,
     });
 
-    if (res.status === 429) return fail('rate_limited', RATE_MESSAGE, 429);
+    if (res.status === 429) return ok({ reply: RATE_MESSAGE });
     if (!res.ok) {
       const detail = await res.text().catch(() => '');
       console.error('[opi] NVIDIA API error:', res.status, detail.slice(0, 300));
-      return fail('internal_error', BUSY_MESSAGE, 502);
+      return ok({ reply: BUSY_MESSAGE });
     }
 
     const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     const reply = data.choices?.[0]?.message?.content?.trim();
-    if (!reply) return fail('internal_error', BUSY_MESSAGE, 502);
+    if (!reply) return ok({ reply: BUSY_MESSAGE });
     return ok({ reply: reply.slice(0, 1200) });
   } catch (error) {
     const aborted = error instanceof Error && error.name === 'AbortError';
     if (!aborted) console.error('[opi] request failed:', error instanceof Error ? error.message : error);
-    return fail('internal_error', aborted ? SLOW_MESSAGE : BUSY_MESSAGE, aborted ? 504 : 502);
+    return ok({ reply: aborted ? SLOW_MESSAGE : BUSY_MESSAGE });
   } finally {
     clearTimeout(timer);
   }

@@ -3,6 +3,23 @@ import { products } from './site-content';
 
 const optionalUrl = z.string().url().optional().or(z.literal('').transform(() => undefined));
 
+function toHttpsUrl(value: string) {
+  const trimmed = value.trim();
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
+function withDeploymentDefaults(source: NodeJS.ProcessEnv) {
+  const next = { ...source };
+  if (!next.APP_URL) {
+    const vercelHost = next.VERCEL_PROJECT_PRODUCTION_URL || next.VERCEL_URL;
+    if (vercelHost) next.APP_URL = toHttpsUrl(vercelHost);
+  }
+  if (!next.DISCORD_REDIRECT_URI && next.APP_URL) {
+    next.DISCORD_REDIRECT_URI = `${next.APP_URL.replace(/\/$/, '')}/api/auth/discord/callback`;
+  }
+  return next;
+}
+
 const fieldEncryptionKeyRefine = (v: string) => {
   // Accept 32-byte base64, 64-char hex, or raw utf8 ≥ 32 chars
   if (Buffer.from(v, 'base64').length === 32) return true;
@@ -41,7 +58,7 @@ let cached: z.infer<typeof envSchema> | null = null;
 
 export function env() {
   if (!cached) {
-    const parsed = envSchema.safeParse(process.env);
+    const parsed = envSchema.safeParse(withDeploymentDefaults(process.env));
     if (!parsed.success) {
       // Log variable names + messages (never values) so the real cause is visible in deploy logs.
       const issues = parsed.error.issues
@@ -55,7 +72,7 @@ export function env() {
     if (cached.NODE_ENV === 'production' && !cached.APP_URL.startsWith('https://')) {
       const msg =
         `APP_URL must use https:// in production (got: ${cached.APP_URL}). ` +
-        'Set APP_URL=https://opussolutions.xyz in Railway Variables.';
+        'Set APP_URL=https://opussolutions.xyz in deployment variables.';
       console.error('[env]', msg);
       throw new Error(msg);
     }
