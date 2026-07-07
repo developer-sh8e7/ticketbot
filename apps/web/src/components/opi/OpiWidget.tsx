@@ -147,19 +147,23 @@ export function OpiWidget() {
       ref={rootRef}
       dir="rtl"
       className={`${styles.root} font-arabic`}
-      style={{ '--opi': '#ff8a00', '--opi-soft': 'rgba(255,138,0,0.14)' } as CSSProperties}
+      style={{ '--opi': '#ff8a00', '--opi-soft': 'rgba(255,138,0,0.14)', '--opi-border': 'rgba(255,138,0,0.45)' } as CSSProperties}
     >
       {/* ambient speech bubble */}
       <AnimatePresence>
         {bubble && !open ? (
           <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.95 }}
+            initial={{ opacity: 0, y: 10, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.95 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute bottom-full right-0 mb-3 w-60 rounded-2xl rounded-br-md border border-[var(--opi)] bg-[var(--color-surface)] px-4 py-3 text-sm leading-7 text-[var(--color-text)] shadow-[0_18px_60px_rgba(0,0,0,0.6)]"
+            exit={{ opacity: 0, y: 6, scale: 0.95 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute bottom-[calc(100%+12px)] left-0 w-56 rounded-2xl border border-[var(--opi-border)] bg-[var(--color-surface)] px-4 py-3 text-[13px] font-semibold leading-6 text-[var(--color-text)] shadow-[0_12px_40px_rgba(0,0,0,0.55)]"
           >
             {bubble}
+            <span
+              aria-hidden="true"
+              className="absolute -bottom-[7px] left-8 h-3.5 w-3.5 rotate-45 border-b border-r border-[var(--opi-border)] bg-[var(--color-surface)]"
+            />
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -172,7 +176,7 @@ export function OpiWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.97 }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute bottom-full right-0 mb-3 flex max-h-[420px] w-[min(320px,calc(100vw-32px))] flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_18px_60px_rgba(0,0,0,0.6)]"
+            className="absolute bottom-full left-0 mb-3 flex max-h-[420px] w-[min(320px,calc(100vw-32px))] flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_18px_60px_rgba(0,0,0,0.6)]"
           >
             <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
               <div>
@@ -238,7 +242,7 @@ export function OpiWidget() {
         ) : null}
       </AnimatePresence>
 
-      {/* the mascot itself */}
+      {/* Opi himself */}
       <button
         type="button"
         onClick={() => {
