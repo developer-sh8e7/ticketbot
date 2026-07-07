@@ -1,5 +1,6 @@
 /**
- * Opi mascot chat endpoint — proxies to deepseek-v4-pro via NVIDIA API.
+ * Opi mascot chat endpoint — proxies to deepseek-v4-flash via NVIDIA API
+ * (flash over pro: much faster at peak hours, sufficient for short persona replies).
  * Keeps the key server-side, rate-limits per IP, and returns friendly
  * in-character Arabic messages on failure/timeout instead of technical errors.
  */
@@ -10,7 +11,7 @@ import { rateLimit } from '@/lib/rate-limit';
 export const runtime = 'nodejs';
 
 const NVIDIA_CHAT_URL = 'https://integrate.api.nvidia.com/v1/chat/completions';
-const MODEL = 'deepseek-ai/deepseek-v4-pro';
+const MODEL = 'deepseek-ai/deepseek-v4-flash';
 const REQUEST_TIMEOUT_MS = 20_000;
 
 // Friendly, in-character fallback messages (shown to the visitor as if Opi said them)
