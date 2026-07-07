@@ -9,6 +9,8 @@ import { fail, ok } from '@/lib/api-response';
 import { rateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
+// Vercel: default function timeout (10s) is shorter than our 20s NVIDIA wait
+export const maxDuration = 30;
 
 const NVIDIA_CHAT_URL = 'https://integrate.api.nvidia.com/v1/chat/completions';
 const MODEL = 'deepseek-ai/deepseek-v4-flash';
