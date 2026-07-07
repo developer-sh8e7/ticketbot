@@ -10,7 +10,7 @@ import { rateLimit } from '@/lib/rate-limit';
 export const runtime = 'nodejs';
 
 const NVIDIA_CHAT_URL = 'https://integrate.api.nvidia.com/v1/chat/completions';
-const MODEL = 'deepseek-v4-pro';
+const MODEL = 'deepseek-ai/deepseek-v4-pro';
 const REQUEST_TIMEOUT_MS = 20_000;
 
 // Friendly, in-character fallback messages (shown to the visitor as if Opi said them)
@@ -90,13 +90,16 @@ export async function POST(req: NextRequest) {
         temperature: 0.6,
         max_tokens: 350,
         stream: false,
+        // NIM-specific: disable DeepSeek reasoning tokens — Opi needs fast, short replies
+        chat_template_kwargs: { thinking: false },
       }),
       signal: controller.signal,
     });
 
     if (res.status === 429) return fail('rate_limited', RATE_MESSAGE, 429);
     if (!res.ok) {
-      console.error('[opi] NVIDIA API error:', res.status);
+      const detail = await res.text().catch(() => '');
+      console.error('[opi] NVIDIA API error:', res.status, detail.slice(0, 300));
       return fail('internal_error', BUSY_MESSAGE, 502);
     }
 
