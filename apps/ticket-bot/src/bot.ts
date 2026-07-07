@@ -24,6 +24,12 @@ function resolveConfig(config: Record<string, unknown> | undefined, guildId: str
   const defaultPath = fileURLToPath(new URL('../assets/default-config.json', import.meta.url));
   const def = JSON.parse(readFileSync(defaultPath, 'utf8')) as Record<string, unknown>;
   if (def.guild && typeof def.guild === 'object') (def.guild as Record<string, unknown>).id = guildId;
+  if (def.roleProtection && typeof def.roleProtection === 'object') {
+    (def.roleProtection as Record<string, unknown>).enabled = false;
+  }
+  if (def.roleManagement && typeof def.roleManagement === 'object') {
+    (def.roleManagement as Record<string, unknown>).enabled = false;
+  }
   return def;
 }
 
