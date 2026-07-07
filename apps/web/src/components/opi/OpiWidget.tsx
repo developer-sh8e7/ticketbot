@@ -113,7 +113,7 @@ export function OpiWidget() {
     const text = input.trim();
     if (!text || pending) return;
     setInput('');
-    const next: ChatMessage[] = [...messages, { role: 'user', content: text }];
+    const next: ChatMessage[] = [...messages, { role: 'user' as const, content: text }];
     setMessages(next.slice(-20));
     setPending(true);
     pendingRef.current = true;
@@ -138,7 +138,7 @@ export function OpiWidget() {
       clearTimeout(timer);
       pendingRef.current = false;
       setPending(false);
-      setMessages((prev) => [...prev, { role: 'assistant', content: reply }].slice(-20));
+      setMessages((prev) => [...prev, { role: 'assistant' as const, content: reply }].slice(-20));
     }
   };
 
