@@ -53,7 +53,7 @@ function ProductRow({
   const paid = hasPaidPrice(product);
   const rowClassName = `flex min-h-[72px] w-full items-center justify-between gap-4 border-b border-[var(--color-border)] border-l-[3px] px-4 py-3 text-start transition last:border-b-0 ${
     selected
-      ? 'border-l-[var(--color-accent)] bg-[rgba(124,92,252,0.05)]'
+      ? 'border-l-[var(--color-accent)] bg-[rgba(255,138,0,0.05)]'
       : 'border-l-transparent bg-transparent hover:bg-white/[0.025]'
   } ${paid ? 'cursor-pointer' : 'cursor-not-allowed opacity-40'}`;
 
@@ -181,12 +181,12 @@ export function PricingCheckout({ products }: { products: Product[] }) {
             onClick={() => setBillingPeriod('monthly')}
             className={`rounded-2xl border px-4 py-3 text-center font-arabic transition ${
               billingPeriod === 'monthly'
-                ? 'border-[#7c5cfc] bg-[#7c5cfc] text-white shadow-[0_0_28px_rgba(124,92,252,0.22)]'
-                : 'border-[var(--color-border)] bg-transparent text-[var(--color-muted)] hover:border-[#7c5cfc] hover:text-[var(--color-text)]'
+                ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-black shadow-[0_0_28px_rgba(255,138,0,0.22)]'
+                : 'border-[var(--color-border)] bg-transparent text-[var(--color-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-text)]'
             }`}
           >
             <span className="block text-base font-extrabold">شهري</span>
-            <span className={`mt-1 block text-xs ${billingPeriod === 'monthly' ? 'text-white/80' : 'text-[var(--color-muted)]'}`}>
+            <span className={`mt-1 block text-xs ${billingPeriod === 'monthly' ? 'text-black/70' : 'text-[var(--color-muted)]'}`}>
               دفع كل شهر
             </span>
           </button>
@@ -196,15 +196,15 @@ export function PricingCheckout({ products }: { products: Product[] }) {
             onClick={() => setBillingPeriod('quarterly')}
             className={`relative rounded-2xl border px-4 py-3 text-center font-arabic transition ${
               billingPeriod === 'quarterly'
-                ? 'border-[#7c5cfc] bg-[#7c5cfc] text-white shadow-[0_0_28px_rgba(124,92,252,0.22)]'
-                : 'border-[var(--color-border)] bg-transparent text-[var(--color-muted)] hover:border-[#7c5cfc] hover:text-[var(--color-text)]'
+                ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-black shadow-[0_0_28px_rgba(255,138,0,0.22)]'
+                : 'border-[var(--color-border)] bg-transparent text-[var(--color-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-text)]'
             }`}
           >
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--color-accent-2)] px-3 py-1 text-[11px] font-extrabold text-[var(--color-bg)] shadow-[0_0_18px_rgba(0,212,170,0.22)]">
+            <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--color-accent-2)] px-3 py-1 text-[11px] font-extrabold text-[var(--color-bg)] shadow-[0_0_18px_rgba(255,138,0,0.22)]">
               وفّر 5%
             </span>
             <span className="block text-base font-extrabold">3 شهور</span>
-            <span className={`mt-1 block text-xs ${billingPeriod === 'quarterly' ? 'text-white/80' : 'text-[var(--color-muted)]'}`}>
+            <span className={`mt-1 block text-xs ${billingPeriod === 'quarterly' ? 'text-black/70' : 'text-[var(--color-muted)]'}`}>
               دفعة واحدة كل 3 شهور
             </span>
           </button>

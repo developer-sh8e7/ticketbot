@@ -1,0 +1,5 @@
+# personal config (contains your OBS websocket password) — keep the example tracked
+config/video.json
+output/
+__pycache__/
+*.pyc

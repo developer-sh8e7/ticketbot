@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     const title = typeof body.title === 'string' ? body.title : '📝 حدث';
     const description = typeof body.description === 'string' ? body.description : undefined;
 
-    let color = 0x7c5cfc;
+    let color = 0xff8a00;
     if (typeof body.color === 'number' && Number.isFinite(body.color)) {
       color = body.color;
     }

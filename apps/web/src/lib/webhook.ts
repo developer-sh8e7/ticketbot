@@ -28,8 +28,8 @@ function colorForEvent(eventType: string): WebhookColor {
   if (eventType.includes('error') || eventType.includes('fail') || eventType.includes('rejected')) return 0xef4444;
   if (eventType.includes('attempt') || eventType.includes('pending')) return 0xf59e0b;
   if (eventType.includes('page_view') || eventType.includes('visit')) return 0x3b82f6;
-  if (eventType.includes('click') || eventType.includes('cta')) return 0x8b5cf6;
-  return 0x7c5cfc;
+  if (eventType.includes('click') || eventType.includes('cta')) return 0xffb866;
+  return 0xff8a00;
 }
 
 function getEnv(key: string): string | undefined {

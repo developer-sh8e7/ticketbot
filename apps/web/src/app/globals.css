@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  /* Monochrome, professional black & white theme. */
+  /* Black background with Opus orange accent (Opi's color). */
   --color-bg: #0a0a0a;
   --color-surface: #141416;
   --color-border: #2a2a2e;
-  --color-accent: #fafafa;        /* primary actions → white surface, black text */
-  --color-accent-2: #c8c8cf;      /* secondary highlights → light gray */
+  --color-accent: #ff8a00;        /* primary actions → orange surface, black text */
+  --color-accent-2: #ffb866;      /* secondary highlights → light orange */
   --color-text: #fafafa;
   --color-muted: #8b8b94;
   --navbar-bg: color-mix(in srgb, var(--color-bg) 80%, transparent);

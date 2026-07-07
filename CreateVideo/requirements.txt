@@ -1,0 +1,6 @@
+# CreateVideo — automated marketing recorder (Windows)
+# Python 3.11+
+obsws-python>=1.8.0
+playwright>=1.58.0
+pywin32>=306
+# tkinter ships with the standard Windows Python installer (no pip needed)

@@ -4,6 +4,7 @@ import './globals.css';
 import { VisitLogger } from '@/components/VisitLogger';
 import { CartProvider } from '@/components/cart/CartProvider';
 import { CartDrawer } from '@/components/cart/CartDrawer';
+import { OpiRoot } from '@/components/opi/OpiRoot';
 
 const arabicFont = Cairo({
   subsets: ['arabic'],
@@ -57,6 +58,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <div className="opus-grid" aria-hidden="true" />
           {children}
           <CartDrawer />
+          <OpiRoot />
         </CartProvider>
       </body>
     </html>
