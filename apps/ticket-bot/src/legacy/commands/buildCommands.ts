@@ -1,6 +1,7 @@
 import { ChannelType, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 import type { AppConfig } from '../types/config.js';
 import { COLOR_GUILD_ID } from '../constants/colorTickets.js';
+import { isSeedGuild } from '../constants/seedGuilds.js';
 
 export interface BuildCommandOptions {
   includeOpusCommands?: boolean;
@@ -88,11 +89,13 @@ export function buildCommandDefinitions(config: AppConfig, options: BuildCommand
       ) as unknown as SlashCommandBuilder,
   );
 
-  commands.push(
-    new SlashCommandBuilder()
-      .setName('logs')
-      .setDescription('Respawn all bot log channels and post what each log is for.') as SlashCommandBuilder,
-  );
+  if (isSeedGuild(config.guild?.id)) {
+    commands.push(
+      new SlashCommandBuilder()
+        .setName('logs')
+        .setDescription('Respawn all bot log channels and post what each log is for.') as SlashCommandBuilder,
+    );
+  }
 
   // AI Toggle command
   commands.push(

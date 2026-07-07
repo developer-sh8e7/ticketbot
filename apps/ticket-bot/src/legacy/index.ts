@@ -157,8 +157,8 @@ const welcomeService = new WelcomeService();
 const tempRoomService = new TempRoomService(configStore);
 const voice247Service = new Voice247Service(configStore);
 
-async function syncCommands(): Promise<void> {
-  const config = configStore.current;
+async function syncCommandsForGuild(guildId: string): Promise<void> {
+  const guildConfig = configStore.get(guildId);
 
   // Register with THIS bot's own application id (client id), never the shared
   // website DISCORD_CLIENT_ID — using another app's id yields DiscordAPIError
@@ -169,23 +169,26 @@ async function syncCommands(): Promise<void> {
     return;
   }
 
-  if (!config.commands.registerOnStartup) {
+  if (!guildConfig.commands.registerOnStartup) {
     logger.info('Command registration on startup is disabled.');
     return;
   }
 
+  if (!guildConfig.commands.guildScoped) return;
+
+  await registerCommands(env.DISCORD_TOKEN, appId, guildConfig, {
+    includeOpusCommands: isOpusRuntime(),
+  });
+  logger.info(`Commands registered for guild ${guildId}`);
+}
+
+async function syncCommands(): Promise<void> {
   const guilds = await client.guilds.fetch();
   for (const guild of guilds.values()) {
-    const guildConfig = configStore.get(guild.id);
-    if (guildConfig.commands.guildScoped) {
-      try {
-        await registerCommands(env.DISCORD_TOKEN, appId, guildConfig, {
-          includeOpusCommands: isOpusRuntime(),
-        });
-        logger.info(`Commands registered for guild ${guild.id}`);
-      } catch (err) {
-        logger.error(`Failed to register commands for guild ${guild.id}:`, err);
-      }
+    try {
+      await syncCommandsForGuild(guild.id);
+    } catch (err) {
+      logger.error(`Failed to register commands for guild ${guild.id}:`, err);
     }
   }
   logger.info('Slash commands registered successfully.');
@@ -357,6 +360,11 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
   if (interaction.commandName === 'logs') {
     if (!interaction.inCachedGuild()) {
       await safeReply(interaction, [buildErrorEmbed(configStore.current, 'هذا الأمر يعمل داخل السيرفر فقط.')]);
+      return;
+    }
+
+    if (!serverLogService.isEnabled()) {
+      await safeReply(interaction, [buildErrorEmbed(config, 'ميزة اللوقات مخصصة لسيرفرات Opus الأساسية فقط.')]);
       return;
     }
 
@@ -646,10 +654,36 @@ client.once(Events.ClientReady, async (readyClient) => {
   }
 
   try {
-    await serverLogService.ensure();
-    logger.info('Server logs verified / created successfully.');
+    if (serverLogService.isEnabled()) {
+      await serverLogService.ensure();
+      logger.info('Server logs verified / created successfully.');
+    } else {
+      logger.info('Server logs disabled outside seed guilds.');
+    }
   } catch (error) {
     logger.error('Failed to setup server logs', error instanceof Error ? error.message : error);
+  }
+});
+
+client.on(Events.GuildCreate, async (guild) => {
+  logger.info(`Joined guild ${guild.id}; preparing ticket bot commands and infrastructure.`);
+
+  try {
+    await infrastructureService.ensureInfrastructure(client, guild);
+  } catch (error) {
+    logger.error(`Failed to setup infrastructure for guild ${guild.id}`, error instanceof Error ? error.message : error);
+  }
+
+  try {
+    await syncCommandsForGuild(guild.id);
+  } catch (error) {
+    logger.error(`Failed to register commands for joined guild ${guild.id}`, error instanceof Error ? error.message : error);
+  }
+
+  try {
+    if (serverLogService.isEnabled()) await serverLogService.ensure();
+  } catch (error) {
+    logger.error(`Failed to setup server logs for guild ${guild.id}`, error instanceof Error ? error.message : error);
   }
 });
 

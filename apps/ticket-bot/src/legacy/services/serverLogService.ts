@@ -8,6 +8,7 @@ import {
   type TextChannel,
 } from 'discord.js';
 import { logger } from '../utils/logger.js';
+import { isSeedGuild } from '../constants/seedGuilds.js';
 
 type LogChannelKey = 'security' | 'roles' | 'channels' | 'permissions' | 'messages' | 'members' | 'voice' | 'moderation' | 'server';
 
@@ -42,7 +43,13 @@ export class ServerLogService {
 
   public constructor(private readonly client: Client, private readonly guildId: string) {}
 
+  public isEnabled(): boolean {
+    return isSeedGuild(this.guildId);
+  }
+
   public async ensure(announce = false): Promise<{ key: LogChannelKey; name: string; id: string; description: string }[]> {
+    if (!this.isEnabled()) return [];
+
     const guild = await this.client.guilds.fetch(this.guildId).catch(() => null);
     if (!guild) return [];
 
@@ -62,6 +69,8 @@ export class ServerLogService {
   }
 
   public async send(key: LogChannelKey, title: string, description: string, fields: { name: string; value: string; inline?: boolean }[] = []): Promise<void> {
+    if (!this.isEnabled()) return;
+
     const channelId = this.channelIds.get(key);
     if (!channelId) return;
 
@@ -82,6 +91,8 @@ export class ServerLogService {
   }
 
   public async fetchExecutor(guild: Guild, type: AuditLogEvent, targetId?: string): Promise<string> {
+    if (!this.isEnabled()) return 'غير معروف';
+
     for (let attempt = 0; attempt < 3; attempt++) {
       const executor = await this.findRecentExecutor(guild, type, targetId);
       if (executor) return executor;

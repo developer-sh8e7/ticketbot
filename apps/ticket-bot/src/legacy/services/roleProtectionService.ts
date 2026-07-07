@@ -10,8 +10,7 @@ import {
 import type { AppConfig } from '../types/config.js';
 import { logger } from '../utils/logger.js';
 import { RoleProtectionRepository } from '../database/roleProtectionRepository.js';
-
-const ROLE_PROTECTION_GUILD_ALLOWLIST = new Set(['1413059459630104626', '1395842846107631746']);
+import { isSeedGuild } from '../constants/seedGuilds.js';
 
 export class RoleProtectionService {
   private interval: NodeJS.Timeout | null = null;
@@ -32,7 +31,7 @@ export class RoleProtectionService {
       return;
     }
 
-    if (!ROLE_PROTECTION_GUILD_ALLOWLIST.has(this.guildId)) {
+    if (!isSeedGuild(this.guildId)) {
       logger.warn(`Role protection is seed-guild only; disabled for guild ${this.guildId}.`);
       return;
     }

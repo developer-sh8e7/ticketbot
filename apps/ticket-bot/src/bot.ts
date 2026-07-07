@@ -13,24 +13,41 @@ const log = createLogger('ticket-bot');
 // EADDRINUSE (restart loop). Give each ticket worker its own unique internal port.
 let nextHealthPort = 3101;
 
+const SEED_GUILD_IDS = new Set(['1413059459630104626', '1395842846107631746']);
+
+function cloneConfig(config: Record<string, unknown>): Record<string, unknown> {
+  return JSON.parse(JSON.stringify(config)) as Record<string, unknown>;
+}
+
+function prepareRuntimeConfig(config: Record<string, unknown>, guildId: string): Record<string, unknown> {
+  const prepared = cloneConfig(config);
+  if (prepared.guild && typeof prepared.guild === 'object') {
+    (prepared.guild as Record<string, unknown>).id = guildId;
+  }
+
+  if (!SEED_GUILD_IDS.has(guildId)) {
+    if (prepared.roleProtection && typeof prepared.roleProtection === 'object') {
+      (prepared.roleProtection as Record<string, unknown>).enabled = false;
+    }
+    if (prepared.roleManagement && typeof prepared.roleManagement === 'object') {
+      (prepared.roleManagement as Record<string, unknown>).enabled = false;
+    }
+  }
+
+  return prepared;
+}
+
 /**
  * A fresh guild has no saved server_configs row, so options.config is empty and
  * the legacy loader's strict schema would reject it and crash the worker (the
  * bot then shows offline). Fall back to a bundled, schema-valid default config
- * (store-specific IDs stripped) with the target guild id filled in.
+ * with the target guild id filled in.
  */
 function resolveConfig(config: Record<string, unknown> | undefined, guildId: string): Record<string, unknown> {
-  if (config && Object.keys(config).length > 0) return config;
+  if (config && Object.keys(config).length > 0) return prepareRuntimeConfig(config, guildId);
   const defaultPath = fileURLToPath(new URL('../assets/default-config.json', import.meta.url));
   const def = JSON.parse(readFileSync(defaultPath, 'utf8')) as Record<string, unknown>;
-  if (def.guild && typeof def.guild === 'object') (def.guild as Record<string, unknown>).id = guildId;
-  if (def.roleProtection && typeof def.roleProtection === 'object') {
-    (def.roleProtection as Record<string, unknown>).enabled = false;
-  }
-  if (def.roleManagement && typeof def.roleManagement === 'object') {
-    (def.roleManagement as Record<string, unknown>).enabled = false;
-  }
-  return def;
+  return prepareRuntimeConfig(def, guildId);
 }
 
 function legacyEntry(): string {
