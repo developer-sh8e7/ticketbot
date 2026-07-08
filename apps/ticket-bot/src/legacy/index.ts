@@ -613,15 +613,23 @@ client.once(Events.ClientReady, async (readyClient) => {
   }
 
   try {
-    await tempRoomService.recoverAll(readyClient);
-    logger.info('Temporary voice rooms recovered successfully.');
+    if (configStore.all().some((entry) => entry.tempRooms?.enabled)) {
+      await tempRoomService.recoverAll(readyClient);
+      logger.info('Temporary voice rooms recovered successfully.');
+    } else {
+      logger.info('Temporary voice rooms disabled.');
+    }
   } catch (error) {
     logger.error('Failed to recover temporary voice rooms', error instanceof Error ? error.message : error);
   }
 
   try {
-    await voice247Service.recoverAll(readyClient);
-    logger.info('24/7 voice connection recovered successfully.');
+    if (configStore.all().some((entry) => entry.voice247?.enabled && entry.voice247.channelId)) {
+      await voice247Service.recoverAll(readyClient);
+      logger.info('24/7 voice connection recovered successfully.');
+    } else {
+      logger.info('24/7 voice connection disabled.');
+    }
   } catch (error) {
     logger.error('Failed to recover 24/7 voice connection', error instanceof Error ? error.message : error);
   }
@@ -662,8 +670,12 @@ client.once(Events.ClientReady, async (readyClient) => {
   }
 
   try {
-    const escalationService = new EscalationService(readyClient, ticketRepository, config);
-    escalationService.start();
+    if (isStbGuild(config.guild.id)) {
+      const escalationService = new EscalationService(readyClient, ticketRepository, config);
+      escalationService.start();
+    } else {
+      logger.info('Middleman escalation scheduler disabled outside STB guild.');
+    }
   } catch (error) {
     logger.error('Failed to start EscalationService', error instanceof Error ? error.message : error);
   }

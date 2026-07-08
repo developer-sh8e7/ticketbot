@@ -31,7 +31,7 @@ export class EscalationService {
   }
 
   private async checkEscalations(): Promise<void> {
-    const guildId = this.config.guild.guildId;
+    const guildId = this.config.guild.id;
     if (!guildId) return;
 
     const guild = await this.client.guilds.fetch(guildId).catch(() => null);

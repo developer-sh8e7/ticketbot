@@ -5,7 +5,7 @@
     "buildCommand": "npm run build -w @opus/core && npm run build -w @opus/ticket-bot && npm run build -w @opus/voice-rooms-bot && npm run build -w @opus/system-bot && npm run build -w @opus/broadcast-bot && npm run build -w @opus/orchestrator"
   },
   "deploy": {
-    "startCommand": "npm run start -w @opus/orchestrator",
+    "startCommand": "node apps/orchestrator/dist/index.js",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 30,
     "restartPolicyType": "ON_FAILURE",
