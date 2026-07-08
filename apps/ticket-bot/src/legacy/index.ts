@@ -212,13 +212,15 @@ function isSpecialTicketCommandAllowed(commandName: string, guildId: string | nu
 }
 
 async function ensurePanelManager(interaction: ChatInputCommandInteraction): Promise<boolean> {
+  const config = interaction.guildId ? configStore.get(interaction.guildId) : configStore.current;
+
   if (!interaction.inCachedGuild() || !interaction.member) {
-    await safeReply(interaction, [buildErrorEmbed(configStore.current, 'This command only works inside the configured guild.')]);
+    await safeReply(interaction, [buildErrorEmbed(config, 'This command only works inside the configured guild.')]);
     return false;
   }
 
-  if (!canManagePanels(interaction.member, configStore.current)) {
-    await safeReply(interaction, [buildErrorEmbed(configStore.current, configStore.current.ticket.messages.noPermission)]);
+  if (!canManagePanels(interaction.member, config)) {
+    await safeReply(interaction, [buildErrorEmbed(config, config.ticket.messages.noPermission)]);
     return false;
   }
 
@@ -237,8 +239,15 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
     if (!(await safeDeferReply(interaction, interaction.commandName))) {
       return;
     }
-    const message = await panelService.sendPanel(interaction.guild!);
-    await safeEditReply(interaction, [buildSuccessEmbed(configStore.current, 'Panel Sent', `Panel has been sent successfully.\nMessage ID: \`${message.id}\``)]);
+    const targetChannel = interaction.options.getChannel('channel');
+    const message = await panelService.sendPanel(interaction.guild!, targetChannel?.id);
+    await safeEditReply(interaction, [
+      buildSuccessEmbed(
+        config,
+        'Panel Sent',
+        `تم إرسال البنل بنجاح في <#${message.channelId}>.\n[افتح رسالة البنل](${message.url})\nMessage ID: \`${message.id}\``,
+      ),
+    ]);
     return;
   }
 
@@ -252,7 +261,13 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
     }
     const messageId = interaction.options.getString('message-id') ?? undefined;
     const message = await panelService.refreshPanel(interaction.guild!, messageId);
-    await safeEditReply(interaction, [buildSuccessEmbed(configStore.current, 'Panel Refreshed', `Panel has been refreshed.\nMessage ID: \`${message.id}\``)]);
+    await safeEditReply(interaction, [
+      buildSuccessEmbed(
+        config,
+        'Panel Refreshed',
+        `تم تحديث البنل في <#${message.channelId}>.\n[افتح رسالة البنل](${message.url})\nMessage ID: \`${message.id}\``,
+      ),
+    ]);
     return;
   }
 

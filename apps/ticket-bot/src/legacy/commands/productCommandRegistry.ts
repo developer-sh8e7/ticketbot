@@ -1,4 +1,4 @@
-import { REST, Routes, SlashCommandBuilder } from 'discord.js';
+import { ChannelType, REST, Routes, SlashCommandBuilder } from 'discord.js';
 import type { AppConfig } from '../types/config.js';
 import type { ProductType } from '../database/botInstanceRepository.js';
 
@@ -31,7 +31,14 @@ function buildTicketCommands(config: AppConfig): SlashCommandBuilder[] {
     cmds.push(
       new SlashCommandBuilder()
         .setName(names.panelSend)
-        .setDescription('Send the ticket panel to the configured panel channel.') as SlashCommandBuilder,
+        .setDescription('Send the ticket panel to a channel.')
+        .addChannelOption((option) =>
+          option
+            .setName('channel')
+            .setDescription('Channel to send the ticket panel in. Defaults to the configured panel channel.')
+            .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+            .setRequired(false),
+        ) as unknown as SlashCommandBuilder,
     );
   }
   if (names.panelRefresh) {

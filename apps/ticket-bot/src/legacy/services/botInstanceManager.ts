@@ -634,9 +634,10 @@ export class BotInstanceManager {
       }
 
       if (commandName === config.commands.names.panelSend) {
-        const message = await panelService.sendPanel(interaction.guild!);
+        const targetChannel = interaction.options.getChannel('channel');
+        const message = await panelService.sendPanel(interaction.guild!, targetChannel?.id);
         await safeEditReply(interaction, [
-          buildSuccessEmbed(config, 'Panel Sent', `تم إرسال لوحة التذاكر بنجاح.\nMessage ID: \`${message.id}\``),
+          buildSuccessEmbed(config, 'Panel Sent', `تم إرسال لوحة التذاكر بنجاح في <#${message.channelId}>.\n[افتح رسالة البنل](${message.url})\nMessage ID: \`${message.id}\``),
         ]);
         return;
       }
@@ -645,7 +646,7 @@ export class BotInstanceManager {
         const messageId = interaction.options.getString('message-id') ?? undefined;
         const message = await panelService.refreshPanel(interaction.guild!, messageId);
         await safeEditReply(interaction, [
-          buildSuccessEmbed(config, 'Panel Refreshed', `تم تحديث لوحة التذاكر.\nMessage ID: \`${message.id}\``),
+          buildSuccessEmbed(config, 'Panel Refreshed', `تم تحديث لوحة التذاكر في <#${message.channelId}>.\n[افتح رسالة البنل](${message.url})\nMessage ID: \`${message.id}\``),
         ]);
         return;
       }

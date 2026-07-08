@@ -10,8 +10,9 @@ export class PanelService {
     private readonly mediatorRepository: MediatorRepository,
   ) {}
 
-  private async resolvePanelChannel(guild: Guild) {
-    const channelId = this.configStore.current.panel.channelId;
+  private async resolvePanelChannel(guild: Guild, overrideChannelId?: string) {
+    const config = this.configStore.get(guild.id);
+    const channelId = overrideChannelId || config.panel.channelId;
 
     if (!channelId) {
       throw new Error('Panel channel ID is not configured. Run infrastructure setup first.');
@@ -27,7 +28,7 @@ export class PanelService {
   }
 
   private async buildPayload(guild: Guild) {
-    const config = this.configStore.current;
+    const config = this.configStore.get(guild.id);
     const mediatorConfig = await this.mediatorRepository.getMediatorConfig();
 
     const content = [config.panel.description.trim(), config.panel.defaultMention.trim()]
@@ -46,15 +47,15 @@ export class PanelService {
     };
   }
 
-  public async sendPanel(guild: Guild): Promise<Message> {
-    const channel = await this.resolvePanelChannel(guild);
+  public async sendPanel(guild: Guild, channelId?: string): Promise<Message> {
+    const channel = await this.resolvePanelChannel(guild, channelId);
     const payload = await this.buildPayload(guild);
     return channel.send(payload);
   }
 
   public async refreshPanel(guild: Guild, messageId?: string): Promise<Message> {
     const channel = await this.resolvePanelChannel(guild);
-    const targetMessageId = messageId || this.configStore.current.panel.messageId;
+    const targetMessageId = messageId || this.configStore.get(guild.id).panel.messageId;
 
     if (!targetMessageId) {
       return this.sendPanel(guild);

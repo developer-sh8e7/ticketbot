@@ -19,7 +19,14 @@ export function buildCommandDefinitions(config: AppConfig, options: BuildCommand
     commands.push(
       new SlashCommandBuilder()
         .setName(names.panelSend)
-        .setDescription('Send the ticket panel to the configured panel channel.') as SlashCommandBuilder,
+        .setDescription('Send the ticket panel to a channel.')
+        .addChannelOption((option) =>
+          option
+            .setName('channel')
+            .setDescription('Channel to send the ticket panel in. Defaults to the configured panel channel.')
+            .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+            .setRequired(false),
+        ) as unknown as SlashCommandBuilder,
     );
   }
 
