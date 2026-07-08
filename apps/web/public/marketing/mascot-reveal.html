@@ -1,408 +1,514 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Opi — NOW SHOWING</title>
-
-<!-- Pixel/LED display font (falls back to monospace if offline) -->
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
-
-<!-- GSAP (GreenSock) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Opi AI — TikTok Mascot Ad</title>
 <style>
-  /* ============================================================= *
-   *  All look & feel is driven by CONFIG (see <script> below).    *
-   *  These CSS custom properties are set from JS at runtime, so    *
-   *  you normally never touch this stylesheet — only CONFIG.       *
-   * ============================================================= */
   :root {
-    --bg: #000000;
-    --dot: #1c1c1c;
-    --cell-bg: #141416;
-    --cell-border: #2c2c30;
-    --cell-inner: #0c0c0f;
-    --letter: #ff8a00;
-    --letter-glow: #ff8a00;
-    --bubble-bg: #ffffff;
-    --bubble-text: #141414;
-    --accent: #ff8a00;
+    --bg: #050505;
+    --dot: #242424;
+    --coral: #e37257;
+    --coral-2: #ff8a00;
+    --glow: rgba(255, 138, 0, 0.62);
+    --text: #fff7ed;
+    --muted: #b7afa7;
+    --panel: rgba(9, 9, 11, 0.88);
+    --border: rgba(227, 114, 87, 0.46);
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  html, body {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background-color: var(--bg);
-    /* faint, static dot grid */
-    background-image: radial-gradient(var(--dot) 1.6px, transparent 1.7px);
-    background-size: 26px 26px;
-    background-position: center;
-  }
-
+  * { box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #000; }
   body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Press Start 2P', 'Courier New', monospace;
+    display: grid;
+    place-items: center;
+    color: var(--text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   }
 
-  /* Portrait 9:16 stage, scales to fit any window (great for TikTok capture) */
   .stage {
     position: relative;
-    width: min(56.25vh, 100vw);
+    width: min(100vw, 56.25vh);
     height: min(100vh, 177.78vw);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: clamp(20px, 4.5vh, 60px);
-    padding: 4vh 0;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 50% 16%, rgba(227, 114, 87, 0.18), transparent 31%),
+      radial-gradient(circle at 50% 72%, rgba(255, 138, 0, 0.13), transparent 38%),
+      linear-gradient(180deg, #121212 0%, #050505 58%, #000 100%);
+    isolation: isolate;
   }
 
-  /* ---- Speech bubble ---- */
-  .bubble-wrap {
-    position: relative;
-    opacity: 0;            /* GSAP fades it in */
-    will-change: transform, opacity;
+  .stage::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(var(--dot) 1.45px, transparent 1.7px);
+    background-size: 23px 23px;
+    opacity: 0.9;
+    animation: bgMove 10s linear infinite;
+    z-index: -4;
   }
+
+  .stage::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(rgba(255,255,255,0.04) 50%, rgba(0,0,0,0.04) 50%),
+      radial-gradient(circle at center, transparent 48%, rgba(0,0,0,0.78) 100%);
+    background-size: 100% 4px, 100% 100%;
+    opacity: 0.42;
+    mix-blend-mode: screen;
+    z-index: 40;
+  }
+
+  @keyframes bgMove { to { background-position: 23px 23px; } }
+
+  .topbar {
+    position: absolute;
+    top: 20px;
+    inset-inline: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 10;
+    direction: ltr;
+  }
+
+  .rec {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 999px;
+    padding: 8px 11px;
+    background: rgba(0,0,0,0.52);
+    color: #fff;
+    font-size: 11px;
+    letter-spacing: 0.09em;
+  }
+  .rec i { width: 8px; height: 8px; border-radius: 99px; background: #ff4d4d; box-shadow: 0 0 14px #ff4d4d; animation: blink 0.65s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: 0.2; } }
+
+  .brand {
+    text-align: right;
+    direction: rtl;
+  }
+  .brand b {
+    display: block;
+    color: var(--coral-2);
+    font-size: 18px;
+    letter-spacing: 0.08em;
+    text-shadow: 0 0 14px var(--glow), 0 0 26px rgba(227,114,87,0.55);
+  }
+  .brand span { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; }
+
+  .bubble-wrap {
+    position: absolute;
+    top: 78px;
+    left: 50%;
+    width: 86%;
+    transform: translateX(-50%) scale(0.88);
+    opacity: 0;
+    animation: pop 0.55s cubic-bezier(.2,1.55,.35,1) 0.35s forwards;
+    z-index: 12;
+  }
+
   .bubble {
     position: relative;
-    background: var(--bubble-bg);
-    color: var(--bubble-text);
-    border-radius: 999px;
-    padding: clamp(12px, 2.4vh, 20px) clamp(20px, 4vw, 34px);
-    font-size: clamp(10px, 1.9vh, 16px);
-    letter-spacing: 1px;
-    line-height: 1.4;
+    min-height: 70px;
+    display: grid;
+    place-items: center;
+    padding: 13px 20px;
+    color: #d6d6d6;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial, sans-serif;
+    font-size: clamp(21px, 5.7vw, 32px);
+    font-weight: 950;
+    line-height: 1.25;
     text-align: center;
-    box-shadow: 0 8px 0 rgba(0,0,0,0.35);
-    white-space: nowrap;
+    text-shadow: 0 0 12px rgba(255,255,255,0.12);
   }
-  /* classic comic tail pointing down toward the board */
+  .bubble::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background:
+      radial-gradient(circle, #a7a7a7 2px, transparent 2.6px) top left / 14px 14px,
+      rgba(0,0,0,0.22);
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    padding: 3px;
+    mask-composite: exclude;
+    -webkit-mask-composite: xor;
+    opacity: 0.95;
+    pointer-events: none;
+  }
   .bubble::after {
     content: "";
     position: absolute;
-    left: 50%;
-    bottom: -14px;
-    transform: translateX(-50%);
-    border-left: 14px solid transparent;
-    border-right: 14px solid transparent;
-    border-top: 16px solid var(--bubble-bg);
+    bottom: -16px;
+    right: 33%;
+    width: 28px;
+    height: 28px;
+    border-right: 3px dotted #a7a7a7;
+    border-bottom: 3px dotted #a7a7a7;
+    transform: rotate(45deg);
+    background: rgba(0,0,0,0.16);
   }
 
-  /* ---- Flip board ---- */
-  .board {
+  @keyframes pop { to { opacity: 1; transform: translateX(-50%) scale(1); } }
+
+  .split-word {
+    position: absolute;
+    top: 168px;
+    left: 50%;
+    transform: translateX(-50%);
+    direction: ltr;
     display: flex;
-    gap: clamp(6px, 1.4vw, 12px);
-    perspective: 700px;           /* enables the 3D flip */
-    padding: clamp(10px, 2vh, 18px);
+    gap: 7px;
+    z-index: 11;
   }
-  .cell {
-    width: clamp(38px, 9vw, 72px);
-    height: clamp(52px, 12.5vw, 100px);
-    background: var(--cell-bg);
-    border: 2px solid var(--cell-border);
-    border-radius: 8px;
+  .tile {
+    width: clamp(38px, 10vw, 54px);
+    height: clamp(50px, 13vw, 72px);
+    display: grid;
+    place-items: center;
+    border: 2px solid #34322f;
+    border-radius: 9px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.09), transparent 38%), #17181a;
+    box-shadow: inset 0 0 0 3px #0b0b0c, 0 6px 0 rgba(0,0,0,0.55), 0 0 20px rgba(227,114,87,0.12);
+    color: var(--coral);
+    font-size: clamp(21px, 6vw, 36px);
+    font-weight: 1000;
+    text-shadow: 0 0 8px var(--coral), 0 0 19px rgba(227,114,87,0.55);
+    opacity: 0;
+    transform-origin: 50% 0;
+    transform: rotateX(-88deg) translateY(-18px);
+    animation: flipIn 0.56s cubic-bezier(.2,1.35,.35,1) forwards;
+  }
+  .tile::after { content: ""; position: absolute; left: 6px; right: 6px; top: 50%; height: 2px; background: rgba(0,0,0,0.62); }
+  .tile:nth-child(2) { animation-delay: 0.08s; }
+  .tile:nth-child(3) { animation-delay: 0.16s; }
+  .tile:nth-child(4) { animation-delay: 0.24s; }
+  .tile:nth-child(5) { animation-delay: 0.32s; }
+  @keyframes flipIn { to { opacity: 1; transform: rotateX(0) translateY(0); } }
+
+  .type-card {
+    position: absolute;
+    top: 260px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 89%;
+    min-height: 250px;
+    padding: 14px 15px 16px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(227,114,87,0.08), transparent 40%), var(--panel);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), 0 0 34px rgba(227,114,87,0.18);
+    z-index: 10;
+  }
+
+  .type-head {
     display: flex;
     align-items: center;
-    justify-content: center;
-    position: relative;
-    transform-style: preserve-3d;
-    box-shadow: inset 0 0 0 3px var(--cell-inner),
-                0 6px 0 rgba(0,0,0,0.4);
-    opacity: 0;                    /* GSAP flips each in */
-    will-change: transform, opacity;
+    justify-content: space-between;
+    direction: ltr;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    color: #b8b0aa;
+    font-size: 10px;
   }
-  /* subtle horizontal seam like a split-flap display */
-  .cell::after {
-    content: "";
+  .dots { display: flex; gap: 6px; }
+  .dots span { width: 8px; height: 8px; border-radius: 999px; display: block; }
+  .dots span:nth-child(1) { background: #ff5f57; }
+  .dots span:nth-child(2) { background: #ffbd2e; }
+  .dots span:nth-child(3) { background: #28c840; }
+
+  #typed {
+    min-height: 178px;
+    white-space: pre-wrap;
+    direction: rtl;
+    unicode-bidi: plaintext;
+    text-align: right;
+    color: var(--coral);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial, sans-serif;
+    font-size: clamp(21px, 5.45vw, 31px);
+    font-weight: 950;
+    line-height: 1.58;
+    text-shadow: 0 0 10px rgba(227,114,87,0.45);
+  }
+  .caret {
+    display: inline-block;
+    width: 0.45em;
+    height: 1em;
+    margin-inline-start: 3px;
+    transform: translateY(0.18em);
+    background: var(--coral);
+    box-shadow: 0 0 12px var(--coral);
+    animation: blink 0.65s steps(2) infinite;
+  }
+
+  .mascot-zone {
     position: absolute;
-    left: 6px; right: 6px; top: 50%;
-    height: 2px;
-    background: rgba(0,0,0,0.55);
-    transform: translateY(-1px);
+    left: 50%;
+    bottom: 118px;
+    transform: translateX(-50%);
+    width: 96%;
+    height: 270px;
+    display: grid;
+    place-items: center;
+    z-index: 9;
     pointer-events: none;
   }
-  .cell span {
-    font-size: clamp(20px, 6.2vw, 46px);
-    color: var(--letter);
-    text-shadow: 0 0 6px var(--letter-glow),
-                 0 0 14px var(--letter-glow);
-    line-height: 1;
-    user-select: none;
+  .mascot-shadow {
+    position: absolute;
+    bottom: 18px;
+    width: 230px;
+    height: 28px;
+    border-radius: 999px;
+    background: radial-gradient(ellipse, rgba(0,0,0,0.88), transparent 70%);
+    filter: blur(1px);
   }
-  /* space characters render as an empty (dim) cell */
-  .cell.blank { background: transparent; border-color: transparent; box-shadow: none; }
-  .cell.blank::after { display: none; }
+  .sprite {
+    width: min(82vw, 360px);
+    aspect-ratio: 1.08 / 1;
+    background-image: url('/marketing/opi-mascot-sprite.png');
+    background-repeat: no-repeat;
+    background-size: 400% 100%;
+    background-position: 0% 50%;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 0 22px rgba(227,114,87,0.42));
+    transform-origin: 50% 100%;
+    animation: mascotFloat 1.4s ease-in-out infinite;
+  }
+  @keyframes mascotFloat {
+    0%,100% { transform: translateY(0) rotate(-1deg) scale(1); }
+    50% { transform: translateY(-12px) rotate(1.2deg) scale(1.02); }
+  }
 
-  /* ---- Mascot ---- */
-  .mascot {
-    position: relative;
-    width: clamp(150px, 40vw, 300px);
-    opacity: 0;                    /* GSAP slides it up */
-    will-change: transform, opacity;
+  .features {
+    position: absolute;
+    left: 50%;
+    bottom: 45px;
+    transform: translateX(-50%);
+    width: 89%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    z-index: 13;
   }
-  .mascot svg { width: 100%; height: auto; display: block; }
-  /* two stacked poses; GSAP cross-fades between them */
-  .pose { position: absolute; inset: 0; }
-  #opiPointing { opacity: 0; }
+  .pill {
+    border: 1px solid rgba(227,114,87,0.45);
+    border-radius: 14px;
+    padding: 10px 5px;
+    background: rgba(0,0,0,0.72);
+    color: var(--text);
+    text-align: center;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 950;
+    line-height: 1.25;
+    box-shadow: 0 0 18px rgba(227,114,87,0.13);
+    opacity: 0;
+    transform: translateY(14px);
+    animation: pillIn 0.48s ease forwards;
+  }
+  .pill:nth-child(1) { animation-delay: 2.1s; }
+  .pill:nth-child(2) { animation-delay: 2.26s; }
+  .pill:nth-child(3) { animation-delay: 2.42s; }
+  @keyframes pillIn { to { opacity: 1; transform: translateY(0); } }
+
+  .cta {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    width: 90%;
+    color: var(--coral);
+    text-align: center;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 950;
+    text-shadow: 0 0 12px rgba(227,114,87,0.62);
+    z-index: 13;
+  }
+
+  .burst {
+    position: absolute;
+    inset: -20%;
+    background: radial-gradient(circle, rgba(227,114,87,0.26), transparent 55%);
+    opacity: 0;
+    animation: burst 7.2s linear infinite;
+    z-index: -2;
+  }
+  @keyframes burst {
+    0%, 20%, 100% { opacity: 0; transform: scale(0.7); }
+    24% { opacity: 1; transform: scale(1); }
+    30% { opacity: 0; transform: scale(1.15); }
+  }
+
+  .hint {
+    position: absolute;
+    right: 8px;
+    bottom: 5px;
+    direction: ltr;
+    color: rgba(255,255,255,0.25);
+    font-size: 8px;
+    z-index: 20;
+  }
+
+  @media (max-height: 780px) {
+    .bubble-wrap { top: 58px; }
+    .split-word { top: 142px; }
+    .type-card { top: 225px; min-height: 220px; }
+    #typed { font-size: 21px; line-height: 1.5; }
+    .mascot-zone { bottom: 88px; height: 235px; }
+    .features { bottom: 36px; }
+    .cta { bottom: 13px; font-size: 12px; }
+  }
 </style>
 </head>
 <body>
-  <div class="stage">
+  <main class="stage" id="stage">
+    <div class="burst"></div>
 
-    <!-- Speech bubble -->
-    <div class="bubble-wrap" id="bubbleWrap">
-      <div class="bubble" id="bubble">NOW SHOWING</div>
+    <div class="topbar">
+      <div class="rec"><i></i><span>REC 9:16</span></div>
+      <div class="brand"><b>OPUS</b><span>Discord AI Store</span></div>
     </div>
 
-    <!-- Flip-letter board (cells injected by JS) -->
-    <div class="board" id="board"></div>
+    <div class="bubble-wrap"><div class="bubble" id="bubble">اسمعها من Opi 👇</div></div>
 
-    <!-- Opi mascot (two poses, real inline SVG from OpiCharacter.tsx) -->
-    <div class="mascot" id="mascot">
-      <!-- Pose A: idle / standing -->
-      <div class="pose" id="opiIdle">
-        <svg viewBox="0 0 140 150" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <defs>
-            <linearGradient id="opiBodyA" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#ffb14d"/><stop offset="0.55" stop-color="#ff8a00"/><stop offset="1" stop-color="#f07000"/>
-            </linearGradient>
-            <radialGradient id="opiOrbA" cx="0.35" cy="0.35" r="1">
-              <stop offset="0" stop-color="#ffd9a8"/><stop offset="0.5" stop-color="#ff9d2e"/><stop offset="1" stop-color="#ff7a00"/>
-            </radialGradient>
-            <linearGradient id="opiScreenA" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#1a1a1f"/><stop offset="1" stop-color="#0c0c0f"/>
-            </linearGradient>
-          </defs>
-          <ellipse cx="70" cy="144" rx="30" ry="4.5" fill="#000" opacity="0.4"/>
-          <!-- legs & feet -->
-          <rect x="50" y="120" width="13" height="14" rx="5" fill="url(#opiBodyA)"/>
-          <rect x="46" y="130" width="21" height="8" rx="4" fill="#f07000"/>
-          <rect x="77" y="120" width="13" height="14" rx="5" fill="url(#opiBodyA)"/>
-          <rect x="73" y="130" width="21" height="8" rx="4" fill="#f07000"/>
-          <!-- arms down -->
-          <rect x="26" y="86" width="11" height="30" rx="5.5" fill="url(#opiBodyA)"/>
-          <circle cx="31.5" cy="116" r="7" fill="#ffb14d"/>
-          <rect x="103" y="86" width="11" height="30" rx="5.5" fill="url(#opiBodyA)"/>
-          <circle cx="108.5" cy="116" r="7" fill="#ffb14d"/>
-          <!-- body + chest screen -->
-          <rect x="40" y="82" width="60" height="42" rx="12" fill="url(#opiBodyA)"/>
-          <rect x="52" y="90" width="36" height="20" rx="6" fill="url(#opiScreenA)" stroke="#2a2a2e" stroke-width="1"/>
-          <rect x="60" y="94" width="4" height="12" rx="2" fill="#ff8a00"/>
-          <rect x="68" y="94" width="4" height="12" rx="2" fill="#ffb14d"/>
-          <rect x="76" y="94" width="4" height="12" rx="2" fill="#ff8a00"/>
-          <!-- head -->
-          <rect x="68" y="12" width="4" height="14" rx="2" fill="url(#opiBodyA)"/>
-          <circle cx="70" cy="9" r="9" fill="#ff8a00" opacity="0.28"/>
-          <circle cx="70" cy="9" r="5.5" fill="url(#opiOrbA)"/>
-          <rect x="24" y="42" width="8" height="18" rx="4" fill="#f07000"/>
-          <rect x="108" y="42" width="8" height="18" rx="4" fill="#f07000"/>
-          <rect x="30" y="26" width="80" height="52" rx="14" fill="url(#opiBodyA)"/>
-          <rect x="36" y="30" width="68" height="8" rx="4" fill="#ffffff" opacity="0.16"/>
-          <rect x="40" y="36" width="60" height="36" rx="10" fill="url(#opiScreenA)" stroke="#2a2a2e" stroke-width="1"/>
-          <rect x="42" y="38" width="56" height="3" rx="1.5" fill="#ff8a00" opacity="0.5"/>
-          <!-- idle eyes + smile -->
-          <rect x="53" y="45" width="8" height="15" rx="4" fill="#ff8a00"/>
-          <rect x="79" y="45" width="8" height="15" rx="4" fill="#ff8a00"/>
-          <path d="M61 62 Q70 69 79 62" fill="none" stroke="#ff8a00" stroke-width="2.6" stroke-linecap="round"/>
-        </svg>
-      </div>
-
-      <!-- Pose B: happy / presenting the board (arms up, arc eyes, sparkles) -->
-      <div class="pose" id="opiPointing">
-        <svg viewBox="0 0 140 150" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <defs>
-            <linearGradient id="opiBodyB" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#ffb14d"/><stop offset="0.55" stop-color="#ff8a00"/><stop offset="1" stop-color="#f07000"/>
-            </linearGradient>
-            <radialGradient id="opiOrbB" cx="0.35" cy="0.35" r="1">
-              <stop offset="0" stop-color="#ffd9a8"/><stop offset="0.5" stop-color="#ff9d2e"/><stop offset="1" stop-color="#ff7a00"/>
-            </radialGradient>
-            <linearGradient id="opiScreenB" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#1a1a1f"/><stop offset="1" stop-color="#0c0c0f"/>
-            </linearGradient>
-          </defs>
-          <ellipse cx="70" cy="144" rx="30" ry="4.5" fill="#000" opacity="0.4"/>
-          <!-- legs & feet -->
-          <rect x="50" y="120" width="13" height="14" rx="5" fill="url(#opiBodyB)"/>
-          <rect x="46" y="130" width="21" height="8" rx="4" fill="#f07000"/>
-          <rect x="77" y="120" width="13" height="14" rx="5" fill="url(#opiBodyB)"/>
-          <rect x="73" y="130" width="21" height="8" rx="4" fill="#f07000"/>
-          <!-- arms raised / presenting -->
-          <g transform="rotate(-145 31.5 90)">
-            <rect x="26" y="86" width="11" height="30" rx="5.5" fill="url(#opiBodyB)"/>
-            <circle cx="31.5" cy="116" r="7" fill="#ffb14d"/>
-          </g>
-          <g transform="rotate(145 108.5 90)">
-            <rect x="103" y="86" width="11" height="30" rx="5.5" fill="url(#opiBodyB)"/>
-            <circle cx="108.5" cy="116" r="7" fill="#ffb14d"/>
-          </g>
-          <!-- body + chest screen -->
-          <rect x="40" y="82" width="60" height="42" rx="12" fill="url(#opiBodyB)"/>
-          <rect x="52" y="90" width="36" height="20" rx="6" fill="url(#opiScreenB)" stroke="#2a2a2e" stroke-width="1"/>
-          <rect x="60" y="94" width="4" height="12" rx="2" fill="#ff8a00"/>
-          <rect x="68" y="94" width="4" height="12" rx="2" fill="#ffb14d"/>
-          <rect x="76" y="94" width="4" height="12" rx="2" fill="#ff8a00"/>
-          <!-- head -->
-          <rect x="68" y="12" width="4" height="14" rx="2" fill="url(#opiBodyB)"/>
-          <circle cx="70" cy="9" r="9" fill="#ff8a00" opacity="0.4"/>
-          <circle cx="70" cy="9" r="5.5" fill="url(#opiOrbB)"/>
-          <rect x="24" y="42" width="8" height="18" rx="4" fill="#f07000"/>
-          <rect x="108" y="42" width="8" height="18" rx="4" fill="#f07000"/>
-          <rect x="30" y="26" width="80" height="52" rx="14" fill="url(#opiBodyB)"/>
-          <rect x="36" y="30" width="68" height="8" rx="4" fill="#ffffff" opacity="0.16"/>
-          <rect x="40" y="36" width="60" height="36" rx="10" fill="url(#opiScreenB)" stroke="#2a2a2e" stroke-width="1"/>
-          <rect x="42" y="38" width="56" height="3" rx="1.5" fill="#ff8a00" opacity="0.5"/>
-          <!-- happy arc eyes + cheeks + big smile -->
-          <path d="M52 53 q5 -8 10 0" stroke="#ffb14d" stroke-width="3" stroke-linecap="round" fill="none"/>
-          <path d="M78 53 q5 -8 10 0" stroke="#ffb14d" stroke-width="3" stroke-linecap="round" fill="none"/>
-          <ellipse cx="48" cy="61" rx="4.5" ry="2.6" fill="#ff8a00" opacity="0.35"/>
-          <ellipse cx="92" cy="61" rx="4.5" ry="2.6" fill="#ff8a00" opacity="0.35"/>
-          <path d="M62 61 q8 9 16 0 z" fill="#ff8a00" opacity="0.9"/>
-          <!-- sparkles -->
-          <g fill="#ffd9a8">
-            <path d="M18 40 l2.2 5 5 2.2 -5 2.2 -2.2 5 -2.2 -5 -5 -2.2 5 -2.2 z"/>
-            <path d="M120 34 l1.8 4 4 1.8 -4 1.8 -1.8 4 -1.8 -4 -4 -1.8 4 -1.8 z"/>
-            <path d="M126 78 l1.5 3.4 3.4 1.5 -3.4 1.5 -1.5 3.4 -1.5 -3.4 -3.4 -1.5 3.4 -1.5 z"/>
-          </g>
-        </svg>
-      </div>
+    <div class="split-word" aria-label="OPI AI">
+      <div class="tile">O</div><div class="tile">P</div><div class="tile">I</div><div class="tile">A</div><div class="tile">I</div>
     </div>
 
-  </div>
+    <section class="type-card" aria-label="Saudi Arabic ad script">
+      <div class="type-head"><div class="dots"><span></span><span></span><span></span></div><div>opi-ai-launch.sketch</div></div>
+      <div id="typed"></div>
+    </section>
+
+    <section class="mascot-zone" aria-label="animated Opi mascot">
+      <div class="mascot-shadow"></div>
+      <div class="sprite" id="sprite"></div>
+    </section>
+
+    <div class="features">
+      <div class="pill">يرد على<br>الأعضاء</div>
+      <div class="pill">يفهم<br>الديسكورد</div>
+      <div class="pill">شغال<br>24/7</div>
+    </div>
+
+    <div class="cta">جرّب Opi AI اليوم من Opus Solutions</div>
+    <div class="hint">Press R to replay</div>
+  </main>
 
 <script>
-/* ================================================================= *
- *  CONFIG — the ONLY thing you edit to make a new ad.               *
- *  Change the text, colors, and timings; the animation logic below  *
- *  stays untouched.                                                 *
- * ================================================================= */
-const CONFIG = {
-  boardText:  "OPUS",          // word spelled out on the flip board (spaces allowed)
-  bubbleText: "NOW SHOWING",   // text inside the speech bubble
+(() => {
+  const LINES = [
+    "السلام عليكم ورحمة الله وبركاته",
+    "قد جرّبت AI في سيرفرك حق الديسكورد؟",
+    "اليوم وفرنا لكم Opi AI",
+    "ذكاء اصطناعي مختص بالديسكورد بشكل كامل.",
+    "يرد على الأعضاء، يشرح الأوامر، يساعد الدعم، ويرتب لك السيرفر.",
+    "بدون تعب... خلي سيرفرك أذكى وخدمتك أسرع.",
+    "جرّبه الحين من Opus Solutions."
+  ];
 
-  colors: {
-    bg:         "#000000",     // page background
-    dot:        "#1c1c1c",     // dot-grid color
-    cellBg:     "#141416",     // flip-cell face
-    cellBorder: "#2c2c30",     // flip-cell border
-    cellInner:  "#0c0c0f",     // flip-cell inner ring
-    letter:     "#ff8a00",     // LED letter color
-    letterGlow: "#ff8a00",     // letter glow
-    bubbleBg:   "#ffffff",     // speech-bubble fill
-    bubbleText: "#141414",     // speech-bubble text
-    accent:     "#ff8a00",     // reserved accent
-  },
+  const BUBBLES = [
+    "اسمعها من Opi 👇",
+    "سيرفرك يحتاج مساعد؟",
+    "Opi AI وصل 🔥",
+    "يرد ويساعد 24/7",
+    "جاهز تجرّبه؟"
+  ];
 
-  timing: {  // all in seconds
-    bgFade:        0.4,   // background fade-in
-    bubbleIn:      0.6,   // bubble fade + scale
-    beforeBoard:   0.15,  // pause before letters start
-    letterDur:     0.5,   // duration of one letter flip
-    letterStagger: 0.18,  // gap between letters
-    mascotIn:      0.8,   // mascot slide-up
-    hold:          2.5,   // freeze on the finished scene
-  },
+  const positions = ["0% 50%", "33.333% 50%", "66.666% 50%", "100% 50%"]; 
+  const sprite = document.getElementById("sprite");
+  const typed = document.getElementById("typed");
+  const bubble = document.getElementById("bubble");
 
-  loop: true,   // true = repeat forever (ideal for screen-recording a clean loop)
-};
+  let charTimer;
+  let spriteTimer;
+  let bubbleTimer;
 
-/* ================================================================= *
- *  Below: generic engine. No need to edit for new ads.              *
- * ================================================================= */
+  function escapeHtml(value) {
+    return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#039;");
+  }
 
-// 1) Push colors into CSS variables
-(function applyColors() {
-  const r = document.documentElement.style, c = CONFIG.colors;
-  r.setProperty('--bg', c.bg);
-  r.setProperty('--dot', c.dot);
-  r.setProperty('--cell-bg', c.cellBg);
-  r.setProperty('--cell-border', c.cellBorder);
-  r.setProperty('--cell-inner', c.cellInner);
-  r.setProperty('--letter', c.letter);
-  r.setProperty('--letter-glow', c.letterGlow);
-  r.setProperty('--bubble-bg', c.bubbleBg);
-  r.setProperty('--bubble-text', c.bubbleText);
-  r.setProperty('--accent', c.accent);
-})();
+  function animateSprite() {
+    let i = 0;
+    clearInterval(spriteTimer);
+    sprite.style.backgroundPosition = positions[0];
+    spriteTimer = setInterval(() => {
+      i = (i + 1) % positions.length;
+      sprite.style.backgroundPosition = positions[i];
+    }, 210);
+  }
 
-// 2) Build flip cells from boardText
-const board = document.getElementById('board');
-document.getElementById('bubble').textContent = CONFIG.bubbleText;
+  function animateBubble() {
+    let i = 0;
+    clearInterval(bubbleTimer);
+    bubble.textContent = BUBBLES[0];
+    bubbleTimer = setInterval(() => {
+      i = (i + 1) % BUBBLES.length;
+      bubble.textContent = BUBBLES[i];
+      bubble.parentElement.style.animation = "none";
+      bubble.parentElement.offsetHeight;
+      bubble.parentElement.style.animation = "pop 0.28s cubic-bezier(.2,1.55,.35,1) forwards";
+    }, 2400);
+  }
 
-const cells = [...CONFIG.boardText].map(ch => {
-  const cell = document.createElement('div');
-  cell.className = 'cell' + (ch === ' ' ? ' blank' : '');
-  const span = document.createElement('span');
-  span.textContent = ch === ' ' ? '' : ch;
-  cell.appendChild(span);
-  return cell;
-});
-cells.forEach(c => board.appendChild(c));
+  function typeScript() {
+    clearTimeout(charTimer);
+    let line = 0;
+    let char = 0;
+    let out = "";
+    typed.innerHTML = '<span class="caret"></span>';
 
-// 3) GSAP timeline
-function buildTimeline() {
-  const t = CONFIG.timing;
-  const tl = gsap.timeline({
-    repeat: CONFIG.loop ? -1 : 0,
-    repeatDelay: 0.5,
-    defaults: { ease: 'power2.out' },
+    function tick() {
+      const current = LINES[line];
+      if (char < current.length) {
+        out += current[char++];
+        typed.innerHTML = escapeHtml(out) + '<span class="caret"></span>';
+        charTimer = setTimeout(tick, 18 + Math.random() * 9);
+        return;
+      }
+      if (line < LINES.length - 1) {
+        out += "\n";
+        line += 1;
+        char = 0;
+        typed.innerHTML = escapeHtml(out) + '<span class="caret"></span>';
+        charTimer = setTimeout(tick, line === 1 ? 240 : 135);
+        return;
+      }
+      charTimer = setTimeout(replay, 2500);
+    }
+
+    tick();
+  }
+
+  function replay() {
+    clearTimeout(charTimer);
+    document.querySelectorAll('.tile, .pill').forEach((el) => {
+      el.style.animation = 'none';
+      el.offsetHeight;
+      el.style.animation = '';
+    });
+    typeScript();
+  }
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key.toLowerCase() === 'r') replay();
   });
 
-  // reset state at the top of every (repeated) run
-  tl.set('.bubble-wrap', { opacity: 0, y: 18, scale: 0.85 });
-  tl.set('.cell', { opacity: 0, rotationX: -92, transformOrigin: '50% 0%' });
-  tl.set('#mascot', { opacity: 0, y: 90 });
-  tl.set('#opiIdle', { opacity: 1 });
-  tl.set('#opiPointing', { opacity: 0, scale: 0.9, transformOrigin: '50% 100%' });
-
-  // 1. background is instant; use a tiny beat so bg reads before content
-  tl.to('body', { duration: t.bgFade, opacity: 1 }, 0);
-
-  // 2. speech bubble in
-  tl.to('.bubble-wrap', {
-    duration: t.bubbleIn, opacity: 1, y: 0, scale: 1, ease: 'back.out(1.7)',
-  }, t.bgFade);
-
-  // 3. flip letters in, one after another
-  tl.to('.cell', {
-    duration: t.letterDur,
-    opacity: 1,
-    rotationX: 0,
-    ease: 'back.out(1.4)',
-    stagger: t.letterStagger,
-  }, `+=${t.beforeBoard}`);
-
-  // 4. mascot slides up, timed with the final letter
-  tl.to('#mascot', {
-    duration: t.mascotIn, opacity: 1, y: 0, ease: 'back.out(1.5)',
-  }, '-=0.35');
-
-  // 4b. switch idle -> presenting pose (cross-fade + little pop)
-  tl.to('#opiIdle', { duration: 0.3, opacity: 0 }, '-=0.15');
-  tl.to('#opiPointing', {
-    duration: 0.45, opacity: 1, scale: 1, ease: 'back.out(2)',
-  }, '<');
-
-  // 5. hold the finished scene
-  tl.to({}, { duration: t.hold });
-
-  return tl;
-}
-
-// wait for the pixel font so cell widths don't jump mid-animation
-if (document.fonts && document.fonts.ready) {
-  document.fonts.ready.then(buildTimeline);
-} else {
-  window.addEventListener('load', buildTimeline);
-}
+  animateSprite();
+  animateBubble();
+  setTimeout(typeScript, 760);
+})();
 </script>
 </body>
 </html>
