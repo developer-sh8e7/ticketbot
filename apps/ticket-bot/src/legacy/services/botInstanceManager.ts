@@ -35,6 +35,8 @@ interface RunningClient {
 }
 
 const SYNC_INTERVAL_MS = 60_000;
+const DEFAULT_CUSTOMER_PANEL_BANNER_URL = 'https://i.imgur.com/4pv05GF.png';
+const DEFAULT_CUSTOMER_TICKET_BANNER_URL = 'https://i.imgur.com/fc30QyW.png';
 
 /** Initial backoff after a login failure (ms) before retrying */
 const FAILURE_BACKOFF_MS = 5 * 60_000;
@@ -105,7 +107,7 @@ function makeDefaultConfig(guildId: string): AppConfig {
       managerRoleIds: [],
       mentionRolesOnOpen: [],
     },
-    images: { panelBannerUrl: '', ticketBannerUrl: '', thumbnailUrl: '' },
+    images: { panelBannerUrl: DEFAULT_CUSTOMER_PANEL_BANNER_URL, ticketBannerUrl: DEFAULT_CUSTOMER_TICKET_BANNER_URL, thumbnailUrl: '' },
     naming: {
       ticketChannelPrefix: 'ticket',
       maxChannelNameLength: 100,
@@ -126,7 +128,7 @@ function makeDefaultConfig(guildId: string): AppConfig {
       title: 'Ticket Panel',
       subtitle: 'اختر تصنيفاً لفتح تذكرة',
       description: '',
-      menuPlaceholder: 'اختر تصنيفاً...',
+      menuPlaceholder: 'اختر نوع التذكرة...',
       menuCustomId: 'ticket_open',
       defaultMention: 'here',
       showNumbers: false,
@@ -158,11 +160,11 @@ function makeDefaultConfig(guildId: string): AppConfig {
     },
     emojis: { panelIcon: '', ticketIcon: '', infoIcon: '', epicIcon: '', categories: {} },
     categories: [{
-      key: 'default',
+      key: 'support',
       enabled: true,
-      label: 'عام',
-      description: 'للطلبات العامة',
-      channelNameTemplate: 'ticket-{username}',
+      label: 'الدعم الفني',
+      description: 'للتواصل مع الدعم الفني.',
+      channelNameTemplate: 'دعم-{ticketNumber}',
       supportRoleIds: [],
       questions: [],
     }],
@@ -240,6 +242,7 @@ function applyTicketSettings(config: AppConfig, s: TicketSettingsData): void {
   if (s.panel_message) config.panel.description = s.panel_message;
   if (s.embed_color) config.bot.embedColor = s.embed_color;
   if (s.banner_url) config.images.panelBannerUrl = s.banner_url;
+  if (s.ticket_banner_url) config.images.ticketBannerUrl = s.ticket_banner_url;
   if (s.button_text) config.panel.menuPlaceholder = s.button_text;
   if (s.footer_text) config.bot.footerText = s.footer_text;
 
@@ -249,7 +252,7 @@ function applyTicketSettings(config: AppConfig, s: TicketSettingsData): void {
       enabled: c.enabled,
       label: c.label,
       description: c.description,
-      channelNameTemplate: 'ticket-{username}',
+      channelNameTemplate: 'دعم-{ticketNumber}',
       supportRoleIds: [],
       questions: [],
     }));

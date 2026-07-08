@@ -27,6 +27,7 @@ type Settings = {
   panel_message: string;
   embed_color: string;
   banner_url: string | null;
+  ticket_banner_url: string | null;
   button_text: string;
   footer_text: string;
   categories?: Category[];
@@ -65,10 +66,11 @@ const DEFAULT_SETTINGS: Settings = {
   support_role_id: null,
   panel_message: '',
   embed_color: '#5865F2',
-  banner_url: null,
-  button_text: 'اختر تصنيفاً...',
+  banner_url: 'https://i.imgur.com/4pv05GF.png',
+  ticket_banner_url: 'https://i.imgur.com/fc30QyW.png',
+  button_text: 'اختر نوع التذكرة...',
   footer_text: '',
-  categories: [{ key: 'default', label: 'عام', description: 'للطلبات العامة', emoji: '', enabled: true }],
+  categories: [{ key: 'support', label: 'الدعم الفني', description: 'للتواصل مع الدعم الفني.', emoji: '', enabled: true }],
   buttons: DEFAULT_BUTTONS,
 };
 
@@ -370,6 +372,7 @@ export function TicketSettingsEditor({ botId }: { botId: string }) {
         body: JSON.stringify({
           ...s,
           banner_url: s.banner_url || '',
+          ticket_banner_url: s.ticket_banner_url || '',
           categories: (s.categories || []).filter((c) => c.label.trim()),
           buttons: cleanButtons,
         }),
@@ -434,9 +437,15 @@ export function TicketSettingsEditor({ botId }: { botId: string }) {
 
           <div className="mt-4 grid gap-4">
             <div>
-              <span className={label}>صورة البنل (رابط https)</span>
-              <input value={s.banner_url ?? ''} onChange={(e) => setS((p) => ({ ...p, banner_url: e.target.value || null }))} placeholder="https://i.imgur.com/example.png" dir="ltr" className={`${input} mt-2 font-english`} />
-              <p className={hint}>أفضل مقاس: 1600×500 أو 1200×400 بصيغة PNG/JPG.</p>
+              <span className={label}>صورة البنل قبل فتح التذكرة (رابط https)</span>
+              <input value={s.banner_url ?? ''} onChange={(e) => setS((p) => ({ ...p, banner_url: e.target.value || null }))} placeholder="https://i.imgur.com/4pv05GF.png" dir="ltr" className={`${input} mt-2 font-english`} />
+              <p className={hint}>الصورة الأساسية للعملاء: https://i.imgur.com/4pv05GF.png</p>
+            </div>
+
+            <div>
+              <span className={label}>صورة التذكرة بعد الفتح (رابط https)</span>
+              <input value={s.ticket_banner_url ?? ''} onChange={(e) => setS((p) => ({ ...p, ticket_banner_url: e.target.value || null }))} placeholder="https://i.imgur.com/fc30QyW.png" dir="ltr" className={`${input} mt-2 font-english`} />
+              <p className={hint}>الصورة الأساسية داخل التذكرة: https://i.imgur.com/fc30QyW.png</p>
             </div>
 
             <div>

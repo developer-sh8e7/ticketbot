@@ -75,13 +75,25 @@ export class InstanceManager {
 
   /** يجلب الإعدادات المحفوظة لهذا (السيرفر × المنتج) — تجعل التجديد يرجع كأنه ما وقف. */
   private async loadConfig(inst: BotInstanceRecord): Promise<Record<string, unknown>> {
-    const { data } = await this.supabase
+    const { data: serverConfig } = await this.supabase
       .from('server_configs')
       .select('config_data')
       .eq('guild_id', inst.guild_id)
       .eq('product_type', inst.product_type)
       .maybeSingle();
-    return (data?.config_data as Record<string, unknown>) ?? {};
+
+    const { data: botConfig } = await this.supabase
+      .from('bot_configs')
+      .select('config_data')
+      .eq('bot_instance_id', inst.id)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    return {
+      ...((serverConfig?.config_data as Record<string, unknown> | undefined) ?? {}),
+      ...((botConfig?.config_data as Record<string, unknown> | undefined) ?? {}),
+    };
   }
 
   private async startInstance(inst: BotInstanceRecord): Promise<void> {

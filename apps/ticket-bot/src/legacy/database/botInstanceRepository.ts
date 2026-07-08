@@ -13,6 +13,7 @@ export interface TicketSettingsData {
   panel_message?: string;
   embed_color?: string;
   banner_url?: string | null;
+  ticket_banner_url?: string | null;
   button_text?: string;
   footer_text?: string;
   categories?: Array<{

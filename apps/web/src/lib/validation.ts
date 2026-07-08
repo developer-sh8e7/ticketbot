@@ -46,6 +46,7 @@ export const ticketSettingsSchema = z.object({
   panel_message: safeText(800),
   embed_color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   banner_url: safeOptionalHttpsUrl,
+  ticket_banner_url: safeOptionalHttpsUrl,
   button_text: safeText(80),
   footer_text: safeText(160),
   categories: z.array(ticketPanelCategorySchema).max(25).optional(),

@@ -14,7 +14,7 @@
     "footerIconUrl": ""
   },
   "guild": {
-    "id": "1395842846107631746",
+    "id": "000000000000000000",
     "categoryId": "",
     "archiveCategoryId": "",
     "logChannelId": "",
@@ -24,8 +24,8 @@
     "mentionRolesOnOpen": []
   },
   "images": {
-    "panelBannerUrl": "https://i.imgur.com/BXilqQs.png",
-    "ticketBannerUrl": "https://i.imgur.com/VVXx9Dp.png",
+    "panelBannerUrl": "https://i.imgur.com/4pv05GF.png",
+    "ticketBannerUrl": "https://i.imgur.com/fc30QyW.png",
     "thumbnailUrl": ""
   },
   "naming": {
@@ -62,32 +62,32 @@
       "close": {
         "label": "إغلاق",
         "style": "Secondary",
-        "emojiId": "1505356484471685201"
+        "emojiId": ""
       },
       "add": {
         "label": "إضافة",
         "style": "Secondary",
-        "emojiId": "1505357680842375319"
+        "emojiId": ""
       },
       "remove": {
         "label": "إزالة",
         "style": "Secondary",
-        "emojiId": "1505357865072984115"
+        "emojiId": ""
       },
       "claim": {
         "label": "استلام",
         "style": "Secondary",
-        "emojiId": "1505361811258609705"
+        "emojiId": ""
       },
       "pin": {
         "label": "تثبيت",
         "style": "Secondary",
-        "emojiId": "1505361828186816592"
+        "emojiId": ""
       },
       "stats": {
         "label": "إحصائيات",
         "style": "Secondary",
-        "emojiId": "1505361794510622823",
+        "emojiId": "",
         "allowedRoleIds": []
       }
     },
@@ -108,48 +108,15 @@
     "ticketIcon": "",
     "infoIcon": "",
     "epicIcon": "",
-    "categories": {
-      "purchase": "1505361775510556763",
-      "support": "1505361752303599645",
-      "free_trial": "1517615903678795908",
-      "general_inquiry": "1505361752303599645"
-    }
+    "categories": {}
   },
   "categories": [
     {
-      "key": "purchase",
-      "enabled": true,
-      "label": "عملية شراء",
-      "description": "لشراء منتج من المتجر.",
-      "channelNameTemplate": "شراء-{ticketNumber}",
-      "supportRoleIds": [],
-      "questions": []
-    },
-    {
       "key": "support",
       "enabled": true,
-      "label": "تواصل مع الدعم الفني",
-      "description": "لأي مشكلة تحتاج دعم فني.",
+      "label": "الدعم الفني",
+      "description": "للتواصل مع الدعم الفني.",
       "channelNameTemplate": "دعم-{ticketNumber}",
-      "supportRoleIds": [],
-      "questions": []
-    },
-    {
-      "key": "free_trial",
-      "customId": "open_free_trial_ticket",
-      "enabled": true,
-      "label": "تجربة مجانية",
-      "description": "جرب أحد منتجات Opus Solutions قبل الشراء",
-      "channelNameTemplate": "trial-{ticketNumber}",
-      "supportRoleIds": [],
-      "questions": []
-    },
-    {
-      "key": "general_inquiry",
-      "enabled": true,
-      "label": "استفسار عام",
-      "description": "للاستفسارات العامة قبل الطلب.",
-      "channelNameTemplate": "استفسار-{ticketNumber}",
       "supportRoleIds": [],
       "questions": []
     }
@@ -202,7 +169,7 @@
   },
   "features": {
     "applicationsPanel": false,
-    "tempRoomsPanel": true
+    "tempRoomsPanel": false
   },
   "tempRooms": {
     "enabled": false,
