@@ -7,9 +7,12 @@ export function componentEmojiFromId(emojiId: string | undefined): APIMessageCom
     return undefined;
   }
 
-  return {
-    id: normalized,
-  };
+  // Custom emoji IDs are snowflakes; anything else is treated as a unicode emoji.
+  if (/^\d{17,20}$/.test(normalized)) {
+    return { id: normalized };
+  }
+
+  return { name: normalized };
 }
 
 export async function resolveEmojiMention(guild: Guild, emojiId: string | undefined): Promise<string> {

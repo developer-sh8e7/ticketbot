@@ -197,6 +197,24 @@ export async function fetchBotGuildTextChannels(botToken: string, guildId: strin
     .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name, 'ar'));
 }
 
+export type BotGuildCategory = { id: string; name: string; position: number };
+
+/** List category channels in a guild using the bot token; returns null when the bot cannot access that guild. */
+export async function fetchBotGuildCategories(botToken: string, guildId: string): Promise<BotGuildCategory[] | null> {
+  const res = await fetch(`${DISCORD_API}/guilds/${guildId}/channels`, {
+    headers: { authorization: `Bot ${botToken}` },
+    cache: 'no-store',
+  });
+  if (res.status === 401 || res.status === 403 || res.status === 404) return null;
+  if (!res.ok) throw new Error(`Discord guild channels fetch failed (${res.status})`);
+
+  const raw = (await res.json()) as RawGuildChannel[];
+  return raw
+    .filter((c) => c.type === 4)
+    .map((c) => ({ id: c.id, name: c.name ?? c.id, position: c.position ?? 0 }))
+    .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name, 'ar'));
+}
+
 /** List guild roles using the bot token; returns null when the bot cannot access that guild. */
 export async function fetchBotGuildRoles(botToken: string, guildId: string): Promise<BotGuildRole[] | null> {
   const res = await fetch(`${DISCORD_API}/guilds/${guildId}/roles`, {

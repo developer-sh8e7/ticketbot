@@ -2,6 +2,32 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 export type ProductType = 'ticket' | 'system' | 'verify' | 'custom' | 'web';
 
+/** Ticket settings saved from the website dashboard (bot_configs.config_data.ticketSettings) */
+export interface TicketSettingsData {
+  panel_channel_id?: string | null;
+  log_channel_id?: string | null;
+  transcript_channel_id?: string | null;
+  ticket_category_id?: string | null;
+  archive_category_id?: string | null;
+  support_role_id?: string | null;
+  panel_message?: string;
+  embed_color?: string;
+  banner_url?: string | null;
+  button_text?: string;
+  footer_text?: string;
+  categories?: Array<{
+    key: string;
+    label: string;
+    description: string;
+    emoji?: string;
+    enabled: boolean;
+  }>;
+  buttons?: Partial<Record<'close' | 'add' | 'remove' | 'claim' | 'pin', {
+    label: string;
+    style: 'Primary' | 'Secondary' | 'Success' | 'Danger';
+  }>>;
+}
+
 /** Partial config_data from bot_configs table */
 export interface BotConfigData {
   commands?: {
@@ -12,6 +38,7 @@ export interface BotConfigData {
     label: string;
     enabled: boolean;
   }>;
+  ticketSettings?: TicketSettingsData;
 }
 export type InstanceStatus = 'active' | 'expired' | 'cancelled' | 'paused' | 'rejected';
 

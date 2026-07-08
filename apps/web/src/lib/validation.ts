@@ -20,6 +20,21 @@ export const botIdentitySchema = z.object({
   status: z.never().optional(),
 });
 
+export const ticketButtonStyleSchema = z.enum(['Primary', 'Secondary', 'Success', 'Danger']);
+
+export const ticketControlButtonSchema = z.object({
+  label: safeText(80).refine((v) => v.length > 0, 'Label is required'),
+  style: ticketButtonStyleSchema,
+});
+
+export const ticketPanelCategorySchema = z.object({
+  key: z.string().trim().regex(/^[a-z0-9_-]{1,32}$/i, 'Invalid category key'),
+  label: safeText(80).refine((v) => v.length > 0, 'Label is required'),
+  description: safeText(100),
+  emoji: safeText(64).optional().default(''),
+  enabled: z.boolean(),
+});
+
 export const ticketSettingsSchema = z.object({
   panel_channel_id: optionalDiscordSnowflakeSchema,
   log_channel_id: optionalDiscordSnowflakeSchema,
@@ -32,6 +47,17 @@ export const ticketSettingsSchema = z.object({
   banner_url: safeOptionalHttpsUrl,
   button_text: safeText(80),
   footer_text: safeText(160),
+  categories: z.array(ticketPanelCategorySchema).max(25).optional(),
+  buttons: z
+    .object({
+      close: ticketControlButtonSchema,
+      add: ticketControlButtonSchema,
+      remove: ticketControlButtonSchema,
+      claim: ticketControlButtonSchema,
+      pin: ticketControlButtonSchema,
+    })
+    .partial()
+    .optional(),
 });
 
 export type TicketSettingsInput = z.infer<typeof ticketSettingsSchema>;

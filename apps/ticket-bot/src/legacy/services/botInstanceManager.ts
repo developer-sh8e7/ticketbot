@@ -10,7 +10,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Env } from '../env.js';
 import type { AppConfig } from '../types/config.js';
 import type { ConfigStore } from './configStore.js';
-import { BotInstanceRepository, type BotInstanceRecord } from '../database/botInstanceRepository.js';
+import { BotInstanceRepository, type BotInstanceRecord, type TicketSettingsData } from '../database/botInstanceRepository.js';
 import { TicketRepository } from '../database/ticketRepository.js';
 import { MediatorRepository } from '../database/mediatorRepository.js';
 import { decryptToken } from '../utils/crypto.js';
@@ -206,6 +206,50 @@ function makeDefaultConfig(guildId: string): AppConfig {
   };
 }
 
+/**
+ * Apply dashboard-saved ticket settings (bot_configs.config_data.ticketSettings)
+ * onto an AppConfig. Mutates in place so live references (config store mocks,
+ * wired event handlers) pick up the changes.
+ */
+function applyTicketSettings(config: AppConfig, s: TicketSettingsData): void {
+  if (s.panel_channel_id) config.panel.channelId = s.panel_channel_id;
+  if (s.log_channel_id) config.guild.logChannelId = s.log_channel_id;
+  if (s.transcript_channel_id) config.guild.transcriptChannelId = s.transcript_channel_id;
+  if (s.ticket_category_id) config.guild.categoryId = s.ticket_category_id;
+  if (s.archive_category_id) config.guild.archiveCategoryId = s.archive_category_id;
+  if (s.support_role_id) config.guild.supportRoleIds = [s.support_role_id];
+  if (s.panel_message) config.panel.description = s.panel_message;
+  if (s.embed_color) config.bot.embedColor = s.embed_color;
+  if (s.banner_url) config.images.panelBannerUrl = s.banner_url;
+  if (s.button_text) config.panel.menuPlaceholder = s.button_text;
+  if (s.footer_text) config.bot.footerText = s.footer_text;
+
+  if (s.categories?.length) {
+    config.categories = s.categories.map((c) => ({
+      key: c.key,
+      enabled: c.enabled,
+      label: c.label,
+      description: c.description,
+      channelNameTemplate: 'ticket-{username}',
+      supportRoleIds: [],
+      questions: [],
+    }));
+    for (const c of s.categories) {
+      if (c.emoji) config.emojis.categories[c.key] = c.emoji;
+    }
+  }
+
+  if (s.buttons) {
+    for (const key of ['close', 'add', 'remove', 'claim', 'pin'] as const) {
+      const button = s.buttons[key];
+      if (button?.label) {
+        config.ticket.controls[key].label = button.label;
+        config.ticket.controls[key].style = button.style;
+      }
+    }
+  }
+}
+
 export class BotInstanceManager {
   private readonly clients = new Map<string, RunningClient>();
   /** Track instances that failed login so we don't retry every 60s */
@@ -260,7 +304,13 @@ export class BotInstanceManager {
 
       for (const inst of instances) {
         foundIds.add(inst.id);
-        if (currentIds.has(inst.id)) continue;
+        if (currentIds.has(inst.id)) {
+          const running = this.clients.get(inst.id);
+          if (running && running.instance.updated_at !== inst.updated_at) {
+            await this.reloadInstanceConfig(running, inst);
+          }
+          continue;
+        }
 
         // Skip if this instance recently failed — respect backoff
         const lastFailed = this.failedInstances.get(inst.id);
@@ -306,19 +356,17 @@ export class BotInstanceManager {
     }
 
     // Build config — try bot_configs first, fall back to defaults
-    let config = makeDefaultConfig(record.guild_id);
-    if (record.config_id) {
-      try {
-        const dbConfig = await this.repository.findConfigByInstanceId(record.id);
-        if (dbConfig?.commands?.names) {
-          config = {
-            ...config,
-            commands: { ...config.commands, names: { ...config.commands.names, ...dbConfig.commands.names } },
-          };
-        }
-      } catch {
-        // ignore — fall back to defaults
+    const config = makeDefaultConfig(record.guild_id);
+    try {
+      const dbConfig = await this.repository.findConfigByInstanceId(record.id);
+      if (dbConfig?.commands?.names) {
+        config.commands = { ...config.commands, names: { ...config.commands.names, ...dbConfig.commands.names } };
       }
+      if (dbConfig?.ticketSettings) {
+        applyTicketSettings(config, dbConfig.ticketSettings);
+      }
+    } catch {
+      // ignore — fall back to defaults
     }
 
     // Decrypt token
@@ -382,6 +430,53 @@ export class BotInstanceManager {
           metadata: { error: message },
         }).catch(() => null);
       }
+    }
+  }
+
+  /** Reload dashboard settings for a running instance (bot_instances.updated_at changed) */
+  private async reloadInstanceConfig(running: RunningClient, fresh: BotInstanceRecord): Promise<void> {
+    running.instance = fresh;
+    try {
+      const dbConfig = await this.repository.findConfigByInstanceId(fresh.id);
+      if (!dbConfig?.ticketSettings) return;
+
+      applyTicketSettings(running.config, dbConfig.ticketSettings);
+      logger.info(`[BotInstanceManager] Reloaded ticket settings for ${fresh.bot_name} (${fresh.id})`);
+
+      await this.refreshPanelMessage(running);
+    } catch (error) {
+      logger.error(
+        `[BotInstanceManager] Failed to reload config for ${fresh.id}:`,
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+
+  /** Re-render the existing panel message (if any) after a settings change */
+  private async refreshPanelMessage(running: RunningClient): Promise<void> {
+    const { client, config, instance } = running;
+    const guildId = instance.guild_id;
+    const channelId = config.panel.channelId;
+    if (!guildId || !channelId || !client.isReady()) return;
+
+    try {
+      const guild = await client.guilds.fetch(guildId);
+      const channel = await guild.channels.fetch(channelId).catch(() => null);
+      if (!channel?.isTextBased()) return;
+
+      const messages = await channel.messages.fetch({ limit: 50 });
+      const botId = client.user?.id;
+      const panelMessage = messages.find((m) => m.author.id === botId && m.components.length > 0);
+      if (!panelMessage) return;
+
+      const panelService = new PanelService(makeConfigStoreMock(config), this.mediatorRepository);
+      await panelService.refreshPanel(guild, panelMessage.id);
+      logger.info(`[BotInstanceManager] Panel refreshed for guild ${guildId} after settings update`);
+    } catch (error) {
+      logger.warn(
+        `[BotInstanceManager] Could not auto-refresh panel for guild ${guildId}:`,
+        error instanceof Error ? error.message : error,
+      );
     }
   }
 

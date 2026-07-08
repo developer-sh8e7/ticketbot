@@ -30,8 +30,12 @@ export class PanelService {
     const config = this.configStore.current;
     const mediatorConfig = await this.mediatorRepository.getMediatorConfig();
 
+    const content = [config.panel.description.trim(), config.panel.defaultMention.trim()]
+      .filter(Boolean)
+      .join('\n\n');
+
     return {
-      content: config.panel.defaultMention.trim() || undefined,
+      content: content || undefined,
       embeds: [],
       files: await buildPanelFiles(config),
       attachments: [],
