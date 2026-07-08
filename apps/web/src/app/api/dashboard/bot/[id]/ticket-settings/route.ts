@@ -11,7 +11,7 @@ import { logWebsiteEvent } from '@/lib/events';
 import { notifyManagerSync } from '@/lib/manager-sync';
 import { rateLimit } from '@/lib/rate-limit';
 import { decryptBotToken } from '@/lib/encryption';
-import { fetchBotGuildTextChannels, fetchBotGuildCategories, fetchBotGuildRoles } from '@/lib/discord';
+import { fetchBotGuildTextChannels, fetchBotGuildCategories, fetchBotGuildRoles, fetchBotGuildEmojis } from '@/lib/discord';
 
 /** Resolve the decrypted token for this bot instance without exposing it to the browser. */
 async function tokenForInstance(botId: string): Promise<string | null> {
@@ -43,16 +43,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     let channels = null;
     let categories = null;
     let roles = null;
+    let emojis = null;
     const token = await tokenForInstance(id);
     if (token && bot.guild_id) {
-      [channels, categories, roles] = await Promise.all([
+      [channels, categories, roles, emojis] = await Promise.all([
         fetchBotGuildTextChannels(token, bot.guild_id).catch(() => null),
         fetchBotGuildCategories(token, bot.guild_id).catch(() => null),
         fetchBotGuildRoles(token, bot.guild_id).catch(() => null),
+        fetchBotGuildEmojis(token, bot.guild_id).catch(() => null),
       ]);
     }
 
-    return ok({ settings, channels, categories, roles });
+    return ok({ settings, channels, categories, roles, emojis });
   } catch (error) {
     console.error('[dashboard/ticket-settings][GET]', error);
     return internalError();

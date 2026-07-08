@@ -25,6 +25,7 @@ export interface TicketSettingsData {
   buttons?: Partial<Record<'close' | 'add' | 'remove' | 'claim' | 'pin', {
     label: string;
     style: 'Primary' | 'Secondary' | 'Success' | 'Danger';
+    emoji?: string;
   }>>;
 }
 

@@ -55,10 +55,27 @@ function makeConfigStoreMock(config: AppConfig): ConfigStore {
       config.panel = { ...config.panel, ...partial };
     },
     patchEmojis: (_guildId: string, categoryEmojis: Record<string, string>, buttonEmojis: Record<string, string>) => {
+      const pick = (configValue: string, autoValue: string | undefined) => configValue || autoValue || '';
+      const mergedCategories: Record<string, string> = { ...categoryEmojis };
+      for (const [key, value] of Object.entries(config.emojis.categories)) {
+        if (value) mergedCategories[key] = value;
+      }
+
       config.emojis = {
         ...config.emojis,
-        categories: { ...config.emojis.categories, ...categoryEmojis },
-        ...buttonEmojis,
+        categories: mergedCategories,
+      };
+      config.ticket = {
+        ...config.ticket,
+        controls: {
+          ...config.ticket.controls,
+          close: { ...config.ticket.controls.close, emojiId: pick(config.ticket.controls.close.emojiId, buttonEmojis.close) },
+          add: { ...config.ticket.controls.add, emojiId: pick(config.ticket.controls.add.emojiId, buttonEmojis.add) },
+          remove: { ...config.ticket.controls.remove, emojiId: pick(config.ticket.controls.remove.emojiId, buttonEmojis.remove) },
+          claim: { ...config.ticket.controls.claim, emojiId: pick(config.ticket.controls.claim.emojiId, buttonEmojis.claim) },
+          pin: { ...config.ticket.controls.pin, emojiId: pick(config.ticket.controls.pin.emojiId, buttonEmojis.pin) },
+          stats: { ...config.ticket.controls.stats, emojiId: pick(config.ticket.controls.stats.emojiId, buttonEmojis.stats) },
+        },
       };
     },
   } as unknown as ConfigStore;
@@ -246,6 +263,9 @@ function applyTicketSettings(config: AppConfig, s: TicketSettingsData): void {
       if (button?.label) {
         config.ticket.controls[key].label = button.label;
         config.ticket.controls[key].style = button.style;
+      }
+      if (button?.emoji !== undefined) {
+        config.ticket.controls[key].emojiId = button.emoji;
       }
     }
   }

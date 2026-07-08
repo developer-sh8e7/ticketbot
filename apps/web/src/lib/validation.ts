@@ -25,6 +25,7 @@ export const ticketButtonStyleSchema = z.enum(['Primary', 'Secondary', 'Success'
 export const ticketControlButtonSchema = z.object({
   label: safeText(80).refine((v) => v.length > 0, 'Label is required'),
   style: ticketButtonStyleSchema,
+  emoji: safeText(64).optional().default(''),
 });
 
 export const ticketPanelCategorySchema = z.object({
