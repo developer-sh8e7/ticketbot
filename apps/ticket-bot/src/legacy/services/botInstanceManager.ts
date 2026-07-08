@@ -3,6 +3,7 @@ import {
   Events,
   GatewayIntentBits,
   Partials,
+  PermissionFlagsBits,
   type ChatInputCommandInteraction,
   type Guild,
 } from 'discord.js';
@@ -751,7 +752,9 @@ export class BotInstanceManager {
       // Never authorize commands from another guild for this bot instance.
       if (interaction.guildId !== running.instance.guild_id) return false;
 
-      return interaction.user.id === running.instance.owner_id ||
+      const isAdmin = interaction.memberPermissions?.has(PermissionFlagsBits.Administrator) ?? false;
+      return isAdmin ||
+             interaction.user.id === running.instance.owner_id ||
              interaction.user.id === this.env.TRIAL_MANAGER_ID;
     }
     return false;

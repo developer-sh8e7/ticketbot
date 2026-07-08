@@ -20,6 +20,7 @@ export function buildCommandDefinitions(config: AppConfig, options: BuildCommand
       new SlashCommandBuilder()
         .setName(names.panelSend)
         .setDescription('Send the ticket panel to a channel.')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addChannelOption((option) =>
           option
             .setName('channel')
@@ -35,6 +36,7 @@ export function buildCommandDefinitions(config: AppConfig, options: BuildCommand
       new SlashCommandBuilder()
         .setName(names.panelRefresh)
         .setDescription('Refresh the configured ticket panel message or send a new one.')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addStringOption((option) =>
           option
             .setName('message-id')

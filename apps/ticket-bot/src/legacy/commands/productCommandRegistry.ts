@@ -1,4 +1,4 @@
-import { ChannelType, REST, Routes, SlashCommandBuilder } from 'discord.js';
+import { ChannelType, PermissionFlagsBits, REST, Routes, SlashCommandBuilder } from 'discord.js';
 import type { AppConfig } from '../types/config.js';
 import type { ProductType } from '../database/botInstanceRepository.js';
 
@@ -32,6 +32,7 @@ function buildTicketCommands(config: AppConfig): SlashCommandBuilder[] {
       new SlashCommandBuilder()
         .setName(names.panelSend)
         .setDescription('Send the ticket panel to a channel.')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addChannelOption((option) =>
           option
             .setName('channel')
@@ -46,6 +47,7 @@ function buildTicketCommands(config: AppConfig): SlashCommandBuilder[] {
       new SlashCommandBuilder()
         .setName(names.panelRefresh)
         .setDescription('Refresh the ticket panel message.')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addStringOption((option) =>
           option
             .setName('message-id')

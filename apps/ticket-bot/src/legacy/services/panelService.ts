@@ -1,4 +1,4 @@
-import type { Guild, Message } from 'discord.js';
+import { PermissionsBitField, type Guild, type Message } from 'discord.js';
 import { buildPanelComponents, buildPanelFiles } from '../builders/panelBuilder.js';
 import { isGuildTextChannelType } from '../utils/discord.js';
 import { ConfigStore } from './configStore.js';
@@ -27,6 +27,23 @@ export class PanelService {
     return channel;
   }
 
+  private ensureCanSendPanel(channel: Awaited<ReturnType<PanelService['resolvePanelChannel']>>, hasFiles: boolean): void {
+    const me = channel.guild.members.me;
+    const permissions = me ? channel.permissionsFor(me) : null;
+    if (!permissions) return;
+
+    const required = [
+      PermissionsBitField.Flags.ViewChannel,
+      PermissionsBitField.Flags.SendMessages,
+    ];
+    if (hasFiles) required.push(PermissionsBitField.Flags.AttachFiles);
+
+    const missing = permissions.missing(required);
+    if (missing.length > 0) {
+      throw new Error(`البوت ما عنده صلاحيات كافية في <#${channel.id}>. الصلاحيات الناقصة: ${missing.join(', ')}`);
+    }
+  }
+
   private async buildPayload(guild: Guild) {
     const config = this.configStore.get(guild.id);
     const mediatorConfig = await this.mediatorRepository.getMediatorConfig();
@@ -50,6 +67,7 @@ export class PanelService {
   public async sendPanel(guild: Guild, channelId?: string): Promise<Message> {
     const channel = await this.resolvePanelChannel(guild, channelId);
     const payload = await this.buildPayload(guild);
+    this.ensureCanSendPanel(channel, payload.files.length > 0);
     return channel.send(payload);
   }
 
@@ -62,8 +80,10 @@ export class PanelService {
     }
 
     try {
+      const payload = await this.buildPayload(guild);
+      this.ensureCanSendPanel(channel, payload.files.length > 0);
       const message = await channel.messages.fetch(targetMessageId);
-      return message.edit(await this.buildPayload(guild));
+      return message.edit(payload);
     } catch {
       return this.sendPanel(guild);
     }
