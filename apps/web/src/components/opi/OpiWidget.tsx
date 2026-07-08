@@ -4,13 +4,15 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Send, X } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type FormEvent } from 'react';
-import { OpiCharacter } from './OpiCharacter';
+import { OpiCharacter, type OpiMood } from './OpiCharacter';
 import styles from './opi.module.css';
 
 const GREETING = 'هلا والله! أنا أوبي، روبوت Opus Solutions. أي سؤال عن بوتاتنا أنا حاضر.';
+const WAKE_LINE = 'أوه! غفوت شوي… تحتاج شي؟';
 const NETWORK_MESSAGE = 'يبدو إن الشبكة متعبة شوي… جرّب ترسل سؤالك مرة ثانية.';
 const CLIENT_TIMEOUT_MS = 25_000;
 const GREETED_KEY = 'opi_greeted';
+const SLEEP_AFTER_MS = 45_000;
 
 const PAGE_LINES: { match: (p: string) => boolean; text: string }[] = [
   { match: (p) => p.startsWith('/pricing'), text: 'وصلت صفحة الأسعار! لو محتار أي باقة تناسب سيرفرك، اسألني.' },
@@ -29,20 +31,38 @@ export function OpiWidget() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [pending, setPending] = useState(false);
   const [waving, setWaving] = useState(false);
+  const [happy, setHappy] = useState(false);
+  const [sleeping, setSleeping] = useState(false);
+  const [hop, setHop] = useState(false);
   const [bubble, setBubble] = useState<string | null>(null);
+
+  const mood: OpiMood = pending ? 'thinking' : sleeping ? 'sleeping' : happy ? 'happy' : 'idle';
 
   const rootRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<SVGGElement>(null);
   const pupilsRef = useRef<SVGGElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const bubbleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingRef = useRef(false);
+  const happyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const moodRef = useRef<OpiMood>('idle');
+  const openRef = useRef(false);
   const firstPath = useRef(true);
+
+  useEffect(() => {
+    moodRef.current = mood;
+    openRef.current = open;
+  });
 
   const showBubble = useCallback((text: string, ms = 7000) => {
     if (bubbleTimer.current) clearTimeout(bubbleTimer.current);
     setBubble(text);
     bubbleTimer.current = setTimeout(() => setBubble(null), ms);
+  }, []);
+
+  const celebrate = useCallback((ms = 2600) => {
+    setHappy(true);
+    if (happyTimer.current) clearTimeout(happyTimer.current);
+    happyTimer.current = setTimeout(() => setHappy(false), ms);
   }, []);
 
   // Greeting + wave, once per browser session
@@ -67,10 +87,55 @@ export function OpiWidget() {
       firstPath.current = false;
       return;
     }
-    if (open || !pathname) return;
+    if (open || !pathname || moodRef.current === 'sleeping') return;
     const line = PAGE_LINES.find((l) => l.match(pathname));
     if (line) showBubble(line.text);
   }, [pathname, open, showBubble]);
+
+  // Fall asleep after inactivity; wake up (with a little line) on any activity
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const arm = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (moodRef.current === 'idle' && !openRef.current) setSleeping(true);
+      }, SLEEP_AFTER_MS);
+    };
+    const onActivity = () => {
+      setSleeping((s) => {
+        if (s) showBubble(WAKE_LINE, 4000);
+        return false;
+      });
+      arm();
+    };
+    arm();
+    const events: (keyof WindowEventMap)[] = ['mousemove', 'scroll', 'keydown', 'pointerdown'];
+    events.forEach((ev) => window.addEventListener(ev, onActivity, { passive: true }));
+    return () => {
+      clearTimeout(timer);
+      events.forEach((ev) => window.removeEventListener(ev, onActivity));
+    };
+  }, [showBubble]);
+
+  // Occasional playful double-hop while idle
+  useEffect(() => {
+    let schedule: ReturnType<typeof setTimeout>;
+    let stop: ReturnType<typeof setTimeout>;
+    const plan = () => {
+      schedule = setTimeout(() => {
+        if (moodRef.current === 'idle' && !openRef.current) {
+          setHop(true);
+          stop = setTimeout(() => setHop(false), 1300);
+        }
+        plan();
+      }, 18_000 + Math.random() * 14_000);
+    };
+    plan();
+    return () => {
+      clearTimeout(schedule);
+      clearTimeout(stop);
+    };
+  }, []);
 
   // Eye tracking + head tilt toward the mouse (rAF-throttled, no re-renders)
   useEffect(() => {
@@ -79,7 +144,8 @@ export function OpiWidget() {
       if (raf) return;
       raf = requestAnimationFrame(() => {
         raf = 0;
-        if (pendingRef.current) return; // thinking pose owns the gaze
+        const m = moodRef.current;
+        if (m === 'thinking' || m === 'sleeping') return; // those poses own the gaze
         const el = rootRef.current;
         if (!el) return;
         const r = el.getBoundingClientRect();
@@ -106,6 +172,7 @@ export function OpiWidget() {
 
   useEffect(() => () => {
     if (bubbleTimer.current) clearTimeout(bubbleTimer.current);
+    if (happyTimer.current) clearTimeout(happyTimer.current);
   }, []);
 
   const send = async (e: FormEvent) => {
@@ -116,11 +183,11 @@ export function OpiWidget() {
     const next: ChatMessage[] = [...messages, { role: 'user' as const, content: text }];
     setMessages(next.slice(-20));
     setPending(true);
-    pendingRef.current = true;
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), CLIENT_TIMEOUT_MS);
     let reply = NETWORK_MESSAGE;
+    let succeeded = false;
     try {
       const res = await fetch('/api/opi/chat', {
         method: 'POST',
@@ -131,14 +198,19 @@ export function OpiWidget() {
       const json = (await res.json()) as
         | { success: true; data: { reply: string } }
         | { success: false; error: { message: string } };
-      reply = json.success ? json.data.reply : json.error.message;
+      if (json.success) {
+        reply = json.data.reply;
+        succeeded = true;
+      } else {
+        reply = json.error.message;
+      }
     } catch {
       // network failure or client timeout → keep friendly fallback
     } finally {
       clearTimeout(timer);
-      pendingRef.current = false;
       setPending(false);
       setMessages((prev) => [...prev, { role: 'assistant' as const, content: reply }].slice(-20));
+      if (succeeded) celebrate();
     }
   };
 
@@ -246,13 +318,17 @@ export function OpiWidget() {
       <button
         type="button"
         onClick={() => {
-          setOpen((v) => !v);
+          setOpen((v) => {
+            if (!v) celebrate(1800);
+            return !v;
+          });
+          setSleeping(false);
           setBubble(null);
         }}
         aria-label={open ? 'إغلاق محادثة أوبي' : 'تكلم مع أوبي'}
-        className="block cursor-pointer rounded-2xl transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--opi)]"
+        className={`${styles.mascotBtn} ${hop ? styles.hop : ''} block cursor-pointer rounded-2xl transition-transform duration-150 hover:scale-105 active:scale-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--opi)]`}
       >
-        <OpiCharacter mode={pending ? 'thinking' : 'idle'} waving={waving} headRef={headRef} pupilsRef={pupilsRef} />
+        <OpiCharacter mood={mood} waving={waving} headRef={headRef} pupilsRef={pupilsRef} />
       </button>
     </div>
   );

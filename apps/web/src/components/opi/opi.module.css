@@ -1,14 +1,42 @@
-/* Opi mascot animations — scoped, GPU-friendly transforms only */
+/* Opi mascot — scoped styles & animations (GPU-friendly transforms only) */
 
 .root {
   position: fixed;
   bottom: 16px;
   left: 16px;
   z-index: 40; /* above page content, below navbar (z-50) and cart drawer (z-60) */
+  animation: opi-rise 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.svg {
+  filter: drop-shadow(0 10px 24px rgba(255, 138, 0, 0.22));
+  transition: filter 250ms ease;
+}
+
+.mascotBtn:hover .svg {
+  filter: drop-shadow(0 12px 30px rgba(255, 138, 0, 0.38));
 }
 
 .bob {
   animation: opi-bob 3.4s ease-in-out infinite;
+}
+
+.bobFast {
+  animation: opi-bob 1.1s ease-in-out infinite;
+}
+
+.breathe {
+  animation: opi-breathe 4.6s ease-in-out infinite;
+}
+
+.hop {
+  animation: opi-hop 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.shadow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: opi-shadow 3.4s ease-in-out infinite;
 }
 
 .sway {
@@ -30,16 +58,96 @@
 
 .waveArm {
   transform-box: fill-box;
-  transform-origin: 50% 12%;
+  transform-origin: 50% 10%;
   animation: opi-wave 1.5s ease-in-out 2;
 }
 
-.thinkingAntenna {
-  animation: opi-pulse 0.9s ease-in-out infinite;
+.armHappyL {
+  transform-box: fill-box;
+  transform-origin: 50% 10%;
+  animation: opi-cheer-l 0.55s ease-in-out infinite alternate;
 }
 
-.thinkingBody {
-  animation: opi-bob 1.1s ease-in-out infinite;
+.armHappyR {
+  transform-box: fill-box;
+  transform-origin: 50% 10%;
+  animation: opi-cheer-r 0.55s ease-in-out infinite alternate;
+}
+
+.footTap {
+  transform-box: fill-box;
+  transform-origin: 50% 15%;
+  animation: opi-tap 0.5s ease-in-out infinite;
+}
+
+.orb {
+  animation: opi-pulse 2.6s ease-in-out infinite;
+}
+
+.orbThinking {
+  animation: opi-pulse 0.7s ease-in-out infinite;
+}
+
+.orbHalo {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: opi-halo 2.6s ease-out infinite;
+}
+
+.scanline {
+  animation: opi-scan 4s linear infinite;
+}
+
+.eq1,
+.eq2,
+.eq3 {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: opi-eq 1.6s ease-in-out infinite;
+}
+
+.eq2 {
+  animation-delay: 0.25s;
+}
+
+.eq3 {
+  animation-delay: 0.5s;
+}
+
+.eqFast .eq1,
+.eqFast .eq2,
+.eqFast .eq3 {
+  animation-duration: 0.5s;
+}
+
+.z1,
+.z2,
+.z3 {
+  animation: opi-zzz 2.4s ease-in-out infinite;
+}
+
+.z2 {
+  animation-delay: 0.5s;
+}
+
+.z3 {
+  animation-delay: 1s;
+}
+
+.spark1,
+.spark2,
+.spark3 {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: opi-spark 1.4s ease-out infinite;
+}
+
+.spark2 {
+  animation-delay: 0.35s;
+}
+
+.spark3 {
+  animation-delay: 0.7s;
 }
 
 .dot {
@@ -59,6 +167,17 @@
   animation-delay: 0.3s;
 }
 
+@keyframes opi-rise {
+  from {
+    transform: translateY(90px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 @keyframes opi-bob {
   0%,
   100% {
@@ -66,6 +185,45 @@
   }
   50% {
     transform: translateY(-4px);
+  }
+}
+
+@keyframes opi-breathe {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-1.5px) scale(1.015);
+  }
+}
+
+@keyframes opi-hop {
+  0%,
+  70%,
+  100% {
+    transform: translateY(0);
+  }
+  18% {
+    transform: translateY(-18px);
+  }
+  40% {
+    transform: translateY(0);
+  }
+  55% {
+    transform: translateY(-9px);
+  }
+}
+
+@keyframes opi-shadow {
+  0%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scaleX(0.88);
+    opacity: 0.3;
   }
 }
 
@@ -112,13 +270,106 @@
   }
 }
 
+@keyframes opi-cheer-l {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(32deg);
+  }
+}
+
+@keyframes opi-cheer-r {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-32deg);
+  }
+}
+
+@keyframes opi-tap {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(9deg);
+  }
+}
+
 @keyframes opi-pulse {
   0%,
   100% {
-    opacity: 0.45;
+    opacity: 0.55;
   }
   50% {
     opacity: 1;
+  }
+}
+
+@keyframes opi-halo {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.35;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@keyframes opi-scan {
+  0% {
+    transform: translateY(0);
+    opacity: 0.12;
+  }
+  85% {
+    transform: translateY(28px);
+    opacity: 0.1;
+  }
+  100% {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+}
+
+@keyframes opi-eq {
+  0%,
+  100% {
+    transform: scaleY(0.45);
+  }
+  50% {
+    transform: scaleY(1.35);
+  }
+}
+
+@keyframes opi-zzz {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(7px, -15px);
+    opacity: 0;
+  }
+}
+
+@keyframes opi-spark {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  35% {
+    transform: scale(1.1) rotate(40deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.1) rotate(90deg);
+    opacity: 0;
   }
 }
 
@@ -136,12 +387,31 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .root,
   .bob,
+  .bobFast,
+  .breathe,
+  .hop,
+  .shadow,
   .sway,
   .eye,
   .waveArm,
-  .thinkingAntenna,
-  .thinkingBody,
+  .armHappyL,
+  .armHappyR,
+  .footTap,
+  .orb,
+  .orbThinking,
+  .orbHalo,
+  .scanline,
+  .eq1,
+  .eq2,
+  .eq3,
+  .z1,
+  .z2,
+  .z3,
+  .spark1,
+  .spark2,
+  .spark3,
   .dot {
     animation: none !important;
   }
