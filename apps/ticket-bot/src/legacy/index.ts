@@ -34,6 +34,7 @@ import {
   isAuthorizedAdmin,
 } from './constants/customIds.js';
 import { COLOR_TICKET_BUTTON_PREFIX, JUMP_COLOR_TICKET_BUTTON_PREFIX } from './constants/colorTickets.js';
+import { isSeedGuild, isStbGuild, isStoreGuild } from './constants/seedGuilds.js';
 import { createSupabaseClient } from './database/supabase.js';
 import { InfrastructureRepository } from './database/infrastructureRepository.js';
 import { TicketRepository } from './database/ticketRepository.js';
@@ -194,6 +195,22 @@ async function syncCommands(): Promise<void> {
   logger.info('Slash commands registered successfully.');
 }
 
+function isSpecialTicketCommandAllowed(commandName: string, guildId: string | null): boolean {
+  if (['clear', 'panel', 'panle', 'panel-mm', 'mm', 'mediator-config', 'panel-complaints-send', 'setup-color'].includes(commandName)) {
+    return isStbGuild(guildId);
+  }
+
+  if (['24-7', 'stop', 'vouches'].includes(commandName)) {
+    return isStoreGuild(guildId);
+  }
+
+  if (['logs', 'ai', 'info'].includes(commandName)) {
+    return isSeedGuild(guildId);
+  }
+
+  return true;
+}
+
 async function ensurePanelManager(interaction: ChatInputCommandInteraction): Promise<boolean> {
   if (!interaction.inCachedGuild() || !interaction.member) {
     await safeReply(interaction, [buildErrorEmbed(configStore.current, 'This command only works inside the configured guild.')]);
@@ -321,6 +338,11 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
 
   if (isOpusRuntime() && (interaction.commandName === 'subscription' || interaction.commandName === 'paid')) {
     await opusManagerService.handleSubscriptionCommand(interaction);
+    return;
+  }
+
+  if (!isSpecialTicketCommandAllowed(interaction.commandName, guildId)) {
+    await safeReply(interaction, [buildErrorEmbed(config, 'هذا الأمر مخصص لسيرفر Opus المحدد فقط.')]);
     return;
   }
 

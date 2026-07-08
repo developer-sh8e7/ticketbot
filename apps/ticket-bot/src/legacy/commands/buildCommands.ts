@@ -1,7 +1,7 @@
 import { ChannelType, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 import type { AppConfig } from '../types/config.js';
 import { COLOR_GUILD_ID } from '../constants/colorTickets.js';
-import { isSeedGuild } from '../constants/seedGuilds.js';
+import { isSeedGuild, isStbGuild, isStoreGuild } from '../constants/seedGuilds.js';
 
 export interface BuildCommandOptions {
   includeOpusCommands?: boolean;
@@ -10,6 +10,10 @@ export interface BuildCommandOptions {
 export function buildCommandDefinitions(config: AppConfig, options: BuildCommandOptions = {}) {
   const names = config.commands?.names ?? {} as Record<string, string>;
   const commands: SlashCommandBuilder[] = [];
+  const guildId = config.guild?.id;
+  const seedGuild = isSeedGuild(guildId);
+  const stbGuild = isStbGuild(guildId);
+  const storeGuild = isStoreGuild(guildId);
 
   if (names.panelSend) {
     commands.push(
@@ -77,156 +81,158 @@ export function buildCommandDefinitions(config: AppConfig, options: BuildCommand
       .setDescription('إعادة لوحة التحكم داخل التذكرة الحالية إذا اختفت.') as SlashCommandBuilder,
   );
 
-  commands.push(
-    new SlashCommandBuilder()
-      .setName('clear')
-      .setDescription('Delete all messages sent by a specific user id across the server.')
-      .addStringOption((option) =>
-        option
-          .setName('user-id')
-          .setDescription('Copy ID of the user whose messages should be deleted.')
-          .setRequired(true),
-      ) as unknown as SlashCommandBuilder,
-  );
+  if (stbGuild) {
+    commands.push(
+      new SlashCommandBuilder()
+        .setName('clear')
+        .setDescription('Delete all messages sent by a specific user id across the server.')
+        .addStringOption((option) =>
+          option
+            .setName('user-id')
+            .setDescription('Copy ID of the user whose messages should be deleted.')
+            .setRequired(true),
+        ) as unknown as SlashCommandBuilder,
+    );
+  }
 
-  if (isSeedGuild(config.guild?.id)) {
+  if (seedGuild) {
     commands.push(
       new SlashCommandBuilder()
         .setName('logs')
         .setDescription('Respawn all bot log channels and post what each log is for.') as SlashCommandBuilder,
     );
+
+    commands.push(
+      new SlashCommandBuilder()
+        .setName('ai')
+        .setDescription('تشغيل أو إيقاف المساعد الآلي (AI) في السيرفر')
+        .addSubcommand((sub) =>
+          sub
+            .setName('on')
+            .setDescription('تفعيل المساعد الآلي للتذاكر بالكامل')
+        )
+        .addSubcommand((sub) =>
+          sub
+            .setName('off')
+            .setDescription('إيقاف المساعد الآلي للتذاكر بالكامل')
+        ) as unknown as SlashCommandBuilder,
+    );
+
+    commands.push(
+      new SlashCommandBuilder()
+        .setName('info')
+        .setDescription('عرض معلومات شخص مرتبط بالبوت (للمالك فقط)')
+        .addStringOption((option) =>
+          option
+            .setName('user-id')
+            .setDescription('كوبي آيدي الشخص')
+            .setRequired(true),
+        ) as unknown as SlashCommandBuilder,
+    );
   }
 
-  // AI Toggle command
-  commands.push(
-    new SlashCommandBuilder()
-      .setName('ai')
-      .setDescription('تشغيل أو إيقاف المساعد الآلي (AI) في السيرفر')
-      .addSubcommand((sub) =>
-        sub
-          .setName('on')
-          .setDescription('تفعيل المساعد الآلي للتذاكر بالكامل')
-      )
-      .addSubcommand((sub) =>
-        sub
-          .setName('off')
-          .setDescription('إيقاف المساعد الآلي للتذاكر بالكامل')
-      ) as unknown as SlashCommandBuilder
-  );
+  if (stbGuild) {
+    commands.push(
+      new SlashCommandBuilder()
+        .setName('panel')
+        .setDescription('فتح لوحة التحكم الكاملة بالتذاكر (للأدمن فقط)') as SlashCommandBuilder,
+    );
+    commands.push(
+      new SlashCommandBuilder()
+        .setName('panle')
+        .setDescription('فتح لوحة التحكم الكاملة بالتذاكر (للأدمن فقط) - كتابة بديلة') as SlashCommandBuilder,
+    );
 
-  // Ticket Control Panel commands
-  commands.push(
-    new SlashCommandBuilder()
-      .setName('panel')
-      .setDescription('فتح لوحة التحكم الكاملة بالتذاكر (للأدمن فقط)') as SlashCommandBuilder
-  );
-  commands.push(
-    new SlashCommandBuilder()
-      .setName('panle')
-      .setDescription('فتح لوحة التحكم الكاملة بالتذاكر (للأدمن فقط) - كتابة بديلة') as SlashCommandBuilder
-  );
+    commands.push(
+      new SlashCommandBuilder()
+        .setName('panel-mm')
+        .setDescription('فتح لوحة التحكم الكاملة بالوسطاء (للإدارة فقط)') as SlashCommandBuilder,
+    );
 
-  commands.push(
-    new SlashCommandBuilder()
-      .setName('24-7')
-      .setDescription('إدخال البوت روم صوتي 24/7')
-      .addChannelOption((option) =>
-        option
-          .setName('room')
-          .setDescription('الروم الصوتي الذي يبقى فيه البوت')
-          .addChannelTypes(ChannelType.GuildVoice)
-          .setRequired(true),
-      ) as unknown as SlashCommandBuilder,
-  );
+    commands.push(
+      new SlashCommandBuilder()
+        .setName('mm')
+        .setDescription('لوحة إدارة صلاحيات إعطاء وإزالة الرتب للمالكين فقط') as SlashCommandBuilder,
+    );
 
-  commands.push(
-    new SlashCommandBuilder()
-      .setName('stop')
-      .setDescription('إخراج البوت من روم 24/7 وإيقاف التثبيت') as SlashCommandBuilder,
-  );
+    commands.push(
+      new SlashCommandBuilder()
+        .setName('mediator-config')
+        .setDescription('إدارة حالة التقديم على رتبة وسيط')
+        .addSubcommand((subcommand) =>
+          subcommand
+            .setName('open')
+            .setDescription('فتح التقديم على رتبة وسيط'),
+        )
+        .addSubcommand((subcommand) =>
+          subcommand
+            .setName('close')
+            .setDescription('إغلاق التقديم على رتبة وسيط'),
+        )
+        .addSubcommand((subcommand) =>
+          subcommand
+            .setName('set-max')
+            .setDescription('تحديد العدد الأقصى للوسطاء')
+            .addIntegerOption((option) =>
+              option
+                .setName('number')
+                .setDescription('العدد الأقصى')
+                .setMinValue(1)
+                .setMaxValue(100)
+                .setRequired(true),
+            ),
+        ) as unknown as SlashCommandBuilder,
+    );
 
-  commands.push(
-    new SlashCommandBuilder()
-      .setName('panel-mm')
-      .setDescription('فتح لوحة التحكم الكاملة بالوسطاء (للإدارة فقط)') as SlashCommandBuilder
-  );
+    commands.push(
+      new SlashCommandBuilder()
+        .setName('panel-complaints-send')
+        .setDescription('ارسال لوحة الشكاوي والاعتراضات لمركز الشكاوي (للأدمن فقط)') as SlashCommandBuilder,
+    );
+  }
 
-  commands.push(
-    new SlashCommandBuilder()
-      .setName('mm')
-      .setDescription('لوحة إدارة صلاحيات إعطاء وإزالة الرتب للمالكين فقط') as SlashCommandBuilder
-  );
+  if (storeGuild) {
+    commands.push(
+      new SlashCommandBuilder()
+        .setName('24-7')
+        .setDescription('إدخال البوت روم صوتي 24/7')
+        .addChannelOption((option) =>
+          option
+            .setName('room')
+            .setDescription('الروم الصوتي الذي يبقى فيه البوت')
+            .addChannelTypes(ChannelType.GuildVoice)
+            .setRequired(true),
+        ) as unknown as SlashCommandBuilder,
+    );
 
-  commands.push(
-    new SlashCommandBuilder()
-      .setName('mediator-config')
-      .setDescription('إدارة حالة التقديم على رتبة وسيط')
-      .addSubcommand((subcommand) =>
-        subcommand
-          .setName('open')
-          .setDescription('فتح التقديم على رتبة وسيط'),
-      )
-      .addSubcommand((subcommand) =>
-        subcommand
-          .setName('close')
-          .setDescription('إغلاق التقديم على رتبة وسيط'),
-      )
-      .addSubcommand((subcommand) =>
-        subcommand
-          .setName('set-max')
-          .setDescription('تحديد العدد الأقصى للوسطاء')
-          .addIntegerOption((option) =>
-            option
-              .setName('number')
-              .setDescription('العدد الأقصى')
-              .setMinValue(1)
-              .setMaxValue(100)
-              .setRequired(true),
-          ),
-      ) as unknown as SlashCommandBuilder,
-  );
+    commands.push(
+      new SlashCommandBuilder()
+        .setName('stop')
+        .setDescription('إخراج البوت من روم 24/7 وإيقاف التثبيت') as SlashCommandBuilder,
+    );
 
-  commands.push(
-    new SlashCommandBuilder()
-      .setName('panel-complaints-send')
-      .setDescription('ارسال لوحة الشكاوي والاعتراضات لمركز الشكاوي (للأدمن فقط)') as SlashCommandBuilder
-  );
-
-  // Vouches / review command
-  commands.push(
-    new SlashCommandBuilder()
-      .setName('vouches')
-      .setDescription('إرسال تقييم للمنتج أو الخدمة')
-      .addStringOption((option) =>
-        option
-          .setName('review')
-          .setDescription('كلام العميل / التقييم (حد أقصى 120 حرف)')
-          .setMinLength(2)
-          .setMaxLength(120)
-          .setRequired(true),
-      )
-      .addIntegerOption((option) =>
-        option
-          .setName('rating')
-          .setDescription('عدد النجوم (1-5)')
-          .setMinValue(1)
-          .setMaxValue(5)
-          .setRequired(false),
-      ) as unknown as SlashCommandBuilder,
-  );
-
-  // Linked user info command (linking itself is done through the website OAuth flow)
-  commands.push(
-    new SlashCommandBuilder()
-      .setName('info')
-      .setDescription('عرض معلومات شخص مرتبط بالبوت (للمالك فقط)')
-      .addStringOption((option) =>
-        option
-          .setName('user-id')
-          .setDescription('كوبي آيدي الشخص')
-          .setRequired(true),
-      ) as unknown as SlashCommandBuilder,
-  );
+    commands.push(
+      new SlashCommandBuilder()
+        .setName('vouches')
+        .setDescription('إرسال تقييم للمنتج أو الخدمة')
+        .addStringOption((option) =>
+          option
+            .setName('review')
+            .setDescription('كلام العميل / التقييم (حد أقصى 120 حرف)')
+            .setMinLength(2)
+            .setMaxLength(120)
+            .setRequired(true),
+        )
+        .addIntegerOption((option) =>
+          option
+            .setName('rating')
+            .setDescription('عدد النجوم (1-5)')
+            .setMinValue(1)
+            .setMaxValue(5)
+            .setRequired(false),
+        ) as unknown as SlashCommandBuilder,
+    );
+  }
 
   // Color ("الوان البيوت") setup — provisions any missing configured color categories.
   // Registered ONLY for the one server that uses this feature.
