@@ -170,9 +170,9 @@ export function OwnerBotsManager({ bots }: { bots: AdminSubscriber[] }) {
                   )}
                 </div>
 
-                {b.product_type === 'general' ? (
+                {b.product_type === 'general' || b.product_type === 'ticket' ? (
                   <a
-                    href={`/dashboard/bot/${b.id}/system`}
+                    href={`/dashboard/bot/${b.id}/${b.product_type === 'ticket' ? 'ticket' : 'system'}`}
                     className="mt-2 inline-flex items-center gap-1.5 font-arabic text-xs font-bold text-opus-muted transition hover:text-opus-accent-2"
                   >
                     <Settings size={13} /> الدخول كمالك — تعديل إعدادات هذا البوت
