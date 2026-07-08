@@ -363,7 +363,7 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
       return;
     }
 
-    if (!serverLogService.isEnabled()) {
+    if (!serverLogService.isEnabledForGuild(interaction.guildId)) {
       await safeReply(interaction, [buildErrorEmbed(config, 'ميزة اللوقات مخصصة لسيرفرات Opus الأساسية فقط.')]);
       return;
     }
@@ -654,7 +654,7 @@ client.once(Events.ClientReady, async (readyClient) => {
   }
 
   try {
-    if (serverLogService.isEnabled()) {
+    if (serverLogService.isEnabledForGuild(config.guild.id)) {
       await serverLogService.ensure();
       logger.info('Server logs verified / created successfully.');
     } else {
@@ -681,7 +681,7 @@ client.on(Events.GuildCreate, async (guild) => {
   }
 
   try {
-    if (serverLogService.isEnabled()) await serverLogService.ensure();
+    if (serverLogService.isEnabledForGuild(guild.id)) await serverLogService.ensure();
   } catch (error) {
     logger.error(`Failed to setup server logs for guild ${guild.id}`, error instanceof Error ? error.message : error);
   }
@@ -1046,7 +1046,13 @@ function voiceStateMemberValue(state: VoiceState): string {
   return user ? formatUserLogValue(user) : `<@${state.id}>\nID: ${state.id}`;
 }
 
+function shouldWriteServerLogs(guildId: string | null | undefined): boolean {
+  return serverLogService.isEnabledForGuild(guildId);
+}
+
 async function fetchAnyExecutor(guild: Guild, types: AuditLogEvent[], targetId?: string): Promise<string> {
+  if (!shouldWriteServerLogs(guild.id)) return 'غير معروف';
+
   for (const type of types) {
     const executor = await serverLogService.fetchExecutor(guild, type, targetId);
     if (executor !== 'غير معروف') return executor;
@@ -1058,6 +1064,8 @@ async function fetchAnyExecutor(guild: Guild, types: AuditLogEvent[], targetId?:
 client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
   try {
 
+
+    if (!shouldWriteServerLogs(newMember.guild.id)) return;
 
     const addedRoles = newMember.roles.cache.filter((role) => !oldMember.roles.cache.has(role.id));
     const removedRoles = oldMember.roles.cache.filter((role) => !newMember.roles.cache.has(role.id));
@@ -1112,6 +1120,7 @@ client.on(Events.GuildMemberAdd, async (member) => {
   try {
     if (member.guild.id !== configStore.current.guild.id) return;
     await welcomeService.handleMemberAdd(member);
+    if (!shouldWriteServerLogs(member.guild.id)) return;
     await serverLogService.send('members', 'دخول عضو', `دخل <@${member.id}> إلى السيرفر.`, [
       { name: 'العضو', value: formatMemberLogValue(member), inline: true },
       { name: 'تاريخ إنشاء الحساب', value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:F>`, inline: true },
@@ -1124,7 +1133,7 @@ client.on(Events.GuildMemberAdd, async (member) => {
 
 client.on(Events.GuildMemberRemove, async (member) => {
   try {
-    if (member.guild.id !== configStore.current.guild.id) return;
+    if (!shouldWriteServerLogs(member.guild.id)) return;
 
     const executor = await serverLogService.fetchExecutor(member.guild, AuditLogEvent.MemberKick, member.id);
     const kicked = executor !== 'غير معروف';
@@ -1140,7 +1149,7 @@ client.on(Events.GuildMemberRemove, async (member) => {
 
 client.on(Events.ChannelCreate, async (channel) => {
   try {
-    if (!('guild' in channel) || channel.guild.id !== configStore.current.guild.id) return;
+    if (!('guild' in channel) || !shouldWriteServerLogs(channel.guild.id)) return;
     const executor = await serverLogService.fetchExecutor(channel.guild, AuditLogEvent.ChannelCreate, channel.id);
     await serverLogService.send('channels', 'إنشاء روم', `تم إنشاء الروم <#${channel.id}>.`, [
       { name: 'بواسطة', value: executor, inline: true },
@@ -1154,7 +1163,7 @@ client.on(Events.ChannelCreate, async (channel) => {
 
 client.on(Events.ChannelDelete, async (channel) => {
   try {
-    if (!('guild' in channel) || channel.guild.id !== configStore.current.guild.id) return;
+    if (!('guild' in channel) || !shouldWriteServerLogs(channel.guild.id)) return;
     const executor = await serverLogService.fetchExecutor(channel.guild, AuditLogEvent.ChannelDelete, channel.id);
     await serverLogService.send('channels', 'حذف روم', `تم حذف روم من السيرفر.`, [
       { name: 'بواسطة', value: executor, inline: true },
@@ -1168,7 +1177,7 @@ client.on(Events.ChannelDelete, async (channel) => {
 
 client.on(Events.ChannelUpdate, async (oldChannel, newChannel) => {
   try {
-    if (!('guild' in newChannel) || newChannel.guild.id !== configStore.current.guild.id) return;
+    if (!('guild' in newChannel) || !shouldWriteServerLogs(newChannel.guild.id)) return;
 
     const nameChanged = 'name' in oldChannel && 'name' in newChannel && oldChannel.name !== newChannel.name;
     const parentChanged = 'parentId' in oldChannel && 'parentId' in newChannel && oldChannel.parentId !== newChannel.parentId;
@@ -1207,7 +1216,7 @@ client.on(Events.ChannelUpdate, async (oldChannel, newChannel) => {
 
 client.on(Events.ThreadCreate, async (thread) => {
   try {
-    if (thread.guild.id !== configStore.current.guild.id) return;
+    if (!shouldWriteServerLogs(thread.guild.id)) return;
     const executor = await serverLogService.fetchExecutor(thread.guild, AuditLogEvent.ThreadCreate, thread.id);
     await serverLogService.send('channels', 'إنشاء ثريد', `تم إنشاء الثريد <#${thread.id}>.`, [
       { name: 'بواسطة', value: executor, inline: true },
@@ -1221,7 +1230,7 @@ client.on(Events.ThreadCreate, async (thread) => {
 
 client.on(Events.ThreadUpdate, async (oldThread, newThread) => {
   try {
-    if (newThread.guild.id !== configStore.current.guild.id) return;
+    if (!shouldWriteServerLogs(newThread.guild.id)) return;
     const fields: { name: string; value: string; inline?: boolean }[] = [
       { name: 'الثريد', value: `<#${newThread.id}>\nID: ${newThread.id}`, inline: true },
     ];
@@ -1241,7 +1250,7 @@ client.on(Events.ThreadUpdate, async (oldThread, newThread) => {
 
 client.on(Events.ThreadDelete, async (thread) => {
   try {
-    if (thread.guild.id !== configStore.current.guild.id) return;
+    if (!shouldWriteServerLogs(thread.guild.id)) return;
     const executor = await serverLogService.fetchExecutor(thread.guild, AuditLogEvent.ThreadDelete, thread.id);
     await serverLogService.send('channels', 'حذف ثريد', 'تم حذف ثريد من السيرفر.', [
       { name: 'بواسطة', value: executor, inline: true },
@@ -1255,7 +1264,7 @@ client.on(Events.ThreadDelete, async (thread) => {
 
 client.on(Events.GuildRoleUpdate, async (oldRole, newRole) => {
   try {
-    if (newRole.guild.id !== configStore.current.guild.id) return;
+    if (!shouldWriteServerLogs(newRole.guild.id)) return;
     const permissionChanged = oldRole.permissions.bitfield !== newRole.permissions.bitfield;
     const nameChanged = oldRole.name !== newRole.name;
     const colorChanged = oldRole.hexColor !== newRole.hexColor;
@@ -1290,7 +1299,7 @@ client.on(Events.GuildRoleUpdate, async (oldRole, newRole) => {
 
 client.on(Events.GuildRoleCreate, async (role) => {
   try {
-    if (role.guild.id !== configStore.current.guild.id) return;
+    if (!shouldWriteServerLogs(role.guild.id)) return;
     const executor = await serverLogService.fetchExecutor(role.guild, AuditLogEvent.RoleCreate, role.id);
     await serverLogService.send('roles', 'إنشاء رتبة', `تم إنشاء <@&${role.id}>.`, [
       { name: 'بواسطة', value: executor, inline: true },
@@ -1305,7 +1314,7 @@ client.on(Events.GuildRoleCreate, async (role) => {
 
 client.on(Events.GuildRoleDelete, async (role) => {
   try {
-    if (role.guild.id !== configStore.current.guild.id) return;
+    if (!shouldWriteServerLogs(role.guild.id)) return;
     const executor = await serverLogService.fetchExecutor(role.guild, AuditLogEvent.RoleDelete, role.id);
     await serverLogService.send('roles', 'حذف رتبة', `تم حذف رتبة من السيرفر.`, [
       { name: 'بواسطة', value: executor, inline: true },
@@ -1328,7 +1337,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
     });
 
     const guild = newState.guild ?? oldState.guild;
-    if (guild.id !== configStore.current.guild.id) return;
+    if (!shouldWriteServerLogs(guild.id)) return;
 
     const member = newState.member ?? oldState.member;
     const memberValue = member ? formatUserLogValue(member.user) : voiceStateMemberValue(newState);
@@ -1380,7 +1389,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
 
 client.on(Events.GuildBanAdd, async (ban) => {
   try {
-    if (ban.guild.id !== configStore.current.guild.id) return;
+    if (!shouldWriteServerLogs(ban.guild.id)) return;
     const executor = await serverLogService.fetchExecutor(ban.guild, AuditLogEvent.MemberBanAdd, ban.user.id);
     await serverLogService.send('moderation', 'باند عضو', `تم حظر <@${ban.user.id}> من السيرفر.`, [
       { name: 'بواسطة', value: executor, inline: true },
@@ -1394,7 +1403,7 @@ client.on(Events.GuildBanAdd, async (ban) => {
 
 client.on(Events.GuildBanRemove, async (ban) => {
   try {
-    if (ban.guild.id !== configStore.current.guild.id) return;
+    if (!shouldWriteServerLogs(ban.guild.id)) return;
     const executor = await serverLogService.fetchExecutor(ban.guild, AuditLogEvent.MemberBanRemove, ban.user.id);
     await serverLogService.send('moderation', 'فك باند عضو', `تم فك الحظر عن <@${ban.user.id}>.`, [
       { name: 'بواسطة', value: executor, inline: true },
@@ -1407,7 +1416,7 @@ client.on(Events.GuildBanRemove, async (ban) => {
 
 client.on(Events.GuildUpdate, async (oldGuild, newGuild) => {
   try {
-    if (newGuild.id !== configStore.current.guild.id) return;
+    if (!shouldWriteServerLogs(newGuild.id)) return;
 
     const fields: { name: string; value: string; inline?: boolean }[] = [];
     addChange(fields, 'الاسم', oldGuild.name, newGuild.name);
@@ -1433,7 +1442,7 @@ client.on(Events.GuildUpdate, async (oldGuild, newGuild) => {
 
 client.on(Events.GuildEmojiCreate, async (emoji) => {
   try {
-    if (emoji.guild.id !== configStore.current.guild.id) return;
+    if (!shouldWriteServerLogs(emoji.guild.id)) return;
     const executor = await serverLogService.fetchExecutor(emoji.guild, AuditLogEvent.EmojiCreate, emoji.id);
     await serverLogService.send('server', 'إضافة إيموجي', `تمت إضافة إيموجي ${emoji}.`, [
       { name: 'بواسطة', value: executor, inline: true },
@@ -1446,7 +1455,7 @@ client.on(Events.GuildEmojiCreate, async (emoji) => {
 
 client.on(Events.GuildEmojiUpdate, async (oldEmoji, newEmoji) => {
   try {
-    if (newEmoji.guild.id !== configStore.current.guild.id) return;
+    if (!shouldWriteServerLogs(newEmoji.guild.id)) return;
     if (oldEmoji.name === newEmoji.name) return;
     const executor = await serverLogService.fetchExecutor(newEmoji.guild, AuditLogEvent.EmojiUpdate, newEmoji.id);
     await serverLogService.send('server', 'تعديل إيموجي', `تم تعديل إيموجي ${newEmoji}.`, [
@@ -1462,7 +1471,7 @@ client.on(Events.GuildEmojiUpdate, async (oldEmoji, newEmoji) => {
 
 client.on(Events.GuildEmojiDelete, async (emoji) => {
   try {
-    if (emoji.guild.id !== configStore.current.guild.id) return;
+    if (!shouldWriteServerLogs(emoji.guild.id)) return;
     const executor = await serverLogService.fetchExecutor(emoji.guild, AuditLogEvent.EmojiDelete, emoji.id);
     await serverLogService.send('server', 'حذف إيموجي', 'تم حذف إيموجي من السيرفر.', [
       { name: 'بواسطة', value: executor, inline: true },
@@ -1475,8 +1484,9 @@ client.on(Events.GuildEmojiDelete, async (emoji) => {
 
 client.on(Events.GuildStickerCreate, async (sticker) => {
   try {
-    if (sticker.guild?.id !== configStore.current.guild.id) return;
-    const executor = await serverLogService.fetchExecutor(sticker.guild, AuditLogEvent.StickerCreate, sticker.id);
+    const guild = sticker.guild;
+    if (!guild || !shouldWriteServerLogs(guild.id)) return;
+    const executor = await serverLogService.fetchExecutor(guild, AuditLogEvent.StickerCreate, sticker.id);
     await serverLogService.send('server', 'إضافة ستيكر', 'تمت إضافة ستيكر.', [
       { name: 'بواسطة', value: executor, inline: true },
       { name: 'الستيكر', value: `${sticker.name}\nID: ${sticker.id}`, inline: true },
@@ -1488,12 +1498,13 @@ client.on(Events.GuildStickerCreate, async (sticker) => {
 
 client.on(Events.GuildStickerUpdate, async (oldSticker, newSticker) => {
   try {
-    if (newSticker.guild?.id !== configStore.current.guild.id) return;
+    const guild = newSticker.guild;
+    if (!guild || !shouldWriteServerLogs(guild.id)) return;
     const fields: { name: string; value: string; inline?: boolean }[] = [];
     addChange(fields, 'الاسم', oldSticker.name, newSticker.name);
     addChange(fields, 'الوصف', oldSticker.description, newSticker.description);
     if (fields.length === 0) return;
-    const executor = await serverLogService.fetchExecutor(newSticker.guild, AuditLogEvent.StickerUpdate, newSticker.id);
+    const executor = await serverLogService.fetchExecutor(guild, AuditLogEvent.StickerUpdate, newSticker.id);
     fields.unshift({ name: 'بواسطة', value: executor, inline: true });
     fields.push({ name: 'آيدي', value: newSticker.id, inline: true });
     await serverLogService.send('server', 'تعديل ستيكر', 'تم تعديل ستيكر.', fields);
@@ -1504,8 +1515,9 @@ client.on(Events.GuildStickerUpdate, async (oldSticker, newSticker) => {
 
 client.on(Events.GuildStickerDelete, async (sticker) => {
   try {
-    if (sticker.guild?.id !== configStore.current.guild.id) return;
-    const executor = await serverLogService.fetchExecutor(sticker.guild, AuditLogEvent.StickerDelete, sticker.id);
+    const guild = sticker.guild;
+    if (!guild || !shouldWriteServerLogs(guild.id)) return;
+    const executor = await serverLogService.fetchExecutor(guild, AuditLogEvent.StickerDelete, sticker.id);
     await serverLogService.send('server', 'حذف ستيكر', 'تم حذف ستيكر من السيرفر.', [
       { name: 'بواسطة', value: executor, inline: true },
       { name: 'الستيكر', value: `${sticker.name}\nID: ${sticker.id}`, inline: true },
@@ -1517,8 +1529,9 @@ client.on(Events.GuildStickerDelete, async (sticker) => {
 
 client.on(Events.InviteCreate, async (invite) => {
   try {
-    if (invite.guild?.id !== configStore.current.guild.id) return;
-    const guild = client.guilds.cache.get(invite.guild.id) ?? await client.guilds.fetch(invite.guild.id).catch(() => null);
+    const inviteGuild = invite.guild;
+    if (!inviteGuild || !shouldWriteServerLogs(inviteGuild.id)) return;
+    const guild = client.guilds.cache.get(inviteGuild.id) ?? await client.guilds.fetch(inviteGuild.id).catch(() => null);
     if (!guild) return;
     const executor = await serverLogService.fetchExecutor(guild, AuditLogEvent.InviteCreate, invite.code);
     await serverLogService.send('server', 'إنشاء دعوة', 'تم إنشاء دعوة للسيرفر.', [
@@ -1534,8 +1547,9 @@ client.on(Events.InviteCreate, async (invite) => {
 
 client.on(Events.InviteDelete, async (invite) => {
   try {
-    if (invite.guild?.id !== configStore.current.guild.id) return;
-    const guild = client.guilds.cache.get(invite.guild.id) ?? await client.guilds.fetch(invite.guild.id).catch(() => null);
+    const inviteGuild = invite.guild;
+    if (!inviteGuild || !shouldWriteServerLogs(inviteGuild.id)) return;
+    const guild = client.guilds.cache.get(inviteGuild.id) ?? await client.guilds.fetch(inviteGuild.id).catch(() => null);
     if (!guild) return;
     const executor = await serverLogService.fetchExecutor(guild, AuditLogEvent.InviteDelete, invite.code);
     await serverLogService.send('server', 'حذف دعوة', 'تم حذف دعوة من السيرفر.', [
@@ -1550,7 +1564,7 @@ client.on(Events.InviteDelete, async (invite) => {
 
 client.on(Events.WebhooksUpdate, async (channel) => {
   try {
-    if (!('guild' in channel) || channel.guild.id !== configStore.current.guild.id) return;
+    if (!('guild' in channel) || !shouldWriteServerLogs(channel.guild.id)) return;
     const executor = await fetchAnyExecutor(channel.guild, [AuditLogEvent.WebhookCreate, AuditLogEvent.WebhookUpdate, AuditLogEvent.WebhookDelete], channel.id);
     await serverLogService.send('server', 'تحديث ويب هوك', `تم تحديث ويب هوك داخل <#${channel.id}>.`, [
       { name: 'بواسطة', value: executor, inline: true },
@@ -1572,7 +1586,7 @@ function normalizeLogLine(value: string): string {
 client.on(Events.MessageDelete, async (message) => {
   try {
     const guild = message.guild;
-    if (!guild || guild.id !== configStore.current.guild.id) return;
+    if (!guild || !shouldWriteServerLogs(guild.id)) return;
 
     const author = message.author ? `${message.author.tag} (${message.author.id})` : 'غير معروف';
     const executor = await serverLogService.fetchExecutor(guild, AuditLogEvent.MessageDelete, message.author?.id);
@@ -1594,7 +1608,7 @@ client.on(Events.MessageDelete, async (message) => {
 
 client.on(Events.MessageBulkDelete, async (messages, channel) => {
   try {
-    if (!('guild' in channel) || !channel.guild || channel.guild.id !== configStore.current.guild.id) return;
+    if (!('guild' in channel) || !channel.guild || !shouldWriteServerLogs(channel.guild.id)) return;
 
     const executor = await serverLogService.fetchExecutor(channel.guild, AuditLogEvent.MessageBulkDelete, channel.id);
     const samples = [...messages.values()].slice(0, 8).map((deletedMessage, index) => {
@@ -1617,7 +1631,7 @@ client.on(Events.MessageBulkDelete, async (messages, channel) => {
 client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
   try {
     const guild = newMessage.guild;
-    if (!guild || guild.id !== configStore.current.guild.id) return;
+    if (!guild || !shouldWriteServerLogs(guild.id)) return;
     if (newMessage.author?.bot) return;
     if (oldMessage.partial || newMessage.partial) return;
     if (oldMessage.content === newMessage.content) return;

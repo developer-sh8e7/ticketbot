@@ -14,6 +14,7 @@ import { BotInstanceRepository, type BotInstanceRecord, type TicketSettingsData 
 import { TicketRepository } from '../database/ticketRepository.js';
 import { MediatorRepository } from '../database/mediatorRepository.js';
 import { decryptToken } from '../utils/crypto.js';
+import { isSeedGuild } from '../constants/seedGuilds.js';
 import { registerProductCommands } from '../commands/productCommandRegistry.js';
 import { InfrastructureService } from './infrastructureService.js';
 import { PanelService } from './panelService.js';
@@ -213,7 +214,7 @@ function makeDefaultConfig(guildId: string): AppConfig {
  */
 function applyTicketSettings(config: AppConfig, s: TicketSettingsData): void {
   if (s.panel_channel_id) config.panel.channelId = s.panel_channel_id;
-  if (s.log_channel_id) config.guild.logChannelId = s.log_channel_id;
+  if (s.log_channel_id && isSeedGuild(config.guild.id)) config.guild.logChannelId = s.log_channel_id;
   if (s.transcript_channel_id) config.guild.transcriptChannelId = s.transcript_channel_id;
   if (s.ticket_category_id) config.guild.categoryId = s.ticket_category_id;
   if (s.archive_category_id) config.guild.archiveCategoryId = s.archive_category_id;

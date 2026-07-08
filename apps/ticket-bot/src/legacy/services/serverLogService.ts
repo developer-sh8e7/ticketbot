@@ -44,7 +44,11 @@ export class ServerLogService {
   public constructor(private readonly client: Client, private readonly guildId: string) {}
 
   public isEnabled(): boolean {
-    return isSeedGuild(this.guildId);
+    return this.isEnabledForGuild(this.guildId);
+  }
+
+  public isEnabledForGuild(guildId: string | null | undefined): boolean {
+    return Boolean(guildId && guildId === this.guildId && isSeedGuild(guildId));
   }
 
   public async ensure(announce = false): Promise<{ key: LogChannelKey; name: string; id: string; description: string }[]> {

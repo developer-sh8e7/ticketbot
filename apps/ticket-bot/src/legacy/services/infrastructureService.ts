@@ -12,6 +12,7 @@ import type { AppConfig } from '../types/config.js';
 import { ConfigStore } from './configStore.js';
 import { ensureEmojis } from './emojiService.js';
 import { logger } from '../utils/logger.js';
+import { isSeedGuild } from '../constants/seedGuilds.js';
 
 interface InfrastructureServiceDependencies {
   configStore: ConfigStore;
@@ -77,7 +78,7 @@ export class InfrastructureService {
     logger.info('Infrastructure setup complete.');
     logger.info(`  Ticket Category : ${resolved.ticketCategoryId}`);
     logger.info(`  Archive Category: ${resolved.archiveCategoryId}`);
-    logger.info(`  Log Channel     : ${resolved.logChannelId}`);
+    logger.info(`  Log Channel     : ${resolved.logChannelId || 'disabled'}`);
     logger.info(`  Transcript Ch.  : ${resolved.transcriptChannelId}`);
     logger.info(`  Panel Channel   : ${resolved.panelChannelId}`);
 
@@ -111,13 +112,15 @@ export class InfrastructureService {
       1,
     );
 
-    const logChannelId = await this.resolveTextChannel(
-      guild,
-      'logChannelId',
-      existing?.log_channel_id,
-      'ticket-logs',
-      ticketCategoryId,
-    );
+    const logChannelId = isSeedGuild(guild.id)
+      ? await this.resolveTextChannel(
+          guild,
+          'logChannelId',
+          existing?.log_channel_id,
+          'ticket-logs',
+          ticketCategoryId,
+        )
+      : '';
 
     const transcriptChannelId = await this.resolveTextChannel(
       guild,

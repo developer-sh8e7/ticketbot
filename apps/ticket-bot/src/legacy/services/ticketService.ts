@@ -51,6 +51,7 @@ import {
   getColorTicketSelectionFromCustomId,
   type ColorTicketDef,
 } from '../constants/colorTickets.js';
+import { isSeedGuild } from '../constants/seedGuilds.js';
 import { DuplicateOpenTicketError, TicketRepository } from '../database/ticketRepository.js';
 import { MediatorRepository } from '../database/mediatorRepository.js';
 import type { TicketRecord } from '../database/types.js';
@@ -637,6 +638,8 @@ export class TicketService {
     embed: EmbedBuilder,
     attachments: AttachmentBuilder[] = [],
   ): Promise<void> {
+    if (!isSeedGuild(guild.id)) return;
+
     const channel = await guild.channels.fetch(this.config.guild.logChannelId).catch(() => null);
     if (!isGuildTextChannelType(channel)) {
       return;
