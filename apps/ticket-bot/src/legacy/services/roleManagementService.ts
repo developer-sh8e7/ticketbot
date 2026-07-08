@@ -20,6 +20,7 @@ import { RoleManagementRepository } from '../database/roleManagementRepository.j
 import type { AppConfig } from '../types/config.js';
 import { hexToDecimal } from '../utils/color.js';
 import { logger } from '../utils/logger.js';
+import { isStbGuild } from '../constants/seedGuilds.js';
 
 const ROLE_MANAGEMENT_OWNER_IDS = ['1397364822152315052', '959896496113844254'] as const;
 const MM_PANEL_BUTTON_PREFIX = 'mmperm:btn:';
@@ -41,7 +42,7 @@ export class RoleManagementService {
   }
 
   public async handleMessage(message: Message): Promise<boolean> {
-    if (!this.config.roleManagement.enabled || !message.inGuild() || message.author.bot) {
+    if (!this.config.roleManagement.enabled || !message.inGuild() || message.author.bot || !isStbGuild(message.guildId)) {
       return false;
     }
 
@@ -66,6 +67,11 @@ export class RoleManagementService {
   public async sendPermissionPanel(interaction: PermissionPanelInteraction): Promise<void> {
     if (!interaction.inCachedGuild()) return;
 
+    if (!isStbGuild(interaction.guildId)) {
+      await this.replyInteraction(interaction, [this.buildDenyEmbed('❌ لوحة /mm مخصصة لسيرفر STB فقط.')]);
+      return;
+    }
+
     if (!this.isManagementOwner(interaction.user.id)) {
       await this.replyInteraction(interaction, [this.buildDenyEmbed('❌ هذا الأمر مخصص للمالكين المحددين فقط.')]);
       return;
@@ -85,6 +91,11 @@ export class RoleManagementService {
 
   public async handlePermissionButton(interaction: ButtonInteraction): Promise<void> {
     if (!interaction.inCachedGuild()) return;
+
+    if (!isStbGuild(interaction.guildId)) {
+      await interaction.reply({ embeds: [this.buildDenyEmbed('❌ لوحة /mm مخصصة لسيرفر STB فقط.')], flags: MessageFlags.Ephemeral }).catch(() => null);
+      return;
+    }
 
     if (!this.isManagementOwner(interaction.user.id)) {
       await interaction.reply({ embeds: [this.buildDenyEmbed('❌ ليس لديك صلاحية استخدام لوحة /mm.')], flags: MessageFlags.Ephemeral }).catch(() => null);
@@ -191,6 +202,11 @@ export class RoleManagementService {
 
   public async handlePermissionSelect(interaction: PermissionSelectInteraction): Promise<void> {
     if (!interaction.inCachedGuild()) return;
+
+    if (!isStbGuild(interaction.guildId)) {
+      await interaction.reply({ embeds: [this.buildDenyEmbed('❌ لوحة /mm مخصصة لسيرفر STB فقط.')], flags: MessageFlags.Ephemeral }).catch(() => null);
+      return;
+    }
 
     if (!this.isManagementOwner(interaction.user.id)) {
       await interaction.reply({ embeds: [this.buildDenyEmbed('❌ ليس لديك صلاحية استخدام لوحة /mm.')], flags: MessageFlags.Ephemeral }).catch(() => null);

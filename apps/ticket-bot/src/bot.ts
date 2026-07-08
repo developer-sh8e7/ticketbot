@@ -13,7 +13,7 @@ const log = createLogger('ticket-bot');
 // EADDRINUSE (restart loop). Give each ticket worker its own unique internal port.
 let nextHealthPort = 3101;
 
-const SEED_GUILD_IDS = new Set(['1413059459630104626', '1395842846107631746']);
+const STB_GUILD_ID = '1413059459630104626';
 
 function cloneConfig(config: Record<string, unknown>): Record<string, unknown> {
   return JSON.parse(JSON.stringify(config)) as Record<string, unknown>;
@@ -25,7 +25,7 @@ function prepareRuntimeConfig(config: Record<string, unknown>, guildId: string):
     (prepared.guild as Record<string, unknown>).id = guildId;
   }
 
-  if (!SEED_GUILD_IDS.has(guildId)) {
+  if (guildId !== STB_GUILD_ID) {
     if (prepared.roleProtection && typeof prepared.roleProtection === 'object') {
       (prepared.roleProtection as Record<string, unknown>).enabled = false;
     }

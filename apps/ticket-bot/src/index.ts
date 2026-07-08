@@ -42,7 +42,7 @@ async function main() {
   });
 
   const { botUserId } = await bot.start();
-  console.log(`[ticket-bot] standalone — guild=${guildId} bot=${botUserId}`);
+  console.log(`[ticket-bot] standalone — guild=${guildId}${botUserId ? ` bot=${botUserId}` : ''}`);
 
   process.on('SIGINT', () => bot.stop().then(() => process.exit(0)));
   process.on('SIGTERM', () => bot.stop().then(() => process.exit(0)));
