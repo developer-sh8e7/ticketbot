@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Opi — NOW SHOWING</title>
+
+<!-- Pixel/LED display font (falls back to monospace if offline) -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+
+<!-- GSAP (GreenSock) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+<style>
+  /* ============================================================= *
+   *  All look & feel is driven by CONFIG (see <script> below).    *
+   *  These CSS custom properties are set from JS at runtime, so    *
+   *  you normally never touch this stylesheet — only CONFIG.       *
+   * ============================================================= */
+  :root {
+    --bg: #000000;
+    --dot: #1c1c1c;
+    --cell-bg: #141416;
+    --cell-border: #2c2c30;
+    --cell-inner: #0c0c0f;
+    --letter: #ff8a00;
+    --letter-glow: #ff8a00;
+    --bubble-bg: #ffffff;
+    --bubble-text: #141414;
+    --accent: #ff8a00;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--bg);
+    /* faint, static dot grid */
+    background-image: radial-gradient(var(--dot) 1.6px, transparent 1.7px);
+    background-size: 26px 26px;
+    background-position: center;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Press Start 2P', 'Courier New', monospace;
+  }
+
+  /* Portrait 9:16 stage, scales to fit any window (great for TikTok capture) */
+  .stage {
+    position: relative;
+    width: min(56.25vh, 100vw);
+    height: min(100vh, 177.78vw);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(20px, 4.5vh, 60px);
+    padding: 4vh 0;
+  }
+
+  /* ---- Speech bubble ---- */
+  .bubble-wrap {
+    position: relative;
+    opacity: 0;            /* GSAP fades it in */
+    will-change: transform, opacity;
+  }
+  .bubble {
+    position: relative;
+    background: var(--bubble-bg);
+    color: var(--bubble-text);
+    border-radius: 999px;
+    padding: clamp(12px, 2.4vh, 20px) clamp(20px, 4vw, 34px);
+    font-size: clamp(10px, 1.9vh, 16px);
+    letter-spacing: 1px;
+    line-height: 1.4;
+    text-align: center;
+    box-shadow: 0 8px 0 rgba(0,0,0,0.35);
+    white-space: nowrap;
+  }
+  /* classic comic tail pointing down toward the board */
+  .bubble::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -14px;
+    transform: translateX(-50%);
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-top: 16px solid var(--bubble-bg);
+  }
+
+  /* ---- Flip board ---- */
+  .board {
+    display: flex;
+    gap: clamp(6px, 1.4vw, 12px);
+    perspective: 700px;           /* enables the 3D flip */
+    padding: clamp(10px, 2vh, 18px);
+  }
+  .cell {
+    width: clamp(38px, 9vw, 72px);
+    height: clamp(52px, 12.5vw, 100px);
+    background: var(--cell-bg);
+    border: 2px solid var(--cell-border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transform-style: preserve-3d;
+    box-shadow: inset 0 0 0 3px var(--cell-inner),
+                0 6px 0 rgba(0,0,0,0.4);
+    opacity: 0;                    /* GSAP flips each in */
+    will-change: transform, opacity;
+  }
+  /* subtle horizontal seam like a split-flap display */
+  .cell::after {
+    content: "";
+    position: absolute;
+    left: 6px; right: 6px; top: 50%;
+    height: 2px;
+    background: rgba(0,0,0,0.55);
+    transform: translateY(-1px);
+    pointer-events: none;
+  }
+  .cell span {
+    font-size: clamp(20px, 6.2vw, 46px);
+    color: var(--letter);
+    text-shadow: 0 0 6px var(--letter-glow),
+                 0 0 14px var(--letter-glow);
+    line-height: 1;
+    user-select: none;
+  }
+  /* space characters render as an empty (dim) cell */
+  .cell.blank { background: transparent; border-color: transparent; box-shadow: none; }
+  .cell.blank::after { display: none; }
+
+  /* ---- Mascot ---- */
+  .mascot {
+    position: relative;
+    width: clamp(150px, 40vw, 300px);
+    opacity: 0;                    /* GSAP slides it up */
+    will-change: transform, opacity;
+  }
+  .mascot svg { width: 100%; height: auto; display: block; }
+  /* two stacked poses; GSAP cross-fades between them */
+  .pose { position: absolute; inset: 0; }
+  #opiPointing { opacity: 0; }
+</style>
+</head>
+<body>
+  <div class="stage">
+
+    <!-- Speech bubble -->
+    <div class="bubble-wrap" id="bubbleWrap">
+      <div class="bubble" id="bubble">NOW SHOWING</div>
+    </div>
+
+    <!-- Flip-letter board (cells injected by JS) -->
+    <div class="board" id="board"></div>
+
+    <!-- Opi mascot (two poses, real inline SVG from OpiCharacter.tsx) -->
+    <div class="mascot" id="mascot">
+      <!-- Pose A: idle / standing -->
+      <div class="pose" id="opiIdle">
+        <svg viewBox="0 0 140 150" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="opiBodyA" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#ffb14d"/><stop offset="0.55" stop-color="#ff8a00"/><stop offset="1" stop-color="#f07000"/>
+            </linearGradient>
+            <radialGradient id="opiOrbA" cx="0.35" cy="0.35" r="1">
+              <stop offset="0" stop-color="#ffd9a8"/><stop offset="0.5" stop-color="#ff9d2e"/><stop offset="1" stop-color="#ff7a00"/>
+            </radialGradient>
+            <linearGradient id="opiScreenA" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#1a1a1f"/><stop offset="1" stop-color="#0c0c0f"/>
+            </linearGradient>
+          </defs>
+          <ellipse cx="70" cy="144" rx="30" ry="4.5" fill="#000" opacity="0.4"/>
+          <!-- legs & feet -->
+          <rect x="50" y="120" width="13" height="14" rx="5" fill="url(#opiBodyA)"/>
+          <rect x="46" y="130" width="21" height="8" rx="4" fill="#f07000"/>
+          <rect x="77" y="120" width="13" height="14" rx="5" fill="url(#opiBodyA)"/>
+          <rect x="73" y="130" width="21" height="8" rx="4" fill="#f07000"/>
+          <!-- arms down -->
+          <rect x="26" y="86" width="11" height="30" rx="5.5" fill="url(#opiBodyA)"/>
+          <circle cx="31.5" cy="116" r="7" fill="#ffb14d"/>
+          <rect x="103" y="86" width="11" height="30" rx="5.5" fill="url(#opiBodyA)"/>
+          <circle cx="108.5" cy="116" r="7" fill="#ffb14d"/>
+          <!-- body + chest screen -->
+          <rect x="40" y="82" width="60" height="42" rx="12" fill="url(#opiBodyA)"/>
+          <rect x="52" y="90" width="36" height="20" rx="6" fill="url(#opiScreenA)" stroke="#2a2a2e" stroke-width="1"/>
+          <rect x="60" y="94" width="4" height="12" rx="2" fill="#ff8a00"/>
+          <rect x="68" y="94" width="4" height="12" rx="2" fill="#ffb14d"/>
+          <rect x="76" y="94" width="4" height="12" rx="2" fill="#ff8a00"/>
+          <!-- head -->
+          <rect x="68" y="12" width="4" height="14" rx="2" fill="url(#opiBodyA)"/>
+          <circle cx="70" cy="9" r="9" fill="#ff8a00" opacity="0.28"/>
+          <circle cx="70" cy="9" r="5.5" fill="url(#opiOrbA)"/>
+          <rect x="24" y="42" width="8" height="18" rx="4" fill="#f07000"/>
+          <rect x="108" y="42" width="8" height="18" rx="4" fill="#f07000"/>
+          <rect x="30" y="26" width="80" height="52" rx="14" fill="url(#opiBodyA)"/>
+          <rect x="36" y="30" width="68" height="8" rx="4" fill="#ffffff" opacity="0.16"/>
+          <rect x="40" y="36" width="60" height="36" rx="10" fill="url(#opiScreenA)" stroke="#2a2a2e" stroke-width="1"/>
+          <rect x="42" y="38" width="56" height="3" rx="1.5" fill="#ff8a00" opacity="0.5"/>
+          <!-- idle eyes + smile -->
+          <rect x="53" y="45" width="8" height="15" rx="4" fill="#ff8a00"/>
+          <rect x="79" y="45" width="8" height="15" rx="4" fill="#ff8a00"/>
+          <path d="M61 62 Q70 69 79 62" fill="none" stroke="#ff8a00" stroke-width="2.6" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <!-- Pose B: happy / presenting the board (arms up, arc eyes, sparkles) -->
+      <div class="pose" id="opiPointing">
+        <svg viewBox="0 0 140 150" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="opiBodyB" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#ffb14d"/><stop offset="0.55" stop-color="#ff8a00"/><stop offset="1" stop-color="#f07000"/>
+            </linearGradient>
+            <radialGradient id="opiOrbB" cx="0.35" cy="0.35" r="1">
+              <stop offset="0" stop-color="#ffd9a8"/><stop offset="0.5" stop-color="#ff9d2e"/><stop offset="1" stop-color="#ff7a00"/>
+            </radialGradient>
+            <linearGradient id="opiScreenB" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#1a1a1f"/><stop offset="1" stop-color="#0c0c0f"/>
+            </linearGradient>
+          </defs>
+          <ellipse cx="70" cy="144" rx="30" ry="4.5" fill="#000" opacity="0.4"/>
+          <!-- legs & feet -->
+          <rect x="50" y="120" width="13" height="14" rx="5" fill="url(#opiBodyB)"/>
+          <rect x="46" y="130" width="21" height="8" rx="4" fill="#f07000"/>
+          <rect x="77" y="120" width="13" height="14" rx="5" fill="url(#opiBodyB)"/>
+          <rect x="73" y="130" width="21" height="8" rx="4" fill="#f07000"/>
+          <!-- arms raised / presenting -->
+          <g transform="rotate(-145 31.5 90)">
+            <rect x="26" y="86" width="11" height="30" rx="5.5" fill="url(#opiBodyB)"/>
+            <circle cx="31.5" cy="116" r="7" fill="#ffb14d"/>
+          </g>
+          <g transform="rotate(145 108.5 90)">
+            <rect x="103" y="86" width="11" height="30" rx="5.5" fill="url(#opiBodyB)"/>
+            <circle cx="108.5" cy="116" r="7" fill="#ffb14d"/>
+          </g>
+          <!-- body + chest screen -->
+          <rect x="40" y="82" width="60" height="42" rx="12" fill="url(#opiBodyB)"/>
+          <rect x="52" y="90" width="36" height="20" rx="6" fill="url(#opiScreenB)" stroke="#2a2a2e" stroke-width="1"/>
+          <rect x="60" y="94" width="4" height="12" rx="2" fill="#ff8a00"/>
+          <rect x="68" y="94" width="4" height="12" rx="2" fill="#ffb14d"/>
+          <rect x="76" y="94" width="4" height="12" rx="2" fill="#ff8a00"/>
+          <!-- head -->
+          <rect x="68" y="12" width="4" height="14" rx="2" fill="url(#opiBodyB)"/>
+          <circle cx="70" cy="9" r="9" fill="#ff8a00" opacity="0.4"/>
+          <circle cx="70" cy="9" r="5.5" fill="url(#opiOrbB)"/>
+          <rect x="24" y="42" width="8" height="18" rx="4" fill="#f07000"/>
+          <rect x="108" y="42" width="8" height="18" rx="4" fill="#f07000"/>
+          <rect x="30" y="26" width="80" height="52" rx="14" fill="url(#opiBodyB)"/>
+          <rect x="36" y="30" width="68" height="8" rx="4" fill="#ffffff" opacity="0.16"/>
+          <rect x="40" y="36" width="60" height="36" rx="10" fill="url(#opiScreenB)" stroke="#2a2a2e" stroke-width="1"/>
+          <rect x="42" y="38" width="56" height="3" rx="1.5" fill="#ff8a00" opacity="0.5"/>
+          <!-- happy arc eyes + cheeks + big smile -->
+          <path d="M52 53 q5 -8 10 0" stroke="#ffb14d" stroke-width="3" stroke-linecap="round" fill="none"/>
+          <path d="M78 53 q5 -8 10 0" stroke="#ffb14d" stroke-width="3" stroke-linecap="round" fill="none"/>
+          <ellipse cx="48" cy="61" rx="4.5" ry="2.6" fill="#ff8a00" opacity="0.35"/>
+          <ellipse cx="92" cy="61" rx="4.5" ry="2.6" fill="#ff8a00" opacity="0.35"/>
+          <path d="M62 61 q8 9 16 0 z" fill="#ff8a00" opacity="0.9"/>
+          <!-- sparkles -->
+          <g fill="#ffd9a8">
+            <path d="M18 40 l2.2 5 5 2.2 -5 2.2 -2.2 5 -2.2 -5 -5 -2.2 5 -2.2 z"/>
+            <path d="M120 34 l1.8 4 4 1.8 -4 1.8 -1.8 4 -1.8 -4 -4 -1.8 4 -1.8 z"/>
+            <path d="M126 78 l1.5 3.4 3.4 1.5 -3.4 1.5 -1.5 3.4 -1.5 -3.4 -3.4 -1.5 3.4 -1.5 z"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+/* ================================================================= *
+ *  CONFIG — the ONLY thing you edit to make a new ad.               *
+ *  Change the text, colors, and timings; the animation logic below  *
+ *  stays untouched.                                                 *
+ * ================================================================= */
+const CONFIG = {
+  boardText:  "OPUS",          // word spelled out on the flip board (spaces allowed)
+  bubbleText: "NOW SHOWING",   // text inside the speech bubble
+
+  colors: {
+    bg:         "#000000",     // page background
+    dot:        "#1c1c1c",     // dot-grid color
+    cellBg:     "#141416",     // flip-cell face
+    cellBorder: "#2c2c30",     // flip-cell border
+    cellInner:  "#0c0c0f",     // flip-cell inner ring
+    letter:     "#ff8a00",     // LED letter color
+    letterGlow: "#ff8a00",     // letter glow
+    bubbleBg:   "#ffffff",     // speech-bubble fill
+    bubbleText: "#141414",     // speech-bubble text
+    accent:     "#ff8a00",     // reserved accent
+  },
+
+  timing: {  // all in seconds
+    bgFade:        0.4,   // background fade-in
+    bubbleIn:      0.6,   // bubble fade + scale
+    beforeBoard:   0.15,  // pause before letters start
+    letterDur:     0.5,   // duration of one letter flip
+    letterStagger: 0.18,  // gap between letters
+    mascotIn:      0.8,   // mascot slide-up
+    hold:          2.5,   // freeze on the finished scene
+  },
+
+  loop: true,   // true = repeat forever (ideal for screen-recording a clean loop)
+};
+
+/* ================================================================= *
+ *  Below: generic engine. No need to edit for new ads.              *
+ * ================================================================= */
+
+// 1) Push colors into CSS variables
+(function applyColors() {
+  const r = document.documentElement.style, c = CONFIG.colors;
+  r.setProperty('--bg', c.bg);
+  r.setProperty('--dot', c.dot);
+  r.setProperty('--cell-bg', c.cellBg);
+  r.setProperty('--cell-border', c.cellBorder);
+  r.setProperty('--cell-inner', c.cellInner);
+  r.setProperty('--letter', c.letter);
+  r.setProperty('--letter-glow', c.letterGlow);
+  r.setProperty('--bubble-bg', c.bubbleBg);
+  r.setProperty('--bubble-text', c.bubbleText);
+  r.setProperty('--accent', c.accent);
+})();
+
+// 2) Build flip cells from boardText
+const board = document.getElementById('board');
+document.getElementById('bubble').textContent = CONFIG.bubbleText;
+
+const cells = [...CONFIG.boardText].map(ch => {
+  const cell = document.createElement('div');
+  cell.className = 'cell' + (ch === ' ' ? ' blank' : '');
+  const span = document.createElement('span');
+  span.textContent = ch === ' ' ? '' : ch;
+  cell.appendChild(span);
+  return cell;
+});
+cells.forEach(c => board.appendChild(c));
+
+// 3) GSAP timeline
+function buildTimeline() {
+  const t = CONFIG.timing;
+  const tl = gsap.timeline({
+    repeat: CONFIG.loop ? -1 : 0,
+    repeatDelay: 0.5,
+    defaults: { ease: 'power2.out' },
+  });
+
+  // reset state at the top of every (repeated) run
+  tl.set('.bubble-wrap', { opacity: 0, y: 18, scale: 0.85 });
+  tl.set('.cell', { opacity: 0, rotationX: -92, transformOrigin: '50% 0%' });
+  tl.set('#mascot', { opacity: 0, y: 90 });
+  tl.set('#opiIdle', { opacity: 1 });
+  tl.set('#opiPointing', { opacity: 0, scale: 0.9, transformOrigin: '50% 100%' });
+
+  // 1. background is instant; use a tiny beat so bg reads before content
+  tl.to('body', { duration: t.bgFade, opacity: 1 }, 0);
+
+  // 2. speech bubble in
+  tl.to('.bubble-wrap', {
+    duration: t.bubbleIn, opacity: 1, y: 0, scale: 1, ease: 'back.out(1.7)',
+  }, t.bgFade);
+
+  // 3. flip letters in, one after another
+  tl.to('.cell', {
+    duration: t.letterDur,
+    opacity: 1,
+    rotationX: 0,
+    ease: 'back.out(1.4)',
+    stagger: t.letterStagger,
+  }, `+=${t.beforeBoard}`);
+
+  // 4. mascot slides up, timed with the final letter
+  tl.to('#mascot', {
+    duration: t.mascotIn, opacity: 1, y: 0, ease: 'back.out(1.5)',
+  }, '-=0.35');
+
+  // 4b. switch idle -> presenting pose (cross-fade + little pop)
+  tl.to('#opiIdle', { duration: 0.3, opacity: 0 }, '-=0.15');
+  tl.to('#opiPointing', {
+    duration: 0.45, opacity: 1, scale: 1, ease: 'back.out(2)',
+  }, '<');
+
+  // 5. hold the finished scene
+  tl.to({}, { duration: t.hold });
+
+  return tl;
+}
+
+// wait for the pixel font so cell widths don't jump mid-animation
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(buildTimeline);
+} else {
+  window.addEventListener('load', buildTimeline);
+}
+</script>
+</body>
+</html>
