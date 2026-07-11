@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { Bot, CalendarDays, LayoutDashboard, PanelsTopLeft } from 'lucide-react';
 
 const container = {
   hidden: { opacity: 0 },
@@ -31,22 +32,29 @@ export function HomeHero() {
           variants={item}
           className="mt-7 text-balance font-arabic text-5xl font-extrabold leading-tight tracking-tight text-[var(--color-text)] md:text-7xl"
         >
-          بوتات Discord عربية احترافية
+          نحوّل فكرتك إلى موقع أو نظام يعمل
         </motion.h1>
 
         <motion.p
           variants={item}
           className="mt-6 max-w-2xl text-balance font-arabic text-lg leading-8 text-[var(--color-muted)] md:text-xl"
         >
-          نظام تذاكر، SystemBot، و HumanGuard AI — جاهز للتشغيل في دقائق
+          مواقع، أنظمة حجوزات، لوحات تحكم، أدوات داخلية وبوتات Discord — من الفكرة إلى مشروع جاهز للاستخدام
         </motion.p>
+
+        <motion.div variants={item} className="mt-7 flex flex-wrap justify-center gap-2">
+          {[[PanelsTopLeft, 'مواقع'], [CalendarDays, 'أنظمة حجوزات'], [LayoutDashboard, 'لوحات تحكم'], [Bot, 'بوتات Discord']].map(([Icon, label]) => {
+            const ServiceIcon = Icon as typeof Bot;
+            return <span key={label as string} className="inline-flex items-center gap-2 rounded-full border border-opus-border bg-opus-surface/70 px-3 py-2 font-arabic text-xs font-bold text-opus-muted"><ServiceIcon size={14} className="text-opus-accent" />{label as string}</span>;
+          })}
+        </motion.div>
 
         <motion.div variants={item} className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
-            href="/pricing"
+            href="/project-request"
             className="inline-flex min-w-36 items-center justify-center rounded-xl bg-[var(--color-accent)] px-6 py-3 font-arabic text-sm font-extrabold text-black transition hover:-translate-y-0.5 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
           >
-            اشترِ الآن
+            اطلب مشروعك
           </Link>
           <Link
             href="/pricing"

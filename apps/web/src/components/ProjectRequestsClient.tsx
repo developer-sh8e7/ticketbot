@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Loader2, MessageCircle, Phone, Plus, Send, Trash2, UserRound } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Loader2, MessageCircle, Plus, Send, Trash2, UserRound } from 'lucide-react';
 
 type RequestItem = {
   id: string;
@@ -28,6 +28,20 @@ function formatDate(value: string) {
 }
 
 const statusLabels = { new: 'جديد', open: 'قيد التواصل', closed: 'مغلق' } as const;
+const featureOptions = [
+  ['login', 'تسجيل دخول'],
+  ['dashboard', 'لوحة تحكم'],
+  ['payments', 'دفع إلكتروني'],
+  ['mobile', 'تطبيق جوال'],
+  ['unsure', 'غير متأكد'],
+] as const;
+const budgetOptions = [
+  ['under_1000', 'أقل من 1,000 ريال'],
+  ['from_1000_to_3000', '1,000–3,000 ريال'],
+  ['from_3000_to_7000', '3,000–7,000 ريال'],
+  ['above_7000', 'أكثر من 7,000 ريال'],
+  ['unsure', 'غير متأكد'],
+] as const;
 
 export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boolean }) {
   const [requests, setRequests] = useState<RequestItem[]>([]);
@@ -38,10 +52,16 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
   const [creating, setCreating] = useState(false);
   const [sending, setSending] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(!ownerMode);
+  const [submittedId, setSubmittedId] = useState<string | null>(null);
   const [name, setName] = useState('');
+  const [contactMethod, setContactMethod] = useState<'whatsapp' | 'discord'>('whatsapp');
+  const [contact, setContact] = useState('');
   const [idea, setIdea] = useState('');
-  const [phone, setPhone] = useState('');
+  const [mainGoal, setMainGoal] = useState('');
+  const [features, setFeatures] = useState<string[]>([]);
+  const [budget, setBudget] = useState('');
+  const [deadline, setDeadline] = useState('');
   const [reply, setReply] = useState('');
   const [otherTyping, setOtherTyping] = useState(false);
   const [error, setError] = useState('');
@@ -57,7 +77,7 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
       const rows = json.data?.requests ?? [];
       setRequests(rows);
       setSelectedId((current) => current ?? rows[0]?.id ?? null);
-      if (!ownerMode && rows.length === 0) setShowForm(true);
+      if (!ownerMode) setShowForm(rows.length === 0);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'تعذّر جلب الطلبات.');
     } finally {
@@ -103,16 +123,20 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
       const res = await fetch('/api/project-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrfToken() },
-        body: JSON.stringify({ name, idea, phone }),
+        body: JSON.stringify({ name, contactMethod, contact, idea, mainGoal, features, budget, deadline }),
       });
       const json = (await res.json()) as ApiResult<{ request: RequestItem }>;
       if (!json.success || !json.data?.request) throw new Error(json.error?.message || 'تعذّر إرسال الطلب.');
       setRequests((rows) => [json.data!.request, ...rows]);
       setSelectedId(json.data.request.id);
+      setSubmittedId(json.data.request.id);
       setName('');
+      setContact('');
       setIdea('');
-      setPhone('');
-      setShowForm(false);
+      setMainGoal('');
+      setFeatures([]);
+      setBudget('');
+      setDeadline('');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'تعذّر إرسال الطلب.');
     } finally {
@@ -179,21 +203,22 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
   }
 
   const selected = requests.find((row) => row.id === selectedId) ?? null;
+  const showSidebar = ownerMode || (requests.length > 0 && !submittedId);
 
-  if (loading) {
+  if (loading && ownerMode) {
     return <div className="opus-card flex min-h-72 items-center justify-center gap-2 font-arabic text-sm text-opus-muted"><Loader2 size={18} className="animate-spin" /> جاري تحميل المحادثات...</div>;
   }
 
   return (
-    <div dir="rtl" className="grid gap-4 lg:grid-cols-[310px_1fr]">
-      <aside className="opus-card h-fit p-3">
+    <div dir="rtl" className={showSidebar ? 'grid gap-4 lg:grid-cols-[310px_1fr]' : 'mx-auto max-w-4xl'}>
+      {showSidebar ? <aside className="opus-card h-fit p-3">
         <div className="flex items-center justify-between gap-2 px-2 pb-3">
           <div>
             <h2 className="font-arabic text-base font-extrabold text-opus-text">{ownerMode ? 'طلبات المشاريع' : 'مشاريعك'}</h2>
             <p className="font-arabic text-[11px] text-opus-muted">{requests.length} محادثة</p>
           </div>
           {!ownerMode ? (
-            <button type="button" onClick={() => setShowForm(true)} className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-opus-accent text-black" aria-label="طلب مشروع جديد"><Plus size={17} /></button>
+            <button type="button" onClick={() => { setSubmittedId(null); setShowForm(true); }} className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-opus-accent text-black" aria-label="طلب مشروع جديد"><Plus size={17} /></button>
           ) : null}
         </div>
         <div className="grid max-h-[520px] gap-1 overflow-y-auto">
@@ -201,7 +226,7 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
           {requests.map((item) => {
             const unread = ownerMode ? item.ownerUnread : item.customerUnread;
             return (
-              <button key={item.id} type="button" onClick={() => { setSelectedId(item.id); setShowForm(false); }} className={`rounded-xl border p-3 text-right transition ${selectedId === item.id && !showForm ? 'border-opus-accent bg-opus-accent/10' : 'border-transparent hover:border-opus-border hover:bg-opus-bg'}`}>
+              <button key={item.id} type="button" onClick={() => { setSubmittedId(null); setSelectedId(item.id); setShowForm(false); }} className={`rounded-xl border p-3 text-right transition ${selectedId === item.id && !showForm ? 'border-opus-accent bg-opus-accent/10' : 'border-transparent hover:border-opus-border hover:bg-opus-bg'}`}>
                 <div className="flex items-center justify-between gap-2">
                   <span className="truncate font-arabic text-sm font-bold text-opus-text">{ownerMode ? item.requesterName || 'عميل Discord' : `طلب #${item.id.slice(0, 8)}`}</span>
                   {unread ? <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-opus-accent" title="رسالة جديدة" /> : null}
@@ -213,33 +238,46 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
             );
           })}
         </div>
-      </aside>
+      </aside> : null}
 
       <section className="opus-card min-h-[590px] overflow-hidden p-0">
-        {showForm && !ownerMode ? (
-          <form onSubmit={createRequest} className="mx-auto grid max-w-2xl gap-6 p-6 sm:p-10">
-            <div>
-              <span className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-opus-accent/15 text-opus-accent"><MessageCircle size={23} /></span>
-              <h1 className="font-arabic text-2xl font-extrabold text-opus-text">اطلب مشروعك</h1>
-              <p className="mt-2 font-arabic text-sm leading-7 text-opus-muted">اكتب فكرتك وما الذي تريد تنفيذه، وسنفتح لك محادثة خاصة لمتابعة التفاصيل مباشرة.</p>
+        {submittedId && !ownerMode ? (
+          <div className="flex min-h-[590px] items-center justify-center p-6 sm:p-12">
+            <div className="max-w-xl text-center">
+              <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-emerald-400/30 bg-emerald-400/10 text-emerald-300 shadow-[0_0_45px_rgba(52,211,153,0.14)]"><CheckCircle2 size={38} /></span>
+              <p className="mt-7 font-arabic text-3xl font-extrabold text-opus-text">تم استلام فكرتك ✅</p>
+              <p className="mt-4 font-arabic text-base leading-8 text-opus-muted">سنراجع الطلب ونتواصل معك قريباً بالتفاصيل والتكلفة قبل بدء العمل.</p>
+              <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                <button type="button" onClick={() => { setSubmittedId(null); setShowForm(false); }} className="inline-flex items-center justify-center gap-2 rounded-xl bg-opus-accent px-5 py-3 font-arabic text-sm font-extrabold text-black transition hover:-translate-y-0.5"><MessageCircle size={17} /> متابعة المحادثة</button>
+                <a href="/api/auth/discord?returnTo=/project-request" className="inline-flex items-center justify-center rounded-xl border border-[#5865F2]/60 px-5 py-3 font-arabic text-sm font-bold text-[#aeb4ff] transition hover:bg-[#5865F2]/10">تسجيل الدخول للمتابعة</a>
+              </div>
+              <p className="mt-4 font-arabic text-xs text-opus-muted">تسجيل الدخول اختياري — يمكنك متابعة المحادثة من هذا الجهاز بدونه.</p>
             </div>
-            <label className="grid gap-2">
-              <span className="font-arabic text-sm font-bold text-opus-text">اسمك</span>
-              <input required minLength={2} maxLength={80} value={name} onChange={(e) => setName(e.target.value)} placeholder="اكتب اسمك" className="input font-arabic" />
-            </label>
-            <label className="grid gap-2">
-              <span className="font-arabic text-sm font-bold text-opus-text">فكرة المشروع</span>
-              <textarea required minLength={10} maxLength={5000} rows={8} value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="اشرح فكرة مشروعك، أهم المميزات، والنتيجة التي تتوقعها..." className="input resize-y font-arabic leading-7" />
-              <span className="text-left font-english text-[11px] text-opus-muted">{idea.length} / 5000</span>
-            </label>
-            <label className="grid gap-2">
-              <span className="flex items-center gap-2 font-arabic text-sm font-bold text-opus-text"><Phone size={15} className="text-opus-accent" /> الرقم (اختياري)</span>
-              <input maxLength={100} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="رقم الجوال أو وسيلة تواصل أخرى" dir="ltr" className="input font-english text-left" />
-              <span className="font-arabic text-xs leading-6 text-opus-muted">الرقم اختياري، ولكن يُفضّل إضافته في حال احتجنا التواصل معك مستقبلاً.</span>
-            </label>
-            <div className="flex justify-end">
-              <button disabled={creating} className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-opus-accent px-6 py-3 font-arabic text-sm font-extrabold text-black disabled:opacity-50">{creating ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />} إرسال الطلب</button>
+          </div>
+        ) : showForm && !ownerMode ? (
+          <form onSubmit={createRequest} className="request-form-card mx-auto grid max-w-3xl gap-8 p-5 sm:p-9">
+            <div className="border-b border-opus-border pb-7">
+              <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-opus-accent/25 bg-opus-accent/10 px-3 py-1.5 font-arabic text-xs font-bold text-opus-accent-2"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-opus-accent" /> نراجع كل فكرة بأنفسنا</span>
+              <h2 className="font-arabic text-2xl font-extrabold text-opus-text sm:text-3xl">حدثنا عن المشروع الذي في بالك</h2>
+              <p className="mt-3 font-arabic text-sm leading-8 text-opus-muted">لا تحتاج معرفة تقنية. اشرح ما الذي تريد أن يفعله مشروعك، وسنرتب بقية التفاصيل معك.</p>
             </div>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              <label className="grid gap-2"><span className="font-arabic text-sm font-bold text-opus-text">اسمك</span><input required minLength={2} maxLength={80} value={name} onChange={(e) => setName(e.target.value)} placeholder="كيف نناديك؟" className="input font-arabic" /></label>
+              <div className="grid gap-2"><span className="font-arabic text-sm font-bold text-opus-text">طريقة التواصل</span><div className="grid grid-cols-2 gap-2">{([['whatsapp', 'واتساب'], ['discord', 'Discord']] as const).map(([value, label]) => <button key={value} type="button" onClick={() => setContactMethod(value)} className={`rounded-xl border px-3 py-2.5 font-arabic text-sm font-bold transition ${contactMethod === value ? 'border-opus-accent bg-opus-accent/10 text-opus-accent-2' : 'border-opus-border text-opus-muted hover:border-opus-accent/50'}`}>{label}</button>)}</div></div>
+              <label className="grid gap-2 sm:col-span-2"><span className="font-arabic text-sm font-bold text-opus-text">{contactMethod === 'whatsapp' ? 'رقم واتساب' : 'اسم مستخدم أو ID في Discord'}</span><input required minLength={3} maxLength={100} value={contact} onChange={(e) => setContact(e.target.value)} placeholder={contactMethod === 'whatsapp' ? 'مثال: 05xxxxxxxx' : 'مثال: username أو Discord ID'} dir="ltr" className="input font-english text-left" /></label>
+            </div>
+
+            <label className="grid gap-2"><span className="font-arabic text-sm font-bold text-opus-text">ما فكرة مشروعك؟</span><textarea required minLength={10} maxLength={2500} rows={6} value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="مثال: أريد موقع حجوزات لصالون، يختار العميل الخدمة والموعد ويصلني إشعار..." className="input resize-y font-arabic leading-7" /><span dir="ltr" className="text-left font-english text-[11px] text-opus-muted">{idea.length} / 2500</span></label>
+            <label className="grid gap-2"><span className="font-arabic text-sm font-bold text-opus-text">وش أهم شيء لازم يسويه البرنامج؟</span><textarea required minLength={5} maxLength={1500} rows={4} value={mainGoal} onChange={(e) => setMainGoal(e.target.value)} placeholder="اكتب المهمة الأساسية التي لو نفذها المشروع بنجاح تعتبره حقق هدفه." className="input resize-y font-arabic leading-7" /></label>
+
+            <fieldset className="grid gap-3"><legend className="font-arabic text-sm font-bold text-opus-text">هل تحتاج أيًا من التالي؟</legend><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{featureOptions.map(([value, label]) => { const checked = features.includes(value); return <label key={value} className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 font-arabic text-sm transition ${checked ? 'border-opus-accent bg-opus-accent/10 text-opus-text' : 'border-opus-border text-opus-muted hover:border-opus-accent/40'}`}><input type="checkbox" checked={checked} onChange={() => setFeatures((items) => checked ? items.filter((item) => item !== value) : [...items, value])} className="h-4 w-4 accent-[var(--color-accent)]" />{label}</label>; })}</div></fieldset>
+
+            <fieldset className="grid gap-3"><legend className="font-arabic text-sm font-bold text-opus-text">ميزانيتك التقريبية</legend><div className="grid gap-2 sm:grid-cols-2">{budgetOptions.map(([value, label]) => <label key={value} className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 font-arabic text-sm transition ${budget === value ? 'border-opus-accent bg-opus-accent/10 text-opus-text' : 'border-opus-border text-opus-muted hover:border-opus-accent/40'}`}><input required type="radio" name="budget" value={value} checked={budget === value} onChange={() => setBudget(value)} className="h-4 w-4 accent-[var(--color-accent)]" />{label}</label>)}</div></fieldset>
+
+            <label className="grid gap-2"><span className="font-arabic text-sm font-bold text-opus-text">هل عندك موعد محدد؟ <span className="font-normal text-opus-muted">(اختياري)</span></span><input maxLength={100} value={deadline} onChange={(e) => setDeadline(e.target.value)} placeholder="مثال: خلال شهر، أو قبل بداية رمضان" className="input font-arabic" /></label>
+
+            <button disabled={creating} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-opus-accent px-6 py-4 font-arabic text-base font-extrabold text-black shadow-[0_14px_40px_rgba(255,138,0,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_55px_rgba(255,138,0,0.25)] disabled:opacity-50">{creating ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />} أرسل فكرة مشروعك</button>
           </form>
         ) : selected ? (
           <div className="flex min-h-[590px] flex-col">

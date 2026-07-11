@@ -36,7 +36,7 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-14 md:px-8 lg:px-12">
         <div className="grid gap-10 md:grid-cols-3">
           <div>
-            <h4 className="mb-4 font-arabic text-sm font-extrabold text-[var(--color-text)]">Socials</h4>
+            <h4 className="mb-4 font-arabic text-sm font-extrabold text-[var(--color-text)]">روابط التواصل</h4>
             <div className="grid gap-3 text-sm">
               {socialLinks.map(({ label, href, icon: Icon }) => (
                 <a
@@ -52,8 +52,8 @@ export function Footer() {
               ))}
             </div>
           </div>
-          <FooterGroup title="Pages" links={[['Home', '/'], ['Commands', '/commands'], ['Request a Project', '/project-request'], ['Pricing', '/pricing'], ['Dashboard', '/dashboard']]} />
-          <FooterGroup title="Legal" links={[['Terms of Service', '/terms'], ['Privacy Policy', '/privacy'], ['Cancellations', '/cancellation']]} />
+          <FooterGroup title="الصفحات" links={[['الرئيسية', '/'], ['الأوامر', '/commands'], ['اطلب مشروعك', '/project-request'], ['الأسعار', '/pricing'], ['لوحة التحكم', '/dashboard']]} />
+          <FooterGroup title="الشروط والسياسات" links={[['شروط الاستخدام', '/terms'], ['سياسة الخصوصية', '/privacy'], ['الإلغاء والاسترداد', '/cancellation']]} />
         </div>
         <div className="mt-12 border-t border-[var(--color-border)] pt-6 text-center text-xs text-[var(--color-muted)]">
           © {new Date().getFullYear()} Opus Solutions

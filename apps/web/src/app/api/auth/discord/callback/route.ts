@@ -10,6 +10,7 @@ import { notifyManagerSync } from '@/lib/manager-sync';
 import { hashField } from '@/lib/encryption';
 import { updateOwnerPii, lookupActivationCodeByHash } from '@/lib/activation-codes';
 import { exchangeCode, fetchDiscordUser } from '@/lib/discord';
+import { safeOAuthReturnTo } from '@/lib/oauth-return';
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
@@ -18,6 +19,7 @@ export async function GET(req: NextRequest) {
   const expectedState = req.cookies.get('opus_oauth_state')?.value;
   const plainActivationCode = req.cookies.get('opus_activation_code')?.value;
   const appUrl = env().APP_URL;
+  const returnTo = safeOAuthReturnTo(req.cookies.get('opus_oauth_return')?.value, appUrl);
 
   try {
     if (!code || !state || state !== expectedState) {
@@ -60,11 +62,12 @@ export async function GET(req: NextRequest) {
       discordToken: token,
     });
 
-    const res = NextResponse.redirect(new URL('/dashboard', appUrl));
+    const res = NextResponse.redirect(new URL(returnTo, appUrl));
     setSessionCookie(res, sessionValue);
     // Clear temp cookies
     res.cookies.set('opus_activation_code', '', { httpOnly: true, secure: isProduction(), sameSite: 'lax', path: '/', maxAge: 0 });
     res.cookies.set('opus_oauth_state', '', { httpOnly: true, secure: isProduction(), sameSite: 'lax', path: '/', maxAge: 0 });
+    res.cookies.set('opus_oauth_return', '', { httpOnly: true, secure: isProduction(), sameSite: 'lax', path: '/', maxAge: 0 });
     return res;
   } catch (error) {
     console.error('[discord/callback]', error);

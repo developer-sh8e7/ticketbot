@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { createTicketBot } from '../apps/ticket-bot/src/bot.js';
 import { createVoiceRoomsBot } from '../apps/voice-rooms-bot/src/bot.js';
 import { createSystemBot } from '../apps/system-bot/src/bot.js';
+import { safeOAuthReturnTo } from '../apps/web/src/lib/oauth-return.js';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -52,5 +53,11 @@ assert(migratedCfg.tempRooms?.adminBypass === true, 'temp rooms admin bypass mus
 assert(typeof createTicketBot === 'function', 'ticket factory import failed');
 assert(typeof createVoiceRoomsBot === 'function', 'voice factory import failed');
 assert(typeof createSystemBot === 'function', 'general factory import failed');
+
+const appUrl = 'https://opussolutions.xyz';
+assert(safeOAuthReturnTo('/project-request', appUrl) === '/project-request', 'safe OAuth return path rejected');
+assert(safeOAuthReturnTo('//evil.example', appUrl) === '/dashboard', 'protocol-relative OAuth redirect accepted');
+assert(safeOAuthReturnTo(`/\\evil.example`, appUrl) === '/dashboard', 'backslash OAuth redirect accepted');
+assert(safeOAuthReturnTo('https://evil.example', appUrl) === '/dashboard', 'external OAuth redirect accepted');
 
 console.log('audit smoke passed');

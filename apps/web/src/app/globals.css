@@ -232,3 +232,115 @@ input[type='color']::-moz-color-swatch {
   background: linear-gradient(160deg, color-mix(in srgb, var(--color-text) 4%, var(--color-surface)), var(--color-surface));
   border-radius: 16px;
 }
+
+/* ── Project request atmosphere: quiet motion behind a high-focus form ──── */
+.project-atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% -15%, rgba(255, 138, 0, 0.11), transparent 38%),
+    linear-gradient(180deg, #0b0907 0%, var(--color-bg) 55%);
+}
+
+.project-aurora {
+  position: absolute;
+  width: min(48rem, 85vw);
+  aspect-ratio: 1;
+  border-radius: 48% 52% 62% 38%;
+  filter: blur(85px);
+  opacity: 0.1;
+  will-change: transform;
+}
+
+.project-aurora-one {
+  right: -18rem;
+  top: 8%;
+  background: #ff7a00;
+  animation: project-drift-one 18s ease-in-out infinite alternate;
+}
+
+.project-aurora-two {
+  bottom: -25rem;
+  left: -14rem;
+  background: #ffb866;
+  animation: project-drift-two 22s ease-in-out infinite alternate;
+}
+
+.project-orbit {
+  position: absolute;
+  border: 1px solid rgba(255, 184, 102, 0.09);
+  border-radius: 50%;
+  box-shadow: 0 0 90px rgba(255, 138, 0, 0.03) inset;
+}
+
+.project-orbit-one {
+  right: -13rem;
+  top: 12rem;
+  width: 34rem;
+  height: 34rem;
+  animation: project-orbit-spin 36s linear infinite;
+}
+
+.project-orbit-two {
+  right: -5rem;
+  top: 20rem;
+  width: 18rem;
+  height: 18rem;
+  border-style: dashed;
+  animation: project-orbit-spin 24s linear infinite reverse;
+}
+
+.project-perspective-grid {
+  position: absolute;
+  inset: 45% -25% -40%;
+  opacity: 0.12;
+  transform: perspective(520px) rotateX(62deg);
+  transform-origin: center top;
+  background-image:
+    linear-gradient(rgba(255, 138, 0, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 138, 0, 0.18) 1px, transparent 1px);
+  background-size: 68px 68px;
+  mask-image: linear-gradient(to bottom, transparent, #000 22%, transparent 78%);
+  animation: project-grid-flow 12s linear infinite;
+}
+
+.project-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, transparent 25%, rgba(10, 10, 10, 0.48) 100%);
+}
+
+.request-form-card {
+  border-radius: 24px;
+  border: 1px solid rgba(255, 184, 102, 0.17);
+  background: linear-gradient(145deg, rgba(24, 22, 19, 0.94), rgba(14, 14, 15, 0.97));
+  box-shadow: 0 32px 90px -38px rgba(255, 138, 0, 0.34), 0 1px 0 rgba(255, 255, 255, 0.035) inset;
+  backdrop-filter: blur(18px);
+}
+
+@keyframes project-drift-one {
+  to { transform: translate(-8rem, 5rem) rotate(18deg) scale(1.08); }
+}
+
+@keyframes project-drift-two {
+  to { transform: translate(7rem, -7rem) rotate(-16deg) scale(0.92); }
+}
+
+@keyframes project-orbit-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes project-grid-flow {
+  to { background-position: 0 68px, 0 68px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .project-aurora,
+  .project-orbit,
+  .project-perspective-grid {
+    animation: none;
+  }
+}

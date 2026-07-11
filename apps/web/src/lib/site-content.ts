@@ -6,7 +6,7 @@ export const site = {
   socialDiscord: 'https://discord.gg/WRL',
   socialYoutube: '#',
   socialEmail: '#',
-  tagline: 'حلول بوتات Discord عربية لإدارة وتنمية سيرفراتك.'
+  tagline: 'نحوّل الأفكار إلى مواقع وأنظمة وبرامج وبوتات تعمل.'
 };
 
 export function extractPriceFromLabel(priceLabel: string) {
@@ -158,23 +158,23 @@ export function products(): Product[] {
     {
       key: 'custom',
       id: 'custom-bot',
-      name: 'Custom Bot',
+      name: 'مشروع مخصص',
       icon: 'Code2',
-      shortName: 'بوت مخصص',
-      shortDescription: 'بوت Discord خاص حسب احتياج سيرفرك الفريد.',
-      description: 'Custom Bot هو بوت يتم بناؤه حسب فكرتك واحتياجك. لا يوجد شراء مباشر؛ اضغط تواصل مع المطورين وافتح تذكرة في Discord.',
-      priceLabel: 'تواصل معنا',
+      shortName: 'مشروع مخصص',
+      shortDescription: 'موقع، نظام، برنامج أو بوت يُبنى حسب فكرتك واحتياجك.',
+      description: 'نراجع فكرتك ومتطلباتك، ثم نحدد معك نطاق العمل والمدة والتكلفة قبل بدء التطوير.',
+      priceLabel: 'السعر حسب المتطلبات',
       price_monthly: 0,
       price_quarterly: 0,
       activationCodePrefix: 'CUSTOM',
       productType: 'custom',
-      features: ['تحليل المتطلبات', 'تطوير مخصص', 'تسليم موثق', 'دعم بعد التسليم حسب الاتفاق'],
+      features: ['مواقع وأنظمة مخصصة', 'تحليل واضح للمتطلبات', 'تسليم ودعم حسب الاتفاق', 'تسعير قبل بدء العمل'],
     },
   ];
 
   return all.map((product) => {
-    const productUrl = product.productType === 'custom' ? site.supportDiscordUrl : getPayPalHrefFromPriceLabel(product.priceLabel);
-    return productUrl.startsWith('http') ? { ...product, productUrl } : product;
+    const productUrl = product.productType === 'custom' ? '/project-request' : getPayPalHrefFromPriceLabel(product.priceLabel);
+    return { ...product, productUrl };
   });
 }
 

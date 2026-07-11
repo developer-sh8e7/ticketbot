@@ -128,7 +128,7 @@ export function HomeProductsGrid({ products }: HomeProductsGridProps) {
         منتجاتنا
       </motion.h2>
       <motion.p variants={card} className="mx-auto mt-3 max-w-xl text-center text-sm leading-7 text-[var(--color-muted)]">
-        بوتات جاهزة للتشغيل الفوري — اختر، ادفع، ويوصلك البوت تلقائياً لسيرفرك.
+        حلول جاهزة لبوتات Discord، أو مشروع مخصص نبنيه حول فكرتك واحتياجك.
       </motion.p>
 
       <motion.div variants={container} className="mt-10 grid gap-5 md:grid-cols-2">

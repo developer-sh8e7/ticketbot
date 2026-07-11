@@ -17,7 +17,32 @@ import { getSession } from '@/lib/sessions';
 import { isOwnerId } from '@/lib/owner';
 import { supabaseAdmin } from '@/lib/supabase';
 
-type Body = { name?: unknown; idea?: unknown; phone?: unknown };
+type Body = {
+  name?: unknown;
+  contactMethod?: unknown;
+  contact?: unknown;
+  idea?: unknown;
+  mainGoal?: unknown;
+  features?: unknown;
+  budget?: unknown;
+  deadline?: unknown;
+};
+
+const FEATURE_LABELS: Record<string, string> = {
+  login: 'تسجيل دخول',
+  dashboard: 'لوحة تحكم',
+  payments: 'دفع إلكتروني',
+  mobile: 'تطبيق جوال',
+  unsure: 'غير متأكد',
+};
+
+const BUDGET_LABELS: Record<string, string> = {
+  under_1000: 'أقل من 1,000 ريال',
+  from_1000_to_3000: '1,000–3,000 ريال',
+  from_3000_to_7000: '3,000–7,000 ريال',
+  above_7000: 'أكثر من 7,000 ريال',
+  unsure: 'غير متأكد',
+};
 
 export async function GET(req: NextRequest) {
   try {
@@ -30,17 +55,22 @@ export async function GET(req: NextRequest) {
       const { data, error } = await supabase.from('project_requests').select(PROJECT_REQUEST_FIELDS).order('last_message_at', { ascending: false }).limit(100);
       if (error) throw error;
       rows = (data ?? []) as ProjectRequestRow[];
-    } else if (session) {
-      const { data, error } = await supabase.from('project_requests').select(PROJECT_REQUEST_FIELDS).eq('requester_hash', hashField(session.discordUserId)).order('last_message_at', { ascending: false }).limit(100);
-      if (error) throw error;
-      rows = (data ?? []) as ProjectRequestRow[];
-    } else if (accesses.length > 0) {
-      const { data, error } = await supabase.from('project_requests').select(PROJECT_REQUEST_FIELDS).in('id', accesses.map((access) => access.requestId)).order('last_message_at', { ascending: false });
-      if (error) throw error;
-      rows = ((data ?? []) as ProjectRequestRow[]).filter((row) => {
-        const access = accesses.find((item) => item.requestId === row.id);
-        return Boolean(access && canAccessProjectRequest(row, null, access.token));
-      });
+    } else {
+      if (session) {
+        const { data, error } = await supabase.from('project_requests').select(PROJECT_REQUEST_FIELDS).eq('requester_hash', hashField(session.discordUserId)).order('last_message_at', { ascending: false }).limit(100);
+        if (error) throw error;
+        rows = (data ?? []) as ProjectRequestRow[];
+      }
+      if (accesses.length > 0) {
+        const { data, error } = await supabase.from('project_requests').select(PROJECT_REQUEST_FIELDS).in('id', accesses.map((access) => access.requestId)).order('last_message_at', { ascending: false });
+        if (error) throw error;
+        const guestRows = ((data ?? []) as ProjectRequestRow[]).filter((row) => {
+          const access = accesses.find((item) => item.requestId === row.id);
+          return Boolean(access && canAccessProjectRequest(row, session?.discordUserId, access.token));
+        });
+        const seen = new Set(rows.map((row) => row.id));
+        rows = [...rows, ...guestRows.filter((row) => !seen.has(row.id))].sort((a, b) => Date.parse(b.last_message_at) - Date.parse(a.last_message_at));
+      }
     }
 
     return ok({ requests: rows.map(publicProjectRequest) });
@@ -61,11 +91,31 @@ export async function POST(req: NextRequest) {
 
     const body = (await req.json().catch(() => ({}))) as Body;
     const name = typeof body.name === 'string' ? body.name.trim() : '';
+    const contactMethod = body.contactMethod === 'discord' ? 'discord' : body.contactMethod === 'whatsapp' ? 'whatsapp' : '';
+    const contact = typeof body.contact === 'string' ? body.contact.trim() : '';
     const idea = typeof body.idea === 'string' ? body.idea.trim() : '';
-    const phone = typeof body.phone === 'string' ? body.phone.trim() : '';
+    const mainGoal = typeof body.mainGoal === 'string' ? body.mainGoal.trim() : '';
+    const features = Array.isArray(body.features)
+      ? [...new Set(body.features.filter((item): item is string => typeof item === 'string' && item in FEATURE_LABELS))]
+      : [];
+    const budget = typeof body.budget === 'string' && body.budget in BUDGET_LABELS ? body.budget : '';
+    const deadline = typeof body.deadline === 'string' ? body.deadline.trim() : '';
+
     if (name.length < 2 || name.length > 80) return fail('bad_request', 'اكتب اسمك (من حرفين إلى 80 حرفاً).', 400);
-    if (idea.length < 10 || idea.length > 5000) return fail('bad_request', 'اكتب فكرة المشروع بوضوح (من 10 إلى 5000 حرف).', 400);
-    if (phone.length > 100) return fail('bad_request', 'رقم التواصل طويل جداً.', 400);
+    if (!contactMethod || contact.length < 3 || contact.length > 100) return fail('bad_request', 'اختر طريقة التواصل واكتب بيانات التواصل الصحيحة.', 400);
+    if (idea.length < 10 || idea.length > 2500) return fail('bad_request', 'اكتب فكرة المشروع بوضوح (من 10 إلى 2500 حرف).', 400);
+    if (mainGoal.length < 5 || mainGoal.length > 1500) return fail('bad_request', 'وضّح أهم مهمة يجب أن ينفذها المشروع.', 400);
+    if (!budget) return fail('bad_request', 'اختر الميزانية التقريبية.', 400);
+    if (deadline.length > 100) return fail('bad_request', 'الموعد المحدد طويل جداً.', 400);
+
+    const contactLabel = contactMethod === 'whatsapp' ? 'واتساب' : 'Discord';
+    const projectBrief = [
+      `فكرة المشروع:\n${idea}`,
+      `أهم شيء يجب أن يفعله المشروع:\n${mainGoal}`,
+      `الميزات المطلوبة:\n${features.length ? features.map((item) => `• ${FEATURE_LABELS[item]}`).join('\n') : 'لم يحدد ميزات إضافية'}`,
+      `الميزانية التقريبية:\n${BUDGET_LABELS[budget]}`,
+      `الموعد المطلوب:\n${deadline || 'لا يوجد موعد محدد'}`,
+    ].join('\n\n');
 
     const accessToken = newProjectAccessToken();
     const requesterHash = session ? hashField(session.discordUserId) : hashField(accessToken);
@@ -77,7 +127,7 @@ export async function POST(req: NextRequest) {
         requester_hash: requesterHash,
         requester_discord_id_enc: encryptField(session?.discordUserId ?? '__guest__'),
         requester_name_enc: encryptField(name),
-        phone_enc: phone ? encryptField(phone) : null,
+        phone_enc: encryptField(`${contactLabel}: ${contact}`),
         status: 'new',
         owner_unread: true,
         customer_unread: false,
@@ -91,7 +141,7 @@ export async function POST(req: NextRequest) {
     const { error: messageError } = await supabase.from('project_request_messages').insert({
       request_id: insertedId,
       sender_type: 'customer',
-      content_enc: encryptField(idea),
+      content_enc: encryptField(projectBrief),
     });
     if (messageError) throw messageError;
 

@@ -34,9 +34,9 @@ export default async function HomePage() {
       badge: product.badge,
       stockStatus: stock[product.productType],
       detailHref: `/product/${product.key}`,
-      href: `/pricing?product=${product.key}`,
+      href: isCustom ? '/project-request' : `/pricing?product=${product.key}`,
       external: false,
-      ctaLabel: isSoon ? 'Soon' : 'اشترِ الآن',
+      ctaLabel: isSoon ? 'قريباً' : isCustom ? 'اطلب مشروعك' : 'اشترِ الآن',
       disabled: isSoon,
       purchasable: !isSoon && !isCustom && product.price_monthly > 0,
     };
@@ -95,13 +95,13 @@ export default async function HomePage() {
           style={{ background: 'linear-gradient(135deg, var(--color-accent), var(--color-bg) 72%)' }}
         >
           <div className="mx-auto max-w-6xl">
-            <h2 className="font-arabic text-4xl font-extrabold tracking-tight text-[var(--color-text)]">جاهز تبدأ مع Opus؟</h2>
+            <h2 className="font-arabic text-4xl font-extrabold tracking-tight text-[var(--color-text)]">جاهز تحوّل فكرتك إلى مشروع يعمل؟</h2>
             <div className="mt-7">
               <Link
-                href="/pricing"
+                href="/project-request"
                 className="inline-flex items-center justify-center rounded-xl bg-[var(--color-text)] px-6 py-3 font-arabic text-sm font-extrabold text-[var(--color-bg)] transition hover:-translate-y-0.5 hover:opacity-90"
               >
-                اشترِ الآن
+                اطلب مشروعك
               </Link>
             </div>
           </div>
