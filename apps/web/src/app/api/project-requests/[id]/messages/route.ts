@@ -3,7 +3,7 @@ export const runtime = 'nodejs';
 import { NextRequest } from 'next/server';
 import { fail, internalError, ok } from '@/lib/api-response';
 import { verifyCsrf } from '@/lib/csrf';
-import { encryptField } from '@/lib/encryption';
+import { decryptField, encryptField } from '@/lib/encryption';
 import { readProjectAccess } from '@/lib/project-access';
 import { notifyOwnerOfProjectRequest } from '@/lib/project-notifications';
 import {
@@ -48,16 +48,24 @@ export async function GET(req: NextRequest, { params }: Context) {
         .eq('id', id);
     }
 
-    const now = Date.now();
-    const otherTypingUntil = owner ? requestRow.customer_typing_until : requestRow.owner_typing_until;
+    const allRows = (data ?? []) as ProjectMessageRow[];
+    const otherSender = owner ? 'customer' : 'owner';
+    const otherTyping = allRows.some((row) => {
+      if (row.sender_type !== otherSender || !row.content_enc.startsWith('typing:')) return false;
+      try {
+        return new Date(decryptField(row.content_enc.slice('typing:'.length))).getTime() > Date.now();
+      } catch {
+        return false;
+      }
+    });
     return ok({
       request: publicProjectRequest({
         ...requestRow,
         owner_unread: owner ? false : requestRow.owner_unread,
         customer_unread: owner ? requestRow.customer_unread : false,
       }),
-      messages: ((data ?? []) as ProjectMessageRow[]).map(publicProjectMessage),
-      otherTyping: Boolean(otherTypingUntil && new Date(otherTypingUntil).getTime() > now),
+      messages: allRows.filter((row) => !row.content_enc.startsWith('typing:')).map(publicProjectMessage),
+      otherTyping,
     });
   } catch (error) {
     console.error('[project-messages][GET]', error instanceof Error ? error.message : 'unknown');
@@ -100,10 +108,15 @@ export async function POST(req: NextRequest, { params }: Context) {
         last_message_at: now,
         owner_unread: !owner,
         customer_unread: owner,
-        ...(owner ? { owner_typing_until: null } : { customer_typing_until: null }),
       })
       .eq('id', id);
     if (updateError) throw updateError;
+    await supabase
+      .from('project_request_messages')
+      .delete()
+      .eq('request_id', id)
+      .eq('sender_type', senderType)
+      .like('content_enc', 'typing:%');
 
     if (!owner) {
       const requesterName = requestRow.requester_name_enc ? publicProjectRequest(requestRow).requesterName : null;

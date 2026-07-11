@@ -68,15 +68,14 @@ export async function POST(req: NextRequest) {
     if (phone.length > 100) return fail('bad_request', 'رقم التواصل طويل جداً.', 400);
 
     const accessToken = newProjectAccessToken();
-    const requesterHash = session ? hashField(session.discordUserId) : hashField(`guest:${accessToken}`);
+    const requesterHash = session ? hashField(session.discordUserId) : hashField(accessToken);
     const now = new Date().toISOString();
     const supabase = supabaseAdmin();
     const { data: requestRow, error: requestError } = await supabase
       .from('project_requests')
       .insert({
         requester_hash: requesterHash,
-        access_token_hash: hashField(accessToken),
-        requester_discord_id_enc: session ? encryptField(session.discordUserId) : null,
+        requester_discord_id_enc: encryptField(session?.discordUserId ?? '__guest__'),
         requester_name_enc: encryptField(name),
         phone_enc: phone ? encryptField(phone) : null,
         status: 'new',
