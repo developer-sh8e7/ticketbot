@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Loader2, MessageCircle, Phone, Plus, Send, UserRound } from 'lucide-react';
+import { ArrowLeft, Loader2, MessageCircle, Phone, Plus, Send, Trash2, UserRound } from 'lucide-react';
 
 type RequestItem = {
   id: string;
@@ -37,6 +37,7 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
   const [threadLoading, setThreadLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [sending, setSending] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
   const [idea, setIdea] = useState('');
@@ -144,6 +145,29 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
     }
   }
 
+  async function deleteProject() {
+    if (!ownerMode || !selectedId || !window.confirm('متأكد أنك تريد حذف هذا المشروع وكل محادثته؟ لا يمكن التراجع عن الحذف.')) return;
+    setDeleting(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/project-requests/${selectedId}`, {
+        method: 'DELETE',
+        headers: { 'x-csrf-token': csrfToken() },
+      });
+      const json = (await res.json()) as ApiResult<{ deleted: boolean }>;
+      if (!json.success) throw new Error(json.error?.message || 'تعذّر حذف المشروع.');
+      const remaining = requests.filter((item) => item.id !== selectedId);
+      setRequests(remaining);
+      setSelectedId(remaining[0]?.id ?? null);
+      setMessages([]);
+      setOtherTyping(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'تعذّر حذف المشروع.');
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   function signalTyping(value: string) {
     setReply(value);
     if (!selectedId || !value.trim() || Date.now() - lastTypingSentAt.current < 1800) return;
@@ -225,6 +249,11 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
                   <h2 className="flex items-center gap-2 font-arabic text-base font-extrabold text-opus-text"><UserRound size={17} className="text-opus-accent" /> {ownerMode ? selected.requesterName || 'عميل Discord' : `طلب مشروع #${selected.id.slice(0, 8)}`}</h2>
                   <p className="mt-1 font-arabic text-[11px] text-opus-muted">بدأت {formatDate(selected.createdAt)} · {statusLabels[selected.status]}</p>
                 </div>
+                {ownerMode ? (
+                  <button type="button" disabled={deleting} onClick={deleteProject} className="inline-flex items-center gap-2 rounded-xl border border-red-500/35 px-3 py-2 font-arabic text-xs font-bold text-red-300 transition hover:bg-red-500/10 disabled:opacity-50">
+                    {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} حذف المشروع
+                  </button>
+                ) : null}
               </div>
               {ownerMode ? (
                 <div className="mt-4 grid gap-3 rounded-xl border border-opus-border bg-opus-bg p-4 sm:grid-cols-3">
