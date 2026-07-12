@@ -1373,9 +1373,10 @@ export class TicketService {
     }
 
     const isCreator = context.ticket.creator_id === interaction.user.id;
-    const isManager = canManageTicket(context.member, context.config);
+    const isAdmin = isAuthorizedAdmin(interaction.user.id) || context.member.permissions.has(PermissionFlagsBits.Administrator);
+    const hasMiddlemanRole = context.member.roles.cache.has(MIDDLEMAN_ROLE_ID);
 
-    if (!isCreator && !isManager) {
+    if (!isCreator && !isAdmin && !hasMiddlemanRole) {
       await safeEditReply(interaction, [buildErrorEmbed(this.config, this.config.ticket.messages.noPermission)]);
       return;
     }
