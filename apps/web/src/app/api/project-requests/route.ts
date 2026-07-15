@@ -104,15 +104,15 @@ export async function POST(req: NextRequest) {
     if (name.length < 2 || name.length > 80) return fail('bad_request', 'اكتب اسمك (من حرفين إلى 80 حرفاً).', 400);
     if (!contactMethod || contact.length < 3 || contact.length > 100) return fail('bad_request', 'اختر طريقة التواصل واكتب بيانات التواصل الصحيحة.', 400);
     if (contactMethod === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)) return fail('bad_request', 'اكتب بريداً إلكترونياً صحيحاً.', 400);
-    if (idea.length < 10 || idea.length > 2500) return fail('bad_request', 'اكتب فكرة المشروع بوضوح (من 10 إلى 2500 حرف).', 400);
-    if (mainGoal.length < 5 || mainGoal.length > 1500) return fail('bad_request', 'وضّح أهم مهمة يجب أن ينفذها المشروع.', 400);
+    if (idea.length < 10 || idea.length > 2500) return fail('bad_request', 'اكتب فكرة الموقع أو التطبيق بوضوح (من 10 إلى 2500 حرف).', 400);
+    if (mainGoal.length < 5 || mainGoal.length > 1500) return fail('bad_request', 'وضّح أهم مهمة يجب أن ينفذها الموقع أو التطبيق.', 400);
     if (!budget) return fail('bad_request', 'اختر الميزانية التقريبية.', 400);
     if (deadline.length > 100) return fail('bad_request', 'الموعد المحدد طويل جداً.', 400);
 
     const contactLabel = contactMethod === 'whatsapp' ? 'واتساب' : 'البريد الإلكتروني';
     const projectBrief = [
-      `فكرة المشروع:\n${idea}`,
-      `أهم شيء يجب أن يفعله المشروع:\n${mainGoal}`,
+      `فكرة الموقع أو التطبيق:\n${idea}`,
+      `أهم نتيجة مطلوبة:\n${mainGoal}`,
       `الميزات المطلوبة:\n${features.length ? features.map((item) => `• ${FEATURE_LABELS[item]}`).join('\n') : 'لم يحدد ميزات إضافية'}`,
       `الميزانية التقريبية:\n${BUDGET_LABELS[budget]}`,
       `الموعد المطلوب:\n${deadline || 'لا يوجد موعد محدد'}`,

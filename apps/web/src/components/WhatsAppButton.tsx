@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { trackMarketingEvent } from '@/lib/client-analytics';
 
-const message = encodeURIComponent('هلا، دخلت موقع Opus وعندي استفسار عن مشروع.');
+const message = encodeURIComponent('هلا، دخلت موقع Opus وأبي أستفسر عن تصميم موقع أو تطبيق.');
 const whatsappUrl = `https://wa.me/966597232969?text=${message}`;
 
 export function WhatsAppButton() {

@@ -8,14 +8,14 @@ import { PublicFrame } from '@/components/ui';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'حوّل فكرتك إلى مشروع',
-  description: 'أرسل فكرة موقعك أو نظامك أو تطبيقك، ونراجع المتطلبات ونجهز لك نطاقًا وتقديرًا واضحًا قبل البدء.',
+  title: 'اطلب تصميم موقع أو تطبيق',
+  description: 'أرسل فكرة موقعك أو تطبيقك أو نظامك الرقمي، ونراجع المتطلبات ونجهز لك نطاق عمل وتقديرًا واضحًا قبل البدء.',
   alternates: { canonical: '/project-request' },
 };
 
 const serviceTypes = [
-  [GraduationCap, 'مشاريع الطلاب'],
-  [Lightbulb, 'مشاريع عامة'],
+  [GraduationCap, 'مواقع وتطبيقات للطلاب'],
+  [Lightbulb, 'أفكار رقمية'],
   [PanelsTopLeft, 'مواقع'],
   [BriefcaseBusiness, 'حلول أعمال'],
   [LayoutDashboard, 'لوحات تحكم'],
@@ -29,12 +29,12 @@ export default async function ProjectRequestPage({
 }) {
   const audience = (await searchParams).for;
   const heading = audience === 'student'
-    ? 'خلّ مشروعك الجامعي يطلع بأفضل صورة'
+    ? 'خلّ موقعك أو تطبيقك الجامعي يطلع بأفضل صورة'
     : audience === 'business'
-      ? 'فكرتك جاهزة تتحول إلى مشروع حقيقي'
-      : 'عندك فكرة وتبي تحوّلها إلى مشروع؟';
+      ? 'فكرة موقعك أو تطبيقك جاهزة تبدأ'
+      : 'تبي موقع أو تطبيق أو نظام رقمي؟';
   const description = audience === 'student'
-    ? 'اكتب لنا المطلوب وموعد التسليم، ونرتّب معك نطاق المشروع وخطوات تنفيذه بشكل واضح.'
+    ? 'اكتب لنا المطلوب وموعد التسليم، ونرتّب معك نطاق العمل وخطوات التنفيذ بشكل واضح.'
     : 'اكتب لنا فكرتك، ونراجع المتطلبات ونرسل لك التفاصيل والتكلفة قبل ما نبدأ.';
 
   return (
@@ -45,7 +45,7 @@ export default async function ProjectRequestPage({
           <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">مساحة فكرتك تبدأ هنا</p>
           <h1 className="mt-3 text-balance font-arabic text-3xl font-extrabold leading-tight text-[var(--color-text)] sm:text-5xl">{heading}</h1>
           <p className="mx-auto mt-4 max-w-2xl text-balance font-arabic text-base leading-8 text-[var(--color-muted)] sm:text-lg">{description}</p>
-          <p className="mx-auto mt-1 max-w-xl font-arabic text-sm leading-7 text-[var(--color-accent-2)]">ما يحتاج تكون تقني — بس اكتب وش تبي مشروعك يسوي.</p>
+          <p className="mx-auto mt-1 max-w-xl font-arabic text-sm leading-7 text-[var(--color-accent-2)]">ما يحتاج تكون تقني — بس اكتب وش تبي الموقع أو التطبيق يسوي.</p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             {serviceTypes.map(([Icon, label]) => (
               <span key={label} className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/70 px-3.5 py-2 font-arabic text-xs font-bold text-[var(--color-muted)] transition hover:-translate-y-0.5 hover:border-[var(--color-accent)]/40 hover:text-[var(--color-text)]">

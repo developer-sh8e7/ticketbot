@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   title: 'BOTS Discord',
   description: 'بوتات Discord عربية للتذاكر والإدارة والحماية والرومات المؤقتة مع أسعار واشتراكات واضحة.',
   alternates: { canonical: '/bots' },
+  robots: { index: false, follow: false },
 };
 
 export default async function BotsPage() {

@@ -189,7 +189,7 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
   }
 
   async function deleteProject() {
-    if (!ownerMode || !selectedId || !window.confirm('متأكد أنك تريد حذف هذا المشروع وكل محادثته؟ لا يمكن التراجع عن الحذف.')) return;
+    if (!ownerMode || !selectedId || !window.confirm('متأكد أنك تريد حذف هذا الطلب وكل محادثته؟ لا يمكن التراجع عن الحذف.')) return;
     setDeleting(true);
     setError('');
     try {
@@ -198,14 +198,14 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
         headers: { 'x-csrf-token': csrfToken() },
       });
       const json = (await res.json()) as ApiResult<{ deleted: boolean }>;
-      if (!json.success) throw new Error(json.error?.message || 'تعذّر حذف المشروع.');
+      if (!json.success) throw new Error(json.error?.message || 'تعذّر حذف الطلب.');
       const remaining = requests.filter((item) => item.id !== selectedId);
       setRequests(remaining);
       setSelectedId(remaining[0]?.id ?? null);
       setMessages([]);
       setOtherTyping(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'تعذّر حذف المشروع.');
+      setError(e instanceof Error ? e.message : 'تعذّر حذف الطلب.');
     } finally {
       setDeleting(false);
     }
@@ -233,11 +233,11 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
       {showSidebar ? <aside className="opus-card h-fit p-3">
         <div className="flex items-center justify-between gap-2 px-2 pb-3">
           <div>
-            <h2 className="font-arabic text-base font-extrabold text-[var(--color-text)]">{ownerMode ? 'طلبات المشاريع' : 'مشاريعك'}</h2>
+            <h2 className="font-arabic text-base font-extrabold text-[var(--color-text)]">{ownerMode ? 'طلبات التطوير' : 'طلباتك'}</h2>
             <p className="font-arabic text-[11px] text-[var(--color-muted)]">{requests.length} محادثة</p>
           </div>
           {!ownerMode ? (
-            <button type="button" onClick={() => { setSubmittedId(null); setError(''); setShowForm(true); }} className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-accent)] text-black" aria-label="طلب مشروع جديد"><Plus size={17} /></button>
+            <button type="button" onClick={() => { setSubmittedId(null); setError(''); setShowForm(true); }} className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-accent)] text-black" aria-label="طلب تطوير جديد"><Plus size={17} /></button>
           ) : null}
         </div>
         <div className="grid max-h-[520px] gap-1 overflow-y-auto">
@@ -291,8 +291,8 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
 
             <div className="min-w-0 p-6 sm:p-9">
               <div className="mb-8">
-                <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">طلب مشروع جديد</p>
-                <h2 className="mt-2 font-arabic text-2xl font-extrabold text-[var(--color-text)] sm:text-3xl">اكتب لنا فكرة مشروعك</h2>
+                <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">طلب تطوير جديد</p>
+                <h2 className="mt-2 font-arabic text-2xl font-extrabold text-[var(--color-text)] sm:text-3xl">وش الموقع أو التطبيق اللي تبيه؟</h2>
                 <p className="mt-2 font-arabic text-sm leading-7 text-[var(--color-muted)]">كل المعلومات في نفس الصفحة، وما يحتاج تكتب بصياغة رسمية.</p>
               </div>
 
@@ -320,9 +320,9 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
                 </section>
 
                 <section className="grid gap-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)]/35 p-5">
-                  <div><p className="font-english text-[10px] font-bold tracking-[0.18em] text-[var(--color-accent)]">02</p><h3 className="mt-1 font-arabic text-lg font-extrabold text-[var(--color-text)]">فكرة المشروع</h3></div>
+                  <div><p className="font-english text-[10px] font-bold tracking-[0.18em] text-[var(--color-accent)]">02</p><h3 className="mt-1 font-arabic text-lg font-extrabold text-[var(--color-text)]">تفاصيل الموقع أو التطبيق</h3></div>
                   <label className="grid gap-1.5">
-                    <span className="font-arabic text-sm font-bold text-[var(--color-text)]">وش فكرة مشروعك؟</span>
+                    <span className="font-arabic text-sm font-bold text-[var(--color-text)]">وش تبي نبني لك؟</span>
                     <textarea required minLength={10} maxLength={2500} rows={6} value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="مثال: أبي منصة خدمات يختار فيها العميل طلبه ويدفع ويوصلني إشعار..." className="input resize-y font-arabic leading-7" />
                     <span dir="ltr" className="text-left font-english text-[11px] text-[var(--color-muted)]">{idea.length} / 2500</span>
                   </label>
@@ -361,7 +361,7 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
               {error ? <div className="mt-5 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 font-arabic text-xs leading-6 text-red-200">{error}</div> : null}
               <button disabled={creating} className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-6 py-3.5 font-arabic text-base font-extrabold text-black transition hover:-translate-y-0.5 disabled:opacity-50">
                 {creating ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-                أرسل فكرة مشروعك
+                أرسل طلبك
               </button>
             </div>
           </form>
@@ -370,12 +370,12 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
             <header className="border-b border-[var(--color-border)] p-4 sm:px-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h2 className="flex items-center gap-2 font-arabic text-base font-extrabold text-[var(--color-text)]"><UserRound size={17} className="text-[var(--color-accent)]" /> {ownerMode ? selected.requesterName || 'عميل Discord' : `طلب مشروع #${selected.id.slice(0, 8)}`}</h2>
+                  <h2 className="flex items-center gap-2 font-arabic text-base font-extrabold text-[var(--color-text)]"><UserRound size={17} className="text-[var(--color-accent)]" /> {ownerMode ? selected.requesterName || 'عميل' : `طلب تطوير #${selected.id.slice(0, 8)}`}</h2>
                   <p className="mt-1 font-arabic text-[11px] text-[var(--color-muted)]">بدأت {formatDate(selected.createdAt)} · {statusLabels[selected.status]}</p>
                 </div>
                 {ownerMode ? (
                   <button type="button" disabled={deleting} onClick={deleteProject} className="inline-flex items-center gap-2 rounded-xl border border-red-500/35 px-3 py-2 font-arabic text-xs font-bold text-red-300 transition hover:bg-red-500/10 disabled:opacity-50">
-                    {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} حذف المشروع
+                    {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} حذف الطلب
                   </button>
                 ) : null}
               </div>
@@ -391,7 +391,7 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
                     <p className="mt-1 break-all font-english text-sm text-[var(--color-text)]">{selected.phone || 'لم يُضف رقماً'}</p>
                   </div>
                   <div className="sm:col-span-1">
-                    <p className="font-arabic text-[10px] font-bold text-[var(--color-muted)]">فكرة المشروع</p>
+                    <p className="font-arabic text-[10px] font-bold text-[var(--color-muted)]">تفاصيل الطلب</p>
                     <p className="mt-1 max-h-24 overflow-y-auto whitespace-pre-wrap font-arabic text-sm leading-6 text-[var(--color-text)]">{messages[0]?.content || (threadLoading ? 'جاري التحميل...' : '—')}</p>
                   </div>
                 </div>

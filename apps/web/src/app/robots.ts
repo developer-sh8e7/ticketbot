@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/api/', '/dashboard/', '/cart', '/login'],
+      disallow: ['/api/'],
     },
     sitemap: 'https://opussolutions.xyz/sitemap.xml',
     host: 'https://opussolutions.xyz',

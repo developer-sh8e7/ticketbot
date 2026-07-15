@@ -27,14 +27,14 @@ const audiences = [
     icon: GraduationCap,
     banner: 'student' as const,
     title: 'للطلاب',
-    description: 'نحوّل فكرة مشروعك الجامعي أو مشروع التخرج إلى نموذج عملي واضح وجاهز للعرض.',
-    points: ['مواقع ومشاريع تخرج', 'نماذج أولية قابلة للتجربة', 'واجهات ولوحات عرض مرتبة'],
+    description: 'نحوّل فكرتك الجامعية أو مشروع التخرج التقني إلى موقع أو تطبيق عملي وجاهز للعرض.',
+    points: ['مواقع وتطبيقات لمشاريع التخرج', 'نماذج أولية قابلة للتجربة', 'واجهات ولوحات عرض مرتبة'],
   },
   {
     icon: LayoutTemplate,
     banner: 'general' as const,
-    title: 'للمشاريع العامة',
-    description: 'موقع أو نظام أو أداة رقمية تُبنى حول فكرتك، سواء كانت بسيطة أو تحتاج مراحل متعددة.',
+    title: 'لأصحاب الأفكار',
+    description: 'نحوّل فكرتك إلى موقع أو تطبيق أو أداة رقمية، سواء كانت بسيطة أو تحتاج مراحل متعددة.',
     points: ['مواقع تعريفية وخدمية', 'منصات خدمات وطلبات', 'لوحات تحكم وأدوات داخلية'],
   },
   {
@@ -57,28 +57,28 @@ const workflow = [
     icon: LayoutTemplate,
     banner: 'build' as const,
     title: 'نصمم ونطوّر',
-    description: 'نبني تجربة مرتبة وسهلة الاستخدام تناسب طبيعة مشروعك وجمهوره.',
+    description: 'نبني تجربة مرتبة وسهلة الاستخدام تناسب طبيعة الموقع أو التطبيق وجمهوره.',
   },
   {
     icon: Headphones,
     banner: 'launch' as const,
     title: 'نسلّم وندعم',
-    description: 'تستلم مشروعاً جاهزاً مع توضيح طريقة استخدامه ودعم حسب الاتفاق.',
+    description: 'تستلم منتجًا رقميًا جاهزًا مع توضيح طريقة استخدامه ودعم حسب الاتفاق.',
   },
 ] as const;
 
 const deliverables = [
   { icon: ListChecks, banner: 'scope' as const, title: 'خطة واضحة', description: 'تعرف من البداية ما الذي سنبنيه وما الذي ستستلمه.' },
-  { icon: PanelsTopLeft, banner: 'experience' as const, title: 'تجربة مرتبة', description: 'واجهة مفهومة مصممة حول المستخدم والهدف الحقيقي للمشروع.' },
-  { icon: Rocket, banner: 'delivery' as const, title: 'إطلاق فعلي', description: 'لا نقف عند التصميم؛ نجهّز المشروع ليعمل ويصل لمستخدميه.' },
-  { icon: LifeBuoy, banner: 'support' as const, title: 'دعم بعد التسليم', description: 'نوضح لك طريقة الاستخدام ونبقى معك حسب اتفاق المشروع.' },
+  { icon: PanelsTopLeft, banner: 'experience' as const, title: 'تجربة مرتبة', description: 'واجهة مفهومة مصممة حول المستخدم والهدف الحقيقي للموقع أو التطبيق.' },
+  { icon: Rocket, banner: 'delivery' as const, title: 'إطلاق فعلي', description: 'لا نقف عند التصميم؛ نجهّز المنتج الرقمي ليعمل ويصل لمستخدميه.' },
+  { icon: LifeBuoy, banner: 'support' as const, title: 'دعم بعد التسليم', description: 'نوضح لك طريقة الاستخدام ونبقى معك حسب الاتفاق.' },
 ] as const;
 
 const pricingFactors = [
-  { icon: Workflow, title: 'نطاق المشروع', description: 'عدد الصفحات والوظائف والعمليات المطلوبة.' },
+  { icon: Workflow, title: 'نطاق العمل', description: 'عدد الصفحات والوظائف والعمليات المطلوبة.' },
   { icon: Network, title: 'الربط والتكاملات', description: 'الدفع، الرسائل، الأنظمة الخارجية وأي خدمات مرتبطة.' },
   { icon: UsersRound, title: 'حجم الاستخدام', description: 'عدد المستخدمين والصلاحيات وطبيعة التشغيل.' },
-  { icon: TimerReset, title: 'المدة المطلوبة', description: 'الجدول الزمني ومراحل التسليم المناسبة للمشروع.' },
+  { icon: TimerReset, title: 'المدة المطلوبة', description: 'الجدول الزمني ومراحل التسليم المناسبة للتنفيذ.' },
 ] as const;
 
 export default function HomePage() {
@@ -91,9 +91,9 @@ export default function HomePage() {
         <MotionSection className="py-20">
           <div dir="rtl" className="text-center">
             <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">حلول تناسب احتياجك</p>
-            <h2 className="mt-3 font-arabic text-4xl font-extrabold tracking-tight text-[var(--color-text)]">مشروعك، أيًا كان مجاله</h2>
+            <h2 className="mt-3 font-arabic text-4xl font-extrabold tracking-tight text-[var(--color-text)]">وش تبي نبني لك؟</h2>
             <p className="mx-auto mt-4 max-w-2xl font-arabic text-sm leading-8 text-[var(--color-muted)]">
-              نساعد الطلاب وأصحاب الأفكار والأعمال على تحويل احتياجهم إلى مشروع رقمي واضح وقابل للاستخدام.
+              نصمم ونبرمج مواقع وتطبيقات وأنظمة رقمية للطلاب وأصحاب الأفكار والأعمال.
             </p>
           </div>
 
@@ -121,9 +121,9 @@ export default function HomePage() {
 
         <MotionSection id="process" className="scroll-mt-24 py-20">
           <div dir="rtl" className="text-center">
-            <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">رحلة المشروع</p>
+            <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">رحلة التنفيذ</p>
             <h2 className="mt-3 font-arabic text-4xl font-extrabold tracking-tight text-[var(--color-text)]">ثلاث خطوات، بدون دوخة</h2>
-            <p className="mx-auto mt-4 max-w-2xl font-arabic text-sm leading-8 text-[var(--color-muted)]">من أول رسالة حتى يصبح المشروع جاهزاً للاستخدام.</p>
+            <p className="mx-auto mt-4 max-w-2xl font-arabic text-sm leading-8 text-[var(--color-muted)]">من أول رسالة حتى يصبح موقعك أو تطبيقك جاهزًا للاستخدام.</p>
           </div>
 
           <MotionGrid className="relative mt-12 grid gap-5 md:grid-cols-3">
@@ -146,7 +146,7 @@ export default function HomePage() {
             <div>
               <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">وش تستلم معنا؟</p>
               <h2 className="mt-3 text-balance font-arabic text-3xl font-extrabold leading-tight text-[var(--color-text)] md:text-4xl">مو مجرد ملفات تنرمي لك وتمشي</h2>
-              <p className="mt-4 font-arabic text-sm leading-8 text-[var(--color-muted)]">نبني المشروع ونرتّب لك الصورة كاملة، عشان تعرف تستخدمه وتطوره بعد الإطلاق.</p>
+              <p className="mt-4 font-arabic text-sm leading-8 text-[var(--color-muted)]">نبني المنتج الرقمي ونرتّب لك الصورة كاملة، عشان تعرف تستخدمه وتطوره بعد الإطلاق.</p>
             </div>
             <MotionGrid className="grid gap-3 sm:grid-cols-2">
               {deliverables.map(({ icon: Icon, banner, title, description }) => (
@@ -166,9 +166,9 @@ export default function HomePage() {
             <div className="grid gap-8 p-6 md:p-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
               <div>
                 <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">كيف نحسب التكلفة؟</p>
-                <h2 className="mt-3 text-balance font-arabic text-3xl font-extrabold leading-tight text-[var(--color-text)] md:text-4xl">تسعير على قد مشروعك، مو رقم عشوائي</h2>
-                <p className="mt-4 font-arabic text-sm leading-8 text-[var(--color-muted)]">ما نحط سعرًا ثابتًا على أفكار مختلفة. نفهم المشروع أول، نحدد نطاقه، وبعدها نعطيك عرضًا واضحًا قبل ما نبدأ.</p>
-                <Link href="/project-request" className="mt-6 inline-flex rounded-xl bg-[var(--color-accent)] px-5 py-3 font-arabic text-sm font-extrabold text-black transition hover:-translate-y-0.5 hover:opacity-90">خذ تقدير لمشروعك</Link>
+                <h2 className="mt-3 text-balance font-arabic text-3xl font-extrabold leading-tight text-[var(--color-text)] md:text-4xl">تسعير حسب الموقع أو التطبيق المطلوب</h2>
+                <p className="mt-4 font-arabic text-sm leading-8 text-[var(--color-muted)]">ما نحط سعرًا ثابتًا على احتياجات مختلفة. نفهم المطلوب أول، نحدد نطاق العمل، وبعدها نعطيك عرضًا واضحًا قبل ما نبدأ.</p>
+                <Link href="/project-request" className="mt-6 inline-flex rounded-xl bg-[var(--color-accent)] px-5 py-3 font-arabic text-sm font-extrabold text-black transition hover:-translate-y-0.5 hover:opacity-90">خذ تقدير لموقعك أو تطبيقك</Link>
               </div>
               <MotionGrid className="grid gap-3 sm:grid-cols-2">
                 {pricingFactors.map(({ icon: Icon, title, description }) => (
@@ -187,10 +187,10 @@ export default function HomePage() {
           <div dir="rtl" className="relative overflow-hidden border-y border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-16 text-center md:px-10">
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--color-accent)] to-transparent" aria-hidden="true" />
             <div className="relative mx-auto max-w-6xl">
-              <h2 className="font-arabic text-4xl font-extrabold tracking-tight text-[var(--color-text)]">جاهز تحوّل فكرتك إلى مشروع يعمل؟</h2>
+              <h2 className="font-arabic text-4xl font-extrabold tracking-tight text-[var(--color-text)]">جاهز تحوّل فكرتك إلى موقع أو تطبيق يعمل؟</h2>
               <p className="mx-auto mt-4 max-w-xl font-arabic text-sm leading-7 text-[var(--color-muted)]">أرسل فكرتك حتى لو كانت غير مرتبة، وسنساعدك على تحديد الخطوة المناسبة.</p>
               <div className="mt-7">
-                <Link href="/project-request" className="inline-flex items-center justify-center rounded-xl bg-[var(--color-accent)] px-7 py-3.5 font-arabic text-sm font-extrabold text-black transition hover:-translate-y-0.5 hover:opacity-90">ابدأ مشروعك الآن</Link>
+                <Link href="/project-request" className="inline-flex items-center justify-center rounded-xl bg-[var(--color-accent)] px-7 py-3.5 font-arabic text-sm font-extrabold text-black transition hover:-translate-y-0.5 hover:opacity-90">اطلب موقعك أو تطبيقك</Link>
               </div>
             </div>
           </div>

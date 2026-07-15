@@ -158,10 +158,10 @@ export function products(): Product[] {
     {
       key: 'custom',
       id: 'custom-bot',
-      name: 'مشروع مخصص',
+      name: 'حل رقمي مخصص',
       icon: 'Code2',
-      shortName: 'مشروع مخصص',
-      shortDescription: 'مشروع رقمي يُبنى حسب فكرتك واحتياجك.',
+      shortName: 'حل رقمي مخصص',
+      shortDescription: 'موقع أو تطبيق أو نظام رقمي يُبنى حسب فكرتك واحتياجك.',
       description: 'نراجع فكرتك ومتطلباتك، ثم نحدد معك نطاق العمل والمدة والتكلفة قبل بدء التطوير.',
       priceLabel: 'السعر حسب المتطلبات',
       price_monthly: 0,

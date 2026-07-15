@@ -30,10 +30,10 @@ export function Footer() {
           <div>
             <h4 className="font-arabic text-lg font-extrabold text-[var(--color-text)]">Opus Solutions</h4>
             <p className="mt-3 max-w-xs font-arabic text-sm leading-7 text-[var(--color-muted)]">
-              نحوّل الأفكار إلى مشاريع رقمية واضحة، مرتبة، وجاهزة للاستخدام.
+              نصمم ونبرمج مواقع وتطبيقات وأنظمة رقمية واضحة وجاهزة للاستخدام.
             </p>
           </div>
-          <FooterGroup title="الصفحات" links={[['الرئيسية', '/'], ['BOTS Discord', '/bots'], ['اطلب مشروعك', '/project-request']]} />
+          <FooterGroup title="الصفحات" links={[['الرئيسية', '/'], ['BOTS Discord', '/bots'], ['اطلب موقعك أو تطبيقك', '/project-request']]} />
           <FooterGroup title="الشروط والسياسات" links={[['شروط الاستخدام', '/terms'], ['سياسة الخصوصية', '/privacy'], ['الإلغاء والاسترداد', '/cancellation']]} />
         </div>
         <div className="mt-12 border-t border-[var(--color-border)] pt-6 text-center text-xs text-[var(--color-muted)]">

@@ -129,7 +129,7 @@ function AddToCartButton({ product }: { product: HomeProduct }) {
 export function HomeProductsGrid({
   products,
   title = 'منتجاتنا',
-  description = 'حلول جاهزة لبوتات Discord، أو مشروع مخصص نبنيه حول فكرتك واحتياجك.',
+  description = 'حلول جاهزة لبوتات Discord، أو موقع أو تطبيق مخصص نبنيه حول فكرتك واحتياجك.',
 }: HomeProductsGridProps) {
   return (
     <motion.section

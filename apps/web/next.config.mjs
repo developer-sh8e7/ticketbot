@@ -39,6 +39,20 @@ const securityHeaders = [
   },
 ];
 
+const noIndexHeaders = [
+  { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+];
+
+const privateOrDiscordPaths = [
+  '/dashboard/:path*',
+  '/login',
+  '/cart',
+  '/bots',
+  '/commands',
+  '/pricing',
+  '/product/:path*',
+];
+
 const nextConfig = {
   poweredByHeader: false,
   images: {
@@ -48,7 +62,10 @@ const nextConfig = {
     ],
   },
   async headers() {
-    return [{ source: '/:path*', headers: securityHeaders }];
+    return [
+      { source: '/:path*', headers: securityHeaders },
+      ...privateOrDiscordPaths.map((source) => ({ source, headers: noIndexHeaders })),
+    ];
   },
 };
 

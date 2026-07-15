@@ -97,13 +97,13 @@ export function WelcomeIntro() {
                 animate="visible"
                 className="mt-6 max-w-2xl text-balance font-arabic text-base leading-8 text-white/55 sm:text-lg"
               >
-                رائد أعمال وفكرة التطبيق ساكنة في الملاحظات؟ أو طالب جامعي والمشروع بدأ يسابقك؟ اهدأ، وصلت. نرتّب المطلوب ونحوّله إلى مشروع يشتغل ويشرّفك.
+                فكرة تطبيق ساكنة في الملاحظات؟ أو تحتاج موقعًا لنشاطك أو واجبك الجامعي؟ وصلت. نرتّب المطلوب ونحوّله إلى منتج رقمي يشتغل ويشرّفك.
               </motion.p>
 
               <motion.div custom={0.4} variants={reveal} initial="hidden" animate="visible" className="mt-8 grid gap-3 sm:grid-cols-2">
                 <article className="rounded-2xl border border-white/12 bg-white/[0.035] p-5 transition hover:border-[var(--color-accent)]/60 hover:bg-white/[0.055]">
                   <BriefcaseBusiness size={22} className="text-[var(--color-accent)]" />
-                  <h3 className="mt-4 font-arabic text-lg font-extrabold text-white">أبني فكرة أو مشروع</h3>
+                  <h3 className="mt-4 font-arabic text-lg font-extrabold text-white">أبني موقع أو تطبيق</h3>
                   <p className="mt-2 min-h-12 font-arabic text-sm leading-6 text-white/45">عندي فكرة وأبي أشوفها تشتغل على أرض الواقع.</p>
                   <Link
                     href="/project-request?for=business"
@@ -116,7 +116,7 @@ export function WelcomeIntro() {
 
                 <article className="rounded-2xl border border-white/12 bg-white/[0.035] p-5 transition hover:border-[var(--color-accent)]/60 hover:bg-white/[0.055]">
                   <GraduationCap size={22} className="text-[var(--color-accent)]" />
-                  <h3 className="mt-4 font-arabic text-lg font-extrabold text-white">ألحق مشروعي الجامعي</h3>
+                  <h3 className="mt-4 font-arabic text-lg font-extrabold text-white">ألحق تطبيقي الجامعي</h3>
                   <p className="mt-2 min-h-12 font-arabic text-sm leading-6 text-white/45">أبيه مرتباً، واضحاً، وجاهزاً للعرض.</p>
                   <Link
                     href="/project-request?for=student"
@@ -150,7 +150,7 @@ export function WelcomeIntro() {
             >
               <WelcomeScene3D />
               <div className="-mt-8 flex justify-center gap-2 font-arabic text-[10px] font-bold text-white/35 lg:-mt-12">
-                <span>فكرة</span><span>←</span><span>خطة</span><span>←</span><span>مشروع يعمل</span>
+                <span>فكرة</span><span>←</span><span>تصميم</span><span>←</span><span>منتج رقمي</span>
               </div>
             </motion.div>
           </div>

@@ -13,7 +13,7 @@ const SUPPORT_URL = 'https://discord.gg/WRL';
 const links: [string, string][] = [
   ['الرئيسية', '/'],
   ['BOTS Discord', '/bots'],
-  ['اطلب مشروعك', '/project-request'],
+  ['اطلب موقعك أو تطبيقك', '/project-request'],
 ];
 
 type SessionUser = { discord_user_id: string; username: string | null; avatar: string | null };

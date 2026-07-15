@@ -30,20 +30,20 @@ export function HomeHero() {
       <div className="mx-auto grid w-full max-w-7xl items-center gap-8 lg:grid-cols-[1.04fr_0.96fr]">
         <motion.div variants={container} initial="hidden" animate="show" dir="rtl" className="relative z-10 text-center lg:text-right">
           <motion.p variants={item} className="font-arabic text-sm font-bold text-[var(--color-accent)]">
-            Opus Solutions — من الفكرة إلى مشروع جاهز
+            Opus — مواقع وتطبيقات وأنظمة رقمية
           </motion.p>
 
           <motion.h1 variants={item} className="mt-5 text-balance font-arabic text-5xl font-extrabold leading-tight tracking-tight text-[var(--color-text)] md:text-7xl">
-            فكرتك تستاهل تصير مشروع حقيقي
+            فكرتك تستاهل تصير موقع أو تطبيق حقيقي
           </motion.h1>
 
           <motion.p variants={item} className="mt-6 max-w-2xl text-balance font-arabic text-lg leading-8 text-[var(--color-muted)] md:text-xl">
-            نرتّب الفكرة معك، نصمم التجربة، ونبني مشروعاً يعمل بوضوح من البداية حتى التسليم.
+            نرتّب فكرتك، نصمم التجربة، ونبني موقعًا أو تطبيقًا أو نظامًا رقميًا جاهزًا للاستخدام.
           </motion.p>
 
           <motion.div variants={item} className="mt-9 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
             <Link href="/project-request" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-6 py-3 font-arabic text-sm font-extrabold text-black transition hover:-translate-y-0.5 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]">
-              ابدأ مشروعك <ArrowLeft size={16} />
+              اطلب موقعك أو تطبيقك <ArrowLeft size={16} />
             </Link>
             <a href="#process" className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] px-6 py-3 font-arabic text-sm font-bold text-[var(--color-text)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]">
               شوف كيف نشتغل <ArrowDown size={15} />
