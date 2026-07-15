@@ -12,6 +12,7 @@ import {
   Rocket,
 } from 'lucide-react';
 import { HomeHero } from '@/components/HomeHero';
+import { GeometricBanner } from '@/components/GeometricBanner';
 import { MotionGrid } from '@/components/MotionGrid';
 import { MotionSection } from '@/components/MotionSection';
 import { PublicFrame } from '@/components/ui';
@@ -20,18 +21,21 @@ import { WelcomeIntro } from '@/components/WelcomeIntro';
 const audiences = [
   {
     icon: GraduationCap,
+    banner: 'student' as const,
     title: 'للطلاب',
     description: 'نحوّل فكرة مشروعك الجامعي أو مشروع التخرج إلى نموذج عملي واضح وجاهز للعرض.',
     points: ['مواقع ومشاريع تخرج', 'نماذج أولية قابلة للتجربة', 'واجهات ولوحات عرض مرتبة'],
   },
   {
     icon: LayoutTemplate,
+    banner: 'general' as const,
     title: 'للمشاريع العامة',
     description: 'موقع أو نظام أو أداة رقمية تُبنى حول فكرتك، سواء كانت بسيطة أو تحتاج مراحل متعددة.',
     points: ['مواقع تعريفية وخدمية', 'أنظمة حجوزات وطلبات', 'لوحات تحكم وأدوات داخلية'],
   },
   {
     icon: BriefcaseBusiness,
+    banner: 'business' as const,
     title: 'للأعمال',
     description: 'حلول رقمية تساعد نشاطك على تنظيم العمل وتقديم تجربة أفضل لعملائك.',
     points: ['أتمتة المهام المتكررة', 'إدارة العملاء والطلبات', 'تطوير وتوسّع حسب الحاجة'],
@@ -41,26 +45,29 @@ const audiences = [
 const workflow = [
   {
     icon: ClipboardCheck,
+    banner: 'plan' as const,
     title: 'نرتّب الفكرة معك',
     description: 'نراجع الهدف والمتطلبات ونحوّلها إلى نطاق عمل واضح قبل البدء.',
   },
   {
     icon: LayoutTemplate,
+    banner: 'build' as const,
     title: 'نصمم ونطوّر',
     description: 'نبني تجربة مرتبة وسهلة الاستخدام تناسب طبيعة مشروعك وجمهوره.',
   },
   {
     icon: Headphones,
+    banner: 'launch' as const,
     title: 'نسلّم وندعم',
     description: 'تستلم مشروعاً جاهزاً مع توضيح طريقة استخدامه ودعم حسب الاتفاق.',
   },
 ] as const;
 
 const deliverables = [
-  { icon: ListChecks, title: 'خطة واضحة', description: 'تعرف من البداية ما الذي سنبنيه وما الذي ستستلمه.' },
-  { icon: PanelsTopLeft, title: 'تجربة مرتبة', description: 'واجهة مفهومة مصممة حول المستخدم والهدف الحقيقي للمشروع.' },
-  { icon: Rocket, title: 'إطلاق فعلي', description: 'لا نقف عند التصميم؛ نجهّز المشروع ليعمل ويصل لمستخدميه.' },
-  { icon: LifeBuoy, title: 'دعم بعد التسليم', description: 'نوضح لك طريقة الاستخدام ونبقى معك حسب اتفاق المشروع.' },
+  { icon: ListChecks, banner: 'scope' as const, title: 'خطة واضحة', description: 'تعرف من البداية ما الذي سنبنيه وما الذي ستستلمه.' },
+  { icon: PanelsTopLeft, banner: 'experience' as const, title: 'تجربة مرتبة', description: 'واجهة مفهومة مصممة حول المستخدم والهدف الحقيقي للمشروع.' },
+  { icon: Rocket, banner: 'delivery' as const, title: 'إطلاق فعلي', description: 'لا نقف عند التصميم؛ نجهّز المشروع ليعمل ويصل لمستخدميه.' },
+  { icon: LifeBuoy, banner: 'support' as const, title: 'دعم بعد التسليم', description: 'نوضح لك طريقة الاستخدام ونبقى معك حسب اتفاق المشروع.' },
 ] as const;
 
 export default function HomePage() {
@@ -80,8 +87,9 @@ export default function HomePage() {
           </div>
 
           <MotionGrid className="mt-10 grid gap-5 md:grid-cols-3" >
-            {audiences.map(({ icon: Icon, title, description, points }) => (
-              <article key={title} dir="rtl" className="group h-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 transition-colors hover:border-[var(--color-accent)]/60">
+            {audiences.map(({ icon: Icon, banner, title, description, points }) => (
+              <article key={title} dir="rtl" className="group h-full overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 transition-colors hover:border-[var(--color-accent)]/60">
+                <GeometricBanner variant={banner} className="-mx-6 -mt-6 mb-5 w-[calc(100%+3rem)]" />
                 <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)] transition-transform group-hover:scale-110">
                   <Icon size={22} />
                 </div>
@@ -108,9 +116,9 @@ export default function HomePage() {
           </div>
 
           <MotionGrid className="relative mt-12 grid gap-5 md:grid-cols-3">
-            {workflow.map(({ icon: Icon, title, description }, index) => (
+            {workflow.map(({ icon: Icon, banner, title, description }, index) => (
               <article key={title} dir="rtl" className="relative h-full overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-                <span className="absolute -left-2 -top-7 font-english text-8xl font-extrabold text-white/[0.035]">0{index + 1}</span>
+                <GeometricBanner variant={banner} label={`0${index + 1}`} className="-mx-6 -mt-6 mb-5 w-[calc(100%+3rem)]" />
                 <div className="relative flex items-center justify-between gap-4">
                   <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)]"><Icon size={22} /></div>
                   <span className="font-english text-sm font-bold text-[var(--color-accent-2)]">0{index + 1}</span>
@@ -130,8 +138,9 @@ export default function HomePage() {
               <p className="mt-4 font-arabic text-sm leading-8 text-[var(--color-muted)]">نبني المشروع ونرتّب لك الصورة كاملة، عشان تعرف تستخدمه وتطوره بعد الإطلاق.</p>
             </div>
             <MotionGrid className="grid gap-3 sm:grid-cols-2">
-              {deliverables.map(({ icon: Icon, title, description }) => (
-                <article key={title} className="h-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5">
+              {deliverables.map(({ icon: Icon, banner, title, description }) => (
+                <article key={title} className="h-full overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5">
+                  <GeometricBanner variant={banner} className="-mx-5 -mt-5 mb-4 w-[calc(100%+2.5rem)]" />
                   <Icon size={20} className="text-[var(--color-accent)]" />
                   <h3 className="mt-3 font-arabic text-base font-extrabold text-[var(--color-text)]">{title}</h3>
                   <p className="mt-2 font-arabic text-xs leading-6 text-[var(--color-muted)]">{description}</p>

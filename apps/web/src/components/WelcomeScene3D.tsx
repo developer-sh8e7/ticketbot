@@ -23,20 +23,21 @@ const welcomePieces = [
 ] as const;
 
 const homePieces = [
-  { size: [3.5, 0.12, 2.2], position: [0, -1.15, 0], rotation: [0, -0.06, 0], accent: false },
-  { size: [2.75, 0.12, 1.65], position: [-0.32, -0.62, 0.15], rotation: [0, 0.14, 0], accent: false },
-  { size: [2.05, 0.12, 1.15], position: [0.35, -0.08, 0.3], rotation: [0, -0.18, 0], accent: true },
-  { size: [1.35, 0.12, 0.72], position: [-0.22, 0.48, 0.45], rotation: [0, 0.2, 0], accent: false },
-  { size: [0.68, 0.68, 0.68], position: [0.22, 1.18, 0.5], rotation: [0.2, 0.3, 0.1], accent: true },
+  { size: [3.35, 2.15, 0.14], position: [0, 0, 0], rotation: [0, 0, 0], accent: false },
+  { size: [3.35, 0.18, 0.2], position: [0, 0.98, 0.1], rotation: [0, 0, 0], accent: false },
+  { size: [0.4, 1.48, 0.2], position: [-1.28, -0.08, 0.12], rotation: [0, 0, 0], accent: true },
+  { size: [1.65, 0.3, 0.2], position: [0.32, 0.34, 0.13], rotation: [0, 0, 0], accent: true },
+  { size: [0.72, 0.58, 0.2], position: [-0.05, -0.48, 0.13], rotation: [0, 0, 0], accent: false },
+  { size: [0.72, 0.58, 0.2], position: [0.9, -0.48, 0.13], rotation: [0, 0, 0], accent: false },
 ] as const;
 
 const projectPieces = [
-  { size: [3.35, 0.1, 2.15], position: [0, -0.92, 0], rotation: [0, 0.08, 0], accent: false },
-  { size: [3.0, 0.1, 1.9], position: [0.22, -0.48, 0.18], rotation: [0, -0.08, 0], accent: false },
-  { size: [2.62, 0.1, 1.62], position: [-0.18, -0.04, 0.36], rotation: [0, 0.1, 0], accent: false },
-  { size: [1.7, 0.18, 0.28], position: [-0.3, 0.62, 0.58], rotation: [0, 0.08, 0], accent: true },
-  { size: [0.86, 0.18, 0.28], position: [0.72, 0.62, 0.58], rotation: [0, 0.08, 0], accent: false },
-  { size: [0.48, 0.48, 0.48], position: [0.95, 1.18, 0.66], rotation: [0.2, 0.25, 0.08], accent: true },
+  { size: [3.4, 2.2, 0.14], position: [0, 0, 0], rotation: [0, 0, 0], accent: false },
+  { size: [1.86, 0.16, 0.2], position: [-0.25, 0.58, 0.13], rotation: [0, 0, 0], accent: true },
+  { size: [1.72, 0.12, 0.18], position: [-0.18, 0.04, 0.13], rotation: [0, 0, 0], accent: false },
+  { size: [1.72, 0.12, 0.18], position: [-0.18, -0.5, 0.13], rotation: [0, 0, 0], accent: false },
+  { size: [0.25, 0.25, 0.2], position: [1.12, 0.04, 0.14], rotation: [0, 0, 0], accent: true },
+  { size: [0.25, 0.25, 0.2], position: [1.12, -0.5, 0.14], rotation: [0, 0, 0], accent: false },
 ] as const;
 
 const botPieces = [
@@ -57,8 +58,8 @@ const scenePieces = {
 
 const sceneRotations: Record<SceneVariant, [number, number, number]> = {
   welcome: [-0.42, -0.52, 0.1],
-  home: [-0.38, -0.56, 0.08],
-  project: [-0.48, -0.4, 0.06],
+  home: [-0.08, -0.42, 0.02],
+  project: [-0.1, -0.36, 0.03],
   bots: [-0.16, -0.48, 0.04],
 };
 
@@ -157,6 +158,16 @@ export function WelcomeScene3D({ variant = 'welcome' }: { variant?: SceneVariant
       };
     });
 
+    let connectionGeometry: THREE.BufferGeometry | null = null;
+    let connectionMaterial: THREE.LineBasicMaterial | null = null;
+    if (variant === 'bots') {
+      const links = [[0, 3], [1, 3], [1, 4], [2, 4], [3, 5], [4, 5]];
+      const points = links.flatMap(([from, to]) => [pieces[from].target, pieces[to].target]);
+      connectionGeometry = new THREE.BufferGeometry().setFromPoints(points);
+      connectionMaterial = new THREE.LineBasicMaterial({ color: 0xff8a00, transparent: true, opacity: 0 });
+      assembly.add(new THREE.LineSegments(connectionGeometry, connectionMaterial));
+    }
+
     const pointer = { x: 0, y: 0 };
     const onPointerMove = (event: PointerEvent) => {
       pointer.x = (event.clientX / window.innerWidth - 0.5) * 2;
@@ -190,6 +201,7 @@ export function WelcomeScene3D({ variant = 'welcome' }: { variant?: SceneVariant
         piece.group.rotation.z = THREE.MathUtils.lerp(piece.group.rotation.z, piece.targetRotation.z, 0.055);
         if (index === pieces.length - 1) piece.group.rotation.y += Math.sin(elapsed * 0.7) * 0.0018;
       });
+      if (connectionMaterial) connectionMaterial.opacity = Math.max(0, entrance - 0.58) * 0.52;
 
       assembly.rotation.y = THREE.MathUtils.lerp(assembly.rotation.y, baseRotation[1] + pointer.x * 0.14, 0.035);
       assembly.rotation.x = THREE.MathUtils.lerp(assembly.rotation.x, baseRotation[0] + pointer.y * 0.08, 0.035);
@@ -209,22 +221,46 @@ export function WelcomeScene3D({ variant = 'welcome' }: { variant?: SceneVariant
       accentMaterial.dispose();
       edgeMaterial.dispose();
       mutedEdgeMaterial.dispose();
+      connectionGeometry?.dispose();
+      connectionMaterial?.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     };
   }, [variant]);
 
   if (fallback) {
+    const staticArt = variant === 'home' ? (
+      <div className="relative h-44 w-64 rotate-[-3deg] rounded-xl border border-white/25 bg-[var(--color-surface)]">
+        <span className="absolute inset-x-0 top-0 h-5 rounded-t-xl border-b border-white/15" />
+        <span className="absolute bottom-4 right-4 top-9 w-8 rounded-md bg-[var(--color-accent)]/70" />
+        <span className="absolute left-5 right-16 top-10 h-7 rounded-md border border-[var(--color-accent)]/55" />
+        <span className="absolute bottom-5 left-5 h-14 w-16 rounded-md border border-white/15" />
+        <span className="absolute bottom-5 left-24 h-14 w-16 rounded-md border border-white/15" />
+      </div>
+    ) : variant === 'project' ? (
+      <div className="relative h-44 w-64 rotate-2 rounded-xl border border-white/25 bg-[var(--color-surface)]">
+        <span className="absolute right-6 top-8 h-3 w-36 rounded-full bg-[var(--color-accent)]/70" />
+        <span className="absolute right-6 top-[76px] h-2 w-32 rounded-full bg-white/10" />
+        <span className="absolute left-6 top-[70px] h-5 w-5 rounded border border-[var(--color-accent)]/60" />
+        <span className="absolute right-6 top-[116px] h-2 w-32 rounded-full bg-white/10" />
+        <span className="absolute left-6 top-[108px] h-5 w-5 rounded border border-white/20" />
+      </div>
+    ) : variant === 'bots' ? (
+      <div className="grid grid-cols-3 gap-3 rotate-[-4deg]">
+        {[0, 1, 2, 3, 4, 5].map((cube) => <span key={cube} className={`h-16 w-16 rounded-lg border ${cube % 2 ? 'border-[var(--color-accent)]/55 bg-[var(--color-accent)]/12' : 'border-white/20 bg-[var(--color-surface)]'}`} />)}
+      </div>
+    ) : (
+      <div className="relative h-full min-h-64 w-full">
+        {[0, 1, 2, 3].map((layer) => (
+          <span key={layer} className="absolute left-1/2 top-1/2 h-24 w-44 rounded-xl border border-[var(--color-accent)]/50 bg-[var(--color-surface)]" style={{ transform: `translate(calc(-50% + ${layer * 12 - 18}px), calc(-50% + ${layer * -22 + 32}px)) rotate(${layer * -2}deg)` }} />
+        ))}
+        <span className="absolute left-1/2 top-1/2 z-10 h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-xl bg-[var(--color-accent)] shadow-[0_18px_70px_rgba(255,138,0,0.24)]" />
+      </div>
+    );
+
     return (
       <div className="relative flex h-full min-h-64 items-center justify-center" aria-hidden="true">
-        {[0, 1, 2, 3].map((layer) => (
-          <span
-            key={layer}
-            className="absolute h-24 w-44 rounded-xl border border-[var(--color-accent)]/50 bg-[var(--color-surface)]"
-            style={{ transform: `translate(${layer * 12 - 18}px, ${layer * -22 + 32}px) rotate(${layer * -2}deg)` }}
-          />
-        ))}
-        <span className="relative z-10 h-14 w-14 rounded-xl bg-[var(--color-accent)] shadow-[0_18px_70px_rgba(255,138,0,0.24)]" />
+        {staticArt}
       </div>
     );
   }

@@ -8,6 +8,7 @@ import type { ProductKey } from '@/lib/site-content';
 import type { StockStatus } from '@/lib/public-stock';
 import { buildCartItem, useCart } from '@/components/cart/CartProvider';
 import { InfoTip } from '@/components/InfoTip';
+import { GeometricBanner } from '@/components/GeometricBanner';
 
 type HomeProduct = {
   key: ProductKey;
@@ -44,6 +45,15 @@ const icons: Record<ProductKey, LucideIcon> = {
   humanguard: ShieldCheck,
   custom: Code2,
 };
+
+const bannerVariants = {
+  ticket: 'ticket',
+  voice_rooms: 'voice_rooms',
+  general: 'bot',
+  broadcast: 'broadcast',
+  humanguard: 'humanguard',
+  custom: 'general',
+} as const;
 
 const STOCK_LABEL: Record<StockStatus, string> = {
   in: 'متوفر الآن',
@@ -149,6 +159,7 @@ export function HomeProductsGrid({
               transition={{ type: 'spring', stiffness: 320, damping: 24 }}
               className="product-card group relative flex min-h-72 flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 transition-colors duration-200 hover:border-[var(--color-accent)]"
             >
+              <GeometricBanner variant={bannerVariants[product.key]} className="-mx-6 -mt-6 mb-5 w-[calc(100%+3rem)] rounded-t-2xl" />
               {product.badge ? (
                 <span className="absolute left-5 top-5 rounded-full bg-[var(--color-accent)] px-2.5 py-1 font-arabic text-[11px] font-extrabold text-black">
                   {product.badge}
