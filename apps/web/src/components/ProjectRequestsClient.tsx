@@ -1,8 +1,7 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, CheckCircle2, CircleUserRound, Lightbulb, Loader2, MessageCircle, Plus, Send, SlidersHorizontal, Trash2, UserRound } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Loader2, MessageCircle, Plus, Send, Trash2, UserRound } from 'lucide-react';
 import { ProjectFormScene3D } from '@/components/ProjectFormScene3D';
 
 type RequestItem = {
@@ -45,12 +44,6 @@ const budgetOptions = [
   ['unsure', 'غير متأكد'],
 ] as const;
 
-const formSteps = [
-  { title: 'خلّنا نتعرف عليك', description: 'بيانات بسيطة عشان نعرف كيف نتواصل معك.', icon: CircleUserRound },
-  { title: 'وش الفكرة اللي في بالك؟', description: 'اكتبها بطريقتك، ما يحتاج تستخدم مصطلحات تقنية.', icon: Lightbulb },
-  { title: 'نرتّب التفاصيل', description: 'اختيارات أخيرة تساعدنا نقدّر النطاق والتكلفة.', icon: SlidersHorizontal },
-] as const;
-
 export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boolean }) {
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -62,7 +55,6 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
   const [deleting, setDeleting] = useState(false);
   const [showForm, setShowForm] = useState(!ownerMode);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
-  const [formStep, setFormStep] = useState<0 | 1 | 2>(0);
   const [name, setName] = useState('');
   const [contactMethod, setContactMethod] = useState<'whatsapp' | 'email'>('whatsapp');
   const [contact, setContact] = useState('');
@@ -124,28 +116,8 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
     return () => window.clearInterval(timer);
   }, [selectedId, showForm, loadThread, loadRequests]);
 
-  function goToNextStep() {
-    setError('');
-    if (formStep === 0) {
-      if (name.trim().length < 2) return setError('اكتب اسمك عشان نعرف كيف نناديك.');
-      if (contact.trim().length < 3) return setError('اكتب بيانات التواصل الصحيحة.');
-      if (contactMethod === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.trim())) return setError('اكتب بريداً إلكترونياً صحيحاً.');
-      setFormStep(1);
-      return;
-    }
-    if (formStep === 1) {
-      if (idea.trim().length < 10) return setError('اكتب فكرة المشروع بشكل أوضح شوي.');
-      if (mainGoal.trim().length < 5) return setError('اكتب أهم شيء لازم يحققه المشروع.');
-      setFormStep(2);
-    }
-  }
-
   async function createRequest(event: FormEvent) {
     event.preventDefault();
-    if (formStep < 2) {
-      goToNextStep();
-      return;
-    }
     setCreating(true);
     setError('');
     try {
@@ -166,7 +138,6 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
       setFeatures([]);
       setBudget('');
       setDeadline('');
-      setFormStep(0);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'تعذّر إرسال الطلب.');
     } finally {
@@ -234,7 +205,6 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
 
   const selected = requests.find((row) => row.id === selectedId) ?? null;
   const showSidebar = ownerMode || (requests.length > 0 && !submittedId);
-  const ActiveFormIcon = formSteps[formStep].icon;
 
   if (loading && ownerMode) {
     return <div className="opus-card flex min-h-72 items-center justify-center gap-2 font-arabic text-sm text-[var(--color-muted)]"><Loader2 size={18} className="animate-spin" /> جاري تحميل المحادثات...</div>;
@@ -249,7 +219,7 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
             <p className="font-arabic text-[11px] text-[var(--color-muted)]">{requests.length} محادثة</p>
           </div>
           {!ownerMode ? (
-            <button type="button" onClick={() => { setSubmittedId(null); setFormStep(0); setError(''); setShowForm(true); }} className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-accent)] text-black" aria-label="طلب مشروع جديد"><Plus size={17} /></button>
+            <button type="button" onClick={() => { setSubmittedId(null); setError(''); setShowForm(true); }} className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-accent)] text-black" aria-label="طلب مشروع جديد"><Plus size={17} /></button>
           ) : null}
         </div>
         <div className="grid max-h-[520px] gap-1 overflow-y-auto">
@@ -287,129 +257,94 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
             </div>
           </div>
         ) : showForm && !ownerMode ? (
-          <form onSubmit={createRequest} className="grid min-h-[680px] lg:grid-cols-[320px_1fr]">
+          <form onSubmit={createRequest} className="grid lg:grid-cols-[300px_1fr]">
             <aside className="relative overflow-hidden border-b border-[var(--color-border)] bg-[var(--color-bg)]/55 p-5 lg:border-b-0 lg:border-l lg:p-6">
               <div className="pointer-events-none h-52 sm:h-60 lg:h-72" aria-hidden="true">
-                <ProjectFormScene3D step={formStep} />
+                <ProjectFormScene3D step={1} />
               </div>
-              <div className="mt-2 grid grid-cols-3 gap-2 lg:mt-4 lg:grid-cols-1">
-                {formSteps.map(({ title, icon: Icon }, index) => {
-                  const active = index === formStep;
-                  const complete = index < formStep;
-                  return (
-                    <button
-                      key={title}
-                      type="button"
-                      disabled={index > formStep}
-                      onClick={() => { setError(''); setFormStep(index as 0 | 1 | 2); }}
-                      className={`flex min-w-0 items-center gap-2 rounded-xl border px-2.5 py-2.5 text-right transition lg:px-3 ${active ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-text)]' : complete ? 'border-[var(--color-border)] text-[var(--color-accent-2)] hover:border-[var(--color-accent)]/50' : 'cursor-not-allowed border-transparent text-[var(--color-muted)]/45'}`}
-                    >
-                      <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${active ? 'bg-[var(--color-accent)] text-black' : 'bg-white/[0.04]'}`}>{complete ? <CheckCircle2 size={14} /> : <Icon size={14} />}</span>
-                      <span className="hidden truncate font-arabic text-xs font-bold sm:block">{title}</span>
-                    </button>
-                  );
-                })}
+              <div className="mt-3 rounded-2xl border border-[var(--color-border)] bg-white/[0.02] p-4">
+                <p className="font-arabic text-base font-extrabold text-[var(--color-text)]">كل شيء قدامك</p>
+                <p className="mt-2 font-arabic text-xs leading-6 text-[var(--color-muted)]">عبّ الحقول اللي تعرفها، وإذا شيء مو واضح اختر «غير متأكد» ونرتّبه معك.</p>
+                <ul className="mt-4 grid gap-2 font-arabic text-xs text-[var(--color-muted)]">
+                  {['ما يحتاج حساب', 'ما يحتاج معرفة تقنية', 'نراجع الطلب قبل أي اتفاق'].map((point) => <li key={point} className="flex items-center gap-2"><CheckCircle2 size={13} className="text-[var(--color-accent)]" />{point}</li>)}
+                </ul>
               </div>
             </aside>
 
-            <div className="flex min-w-0 flex-col p-6 sm:p-9">
-              <div className="mb-7 flex items-start justify-between gap-4">
-                <div>
-                  <p dir="ltr" className="w-fit font-english text-xs font-bold tracking-[0.18em] text-[var(--color-accent)]">0{formStep + 1} / 03</p>
-                  <h2 className="mt-2 font-arabic text-2xl font-extrabold text-[var(--color-text)] sm:text-3xl">{formSteps[formStep].title}</h2>
-                  <p className="mt-2 font-arabic text-sm leading-7 text-[var(--color-muted)]">{formSteps[formStep].description}</p>
-                </div>
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)]"><ActiveFormIcon size={21} /></span>
+            <div className="min-w-0 p-6 sm:p-9">
+              <div className="mb-8">
+                <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">طلب مشروع جديد</p>
+                <h2 className="mt-2 font-arabic text-2xl font-extrabold text-[var(--color-text)] sm:text-3xl">اكتب لنا فكرة مشروعك</h2>
+                <p className="mt-2 font-arabic text-sm leading-7 text-[var(--color-muted)]">كل المعلومات في نفس الصفحة، وما يحتاج تكتب بصياغة رسمية.</p>
               </div>
 
-              <div className="mb-7 h-1 overflow-hidden rounded-full bg-white/[0.055]">
-                <motion.div className="h-full rounded-full bg-[var(--color-accent)]" animate={{ width: `${((formStep + 1) / 3) * 100}%` }} transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }} />
-              </div>
-
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div key={formStep} initial={{ opacity: 0, x: -18 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 18 }} transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }} className="grid gap-5">
-                  {formStep === 0 ? (
-                    <>
-                      <label className="grid gap-1.5">
-                        <span className="font-arabic text-sm font-bold text-[var(--color-text)]">اسمك</span>
-                        <input minLength={2} maxLength={80} value={name} onChange={(e) => setName(e.target.value)} placeholder="كيف نناديك؟" autoComplete="name" className="input font-arabic" />
-                      </label>
-                      <div className="grid gap-1.5">
-                        <span className="font-arabic text-sm font-bold text-[var(--color-text)]">كيف تحب نتواصل معك؟</span>
-                        <div className="grid grid-cols-2 gap-2">
-                          {([['whatsapp', 'واتساب'], ['email', 'البريد الإلكتروني']] as const).map(([value, label]) => (
-                            <button key={value} type="button" onClick={() => { setContact(''); setContactMethod(value); }} className={`rounded-xl border px-3 py-3 font-arabic text-sm font-bold transition ${contactMethod === value ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-accent-2)]' : 'border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-accent)]/50'}`}>{label}</button>
-                          ))}
-                        </div>
+              <div className="grid gap-7">
+                <section className="grid gap-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)]/35 p-5">
+                  <div><p className="font-english text-[10px] font-bold tracking-[0.18em] text-[var(--color-accent)]">01</p><h3 className="mt-1 font-arabic text-lg font-extrabold text-[var(--color-text)]">بيانات التواصل</h3></div>
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <label className="grid gap-1.5">
+                      <span className="font-arabic text-sm font-bold text-[var(--color-text)]">اسمك</span>
+                      <input required minLength={2} maxLength={80} value={name} onChange={(e) => setName(e.target.value)} placeholder="كيف نناديك؟" autoComplete="name" className="input font-arabic" />
+                    </label>
+                    <div className="grid gap-1.5">
+                      <span className="font-arabic text-sm font-bold text-[var(--color-text)]">طريقة التواصل</span>
+                      <div className="grid grid-cols-2 gap-2">
+                        {([['whatsapp', 'واتساب'], ['email', 'البريد الإلكتروني']] as const).map(([value, label]) => (
+                          <button key={value} type="button" onClick={() => { setContact(''); setContactMethod(value); }} className={`rounded-xl border px-3 py-3 font-arabic text-sm font-bold transition ${contactMethod === value ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-accent-2)]' : 'border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-accent)]/50'}`}>{label}</button>
+                        ))}
                       </div>
-                      <label className="grid gap-1.5">
-                        <span className="font-arabic text-sm font-bold text-[var(--color-text)]">{contactMethod === 'whatsapp' ? 'رقم واتساب' : 'البريد الإلكتروني'}</span>
-                        <input minLength={3} maxLength={100} type={contactMethod === 'email' ? 'email' : 'text'} value={contact} onChange={(e) => setContact(e.target.value)} placeholder={contactMethod === 'whatsapp' ? 'مثال: 05xxxxxxxx' : 'name@example.com'} autoComplete={contactMethod === 'email' ? 'email' : 'tel'} dir="ltr" className="input font-english text-left" />
-                      </label>
-                    </>
-                  ) : formStep === 1 ? (
-                    <>
-                      <label className="grid gap-1.5">
-                        <span className="font-arabic text-sm font-bold text-[var(--color-text)]">وش فكرة مشروعك؟</span>
-                        <textarea minLength={10} maxLength={2500} rows={6} value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="مثال: أبي منصة حجوزات يختار فيها العميل الخدمة والموعد ويوصلني إشعار..." className="input resize-y font-arabic leading-7" />
-                        <span dir="ltr" className="text-left font-english text-[11px] text-[var(--color-muted)]">{idea.length} / 2500</span>
-                      </label>
-                      <label className="grid gap-1.5">
-                        <span className="font-arabic text-sm font-bold text-[var(--color-text)]">وش أهم نتيجة لازم يحققها؟</span>
-                        <textarea minLength={5} maxLength={1500} rows={4} value={mainGoal} onChange={(e) => setMainGoal(e.target.value)} placeholder="مثال: العميل يحجز ويدفع بسهولة وأنا أتابع كل الطلبات من مكان واحد." className="input resize-y font-arabic leading-7" />
-                      </label>
-                    </>
-                  ) : (
-                    <>
-                      <fieldset className="grid gap-3">
-                        <legend className="font-arabic text-sm font-bold text-[var(--color-text)]">هل تحتاج أيًا من التالي؟</legend>
-                        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                          {featureOptions.map(([value, label]) => {
-                            const checked = features.includes(value);
-                            return (
-                              <label key={value} className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 font-arabic text-sm transition ${checked ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-text)]' : 'border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-accent)]/40'}`}>
-                                <input type="checkbox" checked={checked} onChange={() => setFeatures((items) => checked ? items.filter((item) => item !== value) : [...items, value])} className="h-4 w-4 accent-[var(--color-accent)]" />
-                                {label}
-                              </label>
-                            );
-                          })}
-                        </div>
-                      </fieldset>
-                      <fieldset className="grid gap-3">
-                        <legend className="font-arabic text-sm font-bold text-[var(--color-text)]">ميزانيتك التقريبية</legend>
-                        <div className="grid gap-2 sm:grid-cols-2">
-                          {budgetOptions.map(([value, label]) => (
-                            <label key={value} className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 font-arabic text-sm transition ${budget === value ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-text)]' : 'border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-accent)]/40'}`}>
-                              <input required type="radio" name="budget" value={value} checked={budget === value} onChange={() => setBudget(value)} className="h-4 w-4 accent-[var(--color-accent)]" />
-                              {label}
-                            </label>
-                          ))}
-                        </div>
-                      </fieldset>
-                      <label className="grid gap-1.5">
-                        <span className="font-arabic text-sm font-bold text-[var(--color-text)]">عندك موعد محدد؟ <span className="font-normal text-[var(--color-muted)]">(اختياري)</span></span>
-                        <input maxLength={100} value={deadline} onChange={(e) => setDeadline(e.target.value)} placeholder="مثال: خلال شهر" className="input font-arabic" />
-                      </label>
-                    </>
-                  )}
-                </motion.div>
-              </AnimatePresence>
+                    </div>
+                    <label className="grid gap-1.5 sm:col-span-2">
+                      <span className="font-arabic text-sm font-bold text-[var(--color-text)]">{contactMethod === 'whatsapp' ? 'رقم واتساب' : 'البريد الإلكتروني'}</span>
+                      <input required minLength={3} maxLength={100} type={contactMethod === 'email' ? 'email' : 'text'} value={contact} onChange={(e) => setContact(e.target.value)} placeholder={contactMethod === 'whatsapp' ? 'مثال: 05xxxxxxxx' : 'name@example.com'} autoComplete={contactMethod === 'email' ? 'email' : 'tel'} dir="ltr" className="input font-english text-left" />
+                    </label>
+                  </div>
+                </section>
+
+                <section className="grid gap-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)]/35 p-5">
+                  <div><p className="font-english text-[10px] font-bold tracking-[0.18em] text-[var(--color-accent)]">02</p><h3 className="mt-1 font-arabic text-lg font-extrabold text-[var(--color-text)]">فكرة المشروع</h3></div>
+                  <label className="grid gap-1.5">
+                    <span className="font-arabic text-sm font-bold text-[var(--color-text)]">وش فكرة مشروعك؟</span>
+                    <textarea required minLength={10} maxLength={2500} rows={6} value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="مثال: أبي منصة حجوزات يختار فيها العميل الخدمة والموعد ويوصلني إشعار..." className="input resize-y font-arabic leading-7" />
+                    <span dir="ltr" className="text-left font-english text-[11px] text-[var(--color-muted)]">{idea.length} / 2500</span>
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className="font-arabic text-sm font-bold text-[var(--color-text)]">وش أهم نتيجة لازم يحققها؟</span>
+                    <textarea required minLength={5} maxLength={1500} rows={4} value={mainGoal} onChange={(e) => setMainGoal(e.target.value)} placeholder="مثال: العميل يحجز ويدفع بسهولة وأنا أتابع كل الطلبات من مكان واحد." className="input resize-y font-arabic leading-7" />
+                  </label>
+                </section>
+
+                <section className="grid gap-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)]/35 p-5">
+                  <div><p className="font-english text-[10px] font-bold tracking-[0.18em] text-[var(--color-accent)]">03</p><h3 className="mt-1 font-arabic text-lg font-extrabold text-[var(--color-text)]">تفاصيل تساعدنا</h3></div>
+                  <fieldset className="grid gap-3">
+                    <legend className="font-arabic text-sm font-bold text-[var(--color-text)]">هل تحتاج أيًا من التالي؟</legend>
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                      {featureOptions.map(([value, label]) => {
+                        const checked = features.includes(value);
+                        return <label key={value} className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 font-arabic text-sm transition ${checked ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-text)]' : 'border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-accent)]/40'}`}><input type="checkbox" checked={checked} onChange={() => setFeatures((items) => checked ? items.filter((item) => item !== value) : [...items, value])} className="h-4 w-4 accent-[var(--color-accent)]" />{label}</label>;
+                      })}
+                    </div>
+                  </fieldset>
+                  <fieldset className="grid gap-3">
+                    <legend className="font-arabic text-sm font-bold text-[var(--color-text)]">ميزانيتك التقريبية</legend>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {budgetOptions.map(([value, label]) => (
+                        <label key={value} className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 font-arabic text-sm transition ${budget === value ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-text)]' : 'border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-accent)]/40'}`}><input required type="radio" name="budget" value={value} checked={budget === value} onChange={() => setBudget(value)} className="h-4 w-4 accent-[var(--color-accent)]" />{label}</label>
+                      ))}
+                    </div>
+                  </fieldset>
+                  <label className="grid gap-1.5">
+                    <span className="font-arabic text-sm font-bold text-[var(--color-text)]">عندك موعد محدد؟ <span className="font-normal text-[var(--color-muted)]">(اختياري)</span></span>
+                    <input maxLength={100} value={deadline} onChange={(e) => setDeadline(e.target.value)} placeholder="مثال: خلال شهر" className="input font-arabic" />
+                  </label>
+                </section>
+              </div>
 
               {error ? <div className="mt-5 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 font-arabic text-xs leading-6 text-red-200">{error}</div> : null}
-
-              <div className="mt-auto flex items-center justify-between gap-3 pt-8">
-                {formStep > 0 ? (
-                  <button type="button" onClick={() => { setError(''); setFormStep((formStep - 1) as 0 | 1); }} className="inline-flex items-center gap-2 rounded-xl border border-[var(--color-border)] px-4 py-3 font-arabic text-sm font-bold text-[var(--color-muted)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-text)]"><ArrowRight size={16} /> السابق</button>
-                ) : <span />}
-                {formStep < 2 ? (
-                  <button type="button" onClick={goToNextStep} className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-accent)] px-5 py-3 font-arabic text-sm font-extrabold text-black transition hover:-translate-y-0.5 hover:opacity-90">التالي <ArrowLeft size={16} /></button>
-                ) : (
-                  <button disabled={creating} className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-accent)] px-5 py-3 font-arabic text-sm font-extrabold text-black transition hover:-translate-y-0.5 disabled:opacity-50">
-                    {creating ? <Loader2 size={17} className="animate-spin" /> : <Send size={17} />}
-                    أرسل فكرة مشروعك
-                  </button>
-                )}
-              </div>
+              <button disabled={creating} className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-6 py-3.5 font-arabic text-base font-extrabold text-black transition hover:-translate-y-0.5 disabled:opacity-50">
+                {creating ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                أرسل فكرة مشروعك
+              </button>
             </div>
           </form>
         ) : selected ? (
