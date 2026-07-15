@@ -11,7 +11,9 @@ type Piece = {
   phase: number;
 };
 
-const pieceConfigs = [
+type SceneVariant = 'welcome' | 'home' | 'project' | 'bots';
+
+const welcomePieces = [
   { size: [3.4, 0.16, 2.25], position: [0, -1.25, 0], rotation: [0, 0, 0], accent: false },
   { size: [2.9, 0.16, 1.9], position: [0.18, -0.78, 0.08], rotation: [0, -0.08, 0], accent: false },
   { size: [2.35, 0.16, 1.55], position: [-0.12, -0.31, 0.18], rotation: [0, 0.1, 0], accent: true },
@@ -20,7 +22,47 @@ const pieceConfigs = [
   { size: [0.62, 0.62, 0.62], position: [0.34, 1.23, 0.4], rotation: [0.18, 0.35, 0.08], accent: true },
 ] as const;
 
-export function WelcomeScene3D() {
+const homePieces = [
+  { size: [3.5, 0.12, 2.2], position: [0, -1.15, 0], rotation: [0, -0.06, 0], accent: false },
+  { size: [2.75, 0.12, 1.65], position: [-0.32, -0.62, 0.15], rotation: [0, 0.14, 0], accent: false },
+  { size: [2.05, 0.12, 1.15], position: [0.35, -0.08, 0.3], rotation: [0, -0.18, 0], accent: true },
+  { size: [1.35, 0.12, 0.72], position: [-0.22, 0.48, 0.45], rotation: [0, 0.2, 0], accent: false },
+  { size: [0.68, 0.68, 0.68], position: [0.22, 1.18, 0.5], rotation: [0.2, 0.3, 0.1], accent: true },
+] as const;
+
+const projectPieces = [
+  { size: [3.35, 0.1, 2.15], position: [0, -0.92, 0], rotation: [0, 0.08, 0], accent: false },
+  { size: [3.0, 0.1, 1.9], position: [0.22, -0.48, 0.18], rotation: [0, -0.08, 0], accent: false },
+  { size: [2.62, 0.1, 1.62], position: [-0.18, -0.04, 0.36], rotation: [0, 0.1, 0], accent: false },
+  { size: [1.7, 0.18, 0.28], position: [-0.3, 0.62, 0.58], rotation: [0, 0.08, 0], accent: true },
+  { size: [0.86, 0.18, 0.28], position: [0.72, 0.62, 0.58], rotation: [0, 0.08, 0], accent: false },
+  { size: [0.48, 0.48, 0.48], position: [0.95, 1.18, 0.66], rotation: [0.2, 0.25, 0.08], accent: true },
+] as const;
+
+const botPieces = [
+  { size: [0.78, 0.78, 0.78], position: [-1.02, -0.92, 0], rotation: [0.06, 0.12, 0], accent: false },
+  { size: [0.78, 0.78, 0.78], position: [0, -0.92, 0.12], rotation: [-0.04, -0.1, 0], accent: true },
+  { size: [0.78, 0.78, 0.78], position: [1.02, -0.92, 0.24], rotation: [0.04, 0.1, 0], accent: false },
+  { size: [0.78, 0.78, 0.78], position: [-0.52, 0.08, 0.18], rotation: [-0.04, 0.08, 0], accent: true },
+  { size: [0.78, 0.78, 0.78], position: [0.52, 0.08, 0.3], rotation: [0.06, -0.12, 0], accent: false },
+  { size: [0.88, 0.88, 0.88], position: [0, 1.12, 0.42], rotation: [0.14, 0.28, 0.08], accent: true },
+] as const;
+
+const scenePieces = {
+  welcome: welcomePieces,
+  home: homePieces,
+  project: projectPieces,
+  bots: botPieces,
+} as const;
+
+const sceneRotations: Record<SceneVariant, [number, number, number]> = {
+  welcome: [-0.42, -0.52, 0.1],
+  home: [-0.38, -0.56, 0.08],
+  project: [-0.48, -0.4, 0.06],
+  bots: [-0.16, -0.48, 0.04],
+};
+
+export function WelcomeScene3D({ variant = 'welcome' }: { variant?: SceneVariant }) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [fallback, setFallback] = useState(false);
 
@@ -54,8 +96,9 @@ export function WelcomeScene3D() {
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
     camera.position.set(0, 0.15, 7.2);
 
+    const baseRotation = sceneRotations[variant];
     const assembly = new THREE.Group();
-    assembly.rotation.set(-0.42, -0.52, 0.1);
+    assembly.rotation.set(...baseRotation);
     scene.add(assembly);
 
     scene.add(new THREE.AmbientLight(0xffffff, 1.5));
@@ -85,7 +128,7 @@ export function WelcomeScene3D() {
     const mutedEdgeMaterial = new THREE.LineBasicMaterial({ color: 0x5b5b62, transparent: true, opacity: 0.65 });
     const geometries: THREE.BufferGeometry[] = [];
 
-    const pieces: Piece[] = pieceConfigs.map((config, index) => {
+    const pieces: Piece[] = scenePieces[variant].map((config, index) => {
       const geometry = new THREE.BoxGeometry(...config.size);
       const edgeGeometry = new THREE.EdgesGeometry(geometry);
       geometries.push(geometry, edgeGeometry);
@@ -148,8 +191,8 @@ export function WelcomeScene3D() {
         if (index === pieces.length - 1) piece.group.rotation.y += Math.sin(elapsed * 0.7) * 0.0018;
       });
 
-      assembly.rotation.y = THREE.MathUtils.lerp(assembly.rotation.y, -0.52 + pointer.x * 0.14, 0.035);
-      assembly.rotation.x = THREE.MathUtils.lerp(assembly.rotation.x, -0.42 + pointer.y * 0.08, 0.035);
+      assembly.rotation.y = THREE.MathUtils.lerp(assembly.rotation.y, baseRotation[1] + pointer.x * 0.14, 0.035);
+      assembly.rotation.x = THREE.MathUtils.lerp(assembly.rotation.x, baseRotation[0] + pointer.y * 0.08, 0.035);
       assembly.position.y = Math.sin(elapsed * 0.55) * 0.055;
 
       renderer.render(scene, camera);
@@ -169,7 +212,7 @@ export function WelcomeScene3D() {
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, []);
+  }, [variant]);
 
   if (fallback) {
     return (

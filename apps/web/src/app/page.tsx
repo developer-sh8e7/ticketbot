@@ -1,6 +1,18 @@
 import Link from 'next/link';
-import { BriefcaseBusiness, Check, ClipboardCheck, GraduationCap, Headphones, LayoutTemplate } from 'lucide-react';
+import {
+  BriefcaseBusiness,
+  Check,
+  ClipboardCheck,
+  GraduationCap,
+  Headphones,
+  LayoutTemplate,
+  LifeBuoy,
+  ListChecks,
+  PanelsTopLeft,
+  Rocket,
+} from 'lucide-react';
 import { HomeHero } from '@/components/HomeHero';
+import { MotionGrid } from '@/components/MotionGrid';
 import { MotionSection } from '@/components/MotionSection';
 import { PublicFrame } from '@/components/ui';
 import { WelcomeIntro } from '@/components/WelcomeIntro';
@@ -44,6 +56,13 @@ const workflow = [
   },
 ] as const;
 
+const deliverables = [
+  { icon: ListChecks, title: 'خطة واضحة', description: 'تعرف من البداية ما الذي سنبنيه وما الذي ستستلمه.' },
+  { icon: PanelsTopLeft, title: 'تجربة مرتبة', description: 'واجهة مفهومة مصممة حول المستخدم والهدف الحقيقي للمشروع.' },
+  { icon: Rocket, title: 'إطلاق فعلي', description: 'لا نقف عند التصميم؛ نجهّز المشروع ليعمل ويصل لمستخدميه.' },
+  { icon: LifeBuoy, title: 'دعم بعد التسليم', description: 'نوضح لك طريقة الاستخدام ونبقى معك حسب اتفاق المشروع.' },
+] as const;
+
 export default function HomePage() {
   return (
     <>
@@ -51,78 +70,88 @@ export default function HomePage() {
       <PublicFrame>
         <HomeHero />
 
-      <MotionSection className="py-20">
-        <div dir="rtl" className="text-center">
-          <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">حلول تناسب احتياجك</p>
-          <h2 className="mt-3 font-arabic text-4xl font-extrabold tracking-tight text-[var(--color-text)]">
-            مشروعك، أيًا كان مجاله
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl font-arabic text-sm leading-8 text-[var(--color-muted)]">
-            نساعد الطلاب وأصحاب الأفكار والأعمال على تحويل احتياجهم إلى مشروع رقمي واضح وقابل للاستخدام.
-          </p>
-        </div>
+        <MotionSection className="py-20">
+          <div dir="rtl" className="text-center">
+            <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">حلول تناسب احتياجك</p>
+            <h2 className="mt-3 font-arabic text-4xl font-extrabold tracking-tight text-[var(--color-text)]">مشروعك، أيًا كان مجاله</h2>
+            <p className="mx-auto mt-4 max-w-2xl font-arabic text-sm leading-8 text-[var(--color-muted)]">
+              نساعد الطلاب وأصحاب الأفكار والأعمال على تحويل احتياجهم إلى مشروع رقمي واضح وقابل للاستخدام.
+            </p>
+          </div>
 
-        <div dir="rtl" className="mt-10 grid gap-5 md:grid-cols-3">
-          {audiences.map(({ icon: Icon, title, description, points }) => (
-            <article key={title} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-              <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
-                <Icon size={22} />
-              </div>
-              <h3 className="font-arabic text-xl font-extrabold text-[var(--color-text)]">{title}</h3>
-              <p className="mt-3 font-arabic text-sm leading-7 text-[var(--color-muted)]">{description}</p>
-              <ul className="mt-5 grid gap-2">
-                {points.map((point) => (
-                  <li key={point} className="flex items-start gap-2 font-arabic text-sm leading-7 text-[var(--color-muted)]">
-                    <Check size={16} className="mt-1 shrink-0 text-[var(--color-accent-2)]" />
-                    <span>{point}</span>
-                  </li>
-                ))}
-              </ul>
-            </article>
-          ))}
-        </div>
-      </MotionSection>
-
-      <MotionSection className="py-20">
-        <div dir="rtl" className="text-center">
-          <h2 className="font-arabic text-4xl font-extrabold tracking-tight text-[var(--color-text)]">كيف نبدأ مشروعك؟</h2>
-          <p className="mx-auto mt-4 max-w-2xl font-arabic text-sm leading-8 text-[var(--color-muted)]">
-            خطوات بسيطة وواضحة من أول رسالة حتى التسليم.
-          </p>
-        </div>
-
-        <div dir="rtl" className="mt-10 grid gap-5 md:grid-cols-3">
-          {workflow.map(({ icon: Icon, title, description }, index) => (
-            <article key={title} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
+          <MotionGrid className="mt-10 grid gap-5 md:grid-cols-3" >
+            {audiences.map(({ icon: Icon, title, description, points }) => (
+              <article key={title} dir="rtl" className="group h-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 transition-colors hover:border-[var(--color-accent)]/60">
+                <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)] transition-transform group-hover:scale-110">
                   <Icon size={22} />
                 </div>
-                <span className="font-english text-sm font-bold text-[var(--color-muted)]">0{index + 1}</span>
-              </div>
-              <h3 className="mt-5 font-arabic text-xl font-extrabold text-[var(--color-text)]">{title}</h3>
-              <p className="mt-3 font-arabic text-sm leading-7 text-[var(--color-muted)]">{description}</p>
-            </article>
-          ))}
-        </div>
-      </MotionSection>
+                <h3 className="font-arabic text-xl font-extrabold text-[var(--color-text)]">{title}</h3>
+                <p className="mt-3 font-arabic text-sm leading-7 text-[var(--color-muted)]">{description}</p>
+                <ul className="mt-5 grid gap-2">
+                  {points.map((point) => (
+                    <li key={point} className="flex items-start gap-2 font-arabic text-sm leading-7 text-[var(--color-muted)]">
+                      <Check size={16} className="mt-1 shrink-0 text-[var(--color-accent-2)]" />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </MotionGrid>
+        </MotionSection>
 
-      <MotionSection className="mx-[calc(50%-50vw)] w-screen py-20">
-        <div dir="rtl" className="border-y border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-14 text-center md:px-10">
-          <div className="mx-auto max-w-6xl">
-            <h2 className="font-arabic text-4xl font-extrabold tracking-tight text-[var(--color-text)]">
-              جاهز تحوّل فكرتك إلى مشروع يعمل؟
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl font-arabic text-sm leading-7 text-[var(--color-muted)]">
-              أرسل فكرتك حتى لو كانت غير مرتبة، وسنساعدك على تحديد الخطوة المناسبة.
-            </p>
-            <div className="mt-7">
-              <Link href="/project-request" className="inline-flex items-center justify-center rounded-xl bg-[var(--color-accent)] px-6 py-3 font-arabic text-sm font-extrabold text-black transition hover:opacity-90">
-                اطلب مشروعك
-              </Link>
+        <MotionSection id="process" className="scroll-mt-24 py-20">
+          <div dir="rtl" className="text-center">
+            <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">رحلة المشروع</p>
+            <h2 className="mt-3 font-arabic text-4xl font-extrabold tracking-tight text-[var(--color-text)]">ثلاث خطوات، بدون دوخة</h2>
+            <p className="mx-auto mt-4 max-w-2xl font-arabic text-sm leading-8 text-[var(--color-muted)]">من أول رسالة حتى يصبح المشروع جاهزاً للاستخدام.</p>
+          </div>
+
+          <MotionGrid className="relative mt-12 grid gap-5 md:grid-cols-3">
+            {workflow.map(({ icon: Icon, title, description }, index) => (
+              <article key={title} dir="rtl" className="relative h-full overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+                <span className="absolute -left-2 -top-7 font-english text-8xl font-extrabold text-white/[0.035]">0{index + 1}</span>
+                <div className="relative flex items-center justify-between gap-4">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)]"><Icon size={22} /></div>
+                  <span className="font-english text-sm font-bold text-[var(--color-accent-2)]">0{index + 1}</span>
+                </div>
+                <h3 className="relative mt-5 font-arabic text-xl font-extrabold text-[var(--color-text)]">{title}</h3>
+                <p className="relative mt-3 font-arabic text-sm leading-7 text-[var(--color-muted)]">{description}</p>
+              </article>
+            ))}
+          </MotionGrid>
+        </MotionSection>
+
+        <MotionSection className="py-20">
+          <div dir="rtl" className="grid gap-10 rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 md:p-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+            <div>
+              <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">وش تستلم معنا؟</p>
+              <h2 className="mt-3 text-balance font-arabic text-3xl font-extrabold leading-tight text-[var(--color-text)] md:text-4xl">مو مجرد ملفات تنرمي لك وتمشي</h2>
+              <p className="mt-4 font-arabic text-sm leading-8 text-[var(--color-muted)]">نبني المشروع ونرتّب لك الصورة كاملة، عشان تعرف تستخدمه وتطوره بعد الإطلاق.</p>
+            </div>
+            <MotionGrid className="grid gap-3 sm:grid-cols-2">
+              {deliverables.map(({ icon: Icon, title, description }) => (
+                <article key={title} className="h-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5">
+                  <Icon size={20} className="text-[var(--color-accent)]" />
+                  <h3 className="mt-3 font-arabic text-base font-extrabold text-[var(--color-text)]">{title}</h3>
+                  <p className="mt-2 font-arabic text-xs leading-6 text-[var(--color-muted)]">{description}</p>
+                </article>
+              ))}
+            </MotionGrid>
+          </div>
+        </MotionSection>
+
+        <MotionSection className="mx-[calc(50%-50vw)] w-screen py-20">
+          <div dir="rtl" className="relative overflow-hidden border-y border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-16 text-center md:px-10">
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--color-accent)] to-transparent" aria-hidden="true" />
+            <div className="relative mx-auto max-w-6xl">
+              <h2 className="font-arabic text-4xl font-extrabold tracking-tight text-[var(--color-text)]">جاهز تحوّل فكرتك إلى مشروع يعمل؟</h2>
+              <p className="mx-auto mt-4 max-w-xl font-arabic text-sm leading-7 text-[var(--color-muted)]">أرسل فكرتك حتى لو كانت غير مرتبة، وسنساعدك على تحديد الخطوة المناسبة.</p>
+              <div className="mt-7">
+                <Link href="/project-request" className="inline-flex items-center justify-center rounded-xl bg-[var(--color-accent)] px-7 py-3.5 font-arabic text-sm font-extrabold text-black transition hover:-translate-y-0.5 hover:opacity-90">ابدأ مشروعك الآن</Link>
+              </div>
             </div>
           </div>
-        </div>
         </MotionSection>
       </PublicFrame>
     </>

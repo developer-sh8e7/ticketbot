@@ -3,9 +3,10 @@
 import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
 
-export function MotionSection({ children, className = '' }: { children: ReactNode; className?: string }) {
+export function MotionSection({ children, className = '', id }: { children: ReactNode; className?: string; id?: string }) {
   return (
     <motion.section
+      id={id}
       initial={{ opacity: 0, y: 26 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-80px' }}

@@ -36,7 +36,8 @@ export function WelcomeIntro() {
     };
   }, [open]);
 
-  function dismiss() {
+  function dismiss(revealHome = true) {
+    if (revealHome) window.dispatchEvent(new Event('opus-welcome-closed'));
     setOpen(false);
   }
 
@@ -67,7 +68,7 @@ export function WelcomeIntro() {
             <button
               ref={skipRef}
               type="button"
-              onClick={dismiss}
+              onClick={() => dismiss()}
               className="pointer-events-auto rounded-full border border-white/15 bg-black/30 px-4 py-2 font-arabic text-xs font-bold text-white/65 backdrop-blur transition hover:border-[var(--color-accent)] hover:text-white focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
             >
               تخطي المقدمة
@@ -106,7 +107,7 @@ export function WelcomeIntro() {
                   <p className="mt-2 min-h-12 font-arabic text-sm leading-6 text-white/45">عندي فكرة وأبي أشوفها تشتغل على أرض الواقع.</p>
                   <Link
                     href="/project-request?for=business"
-                    onClick={dismiss}
+                    onClick={() => dismiss(false)}
                     className="mt-5 inline-flex touch-manipulation items-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 font-arabic text-sm font-extrabold text-black transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-white"
                   >
                     ابدأ من هنا <ArrowLeft size={15} />
@@ -119,7 +120,7 @@ export function WelcomeIntro() {
                   <p className="mt-2 min-h-12 font-arabic text-sm leading-6 text-white/45">أبيه مرتباً، واضحاً، وجاهزاً للعرض.</p>
                   <Link
                     href="/project-request?for=student"
-                    onClick={dismiss}
+                    onClick={() => dismiss(false)}
                     className="mt-5 inline-flex touch-manipulation items-center gap-2 rounded-xl border border-white/20 px-4 py-2.5 font-arabic text-sm font-extrabold text-white transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                   >
                     رتّبها معي <ArrowLeft size={15} />
@@ -133,7 +134,7 @@ export function WelcomeIntro() {
                 initial="hidden"
                 animate="visible"
                 type="button"
-                onClick={dismiss}
+                onClick={() => dismiss()}
                 className="mt-6 touch-manipulation py-2 font-arabic text-sm font-bold text-white/40 underline decoration-white/15 underline-offset-4 transition hover:text-white"
               >
                 أبي أشوف الموقع أول
