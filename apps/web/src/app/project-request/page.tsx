@@ -27,8 +27,8 @@ export default async function ProjectRequestPage({
       ? 'فكرتك جاهزة تتحول إلى مشروع حقيقي'
       : 'عندك فكرة وتبي تحوّلها إلى مشروع؟';
   const description = audience === 'student'
-    ? 'اشرح لنا المطلوب وموعد التسليم، وسنرتّب معك نطاق المشروع وخطوات تنفيذه بشكل واضح.'
-    : 'اشرح فكرتك لنا، وسنراجع المتطلبات ونرسل لك التفاصيل والتكلفة قبل بدء العمل.';
+    ? 'اكتب لنا المطلوب وموعد التسليم، ونرتّب معك نطاق المشروع وخطوات تنفيذه بشكل واضح.'
+    : 'اكتب لنا فكرتك، ونراجع المتطلبات ونرسل لك التفاصيل والتكلفة قبل ما نبدأ.';
 
   return (
     <PublicFrame>
@@ -38,7 +38,7 @@ export default async function ProjectRequestPage({
           <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">مساحة فكرتك تبدأ هنا</p>
           <h1 className="mt-3 text-balance font-arabic text-3xl font-extrabold leading-tight text-[var(--color-text)] sm:text-5xl">{heading}</h1>
           <p className="mx-auto mt-4 max-w-2xl text-balance font-arabic text-base leading-8 text-[var(--color-muted)] sm:text-lg">{description}</p>
-          <p className="mx-auto mt-1 max-w-xl font-arabic text-sm leading-7 text-[var(--color-accent-2)]">لا تحتاج معرفة تقنية — فقط اشرح ما الذي تريد أن يفعله مشروعك.</p>
+          <p className="mx-auto mt-1 max-w-xl font-arabic text-sm leading-7 text-[var(--color-accent-2)]">ما يحتاج تكون تقني — بس اكتب وش تبي مشروعك يسوي.</p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             {serviceTypes.map(([Icon, label]) => (
               <span key={label} className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/70 px-3.5 py-2 font-arabic text-xs font-bold text-[var(--color-muted)] transition hover:-translate-y-0.5 hover:border-[var(--color-accent)]/40 hover:text-[var(--color-text)]">

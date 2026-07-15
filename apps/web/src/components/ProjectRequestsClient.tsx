@@ -47,7 +47,7 @@ const budgetOptions = [
 
 const formSteps = [
   { title: 'خلّنا نتعرف عليك', description: 'بيانات بسيطة عشان نعرف كيف نتواصل معك.', icon: CircleUserRound },
-  { title: 'احكِ لنا الفكرة', description: 'اشرحها بطريقتك؛ ما تحتاج مصطلحات تقنية.', icon: Lightbulb },
+  { title: 'وش الفكرة اللي في بالك؟', description: 'اكتبها بطريقتك، ما يحتاج تستخدم مصطلحات تقنية.', icon: Lightbulb },
   { title: 'نرتّب التفاصيل', description: 'اختيارات أخيرة تساعدنا نقدّر النطاق والتكلفة.', icon: SlidersHorizontal },
 ] as const;
 
@@ -134,7 +134,7 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
       return;
     }
     if (formStep === 1) {
-      if (idea.trim().length < 10) return setError('اشرح فكرة المشروع بشكل أوضح شوي.');
+      if (idea.trim().length < 10) return setError('اكتب فكرة المشروع بشكل أوضح شوي.');
       if (mainGoal.trim().length < 5) return setError('اكتب أهم شيء لازم يحققه المشروع.');
       setFormStep(2);
     }
