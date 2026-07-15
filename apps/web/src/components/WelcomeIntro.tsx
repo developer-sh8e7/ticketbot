@@ -6,8 +6,6 @@ import { ArrowLeft, BriefcaseBusiness, GraduationCap } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { WelcomeScene3D } from '@/components/WelcomeScene3D';
 
-const STORAGE_KEY = 'opus_welcome_seen_v2';
-
 const reveal = {
   hidden: { opacity: 0, y: 24 },
   visible: (delay: number) => ({
@@ -18,17 +16,8 @@ const reveal = {
 };
 
 export function WelcomeIntro() {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const skipRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    try {
-      if (window.localStorage.getItem(STORAGE_KEY)) return;
-    } catch {
-      // Storage can be blocked; the intro should still work for this visit.
-    }
-    setOpen(true);
-  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -48,11 +37,6 @@ export function WelcomeIntro() {
   }, [open]);
 
   function dismiss() {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, '1');
-    } catch {
-      // Closing the intro should never depend on storage availability.
-    }
     setOpen(false);
   }
 
