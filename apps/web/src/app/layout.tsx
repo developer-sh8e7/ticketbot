@@ -40,6 +40,7 @@ export const metadata: Metadata = {
   applicationName: 'Opus Solutions',
   creator: 'Opus Solutions',
   publisher: 'Opus Solutions',
+  verification: { google: process.env.GOOGLE_SITE_VERIFICATION },
   keywords: ['Opus Solutions', 'Opussolutions', 'تطوير مشروع', 'برمجة موقع', 'تطوير فكرة تطبيق', 'مشروع تخرج برمجي', 'تصميم لوحة تحكم', 'برمجة نظام مخصص'],
   description: 'Opus Solutions لتصميم وتطوير المواقع والأنظمة والبرامج لمشاريع الطلاب والأعمال — من الفكرة إلى مشروع جاهز للاستخدام.',
   robots: {
