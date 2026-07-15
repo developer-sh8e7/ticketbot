@@ -57,10 +57,10 @@ export function HomeHero() {
             اطلب مشروعك
           </Link>
           <Link
-            href="/pricing"
+            href="/bots"
             className="inline-flex min-w-36 items-center justify-center rounded-xl border border-[var(--color-border)] px-6 py-3 font-arabic text-sm font-extrabold text-[var(--color-text)] transition hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
           >
-            عرض الأسعار
+            Bots
           </Link>
         </motion.div>
       </motion.div>

@@ -1,4 +1,4 @@
-import { Bot, CalendarDays, LayoutDashboard, PanelsTopLeft, Smartphone } from 'lucide-react';
+import { Bot, CalendarDays, GraduationCap, LayoutDashboard, Lightbulb, PanelsTopLeft, Smartphone } from 'lucide-react';
 import { ProjectRequestBackdrop } from '@/components/ProjectRequestBackdrop';
 import { ProjectRequestsClient } from '@/components/ProjectRequestsClient';
 import { PublicFrame } from '@/components/ui';
@@ -6,6 +6,8 @@ import { PublicFrame } from '@/components/ui';
 export const dynamic = 'force-dynamic';
 
 const serviceTypes = [
+  [GraduationCap, 'مشاريع الطلاب'],
+  [Lightbulb, 'مشاريع عامة'],
   [PanelsTopLeft, 'مواقع'],
   [CalendarDays, 'أنظمة حجوزات'],
   [LayoutDashboard, 'لوحات تحكم'],

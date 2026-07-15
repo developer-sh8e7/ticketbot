@@ -1,124 +1,123 @@
 import Link from 'next/link';
-import { Check, ShieldCheck, SlidersHorizontal, Ticket } from 'lucide-react';
-import { FaqAccordion } from '@/components/FaqAccordion';
+import { BriefcaseBusiness, Check, ClipboardCheck, GraduationCap, Headphones, LayoutTemplate } from 'lucide-react';
 import { HomeHero } from '@/components/HomeHero';
-import { HomeProductsGrid } from '@/components/HomeProductsGrid';
 import { MotionSection } from '@/components/MotionSection';
-import { PremiumStatsSection } from '@/components/PremiumStatsSection';
 import { PublicFrame } from '@/components/ui';
-import { primaryFeatures, products } from '@/lib/site-content';
-import { getPublicStock } from '@/lib/public-stock';
 
-const featureIcons = [Ticket, SlidersHorizontal, ShieldCheck] as const;
+const audiences = [
+  {
+    icon: GraduationCap,
+    title: 'للطلاب',
+    description: 'نحوّل فكرة مشروعك الجامعي أو مشروع التخرج إلى نموذج عملي واضح وجاهز للعرض.',
+    points: ['مواقع ومشاريع تخرج', 'نماذج أولية قابلة للتجربة', 'واجهات ولوحات عرض مرتبة'],
+  },
+  {
+    icon: LayoutTemplate,
+    title: 'للمشاريع العامة',
+    description: 'موقع أو نظام أو أداة رقمية تُبنى حول فكرتك، سواء كانت بسيطة أو تحتاج مراحل متعددة.',
+    points: ['مواقع تعريفية وخدمية', 'أنظمة حجوزات وطلبات', 'لوحات تحكم وأدوات داخلية'],
+  },
+  {
+    icon: BriefcaseBusiness,
+    title: 'للأعمال',
+    description: 'حلول رقمية تساعد نشاطك على تنظيم العمل وتقديم تجربة أفضل لعملائك.',
+    points: ['أتمتة المهام المتكررة', 'إدارة العملاء والطلبات', 'تطوير وتوسّع حسب الحاجة'],
+  },
+] as const;
 
-// Live token stock is read per request, so the store always shows real availability.
-export const dynamic = 'force-dynamic';
+const workflow = [
+  {
+    icon: ClipboardCheck,
+    title: 'نرتّب الفكرة معك',
+    description: 'نراجع الهدف والمتطلبات ونحوّلها إلى نطاق عمل واضح قبل البدء.',
+  },
+  {
+    icon: LayoutTemplate,
+    title: 'نصمم ونطوّر',
+    description: 'نبني تجربة مرتبة وسهلة الاستخدام تناسب طبيعة مشروعك وجمهوره.',
+  },
+  {
+    icon: Headphones,
+    title: 'نسلّم وندعم',
+    description: 'تستلم مشروعاً جاهزاً مع توضيح طريقة استخدامه ودعم حسب الاتفاق.',
+  },
+] as const;
 
-export default async function HomePage() {
-  const allProducts = products();
-  const stock = await getPublicStock();
-  const productCards = allProducts.map((product) => {
-    const isSoon = product.priceLabel.toLowerCase() === 'soon';
-    const isCustom = product.productType === 'custom';
-    return {
-      key: product.key,
-      id: product.id,
-      name: product.name,
-      productType: product.productType,
-      shortDescription: product.shortDescription,
-      description: product.description,
-      priceLabel: product.priceLabel,
-      price_monthly: product.price_monthly,
-      price_quarterly: product.price_quarterly,
-      features: product.features,
-      badge: product.badge,
-      stockStatus: stock[product.productType],
-      detailHref: `/product/${product.key}`,
-      href: isCustom ? '/project-request' : `/pricing?product=${product.key}`,
-      external: false,
-      ctaLabel: isSoon ? 'قريباً' : isCustom ? 'اطلب مشروعك' : 'اشترِ الآن',
-      disabled: isSoon,
-      purchasable: !isSoon && !isCustom && product.price_monthly > 0,
-    };
-  });
-
+export default function HomePage() {
   return (
     <PublicFrame>
       <HomeHero />
 
-      <PremiumStatsSection />
-
-      <HomeProductsGrid products={productCards} />
-
-      <MotionSection className="py-20" >
+      <MotionSection className="py-20">
         <div dir="rtl" className="text-center">
-          <h2 className="font-arabic text-4xl font-extrabold tracking-tight text-[var(--color-text)]">لماذا Opus؟</h2>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-8 text-[var(--color-muted)]">
-            تجربة تشغيل واضحة، إعدادات منظمة، ودعم عربي يناسب ملاك السيرفرات.
+          <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">حلول تناسب احتياجك</p>
+          <h2 className="mt-3 font-arabic text-4xl font-extrabold tracking-tight text-[var(--color-text)]">
+            مشروعك، أيًا كان مجاله
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl font-arabic text-sm leading-8 text-[var(--color-muted)]">
+            نساعد الطلاب وأصحاب الأفكار والأعمال على تحويل احتياجهم إلى مشروع رقمي واضح وقابل للاستخدام.
           </p>
         </div>
 
         <div dir="rtl" className="mt-10 grid gap-5 md:grid-cols-3">
-          {primaryFeatures.map((feature, index) => {
-            const Icon = featureIcons[index] ?? Ticket;
-            return (
-              <article
-                key={feature.title}
-                className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6"
-              >
-                <div
-                  className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl text-[var(--color-accent)]"
-                  style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)' }}
-                >
-                  <Icon size={22} />
-                </div>
-                <h3 className="font-arabic text-xl font-extrabold text-[var(--color-text)]">{feature.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-[var(--color-muted)]">{feature.description}</p>
-                <ul className="mt-5 grid gap-2">
-                  {feature.points.slice(0, 3).map((point) => (
-                    <li key={point} className="flex items-start gap-2 text-sm leading-7 text-[var(--color-muted)]">
-                      <Check size={16} className="mt-1 shrink-0 text-[var(--color-accent-2)]" />
-                      <span>{point}</span>
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            );
-          })}
-        </div>
-      </MotionSection>
-
-      <MotionSection className="mx-[calc(50%-50vw)] w-screen py-20">
-        <div
-          dir="rtl"
-          className="border-y border-[var(--color-border)] px-6 py-14 text-center md:px-10"
-          style={{ background: 'linear-gradient(135deg, var(--color-accent), var(--color-bg) 72%)' }}
-        >
-          <div className="mx-auto max-w-6xl">
-            <h2 className="font-arabic text-4xl font-extrabold tracking-tight text-[var(--color-text)]">جاهز تحوّل فكرتك إلى مشروع يعمل؟</h2>
-            <div className="mt-7">
-              <Link
-                href="/project-request"
-                className="inline-flex items-center justify-center rounded-xl bg-[var(--color-text)] px-6 py-3 font-arabic text-sm font-extrabold text-[var(--color-bg)] transition hover:-translate-y-0.5 hover:opacity-90"
-              >
-                اطلب مشروعك
-              </Link>
-            </div>
-          </div>
+          {audiences.map(({ icon: Icon, title, description, points }) => (
+            <article key={title} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+              <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
+                <Icon size={22} />
+              </div>
+              <h3 className="font-arabic text-xl font-extrabold text-[var(--color-text)]">{title}</h3>
+              <p className="mt-3 font-arabic text-sm leading-7 text-[var(--color-muted)]">{description}</p>
+              <ul className="mt-5 grid gap-2">
+                {points.map((point) => (
+                  <li key={point} className="flex items-start gap-2 font-arabic text-sm leading-7 text-[var(--color-muted)]">
+                    <Check size={16} className="mt-1 shrink-0 text-[var(--color-accent-2)]" />
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
         </div>
       </MotionSection>
 
       <MotionSection className="py-20">
-        <div dir="rtl" className="mx-auto max-w-3xl">
-          <div className="mb-8 text-center">
-            <h2 className="font-arabic text-4xl font-extrabold tracking-tight text-[var(--color-text)]">الأسئلة الشائعة</h2>
-            <p className="mt-4 text-sm leading-8 text-[var(--color-muted)]">إجابات مختصرة قبل الشراء والتفعيل.</p>
-          </div>
-          <FaqAccordion />
-          <div className="mt-8 text-center">
-            <Link href="/pricing" className="text-sm font-bold text-[var(--color-accent)] underline underline-offset-4">
-              عرض تفاصيل الأسعار
-            </Link>
+        <div dir="rtl" className="text-center">
+          <h2 className="font-arabic text-4xl font-extrabold tracking-tight text-[var(--color-text)]">كيف نبدأ مشروعك؟</h2>
+          <p className="mx-auto mt-4 max-w-2xl font-arabic text-sm leading-8 text-[var(--color-muted)]">
+            خطوات بسيطة وواضحة من أول رسالة حتى التسليم.
+          </p>
+        </div>
+
+        <div dir="rtl" className="mt-10 grid gap-5 md:grid-cols-3">
+          {workflow.map(({ icon: Icon, title, description }, index) => (
+            <article key={title} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
+                  <Icon size={22} />
+                </div>
+                <span className="font-english text-sm font-bold text-[var(--color-muted)]">0{index + 1}</span>
+              </div>
+              <h3 className="mt-5 font-arabic text-xl font-extrabold text-[var(--color-text)]">{title}</h3>
+              <p className="mt-3 font-arabic text-sm leading-7 text-[var(--color-muted)]">{description}</p>
+            </article>
+          ))}
+        </div>
+      </MotionSection>
+
+      <MotionSection className="mx-[calc(50%-50vw)] w-screen py-20">
+        <div dir="rtl" className="border-y border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-14 text-center md:px-10">
+          <div className="mx-auto max-w-6xl">
+            <h2 className="font-arabic text-4xl font-extrabold tracking-tight text-[var(--color-text)]">
+              جاهز تحوّل فكرتك إلى مشروع يعمل؟
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl font-arabic text-sm leading-7 text-[var(--color-muted)]">
+              أرسل فكرتك حتى لو كانت غير مرتبة، وسنساعدك على تحديد الخطوة المناسبة.
+            </p>
+            <div className="mt-7">
+              <Link href="/project-request" className="inline-flex items-center justify-center rounded-xl bg-[var(--color-accent)] px-6 py-3 font-arabic text-sm font-extrabold text-black transition hover:opacity-90">
+                اطلب مشروعك
+              </Link>
+            </div>
           </div>
         </div>
       </MotionSection>

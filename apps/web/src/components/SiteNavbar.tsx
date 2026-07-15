@@ -11,9 +11,8 @@ const SUPPORT_URL = 'https://discord.gg/WRL';
 
 const links: [string, string][] = [
   ['الرئيسية', '/'],
-  ['الأوامر', '/commands'],
+  ['Bots', '/bots'],
   ['اطلب مشروعك', '/project-request'],
-  ['الأسعار', '/pricing'],
   ['الدعم الفني', SUPPORT_URL],
 ];
 

@@ -31,6 +31,7 @@ const EMPTY: SiteStatus = {
 
 function pageLabel(path: string): string {
   if (path === '/') return 'الرئيسية';
+  if (path.startsWith('/bots')) return 'البوتات والأسعار';
   if (path.startsWith('/pricing')) return 'الأسعار';
   if (path.startsWith('/product')) return 'صفحة منتج';
   if (path.startsWith('/cart')) return 'السلة';

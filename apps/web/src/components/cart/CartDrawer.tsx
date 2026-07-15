@@ -61,7 +61,7 @@ export function CartDrawer() {
                   <p className="font-arabic text-base font-bold text-opus-text">سلتك فارغة</p>
                   <p className="text-sm text-opus-muted">أضف منتجاً للبدء.</p>
                   <Link
-                    href="/pricing"
+                    href="/bots#prices"
                     onClick={closeCart}
                     className="mt-2 rounded-xl border border-opus-accent px-4 py-2 font-arabic text-sm font-bold text-opus-accent transition hover:bg-opus-accent hover:text-black"
                   >

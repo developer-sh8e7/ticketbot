@@ -32,22 +32,22 @@ function metadataBaseUrl() {
 export const metadata: Metadata = {
   metadataBase: metadataBaseUrl(),
   title: {
-    default: 'Opus Solutions — بوتات Discord عربية احترافية',
-    template: '%s — Opus Solutions',
+    default: 'Opus لتصميم مشروعك',
+    template: '%s — Opus',
   },
-  description: 'بوتات Discord عربية احترافية — Bot Ticket، SystemBot، HumanGuard AI، وتطوير بوتات مخصصة.',
+  description: 'تصميم وتطوير مواقع وأنظمة وبرامج لمشاريع الطلاب والأعمال والمشاريع العامة — من الفكرة إلى مشروع جاهز للاستخدام.',
   openGraph: {
-    title: 'Opus Solutions — بوتات Discord عربية احترافية',
-    description: 'حلول بوتات Discord عربية لإدارة وتنمية سيرفراتك — Bot Ticket، SystemBot، HumanGuard AI، وتطوير مخصص.',
+    title: 'Opus لتصميم مشروعك',
+    description: 'نصمم ونطوّر مشروعك: مواقع وأنظمة وبرامج للطلاب وأصحاب الأفكار والأعمال، من الفكرة إلى مشروع جاهز.',
     type: 'website',
     locale: 'ar_SA',
-    siteName: 'Opus Solutions',
-    images: [{ url: '/og-opus.svg', width: 1200, height: 630, alt: 'Opus Solutions preview' }],
+    siteName: 'Opus',
+    images: [{ url: '/og-opus.svg', width: 1200, height: 630, alt: 'Opus لتصميم مشروعك' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Opus Solutions — بوتات Discord عربية احترافية',
-    description: 'بوتات Discord عربية — حلول متكاملة لسيرفراتك.',
+    title: 'Opus لتصميم مشروعك',
+    description: 'مواقع وأنظمة وبرامج لمشاريع الطلاب والأعمال والمشاريع العامة.',
     images: ['/og-opus.svg'],
   },
   icons: {

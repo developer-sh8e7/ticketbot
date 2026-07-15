@@ -66,7 +66,7 @@ export function ProductBuyRow({ product, soldOut }: { product: BuyProduct; soldO
 
       <div className="mt-4 flex items-stretch gap-2">
         <Link
-          href={`/pricing?product=${product.key}&duration=${duration}`}
+          href={`/bots?product=${product.key}&duration=${duration}#prices`}
           className="flex-1 inline-flex items-center justify-center rounded-xl bg-[var(--color-accent)] px-4 py-3 font-arabic text-sm font-extrabold text-black transition hover:-translate-y-0.5 hover:opacity-90"
         >
           اشترِ الآن — ${amount}

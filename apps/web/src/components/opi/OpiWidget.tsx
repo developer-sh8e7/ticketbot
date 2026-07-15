@@ -15,7 +15,7 @@ const GREETED_KEY = 'opi_greeted';
 const SLEEP_AFTER_MS = 45_000;
 
 const PAGE_LINES: { match: (p: string) => boolean; text: string }[] = [
-  { match: (p) => p.startsWith('/pricing'), text: 'وصلت صفحة الأسعار! لو محتار أي باقة تناسب سيرفرك، اسألني.' },
+  { match: (p) => p.startsWith('/bots') || p.startsWith('/pricing'), text: 'وصلت صفحة البوتات والأسعار! لو محتار أي باقة تناسب سيرفرك، اسألني.' },
   { match: (p) => p.startsWith('/product/ticket'), text: 'بوت التذاكر — الأكثر طلباً عندنا. تبي أشرح لك مميزاته؟' },
   { match: (p) => p.startsWith('/product/humanguard'), text: 'HumanGuard AI يحمي سيرفرك بالذكاء الاصطناعي. اسألني عنه!' },
   { match: (p) => p.startsWith('/product/'), text: 'اختيار موفق! لو عندك سؤال عن هذا البوت أنا حاضر.' },

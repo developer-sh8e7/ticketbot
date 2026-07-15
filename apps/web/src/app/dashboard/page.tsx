@@ -118,14 +118,14 @@ function BotCard({ bot }: { bot: OwnedBot }) {
 
       {bot.status !== 'active' ? (
         <a
-          href="/pricing"
+          href="/bots#prices"
           className="mt-3 inline-flex rounded-xl bg-opus-accent px-4 py-2 font-arabic text-sm font-extrabold text-black transition hover:opacity-90"
         >
           تجديد الاشتراك
         </a>
       ) : remaining !== null && remaining <= 7 ? (
         <a
-          href="/pricing"
+          href="/bots#prices"
           className="mt-3 inline-flex rounded-xl border border-amber-500/50 px-4 py-2 font-arabic text-sm font-bold text-amber-300 transition hover:bg-amber-500/10"
         >
           ينتهي قريباً — جدّد الآن
@@ -238,7 +238,7 @@ export default async function DashboardPage() {
             <p className="font-arabic text-base font-bold text-opus-text">لا توجد اشتراكات بعد</p>
             <p className="mt-2 font-arabic text-sm text-opus-muted">اشترِ منتجاً لتفعيل أول بوت على سيرفرك.</p>
             <a
-              href="/pricing"
+              href="/bots#prices"
               className="mt-5 inline-flex rounded-xl bg-opus-accent px-6 py-3 font-arabic text-sm font-extrabold text-black transition hover:opacity-90"
             >
               تصفّح المنتجات

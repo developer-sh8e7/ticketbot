@@ -32,6 +32,8 @@ type HomeProduct = {
 
 type HomeProductsGridProps = {
   products: HomeProduct[];
+  title?: string;
+  description?: string;
 };
 
 const icons: Record<ProductKey, LucideIcon> = {
@@ -114,7 +116,11 @@ function AddToCartButton({ product }: { product: HomeProduct }) {
   );
 }
 
-export function HomeProductsGrid({ products }: HomeProductsGridProps) {
+export function HomeProductsGrid({
+  products,
+  title = 'منتجاتنا',
+  description = 'حلول جاهزة لبوتات Discord، أو مشروع مخصص نبنيه حول فكرتك واحتياجك.',
+}: HomeProductsGridProps) {
   return (
     <motion.section
       dir="rtl"
@@ -125,10 +131,10 @@ export function HomeProductsGrid({ products }: HomeProductsGridProps) {
       variants={container}
     >
       <motion.h2 variants={card} className="text-center font-arabic text-4xl font-extrabold tracking-tight text-[var(--color-text)]">
-        منتجاتنا
+        {title}
       </motion.h2>
       <motion.p variants={card} className="mx-auto mt-3 max-w-xl text-center text-sm leading-7 text-[var(--color-muted)]">
-        حلول جاهزة لبوتات Discord، أو مشروع مخصص نبنيه حول فكرتك واحتياجك.
+        {description}
       </motion.p>
 
       <motion.div variants={container} className="mt-10 grid gap-5 md:grid-cols-2">

@@ -52,7 +52,7 @@ export function Footer() {
               ))}
             </div>
           </div>
-          <FooterGroup title="الصفحات" links={[['الرئيسية', '/'], ['الأوامر', '/commands'], ['اطلب مشروعك', '/project-request'], ['الأسعار', '/pricing'], ['لوحة التحكم', '/dashboard']]} />
+          <FooterGroup title="الصفحات" links={[['الرئيسية', '/'], ['Bots', '/bots'], ['اطلب مشروعك', '/project-request'], ['لوحة التحكم', '/dashboard']]} />
           <FooterGroup title="الشروط والسياسات" links={[['شروط الاستخدام', '/terms'], ['سياسة الخصوصية', '/privacy'], ['الإلغاء والاسترداد', '/cancellation']]} />
         </div>
         <div className="mt-12 border-t border-[var(--color-border)] pt-6 text-center text-xs text-[var(--color-muted)]">

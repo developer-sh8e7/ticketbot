@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 
 function labelFor(path: string) {
   if (path === '/') return 'الرئيسية';
+  if (path.startsWith('/bots')) return 'البوتات والأسعار';
   if (path.startsWith('/pricing')) return 'الأسعار';
   if (path.startsWith('/product')) return 'منتج';
   if (path.startsWith('/cart')) return 'السلة';
