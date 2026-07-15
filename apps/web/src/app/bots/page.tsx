@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, SquareTerminal } from 'lucide-react';
 import { FaqAccordion } from '@/components/FaqAccordion';
@@ -10,6 +11,12 @@ import { products } from '@/lib/site-content';
 import { getPublicStock } from '@/lib/public-stock';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'BOTS Discord',
+  description: 'بوتات Discord عربية للتذاكر والإدارة والحماية والرومات المؤقتة مع أسعار واشتراكات واضحة.',
+  alternates: { canonical: '/bots' },
+};
 
 export default async function BotsPage() {
   const botProducts = products().filter((product) => product.key !== 'custom');

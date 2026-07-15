@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, CheckCircle2, Loader2, MessageCircle, Plus, Send, Trash2, UserRound } from 'lucide-react';
 import { ProjectFormScene3D } from '@/components/ProjectFormScene3D';
+import { trackMarketingEvent } from '@/lib/client-analytics';
 
 type RequestItem = {
   id: string;
@@ -37,11 +38,10 @@ const featureOptions = [
   ['unsure', 'غير متأكد'],
 ] as const;
 const budgetOptions = [
-  ['under_1000', 'أقل من 1,000 ريال'],
-  ['from_1000_to_3000', '1,000–3,000 ريال'],
-  ['from_3000_to_7000', '3,000–7,000 ريال'],
-  ['above_7000', 'أكثر من 7,000 ريال'],
-  ['unsure', 'غير متأكد'],
+  ['needs_estimate', 'أحتاج تقدير منكم'],
+  ['flexible', 'مرنة حسب الحل المناسب'],
+  ['has_budget', 'عندي ميزانية محددة'],
+  ['discuss_later', 'نناقشها بعد مراجعة الفكرة'],
 ] as const;
 
 export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boolean }) {
@@ -68,6 +68,24 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
   const [error, setError] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastTypingSentAt = useRef(0);
+  const formStartedTracked = useRef(false);
+
+  useEffect(() => {
+    if (ownerMode || !showForm) return;
+    const audience = new URLSearchParams(window.location.search).get('for') || 'general';
+    try {
+      if (sessionStorage.getItem('opus_project_form_viewed')) return;
+      sessionStorage.setItem('opus_project_form_viewed', '1');
+    } catch {}
+    trackMarketingEvent('project_form_viewed', { path: window.location.pathname, audience });
+  }, [ownerMode, showForm]);
+
+  function trackFormStarted() {
+    if (formStartedTracked.current) return;
+    formStartedTracked.current = true;
+    const audience = new URLSearchParams(window.location.search).get('for') || 'general';
+    trackMarketingEvent('project_form_started', { path: window.location.pathname, audience });
+  }
 
   const loadRequests = useCallback(async (quiet = false) => {
     if (!quiet) setLoading(true);
@@ -257,7 +275,7 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
             </div>
           </div>
         ) : showForm && !ownerMode ? (
-          <form onSubmit={createRequest} className="grid lg:grid-cols-[300px_1fr]">
+          <form onSubmit={createRequest} onFocusCapture={trackFormStarted} className="grid lg:grid-cols-[300px_1fr]">
             <aside className="relative overflow-hidden border-b border-[var(--color-border)] bg-[var(--color-bg)]/55 p-5 lg:border-b-0 lg:border-l lg:p-6">
               <div className="pointer-events-none h-52 sm:h-60 lg:h-72" aria-hidden="true">
                 <ProjectFormScene3D step={1} />
@@ -305,12 +323,12 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
                   <div><p className="font-english text-[10px] font-bold tracking-[0.18em] text-[var(--color-accent)]">02</p><h3 className="mt-1 font-arabic text-lg font-extrabold text-[var(--color-text)]">فكرة المشروع</h3></div>
                   <label className="grid gap-1.5">
                     <span className="font-arabic text-sm font-bold text-[var(--color-text)]">وش فكرة مشروعك؟</span>
-                    <textarea required minLength={10} maxLength={2500} rows={6} value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="مثال: أبي منصة حجوزات يختار فيها العميل الخدمة والموعد ويوصلني إشعار..." className="input resize-y font-arabic leading-7" />
+                    <textarea required minLength={10} maxLength={2500} rows={6} value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="مثال: أبي منصة خدمات يختار فيها العميل طلبه ويدفع ويوصلني إشعار..." className="input resize-y font-arabic leading-7" />
                     <span dir="ltr" className="text-left font-english text-[11px] text-[var(--color-muted)]">{idea.length} / 2500</span>
                   </label>
                   <label className="grid gap-1.5">
                     <span className="font-arabic text-sm font-bold text-[var(--color-text)]">وش أهم نتيجة لازم يحققها؟</span>
-                    <textarea required minLength={5} maxLength={1500} rows={4} value={mainGoal} onChange={(e) => setMainGoal(e.target.value)} placeholder="مثال: العميل يحجز ويدفع بسهولة وأنا أتابع كل الطلبات من مكان واحد." className="input resize-y font-arabic leading-7" />
+                    <textarea required minLength={5} maxLength={1500} rows={4} value={mainGoal} onChange={(e) => setMainGoal(e.target.value)} placeholder="مثال: العميل يطلب ويدفع بسهولة وأنا أتابع كل الطلبات من مكان واحد." className="input resize-y font-arabic leading-7" />
                   </label>
                 </section>
 

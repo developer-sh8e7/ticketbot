@@ -14,6 +14,7 @@ export type SiteStatus = {
   devices: { desktop: number; mobile: number; tablet: number };
   topReferers: { referer: string; count: number }[];
   funnel: { visitors: number; viewedPricing: number; reachedCart: number; loggedIn: number; purchases: number };
+  projectFunnel: { viewed: number; started: number; submitted: number; whatsappClicks: number };
   events30d: { orderCreated: number; purchaseSuccess: number; captureError: number; pending: number };
   recentEvents: { type: string; at: string }[];
 };
@@ -25,6 +26,7 @@ const EMPTY: SiteStatus = {
   devices: { desktop: 0, mobile: 0, tablet: 0 },
   topReferers: [],
   funnel: { visitors: 0, viewedPricing: 0, reachedCart: 0, loggedIn: 0, purchases: 0 },
+  projectFunnel: { viewed: 0, started: 0, submitted: 0, whatsappClicks: 0 },
   events30d: { orderCreated: 0, purchaseSuccess: 0, captureError: 0, pending: 0 },
   recentEvents: [],
 };
@@ -101,10 +103,30 @@ export async function getVisitorInfo(): Promise<VisitorInfo> {
 }
 
 export async function getSiteStatus(): Promise<SiteStatus> {
-  const { data, error } = await supabaseAdmin().rpc('get_site_status');
+  const supabase = supabaseAdmin();
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60_000).toISOString();
+  const countEvent = (eventType: string) => supabase
+    .from('website_events')
+    .select('id', { count: 'exact', head: true })
+    .eq('event_type', eventType)
+    .gte('created_at', since);
+  const [statusResult, viewedResult, startedResult, submittedResult, whatsappResult] = await Promise.all([
+    supabase.rpc('get_site_status'),
+    countEvent('project_form_viewed'),
+    countEvent('project_form_started'),
+    countEvent('project_request_submitted'),
+    countEvent('whatsapp_click'),
+  ]);
+  const { data, error } = statusResult;
+  const projectFunnel = {
+    viewed: viewedResult.count ?? 0,
+    started: startedResult.count ?? 0,
+    submitted: submittedResult.count ?? 0,
+    whatsappClicks: whatsappResult.count ?? 0,
+  };
   if (error || !data || typeof data !== 'object') {
     if (error) console.warn('[analytics] get_site_status RPC failed (run the schema):', error.message);
-    return EMPTY;
+    return { ...EMPTY, projectFunnel };
   }
 
   const d = data as Record<string, any>;
@@ -133,6 +155,7 @@ export async function getSiteStatus(): Promise<SiteStatus> {
       loggedIn: num(f.loggedIn),
       purchases: num(f.purchases),
     },
+    projectFunnel,
     events30d: {
       orderCreated: num(e.orderCreated),
       purchaseSuccess: num(e.purchaseSuccess),

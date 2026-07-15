@@ -4,6 +4,7 @@ import { NextRequest } from 'next/server';
 import { fail, internalError, ok } from '@/lib/api-response';
 import { verifyCsrf } from '@/lib/csrf';
 import { encryptField, hashField } from '@/lib/encryption';
+import { logWebsiteEvent } from '@/lib/events';
 import { newProjectAccessToken, readProjectAccesses, setProjectAccessCookie } from '@/lib/project-access';
 import { notifyOwnerOfProjectRequest } from '@/lib/project-notifications';
 import {
@@ -37,11 +38,10 @@ const FEATURE_LABELS: Record<string, string> = {
 };
 
 const BUDGET_LABELS: Record<string, string> = {
-  under_1000: 'أقل من 1,000 ريال',
-  from_1000_to_3000: '1,000–3,000 ريال',
-  from_3000_to_7000: '3,000–7,000 ريال',
-  above_7000: 'أكثر من 7,000 ريال',
-  unsure: 'غير متأكد',
+  needs_estimate: 'أحتاج تقدير منكم',
+  flexible: 'مرنة حسب الحل المناسب',
+  has_budget: 'عندي ميزانية محددة',
+  discuss_later: 'نناقشها بعد مراجعة الفكرة',
 };
 
 export async function GET(req: NextRequest) {
@@ -147,6 +147,7 @@ export async function POST(req: NextRequest) {
     if (messageError) throw messageError;
 
     await notifyOwnerOfProjectRequest({ requestId: insertedId, requesterName: name, kind: 'created' });
+    await logWebsiteEvent({ eventType: 'project_request_submitted', message: 'Project request submitted' });
     const response = ok({ request: publicProjectRequest(requestRow as ProjectRequestRow) }, { status: 201 });
     setProjectAccessCookie(req, response, insertedId, accessToken);
     return response;

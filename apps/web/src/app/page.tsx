@@ -8,8 +8,12 @@ import {
   LayoutTemplate,
   LifeBuoy,
   ListChecks,
+  Network,
   PanelsTopLeft,
   Rocket,
+  TimerReset,
+  UsersRound,
+  Workflow,
 } from 'lucide-react';
 import { HomeHero } from '@/components/HomeHero';
 import { GeometricBanner } from '@/components/GeometricBanner';
@@ -31,7 +35,7 @@ const audiences = [
     banner: 'general' as const,
     title: 'للمشاريع العامة',
     description: 'موقع أو نظام أو أداة رقمية تُبنى حول فكرتك، سواء كانت بسيطة أو تحتاج مراحل متعددة.',
-    points: ['مواقع تعريفية وخدمية', 'أنظمة حجوزات وطلبات', 'لوحات تحكم وأدوات داخلية'],
+    points: ['مواقع تعريفية وخدمية', 'منصات خدمات وطلبات', 'لوحات تحكم وأدوات داخلية'],
   },
   {
     icon: BriefcaseBusiness,
@@ -68,6 +72,13 @@ const deliverables = [
   { icon: PanelsTopLeft, banner: 'experience' as const, title: 'تجربة مرتبة', description: 'واجهة مفهومة مصممة حول المستخدم والهدف الحقيقي للمشروع.' },
   { icon: Rocket, banner: 'delivery' as const, title: 'إطلاق فعلي', description: 'لا نقف عند التصميم؛ نجهّز المشروع ليعمل ويصل لمستخدميه.' },
   { icon: LifeBuoy, banner: 'support' as const, title: 'دعم بعد التسليم', description: 'نوضح لك طريقة الاستخدام ونبقى معك حسب اتفاق المشروع.' },
+] as const;
+
+const pricingFactors = [
+  { icon: Workflow, title: 'نطاق المشروع', description: 'عدد الصفحات والوظائف والعمليات المطلوبة.' },
+  { icon: Network, title: 'الربط والتكاملات', description: 'الدفع، الرسائل، الأنظمة الخارجية وأي خدمات مرتبطة.' },
+  { icon: UsersRound, title: 'حجم الاستخدام', description: 'عدد المستخدمين والصلاحيات وطبيعة التشغيل.' },
+  { icon: TimerReset, title: 'المدة المطلوبة', description: 'الجدول الزمني ومراحل التسليم المناسبة للمشروع.' },
 ] as const;
 
 export default function HomePage() {
@@ -147,6 +158,28 @@ export default function HomePage() {
                 </article>
               ))}
             </MotionGrid>
+          </div>
+        </MotionSection>
+
+        <MotionSection className="py-20">
+          <div dir="rtl" className="overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+            <div className="grid gap-8 p-6 md:p-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+              <div>
+                <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">كيف نحسب التكلفة؟</p>
+                <h2 className="mt-3 text-balance font-arabic text-3xl font-extrabold leading-tight text-[var(--color-text)] md:text-4xl">تسعير على قد مشروعك، مو رقم عشوائي</h2>
+                <p className="mt-4 font-arabic text-sm leading-8 text-[var(--color-muted)]">ما نحط سعرًا ثابتًا على أفكار مختلفة. نفهم المشروع أول، نحدد نطاقه، وبعدها نعطيك عرضًا واضحًا قبل ما نبدأ.</p>
+                <Link href="/project-request" className="mt-6 inline-flex rounded-xl bg-[var(--color-accent)] px-5 py-3 font-arabic text-sm font-extrabold text-black transition hover:-translate-y-0.5 hover:opacity-90">خذ تقدير لمشروعك</Link>
+              </div>
+              <MotionGrid className="grid gap-3 sm:grid-cols-2">
+                {pricingFactors.map(({ icon: Icon, title, description }) => (
+                  <article key={title} className="h-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5">
+                    <Icon size={20} className="text-[var(--color-accent)]" />
+                    <h3 className="mt-3 font-arabic text-sm font-extrabold text-[var(--color-text)]">{title}</h3>
+                    <p className="mt-2 font-arabic text-xs leading-6 text-[var(--color-muted)]">{description}</p>
+                  </article>
+                ))}
+              </MotionGrid>
+            </div>
           </div>
         </MotionSection>
 

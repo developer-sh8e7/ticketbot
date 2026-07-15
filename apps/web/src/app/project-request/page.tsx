@@ -1,4 +1,5 @@
-import { CalendarDays, GraduationCap, LayoutDashboard, Lightbulb, PanelsTopLeft, Smartphone } from 'lucide-react';
+import type { Metadata } from 'next';
+import { BriefcaseBusiness, GraduationCap, LayoutDashboard, Lightbulb, PanelsTopLeft, Smartphone } from 'lucide-react';
 import { ProjectRequestBackdrop } from '@/components/ProjectRequestBackdrop';
 import { ProjectRequestsClient } from '@/components/ProjectRequestsClient';
 import { MotionSection } from '@/components/MotionSection';
@@ -6,11 +7,17 @@ import { PublicFrame } from '@/components/ui';
 
 export const dynamic = 'force-dynamic';
 
+export const metadata: Metadata = {
+  title: 'حوّل فكرتك إلى مشروع',
+  description: 'أرسل فكرة موقعك أو نظامك أو تطبيقك، ونراجع المتطلبات ونجهز لك نطاقًا وتقديرًا واضحًا قبل البدء.',
+  alternates: { canonical: '/project-request' },
+};
+
 const serviceTypes = [
   [GraduationCap, 'مشاريع الطلاب'],
   [Lightbulb, 'مشاريع عامة'],
   [PanelsTopLeft, 'مواقع'],
-  [CalendarDays, 'أنظمة حجوزات'],
+  [BriefcaseBusiness, 'حلول أعمال'],
   [LayoutDashboard, 'لوحات تحكم'],
   [Smartphone, 'تطبيقات وأدوات'],
 ] as const;

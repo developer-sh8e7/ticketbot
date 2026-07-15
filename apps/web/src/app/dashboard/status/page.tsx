@@ -20,6 +20,10 @@ const EVENT_LABEL: Record<string, string> = {
   bot_profile_update: 'تعديل بروفايل بوت',
   unauthorized_owner_access: 'محاولة وصول غير مصرّح',
   config_update: 'تحديث إعدادات',
+  project_form_viewed: 'مشاهدة نموذج مشروع',
+  project_form_started: 'بدء تعبئة نموذج مشروع',
+  project_request_submitted: 'إرسال طلب مشروع',
+  whatsapp_click: 'ضغط زر واتساب',
 };
 
 function fmtNum(n: number) {
@@ -113,6 +117,7 @@ export default async function StatusPage() {
 
   const [status, stats] = await Promise.all([getSiteStatus(), getAdminStats()]);
   const f = status.funnel;
+  const pf = status.projectFunnel;
   const maxPage = Math.max(1, ...status.topPages.map((p) => p.count));
   const maxRef = Math.max(1, ...status.topReferers.map((r) => r.count));
   const checkoutConv = pct(status.events30d.purchaseSuccess, status.events30d.orderCreated);
@@ -155,6 +160,23 @@ export default async function StatusPage() {
       {/* Visits chart */}
       <section className="mt-4">
         <VisitsChart data={status.visitsByDay} />
+      </section>
+
+      <section className="mt-4">
+        <div className="opus-card p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="font-arabic text-sm font-extrabold text-opus-text">مسار طلبات المشاريع — آخر 30 يوم</h3>
+              <p className="mt-1 font-arabic text-[11px] text-opus-muted">يوضح أين يبدأ العميل وأين يوقف قبل إرسال الطلب.</p>
+            </div>
+            <span className="font-arabic text-xs font-bold text-opus-accent">{fmtNum(pf.whatsappClicks)} ضغطة واتساب</span>
+          </div>
+          <div className="mt-5 grid gap-4 lg:grid-cols-3">
+            <FunnelRow label="فتحوا نموذج المشروع" value={pf.viewed} base={Math.max(1, pf.viewed)} />
+            <FunnelRow label="بدأوا يعبّون النموذج" value={pf.started} base={Math.max(1, pf.viewed)} />
+            <FunnelRow label="أرسلوا طلبهم" value={pf.submitted} base={Math.max(1, pf.viewed)} />
+          </div>
+        </div>
       </section>
 
       <section className="mt-4 grid gap-4 lg:grid-cols-2">

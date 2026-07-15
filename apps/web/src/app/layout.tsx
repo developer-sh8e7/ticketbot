@@ -5,6 +5,7 @@ import { VisitLogger } from '@/components/VisitLogger';
 import { CartProvider } from '@/components/cart/CartProvider';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { OpiRoot } from '@/components/opi/OpiRoot';
+import { WhatsAppButton } from '@/components/WhatsAppButton';
 
 const arabicFont = Cairo({
   subsets: ['arabic'],
@@ -31,10 +32,12 @@ function metadataBaseUrl() {
 
 export const metadata: Metadata = {
   metadataBase: metadataBaseUrl(),
+  alternates: { canonical: '/' },
   title: {
     default: 'Opus لتصميم مشروعك',
     template: '%s — Opus',
   },
+  keywords: ['تطوير مشروع', 'برمجة موقع', 'تطوير فكرة تطبيق', 'مشروع تخرج برمجي', 'تصميم لوحة تحكم', 'برمجة نظام مخصص'],
   description: 'تصميم وتطوير مواقع وأنظمة وبرامج لمشاريع الطلاب والأعمال والمشاريع العامة — من الفكرة إلى مشروع جاهز للاستخدام.',
   openGraph: {
     title: 'Opus لتصميم مشروعك',
@@ -42,13 +45,13 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'ar_SA',
     siteName: 'Opus',
-    images: [{ url: '/og-opus.svg', width: 1200, height: 630, alt: 'Opus لتصميم مشروعك' }],
+    images: [{ url: '/og-opus.png', width: 1200, height: 630, alt: 'Opus لتصميم مشروعك' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Opus لتصميم مشروعك',
     description: 'مواقع وأنظمة وبرامج لمشاريع الطلاب والأعمال والمشاريع العامة.',
-    images: ['/og-opus.svg'],
+    images: ['/og-opus.png'],
   },
   icons: {
     icon: '/icon.png',
@@ -56,15 +59,36 @@ export const metadata: Metadata = {
   },
 };
 
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': ['Organization', 'ProfessionalService'],
+  name: 'Opus Solutions',
+  url: 'https://opussolutions.xyz',
+  logo: 'https://i.imgur.com/0404vFj.png',
+  image: 'https://opussolutions.xyz/og-opus.png',
+  telephone: '+966597232969',
+  areaServed: { '@type': 'Country', name: 'Saudi Arabia' },
+  availableLanguage: ['ar'],
+  serviceType: ['تطوير المواقع', 'برمجة الأنظمة المخصصة', 'تطوير أفكار التطبيقات', 'مشاريع الطلاب التقنية'],
+  contactPoint: {
+    '@type': 'ContactPoint',
+    telephone: '+966597232969',
+    contactType: 'customer service',
+    availableLanguage: ['Arabic'],
+  },
+};
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ar" dir="rtl">
       <body className={`${arabicFont.variable} ${englishFont.variable}`}>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
         <CartProvider>
           <VisitLogger />
           <div className="opus-grid" aria-hidden="true" />
           {children}
           <CartDrawer />
+          <WhatsAppButton />
           <OpiRoot />
         </CartProvider>
       </body>
