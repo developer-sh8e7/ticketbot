@@ -30,7 +30,7 @@ export function HomeHero() {
       <div className="mx-auto grid w-full max-w-7xl items-center gap-8 lg:grid-cols-[1.04fr_0.96fr]">
         <motion.div variants={container} initial="hidden" animate="show" dir="rtl" className="relative z-10 text-center lg:text-right">
           <motion.p variants={item} className="font-arabic text-sm font-bold text-[var(--color-accent)]">
-            من الفكرة إلى مشروع جاهز
+            Opus Solutions — من الفكرة إلى مشروع جاهز
           </motion.p>
 
           <motion.h1 variants={item} className="mt-5 text-balance font-arabic text-5xl font-extrabold leading-tight tracking-tight text-[var(--color-text)] md:text-7xl">
