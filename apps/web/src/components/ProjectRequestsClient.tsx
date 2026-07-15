@@ -55,7 +55,7 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
   const [showForm, setShowForm] = useState(!ownerMode);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
   const [name, setName] = useState('');
-  const [contactMethod, setContactMethod] = useState<'whatsapp' | 'discord'>('whatsapp');
+  const [contactMethod, setContactMethod] = useState<'whatsapp' | 'email'>('whatsapp');
   const [contact, setContact] = useState('');
   const [idea, setIdea] = useState('');
   const [mainGoal, setMainGoal] = useState('');
@@ -249,11 +249,10 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
               </span>
               <h2 className="mt-6 font-arabic text-2xl font-extrabold text-[var(--color-text)]">تم استلام فكرتك ✅</h2>
               <p className="mt-3 font-arabic text-sm leading-7 text-[var(--color-muted)]">سنراجع الطلب ونتواصل معك قريباً بالتفاصيل والتكلفة قبل بدء العمل.</p>
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <button type="button" onClick={() => { setSubmittedId(null); setShowForm(false); }} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-5 py-3 font-arabic text-sm font-extrabold text-black transition hover:-translate-y-0.5"><MessageCircle size={17} /> متابعة المحادثة</button>
-                <a href="/api/auth/discord?returnTo=/project-request" className="inline-flex items-center justify-center rounded-xl border border-[#5865F2]/60 px-5 py-3 font-arabic text-sm font-bold text-[#aeb4ff] transition hover:bg-[#5865F2]/10">تسجيل الدخول للمتابعة</a>
+              <div className="mt-6">
+                <button type="button" onClick={() => { setSubmittedId(null); setShowForm(false); }} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-5 py-3 font-arabic text-sm font-extrabold text-black transition hover:-translate-y-0.5"><MessageCircle size={17} /> متابعة المحادثة</button>
               </div>
-              <p className="mt-3 font-arabic text-xs text-[var(--color-muted)]">تسجيل الدخول اختياري — يمكنك متابعة المحادثة من هذا الجهاز بدونه.</p>
+              <p className="mt-3 font-arabic text-xs text-[var(--color-muted)]">يمكنك متابعة المحادثة من هذا الجهاز في أي وقت.</p>
             </div>
           </div>
         ) : showForm && !ownerMode ? (
@@ -271,14 +270,14 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
               <div className="grid gap-1.5">
                 <span className="font-arabic text-sm font-bold text-[var(--color-text)]">طريقة التواصل</span>
                 <div className="grid grid-cols-2 gap-2">
-                  {([['whatsapp', 'واتساب'], ['discord', 'Discord']] as const).map(([value, label]) => (
+                  {([['whatsapp', 'واتساب'], ['email', 'البريد الإلكتروني']] as const).map(([value, label]) => (
                     <button key={value} type="button" onClick={() => setContactMethod(value)} className={`rounded-xl border px-3 py-2.5 font-arabic text-sm font-bold transition ${contactMethod === value ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-accent-2)]' : 'border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-accent)]/50'}`}>{label}</button>
                   ))}
                 </div>
               </div>
               <label className="grid gap-1.5 sm:col-span-2">
-                <span className="font-arabic text-sm font-bold text-[var(--color-text)]">{contactMethod === 'whatsapp' ? 'رقم واتساب' : 'اسم مستخدم أو ID في Discord'}</span>
-                <input required minLength={3} maxLength={100} value={contact} onChange={(e) => setContact(e.target.value)} placeholder={contactMethod === 'whatsapp' ? 'مثال: 05xxxxxxxx' : 'مثال: username أو Discord ID'} dir="ltr" className="input font-english text-left" />
+                <span className="font-arabic text-sm font-bold text-[var(--color-text)]">{contactMethod === 'whatsapp' ? 'رقم واتساب' : 'البريد الإلكتروني'}</span>
+                <input required minLength={3} maxLength={100} type={contactMethod === 'email' ? 'email' : 'text'} value={contact} onChange={(e) => setContact(e.target.value)} placeholder={contactMethod === 'whatsapp' ? 'مثال: 05xxxxxxxx' : 'name@example.com'} dir="ltr" className="input font-english text-left" />
               </label>
             </div>
 
@@ -352,7 +351,7 @@ export function ProjectRequestsClient({ ownerMode = false }: { ownerMode?: boole
                     <p className="mt-1 font-english text-[10px] text-[var(--color-muted)]">{selected.requesterDiscordId ? `Discord: ${selected.requesterDiscordId}` : 'زائر بدون تسجيل دخول'}</p>
                   </div>
                   <div>
-                    <p className="font-arabic text-[10px] font-bold text-[var(--color-muted)]">رقم التواصل</p>
+                    <p className="font-arabic text-[10px] font-bold text-[var(--color-muted)]">بيانات التواصل</p>
                     <p className="mt-1 break-all font-english text-sm text-[var(--color-text)]">{selected.phone || 'لم يُضف رقماً'}</p>
                   </div>
                   <div className="sm:col-span-1">

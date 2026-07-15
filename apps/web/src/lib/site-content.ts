@@ -6,7 +6,7 @@ export const site = {
   socialDiscord: 'https://discord.gg/WRL',
   socialYoutube: '#',
   socialEmail: '#',
-  tagline: 'نحوّل الأفكار إلى مواقع وأنظمة وبرامج وبوتات تعمل.'
+  tagline: 'نحوّل الأفكار إلى مشاريع رقمية واضحة وجاهزة للاستخدام.'
 };
 
 export function extractPriceFromLabel(priceLabel: string) {
@@ -161,7 +161,7 @@ export function products(): Product[] {
       name: 'مشروع مخصص',
       icon: 'Code2',
       shortName: 'مشروع مخصص',
-      shortDescription: 'موقع، نظام، برنامج أو بوت يُبنى حسب فكرتك واحتياجك.',
+      shortDescription: 'مشروع رقمي يُبنى حسب فكرتك واحتياجك.',
       description: 'نراجع فكرتك ومتطلباتك، ثم نحدد معك نطاق العمل والمدة والتكلفة قبل بدء التطوير.',
       priceLabel: 'السعر حسب المتطلبات',
       price_monthly: 0,

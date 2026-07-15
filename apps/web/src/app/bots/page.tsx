@@ -39,7 +39,7 @@ export default async function BotsPage() {
   return (
     <PublicFrame>
       <section dir="rtl" className="mx-auto max-w-3xl py-12 text-center md:py-16">
-        <p className="font-english text-sm font-bold uppercase tracking-[0.24em] text-[var(--color-accent)]">Opus Bots</p>
+        <p className="font-english text-sm font-bold tracking-[0.18em] text-[var(--color-accent)]">BOTS Discord</p>
         <h1 className="mt-4 text-balance font-arabic text-4xl font-extrabold leading-tight text-[var(--color-text)] md:text-6xl">
           بوتات Discord جاهزة لسيرفرك
         </h1>

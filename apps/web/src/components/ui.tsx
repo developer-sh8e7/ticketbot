@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { Bot, BrainCircuit, Code2, FileText, Hash, Mail, MessageCircle, PlayCircle, ShieldCheck, Ticket, Undo2, UserCheck, UserPlus, Settings2 } from 'lucide-react';
+import { Bot, BrainCircuit, Code2, FileText, ShieldCheck, Ticket, Undo2, UserCheck, UserPlus, Settings2 } from 'lucide-react';
 import { SiteNavbar } from '@/components/SiteNavbar';
-import { site } from '@/lib/site-content';
 import { cn } from '@/lib/cn';
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -24,35 +23,17 @@ export function Navbar() {
 }
 
 export function Footer() {
-  const socialLinks = [
-    { label: 'Discord', href: site.socialDiscord, icon: MessageCircle },
-    { label: 'X', href: '#', icon: Hash },
-    { label: 'YouTube', href: '#', icon: PlayCircle },
-    { label: 'Email', href: '#', icon: Mail },
-  ];
-
   return (
     <footer dir="rtl" className="border-t border-[var(--color-border)] bg-[var(--color-bg)]">
       <div className="mx-auto max-w-7xl px-4 py-14 md:px-8 lg:px-12">
         <div className="grid gap-10 md:grid-cols-3">
           <div>
-            <h4 className="mb-4 font-arabic text-sm font-extrabold text-[var(--color-text)]">روابط التواصل</h4>
-            <div className="grid gap-3 text-sm">
-              {socialLinks.map(({ label, href, icon: Icon }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target={href.startsWith('http') ? '_blank' : undefined}
-                  rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                  className="inline-flex w-fit items-center gap-2 text-[var(--color-muted)] transition hover:text-[var(--color-text)] focus:outline-none focus:underline focus:underline-offset-2"
-                >
-                  <Icon size={16} className="text-[var(--color-accent)]" />
-                  <span>{label}</span>
-                </a>
-              ))}
-            </div>
+            <h4 className="font-arabic text-lg font-extrabold text-[var(--color-text)]">Opus Solutions</h4>
+            <p className="mt-3 max-w-xs font-arabic text-sm leading-7 text-[var(--color-muted)]">
+              نحوّل الأفكار إلى مشاريع رقمية واضحة، مرتبة، وجاهزة للاستخدام.
+            </p>
           </div>
-          <FooterGroup title="الصفحات" links={[['الرئيسية', '/'], ['Bots', '/bots'], ['اطلب مشروعك', '/project-request'], ['لوحة التحكم', '/dashboard']]} />
+          <FooterGroup title="الصفحات" links={[['الرئيسية', '/'], ['BOTS Discord', '/bots'], ['اطلب مشروعك', '/project-request']]} />
           <FooterGroup title="الشروط والسياسات" links={[['شروط الاستخدام', '/terms'], ['سياسة الخصوصية', '/privacy'], ['الإلغاء والاسترداد', '/cancellation']]} />
         </div>
         <div className="mt-12 border-t border-[var(--color-border)] pt-6 text-center text-xs text-[var(--color-muted)]">

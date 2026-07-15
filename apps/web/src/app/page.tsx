@@ -3,6 +3,7 @@ import { BriefcaseBusiness, Check, ClipboardCheck, GraduationCap, Headphones, La
 import { HomeHero } from '@/components/HomeHero';
 import { MotionSection } from '@/components/MotionSection';
 import { PublicFrame } from '@/components/ui';
+import { WelcomeIntro } from '@/components/WelcomeIntro';
 
 const audiences = [
   {
@@ -46,6 +47,7 @@ const workflow = [
 export default function HomePage() {
   return (
     <PublicFrame>
+      <WelcomeIntro />
       <HomeHero />
 
       <MotionSection className="py-20">

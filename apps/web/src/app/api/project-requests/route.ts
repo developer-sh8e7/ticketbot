@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
 
     const body = (await req.json().catch(() => ({}))) as Body;
     const name = typeof body.name === 'string' ? body.name.trim() : '';
-    const contactMethod = body.contactMethod === 'discord' ? 'discord' : body.contactMethod === 'whatsapp' ? 'whatsapp' : '';
+    const contactMethod = body.contactMethod === 'email' ? 'email' : body.contactMethod === 'whatsapp' ? 'whatsapp' : '';
     const contact = typeof body.contact === 'string' ? body.contact.trim() : '';
     const idea = typeof body.idea === 'string' ? body.idea.trim() : '';
     const mainGoal = typeof body.mainGoal === 'string' ? body.mainGoal.trim() : '';
@@ -103,12 +103,13 @@ export async function POST(req: NextRequest) {
 
     if (name.length < 2 || name.length > 80) return fail('bad_request', 'اكتب اسمك (من حرفين إلى 80 حرفاً).', 400);
     if (!contactMethod || contact.length < 3 || contact.length > 100) return fail('bad_request', 'اختر طريقة التواصل واكتب بيانات التواصل الصحيحة.', 400);
+    if (contactMethod === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)) return fail('bad_request', 'اكتب بريداً إلكترونياً صحيحاً.', 400);
     if (idea.length < 10 || idea.length > 2500) return fail('bad_request', 'اكتب فكرة المشروع بوضوح (من 10 إلى 2500 حرف).', 400);
     if (mainGoal.length < 5 || mainGoal.length > 1500) return fail('bad_request', 'وضّح أهم مهمة يجب أن ينفذها المشروع.', 400);
     if (!budget) return fail('bad_request', 'اختر الميزانية التقريبية.', 400);
     if (deadline.length > 100) return fail('bad_request', 'الموعد المحدد طويل جداً.', 400);
 
-    const contactLabel = contactMethod === 'whatsapp' ? 'واتساب' : 'Discord';
+    const contactLabel = contactMethod === 'whatsapp' ? 'واتساب' : 'البريد الإلكتروني';
     const projectBrief = [
       `فكرة المشروع:\n${idea}`,
       `أهم شيء يجب أن يفعله المشروع:\n${mainGoal}`,

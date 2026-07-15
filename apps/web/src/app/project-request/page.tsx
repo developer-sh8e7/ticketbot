@@ -1,4 +1,4 @@
-import { Bot, CalendarDays, GraduationCap, LayoutDashboard, Lightbulb, PanelsTopLeft, Smartphone } from 'lucide-react';
+import { CalendarDays, GraduationCap, LayoutDashboard, Lightbulb, PanelsTopLeft, Smartphone } from 'lucide-react';
 import { ProjectRequestBackdrop } from '@/components/ProjectRequestBackdrop';
 import { ProjectRequestsClient } from '@/components/ProjectRequestsClient';
 import { PublicFrame } from '@/components/ui';
@@ -12,19 +12,32 @@ const serviceTypes = [
   [CalendarDays, 'أنظمة حجوزات'],
   [LayoutDashboard, 'لوحات تحكم'],
   [Smartphone, 'تطبيقات وأدوات'],
-  [Bot, 'بوتات Discord'],
 ] as const;
 
-export default function ProjectRequestPage() {
+export default async function ProjectRequestPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ for?: string }>;
+}) {
+  const audience = (await searchParams).for;
+  const heading = audience === 'student'
+    ? 'خلّ مشروعك الجامعي يطلع بأفضل صورة'
+    : audience === 'business'
+      ? 'فكرتك جاهزة تتحول إلى مشروع حقيقي'
+      : 'عندك فكرة وتبي تحوّلها إلى مشروع؟';
+  const description = audience === 'student'
+    ? 'اشرح لنا المطلوب وموعد التسليم، وسنرتّب معك نطاق المشروع وخطوات تنفيذه بشكل واضح.'
+    : 'اشرح فكرتك لنا، وسنراجع المتطلبات ونرسل لك التفاصيل والتكلفة قبل بدء العمل.';
+
   return (
     <PublicFrame>
       <ProjectRequestBackdrop />
       <section dir="rtl" className="relative mx-auto mb-8 max-w-4xl pt-8 text-center sm:pt-14">
         <h1 className="text-balance font-arabic text-3xl font-extrabold leading-tight text-[var(--color-text)] sm:text-5xl">
-          عندك فكرة موقع، نظام أو برنامج؟
+          {heading}
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-balance font-arabic text-base leading-8 text-[var(--color-muted)] sm:text-lg">
-          اشرح فكرتك لنا، وسنراجع المتطلبات ونرسل لك التفاصيل والتكلفة قبل بدء العمل.
+          {description}
         </p>
         <p className="mx-auto mt-1 max-w-xl font-arabic text-sm leading-7 text-[var(--color-accent-2)]">
           لا تحتاج معرفة تقنية — فقط اشرح ما الذي تريد أن يفعله مشروعك.

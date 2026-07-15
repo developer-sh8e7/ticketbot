@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { LayoutDashboard, LogOut, Menu, ShoppingCart, X } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useCart } from '@/components/cart/CartProvider';
 
@@ -11,9 +12,8 @@ const SUPPORT_URL = 'https://discord.gg/WRL';
 
 const links: [string, string][] = [
   ['الرئيسية', '/'],
-  ['Bots', '/bots'],
+  ['BOTS Discord', '/bots'],
   ['اطلب مشروعك', '/project-request'],
-  ['الدعم الفني', SUPPORT_URL],
 ];
 
 type SessionUser = { discord_user_id: string; username: string | null; avatar: string | null };
@@ -26,6 +26,7 @@ function discordAvatarUrl(user: SessionUser) {
 }
 
 export function SiteNavbar() {
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -55,6 +56,10 @@ export function SiteNavbar() {
 
   const isElevated = scrolled || open;
   const avatar = user ? discordAvatarUrl(user) : null;
+  const isDiscordArea = ['/bots', '/commands', '/pricing', '/cart', '/dashboard', '/login'].some((path) =>
+    pathname.startsWith(path)
+  ) || (pathname.startsWith('/product/') && !pathname.startsWith('/product/custom'));
+  const visibleLinks: [string, string][] = isDiscordArea ? [...links, ['الدعم الفني', SUPPORT_URL]] : links;
 
   const CartButton = (
     <button
@@ -122,7 +127,7 @@ export function SiteNavbar() {
           : 'border-transparent bg-transparent'
       }`}
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 md:px-8 lg:px-12">
+      <div className="mx-auto grid max-w-7xl grid-cols-[1fr_auto] items-center gap-4 px-4 py-3 md:grid-cols-[1fr_auto_1fr] md:px-8 lg:px-12">
         <Link href="/" className="flex items-center gap-3" onClick={() => setOpen(false)}>
           <Image
             src="https://i.imgur.com/0404vFj.png"
@@ -136,7 +141,7 @@ export function SiteNavbar() {
         </Link>
 
         <div className="hidden items-center gap-2 md:flex">
-          {links.map(([label, href]) => (
+          {visibleLinks.map(([label, href]) => (
             <Link
               key={href}
               href={href}
@@ -149,13 +154,15 @@ export function SiteNavbar() {
           ))}
         </div>
 
-        <div className="hidden items-center gap-3 md:flex">
-          {CartButton}
-          <AuthArea />
-        </div>
+        {isDiscordArea ? (
+          <div className="hidden items-center gap-3 md:flex">
+            {CartButton}
+            <AuthArea />
+          </div>
+        ) : null}
 
         <div className="flex items-center gap-2 md:hidden">
-          {CartButton}
+          {isDiscordArea ? CartButton : null}
           <button
             type="button"
             onClick={() => setOpen((value) => !value)}
@@ -177,7 +184,7 @@ export function SiteNavbar() {
         }`}
       >
         <div className="grid gap-1 px-4 py-4 text-sm">
-          {links.map(([label, href]) => (
+          {visibleLinks.map(([label, href]) => (
             <Link
               key={href}
               href={href}
@@ -189,7 +196,7 @@ export function SiteNavbar() {
               {label}
             </Link>
           ))}
-          <div className="mt-2 border-t border-opus-border pt-3">
+          {isDiscordArea ? <div className="mt-2 border-t border-opus-border pt-3">
             {user ? (
               <div className="grid gap-1">
                 <Link
@@ -211,7 +218,7 @@ export function SiteNavbar() {
                 تسجيل الدخول عبر Discord
               </a>
             )}
-          </div>
+          </div> : null}
         </div>
       </motion.div>
     </nav>
