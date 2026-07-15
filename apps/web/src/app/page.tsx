@@ -46,9 +46,10 @@ const workflow = [
 
 export default function HomePage() {
   return (
-    <PublicFrame>
+    <>
       <WelcomeIntro />
-      <HomeHero />
+      <PublicFrame>
+        <HomeHero />
 
       <MotionSection className="py-20">
         <div dir="rtl" className="text-center">
@@ -122,7 +123,8 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      </MotionSection>
-    </PublicFrame>
+        </MotionSection>
+      </PublicFrame>
+    </>
   );
 }
