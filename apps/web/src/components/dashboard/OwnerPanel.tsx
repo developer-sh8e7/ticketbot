@@ -18,6 +18,7 @@ import {
   Users,
 } from 'lucide-react';
 import type { AdminStats, AdminSubscriber, TokenPoolRow } from '@/lib/admin-data';
+import { formatSubscriptionDate, remainingDaysText } from '@/lib/subscription-time';
 
 // Real product names so labels are never ambiguous.
 const PRODUCTS: { value: string; name: string }[] = [
@@ -224,14 +225,16 @@ export function OwnerPanel({
           </p>
         ) : (
           <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[820px] border-collapse text-right">
+            <table className="w-full min-w-[1080px] border-collapse text-right">
               <thead>
                 <tr className="border-b border-opus-border font-arabic text-[11px] uppercase tracking-wide text-opus-muted">
                   <th className="px-3 py-2.5 font-bold">المنتج</th>
                   <th className="px-3 py-2.5 font-bold">السيرفر</th>
                   <th className="px-3 py-2.5 font-bold">المالك</th>
                   <th className="px-3 py-2.5 font-bold">الحالة</th>
-                  <th className="px-3 py-2.5 font-bold">ينتهي</th>
+                  <th className="px-3 py-2.5 font-bold">تاريخ التفعيل</th>
+                  <th className="px-3 py-2.5 font-bold">تاريخ الانتهاء</th>
+                  <th className="px-3 py-2.5 font-bold">المدة المتبقية</th>
                   <th className="px-3 py-2.5 font-bold">إجراءات</th>
                 </tr>
               </thead>
@@ -246,7 +249,9 @@ export function OwnerPanel({
                       <td className="px-3 py-3">
                         <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-bold ${st.cls}`}>{st.label}</span>
                       </td>
-                      <td className="px-3 py-3 font-english text-xs text-opus-muted">{s.expires_at ? new Date(s.expires_at).toLocaleDateString('en-CA', { timeZone: 'UTC' }) : '∞'}</td>
+                      <td className="px-3 py-3 font-english text-xs text-opus-muted">{formatSubscriptionDate(s.started_at ?? s.created_at)}</td>
+                      <td className="px-3 py-3 font-english text-xs text-opus-muted">{formatSubscriptionDate(s.expires_at)}</td>
+                      <td className="px-3 py-3 font-arabic text-xs font-bold text-opus-accent-2">{remainingDaysText(s.expires_at)}</td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-1.5">
                           <input

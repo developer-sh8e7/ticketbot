@@ -9,6 +9,7 @@ import { sessionIsOwner } from '@/lib/owner';
 import { getAdminStats, getSubscribers, getTokenPool } from '@/lib/admin-data';
 import { botInviteUrl } from '@/lib/bot-invite';
 import { supabaseAdmin } from '@/lib/supabase';
+import { remainingDaysText } from '@/lib/subscription-time';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,7 @@ const productLabels: Record<string, string> = {
   ticket: 'بوت التذاكر',
   voice_rooms: 'الغرف المؤقتة',
   general: 'بوت الإدارة',
+  broadcast: 'بوت البرودكاست',
 };
 
 const statusMeta: Record<string, { label: string; dot: string; text: string }> = {
@@ -32,15 +34,9 @@ function fmtDate(value: string | null | undefined) {
   return value ? new Date(value).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
 }
 
-function daysLeft(expires: string | null | undefined): number | null {
-  if (!expires) return null;
-  const diff = new Date(expires).getTime() - Date.now();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
-}
-
 function BotCard({ bot }: { bot: OwnedBot }) {
   const meta = statusMeta[String(bot.status ?? '')] ?? { label: bot.status ?? '—', dot: 'bg-gray-400', text: 'text-opus-muted' };
-  const remaining = daysLeft(bot.expires_at);
+  const remaining = bot.expires_at ? Math.ceil((new Date(bot.expires_at).getTime() - Date.now()) / 86_400_000) : null;
   const isPaid = bot.plan_type !== 'trial';
   const appId = (bot as { bot_application_id?: string | null }).bot_application_id;
   const avatarUrl = (bot as { bot_avatar_url?: string | null }).bot_avatar_url;
@@ -78,10 +74,14 @@ function BotCard({ bot }: { bot: OwnedBot }) {
           <p className="mt-0.5 font-english text-xs text-opus-muted">{productLabel} · {bot.guild_name || bot.guild_id}</p>
         </div>
 
-      <dl className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <dl className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div>
           <dt className="font-arabic text-xs text-opus-muted">الباقة</dt>
           <dd className="mt-1 font-arabic text-sm font-bold text-opus-text">{isPaid ? 'مدفوعة' : 'تجريبية'}</dd>
+        </div>
+        <div>
+          <dt className="font-arabic text-xs text-opus-muted">تاريخ التفعيل</dt>
+          <dd className="mt-1 font-arabic text-sm font-bold text-opus-text">{fmtDate(bot.started_at ?? bot.created_at)}</dd>
         </div>
         <div>
           <dt className="font-arabic text-xs text-opus-muted">ينتهي في</dt>
@@ -89,11 +89,9 @@ function BotCard({ bot }: { bot: OwnedBot }) {
         </div>
         <div>
           <dt className="font-arabic text-xs text-opus-muted">المتبقي</dt>
-          <dd className="mt-1 font-arabic text-sm font-bold text-opus-text">
-            {remaining === null ? 'غير محدود' : remaining > 0 ? `${remaining} يوم` : 'منتهي'}
-          </dd>
+          <dd className="mt-1 font-arabic text-sm font-bold text-opus-text">{remainingDaysText(bot.expires_at)}</dd>
         </div>
-        <div className="col-span-2 sm:col-span-3">
+        <div className="col-span-2 sm:col-span-4">
           <dt className="font-arabic text-xs text-opus-muted">السيرفر</dt>
           <dd className="mt-1 font-english text-sm text-opus-text">{bot.guild_id || '—'}</dd>
         </div>

@@ -29,6 +29,7 @@ export type AdminSubscriber = {
   owner_id: string | null;
   guild_id: string | null;
   guild_name: string | null;
+  started_at: string | null;
   expires_at: string | null;
   last_started_at: string | null;
   created_at: string | null;
@@ -48,6 +49,8 @@ export type PoolBot = {
   instanceGuildId: string | null;
   instanceGuildName: string | null;
   instanceStatus: string | null;
+  instanceStartedAt: string | null;
+  instanceExpiresAt: string | null;
   // Live bot profile + servers (fetched from Discord using the bot token).
   name: string | null;
   avatarUrl: string | null;
@@ -69,10 +72,10 @@ export async function getPoolBots(): Promise<PoolBot[]> {
   if (error) throw error;
 
   const instanceIds = (tokens ?? []).map((t) => t.claimed_by_instance_id).filter(Boolean) as string[];
-  const instanceById = new Map<string, { guild_id: string | null; guild_name: string | null; status: string | null }>();
+  const instanceById = new Map<string, { guild_id: string | null; guild_name: string | null; status: string | null; started_at: string | null; expires_at: string | null; created_at: string | null }>();
   if (instanceIds.length) {
-    const { data: insts } = await supabase.from('bot_instances').select('id,guild_id,guild_name,status').in('id', instanceIds);
-    for (const i of insts ?? []) instanceById.set(i.id as string, { guild_id: i.guild_id, guild_name: i.guild_name, status: i.status });
+    const { data: insts } = await supabase.from('bot_instances').select('id,guild_id,guild_name,status,started_at,expires_at,created_at').in('id', instanceIds);
+    for (const i of insts ?? []) instanceById.set(i.id as string, { guild_id: i.guild_id, guild_name: i.guild_name, status: i.status, started_at: i.started_at, expires_at: i.expires_at, created_at: i.created_at });
   }
 
   // Fetch each bot's live profile + servers from Discord (owner-only page, few tokens).
@@ -106,6 +109,8 @@ export async function getPoolBots(): Promise<PoolBot[]> {
         instanceGuildId: inst?.guild_id ?? null,
         instanceGuildName: inst?.guild_name ?? null,
         instanceStatus: inst?.status ?? null,
+        instanceStartedAt: inst?.started_at ?? inst?.created_at ?? null,
+        instanceExpiresAt: inst?.expires_at ?? null,
         name,
         avatarUrl,
         bannerUrl,
@@ -153,7 +158,7 @@ export async function getAdminStats(): Promise<AdminStats> {
 export async function getSubscribers(limit = 100): Promise<AdminSubscriber[]> {
   const { data, error } = await supabaseAdmin()
     .from('bot_instances')
-    .select('id,bot_name,bot_avatar_url,bot_banner_url,product_type,plan_type,status,owner_id,guild_id,guild_name,expires_at,last_started_at,created_at')
+    .select('id,bot_name,bot_avatar_url,bot_banner_url,product_type,plan_type,status,owner_id,guild_id,guild_name,started_at,expires_at,last_started_at,created_at')
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) throw error;

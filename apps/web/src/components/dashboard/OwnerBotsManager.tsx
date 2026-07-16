@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { Loader2, Pause, Play, Plus, Settings } from 'lucide-react';
 import type { AdminSubscriber } from '@/lib/admin-data';
+import { daysLeft, formatSubscriptionDate, remainingDaysText } from '@/lib/subscription-time';
 
 type Filter = 'all' | 'active' | 'expiring' | 'expired' | 'paused';
 
@@ -20,17 +21,6 @@ const STATUS: Record<string, { label: string; dot: string }> = {
   cancelled: { label: 'ملغى', dot: 'bg-red-400' },
   rejected: { label: 'مرفوض', dot: 'bg-red-400' },
 };
-
-function daysLeft(expires: string | null): number | null {
-  if (!expires) return null;
-  return Math.ceil((new Date(expires).getTime() - Date.now()) / 86_400_000);
-}
-function fmt(d: string | null) {
-  // Deterministic UTC format — avoids server/client timezone & ICU hydration mismatch.
-  if (!d) return '—';
-  const x = new Date(d);
-  return `${x.getUTCFullYear()}-${String(x.getUTCMonth() + 1).padStart(2, '0')}-${String(x.getUTCDate()).padStart(2, '0')}`;
-}
 
 export function OwnerBotsManager({ bots }: { bots: AdminSubscriber[] }) {
   const router = useRouter();
@@ -112,7 +102,6 @@ export function OwnerBotsManager({ bots }: { bots: AdminSubscriber[] }) {
 
       <div className="grid gap-4 md:grid-cols-2">
         {filtered.map((b) => {
-          const left = daysLeft(b.expires_at);
           const meta = STATUS[String(b.status)] ?? { label: b.status ?? '—', dot: 'bg-gray-400' };
           const name = b.bot_name || PRODUCT[String(b.product_type)] || 'بوت';
           return (
@@ -136,11 +125,12 @@ export function OwnerBotsManager({ bots }: { bots: AdminSubscriber[] }) {
                 <p className="mt-2 font-arabic text-base font-extrabold text-opus-text">{name}</p>
                 <p className="font-english text-[11px] text-opus-muted">{PRODUCT[String(b.product_type)] ?? b.product_type} · {b.guild_name || b.guild_id}</p>
 
-                <div className="mt-3 grid grid-cols-2 gap-2 font-arabic text-[11px] text-opus-muted">
+                <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl border border-opus-border bg-opus-bg/40 p-3 font-arabic text-[11px] text-opus-muted">
                   <span>المالك: <span className="font-english text-opus-text">{b.owner_id}</span></span>
-                  <span>ينتهي: <span className="text-opus-text">{fmt(b.expires_at)}</span></span>
-                  <span>المتبقي: <span className="text-opus-text">{left === null ? 'غير محدود' : left > 0 ? `${left} يوم` : 'منتهي'}</span></span>
                   <span>الباقة: <span className="text-opus-text">{b.plan_type === 'trial' ? 'تجريبية' : 'مدفوعة'}</span></span>
+                  <span>تاريخ التفعيل: <span className="font-english text-opus-text">{formatSubscriptionDate(b.started_at ?? b.created_at)}</span></span>
+                  <span>تاريخ الانتهاء: <span className="font-english text-opus-text">{formatSubscriptionDate(b.expires_at)}</span></span>
+                  <span className="col-span-2">المدة المتبقية: <span className="font-bold text-opus-accent-2">{remainingDaysText(b.expires_at)}</span></span>
                 </div>
 
                 <div className="mt-4 flex flex-wrap items-center gap-2">

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { ExternalLink, Loader2, Power, Settings } from 'lucide-react';
 import type { PoolBot } from '@/lib/admin-data';
 import { botInviteUrl } from '@/lib/bot-invite';
+import { formatSubscriptionDate, remainingDaysText } from '@/lib/subscription-time';
 
 const PRODUCT: Record<string, string> = { ticket: 'التذاكر', voice_rooms: 'الرومات المؤقتة', general: 'السيستم' };
 
@@ -116,6 +117,12 @@ export function StoredBotsPanel({ bots }: { bots: PoolBot[] }) {
 
               <p className="mt-2 font-arabic text-sm font-extrabold text-opus-text">{botName}</p>
               <p className="font-english text-[11px] text-opus-muted">{PRODUCT[String(bot.productType)] ?? bot.productType}</p>
+
+              <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl border border-opus-border bg-opus-bg/40 p-3 font-arabic text-[11px] text-opus-muted">
+                <span>تاريخ التفعيل: <span className="font-english text-opus-text">{bot.instanceId ? formatSubscriptionDate(bot.instanceStartedAt) : 'غير مفعل'}</span></span>
+                <span>تاريخ الانتهاء: <span className="font-english text-opus-text">{bot.instanceId ? formatSubscriptionDate(bot.instanceExpiresAt) : 'غير مفعل'}</span></span>
+                <span className="col-span-2">المدة المتبقية: <span className="font-bold text-opus-accent-2">{bot.instanceId ? remainingDaysText(bot.instanceExpiresAt) : 'غير مفعل'}</span></span>
+              </div>
 
               {bot.reservedFor ? (
                 <p className="mt-2 font-arabic text-[11px] text-opus-muted">
