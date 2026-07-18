@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { scrollToSection } from '@/components/fx/SmoothScroll';
 
 export type SectionNavItem = { id: string; label: string };
 
@@ -32,9 +33,7 @@ export function SectionNav({ items }: { items: SectionNavItem[] }) {
     return () => observer.disconnect();
   }, [items]);
 
-  const scrollTo = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
+  const scrollTo = scrollToSection;
 
   return (
     <nav

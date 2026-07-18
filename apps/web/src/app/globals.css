@@ -378,21 +378,13 @@ input[type='color']::-moz-color-swatch {
   display: none;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .hero-float,
-  .hero-float-slow,
-  .hero-float-sm,
-  .hero-shimmer,
-  .hero-bar,
-  .hero-glow,
-  .hero-blink,
-  .service-illustration-art {
-    animation: none;
-  }
+/* ── Award-site FX: marquee + custom cursor ─────────────────────────────── */
 
-  .hero-parallax {
-    transform: none !important;
-  }
-
-  html { scroll-behavior: auto; }
+@keyframes opus-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
 }
+
+.marquee-track { animation: opus-marquee 30s linear infinite; }
+
+body.custom-cursor, body.custom-cursor * { cursor: none !important; }

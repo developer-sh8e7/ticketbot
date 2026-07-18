@@ -34,7 +34,6 @@ export function HeroScene() {
       return;
     }
 
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const isCoarse = window.matchMedia('(pointer: coarse)').matches;
 
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, isCoarse ? 1.5 : 1.75));
@@ -222,7 +221,7 @@ export function HeroScene() {
 
     // ── loop ────────────────────────────────────────────────────────────
     const clock = new THREE.Clock();
-    const speedScale = reducedMotion ? 0.15 : 1;
+    const speedScale = 1;
     let raf = 0;
 
     const tick = () => {

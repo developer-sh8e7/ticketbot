@@ -22,6 +22,11 @@ import { PublicFrame } from '@/components/ui';
 import { PackagesSection, SELECT_CATEGORY_EVENT } from '@/components/PackagesSection';
 import { SectionNav } from '@/components/SectionNav';
 import { ScrollProgress } from '@/components/ScrollProgress';
+import { SmoothScroll, scrollToSection } from '@/components/fx/SmoothScroll';
+import { Preloader } from '@/components/fx/Preloader';
+import { CustomCursor } from '@/components/fx/CustomCursor';
+import { Marquee } from '@/components/fx/Marquee';
+import { RevealText } from '@/components/fx/RevealText';
 
 const audiences = [
   {
@@ -127,12 +132,15 @@ const sectionNavItems = [
 
 function selectPackagesCategory(category: string) {
   window.dispatchEvent(new CustomEvent(SELECT_CATEGORY_EVENT, { detail: category }));
-  document.getElementById('packages')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  scrollToSection('packages');
 }
 
 export default function HomePage() {
   return (
     <>
+      <Preloader />
+      <SmoothScroll />
+      <CustomCursor />
       <ScrollProgress />
       <SectionNav items={sectionNavItems} />
       <PublicFrame>
@@ -140,18 +148,19 @@ export default function HomePage() {
           <HomeHero />
         </div>
 
+        {/* scrolling capabilities band */}
+        <div className="mx-[calc(50%-50vw)] w-screen overflow-hidden py-4">
+          <Marquee items={['مواقع تعريفية', 'متاجر إلكترونية', 'تطبيقات جوال', 'مشاريع تخرج', 'صفحات هبوط', 'لوحات تحكم']} />
+        </div>
+
         {/* What do you need — service cards (filter the packages below) */}
         <MotionSection id="services" className="scroll-mt-24 py-12 md:py-20">
           <div className="mx-auto max-w-7xl px-4 md:px-8 lg:px-12">
             <div dir="rtl" className="mb-8 text-center md:mb-16">
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-balance font-arabic text-3xl font-extrabold tracking-tight text-[var(--color-text)] sm:text-4xl md:text-5xl lg:text-6xl"
-              >
-                ماذا تحتاج؟<br />
-                <span className="text-[var(--color-accent)]">نبنيه لك</span>
-              </motion.h2>
+              <h2 className="text-balance font-arabic text-3xl font-extrabold tracking-tight text-[var(--color-text)] sm:text-4xl md:text-5xl lg:text-6xl">
+                <RevealText text="ماذا تحتاج؟" /><br />
+                <span className="text-[var(--color-accent)]"><RevealText text="نبنيه لك" delay={0.12} /></span>
+              </h2>
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -196,7 +205,7 @@ export default function HomePage() {
           <div className="mx-auto max-w-7xl px-4 md:px-8 lg:px-12">
             <div dir="rtl" className="mb-8 text-center md:mb-12">
               <h2 className="font-arabic text-3xl font-extrabold tracking-tight text-[var(--color-text)] sm:text-4xl md:text-5xl">
-                الباقات <span className="text-[var(--color-accent)]">والأسعار</span>
+                <RevealText text="الباقات والأسعار" accentWords={['والأسعار']} />
               </h2>
               <p className="mx-auto mt-4 max-w-2xl font-arabic text-base leading-7 text-[var(--color-muted)] sm:text-lg sm:leading-8">
                 أسعار واضحة بدون رسوم مخفية. كل باقة تشمل التصميم والبرمجة والتسليم ودعم فني لمدة أسبوع.
@@ -244,7 +253,9 @@ export default function HomePage() {
         <MotionSection className="py-12 md:py-20">
           <div dir="rtl" className="mx-auto max-w-7xl px-4 md:px-8 lg:px-12 text-center">
             <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">حلول تناسب احتياجك</p>
-            <h2 className="mt-3 font-arabic text-3xl font-extrabold tracking-tight text-[var(--color-text)] sm:text-4xl">وش تبي نبني لك؟</h2>
+            <h2 className="mt-3 font-arabic text-3xl font-extrabold tracking-tight text-[var(--color-text)] sm:text-4xl">
+              <RevealText text="وش تبي نبني لك؟" />
+            </h2>
             <p className="mx-auto mt-4 max-w-2xl font-arabic text-sm leading-8 text-[var(--color-muted)]">
               نصمم ونبرمج مواقع وتطبيقات وأنظمة رقمية للطلاب وأصحاب الأفكار والأعمال.
             </p>
@@ -280,7 +291,9 @@ export default function HomePage() {
           <div className="mx-auto max-w-7xl px-4 md:px-8 lg:px-12">
             <div dir="rtl" className="mb-8 text-center md:mb-16">
               <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">أحدث أعمالنا</p>
-              <h2 className="mt-3 font-arabic text-3xl font-extrabold tracking-tight text-[var(--color-text)] sm:text-4xl md:text-5xl">نماذج من مستوى شغلنا</h2>
+              <h2 className="mt-3 font-arabic text-3xl font-extrabold tracking-tight text-[var(--color-text)] sm:text-4xl md:text-5xl">
+                <RevealText text="نماذج من مستوى شغلنا" accentWords={['شغلنا']} />
+              </h2>
               <p className="mx-auto mt-4 max-w-2xl font-arabic text-base leading-7 text-[var(--color-muted)] sm:text-lg sm:leading-8">أمثلة حقيقية لأنواع المشاريع اللي ننفذها، بنفس الجودة اللي بتستلمها.</p>
             </div>
 
@@ -346,7 +359,9 @@ export default function HomePage() {
           <div className="mx-auto max-w-3xl px-4 md:px-8 lg:px-12">
             <div dir="rtl" className="mb-8 text-center md:mb-16">
               <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">أسئلة شائعة</p>
-              <h2 className="mt-3 font-arabic text-3xl font-extrabold tracking-tight text-[var(--color-text)] sm:text-4xl md:text-5xl">عندك سؤال؟</h2>
+              <h2 className="mt-3 font-arabic text-3xl font-extrabold tracking-tight text-[var(--color-text)] sm:text-4xl md:text-5xl">
+                <RevealText text="عندك سؤال؟" />
+              </h2>
               <p className="mx-auto mt-4 max-w-2xl font-arabic text-base leading-7 text-[var(--color-muted)] sm:text-lg sm:leading-8">هذي إجابات أوضح الأسئلة اللي توصلنا. وإذا ما لقيت سؤالك تواصل معنا مباشرة.</p>
             </div>
 
