@@ -20,6 +20,14 @@ export function WelcomeIntro() {
   const skipRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+    // testing/dev escape hatch: /#skip-intro or /?skip-intro=1 loads the home page without the intro
+    if (window.location.hash === '#skip-intro' || new URLSearchParams(window.location.search).has('skip-intro')) {
+      window.dispatchEvent(new Event('opus-welcome-closed'));
+      setOpen(false);
+    }
+  }, []);
+
+  useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';

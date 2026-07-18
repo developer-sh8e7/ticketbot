@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { ArrowRight, Bot, Check, Code2, Megaphone, Mic2, ShieldCheck, Ticket, type LucideIcon } from 'lucide-react';
 import { PublicFrame } from '@/components/ui';
 import { ProductBuyRow } from '@/components/ProductBuyRow';
-import { products, site, type ProductKey } from '@/lib/site-content';
+import { products, type ProductKey } from '@/lib/site-content';
 import { getPublicStock, type StockStatus } from '@/lib/public-stock';
 
 const icons: Record<ProductKey, LucideIcon> = {
@@ -102,18 +102,24 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
             {isCustom ? (
               <div dir="rtl" className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-                <p className="font-arabic text-sm font-bold text-[var(--color-text)]">بوت مخصص حسب طلبك</p>
+                <p className="font-arabic text-sm font-bold text-[var(--color-text)]">مشروع يُبنى حسب فكرتك</p>
                 <p className="mt-2 font-arabic text-xs leading-6 text-[var(--color-muted)]">
-                  لا يوجد شراء مباشر. افتح تذكرة وسنبني لك البوت حسب فكرتك.
+                  لا يوجد شراء مباشر. اكتب فكرتك ومتطلباتك وسيتواصل معك المطورون مباشرة داخل الموقع.
                 </p>
-                <a
-                  href={site.supportDiscordUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-[var(--color-accent)] px-4 py-3 font-arabic text-sm font-extrabold text-black transition hover:-translate-y-0.5 hover:opacity-90"
+                <ul className="mt-4 grid gap-2">
+                  {['رد سريع على طلبك', 'تحديد النطاق والسعر قبل البدء', 'محادثة مباشرة مع المطور'].map((point) => (
+                    <li key={point} className="flex items-center gap-2 font-arabic text-xs text-[var(--color-muted)]">
+                      <Check size={13} className="shrink-0 text-[var(--color-accent-2)]" />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/project-request"
+                  className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-[var(--color-accent)] px-4 py-3 font-arabic text-sm font-extrabold text-black transition hover:-translate-y-0.5 hover:opacity-90"
                 >
-                  تواصل مع المطورين
-                </a>
+                  تواصل مع المطورين — اطلب مشروعك
+                </Link>
               </div>
             ) : (
               <ProductBuyRow

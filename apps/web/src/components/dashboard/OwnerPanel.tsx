@@ -25,6 +25,7 @@ const PRODUCTS: { value: string; name: string }[] = [
   { value: 'ticket', name: 'Ticket Bot — التذاكر' },
   { value: 'voice_rooms', name: 'TempRooms Bot — الرومات المؤقتة' },
   { value: 'general', name: 'SystemBot — الإدارة والمودريشن' },
+  { value: 'broadcast', name: 'Broadcast Bot — البرودكاست' },
 ];
 const productName = (v: string) => PRODUCTS.find((p) => p.value === v)?.name ?? v;
 

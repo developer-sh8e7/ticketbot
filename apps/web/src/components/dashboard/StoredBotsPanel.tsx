@@ -7,7 +7,7 @@ import type { PoolBot } from '@/lib/admin-data';
 import { botInviteUrl } from '@/lib/bot-invite';
 import { formatSubscriptionDate, remainingDaysText } from '@/lib/subscription-time';
 
-const PRODUCT: Record<string, string> = { ticket: 'التذاكر', voice_rooms: 'الرومات المؤقتة', general: 'السيستم' };
+const PRODUCT: Record<string, string> = { ticket: 'التذاكر', voice_rooms: 'الرومات المؤقتة', general: 'السيستم', broadcast: 'البرودكاست' };
 
 function csrf() {
   const m = document.cookie.match(/(?:^|;\s*)opus_csrf=([^;]+)/);

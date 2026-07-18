@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { Bot, BrainCircuit, Code2, FileText, ShieldCheck, Ticket, Undo2, UserCheck, UserPlus, Settings2 } from 'lucide-react';
+import { Bot, BrainCircuit, Code2, FileText, MessageCircle, Package, ShieldCheck, Ticket, Undo2, UserCheck, UserPlus, Settings2 } from 'lucide-react';
 import { SiteNavbar } from '@/components/SiteNavbar';
 import { cn } from '@/lib/cn';
 
@@ -25,19 +25,20 @@ export function Navbar() {
 export function Footer() {
   return (
     <footer dir="rtl" className="border-t border-[var(--color-border)] bg-[var(--color-bg)]">
-      <div className="mx-auto max-w-7xl px-4 py-14 md:px-8 lg:px-12">
-        <div className="grid gap-10 md:grid-cols-3">
-          <div>
+      <div className="mx-auto max-w-7xl px-4 py-12 md:px-8 md:py-14 lg:px-12">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-9 md:grid-cols-4 md:gap-10">
+          <div className="col-span-2 md:col-span-1">
             <h4 className="font-arabic text-lg font-extrabold text-[var(--color-text)]">Opus Solutions</h4>
             <p className="mt-3 max-w-xs font-arabic text-sm leading-7 text-[var(--color-muted)]">
               نصمم ونبرمج مواقع وتطبيقات وأنظمة رقمية واضحة وجاهزة للاستخدام.
             </p>
           </div>
-          <FooterGroup title="الصفحات" links={[['الرئيسية', '/'], ['BOTS Discord', '/bots'], ['اطلب موقعك أو تطبيقك', '/project-request']]} />
+          <FooterGroup title="الصفحات" links={[['الرئيسية', '/'], ['الباقات', '/packages'], ['BOTS Discord', '/bots'], ['اطلب موقعك أو تطبيقك', '/project-request']]} />
           <FooterGroup title="الشروط والسياسات" links={[['شروط الاستخدام', '/terms'], ['سياسة الخصوصية', '/privacy'], ['الإلغاء والاسترداد', '/cancellation']]} />
+          <FooterGroup title="تواصل معنا" links={[['واتساب', 'https://wa.me/966597232969'], ['الإيميل', 'mailto:hello@opussolutions.xyz'], ['ديسكورد', 'https://discord.gg/WRL']]} />
         </div>
         <div className="mt-12 border-t border-[var(--color-border)] pt-6 text-center text-xs text-[var(--color-muted)]">
-          © {new Date().getFullYear()} Opus Solutions
+          جميع الحقوق محفوظة © {new Date().getFullYear()} Opus Solutions
         </div>
       </div>
     </footer>
@@ -49,6 +50,10 @@ function FooterGroup({ title, links }: { title: string; links: [string, string][
     '/terms': <FileText size={16} className="text-[var(--color-accent)]" />,
     '/privacy': <ShieldCheck size={16} className="text-[var(--color-accent)]" />,
     '/cancellation': <Undo2 size={16} className="text-[var(--color-accent)]" />,
+    'https://wa.me/966597232969': <MessageCircle size={16} className="text-[var(--color-accent)]" />,
+    'mailto:hello@opussolutions.xyz': <MessageCircle size={16} className="text-[var(--color-accent)]" />,
+    'https://discord.gg/WRL': <Bot size={16} className="text-[var(--color-accent)]" />,
+    '/packages': <Package size={16} className="text-[var(--color-accent)]" />,
   };
 
   return (
@@ -56,7 +61,13 @@ function FooterGroup({ title, links }: { title: string; links: [string, string][
       <h4 className="mb-4 font-arabic text-sm font-extrabold text-[var(--color-text)]">{title}</h4>
       <div className="grid gap-3 text-sm text-[var(--color-muted)]">
         {links.map(([label, href]) => (
-          <Link key={href} href={href} className="inline-flex w-fit items-center gap-2 transition hover:text-[var(--color-text)]">
+          <Link
+            key={href}
+            href={href}
+            target={href.startsWith('http') ? '_blank' : undefined}
+            rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
+            className="inline-flex w-fit items-center gap-2 transition hover:text-[var(--color-text)]"
+          >
             {icons[href] ?? null}
             <span>{label}</span>
           </Link>
@@ -126,8 +137,8 @@ export function StatusDot({ status }: { status: string }) {
     expired: { color: 'bg-red-500', label: 'منتهي' },
     cancelled: { color: 'bg-red-500', label: 'ملغي' },
     revoked: { color: 'bg-red-500', label: 'ملغي' },
-    unused: { color: 'bg-yellow-400', label: 'قريبًا' },
-    claimed: { color: 'bg-yellow-400', label: 'قريبًا' },
+    unused: { color: 'bg-yellow-400', label: 'قريبا' },
+    claimed: { color: 'bg-yellow-400', label: 'قريبا' },
     suspended: { color: 'bg-yellow-400', label: 'معلق' },
     inactive: { color: 'bg-yellow-400', label: 'غير نشط' },
   };

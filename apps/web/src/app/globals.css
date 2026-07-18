@@ -3,16 +3,16 @@
 @tailwind utilities;
 
 :root {
-  /* Black background with Opus orange accent (Opi's color). */
-  --color-bg: #0a0a0a;
-  --color-surface: #141416;
-  --color-border: #2a2a2e;
-  --color-accent: #ff8a00;        /* primary actions → orange surface, black text */
-  --color-accent-2: #ffb866;      /* secondary highlights → light orange */
-  --color-text: #fafafa;
-  --color-muted: #8b8b94;
-  --navbar-bg: color-mix(in srgb, var(--color-bg) 80%, transparent);
-  color-scheme: dark;
+  /* Soft warm off-white theme — easy on eyes, not blinding */
+  --color-bg: #faf8f4;
+  --color-surface: #fefefe;
+  --color-border: #e8e2d8;
+  --color-accent: #e86c00;
+  --color-accent-2: #c45a00;
+  --color-text: #2d2820;
+  --color-muted: #8a8278;
+  --navbar-bg: color-mix(in srgb, #fefefe 88%, transparent);
+  color-scheme: light;
 }
 
 * {
@@ -28,13 +28,14 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
+  overflow-x: clip;
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-english), var(--font-cairo), system-ui, Arial, sans-serif;
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--color-accent) 45%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 30%, transparent);
   color: var(--color-text);
 }
 
@@ -48,13 +49,13 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 70%, var(--color-border));
   border-radius: 999px;
   border: 2px solid var(--color-bg);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--color-accent) 82%, var(--color-accent-2));
+  background: var(--color-accent);
 }
 
 a {
@@ -81,16 +82,16 @@ code,
   font-family: var(--font-english), Inter, system-ui, sans-serif;
 }
 
-/* Thin grid overlay — very subtle, pure CSS, no z-index fighting */
+/* Subtle warm grid overlay — very subtle, pure CSS */
 .opus-grid {
   position: fixed;
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(color-mix(in srgb, var(--color-text) 3%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--color-text) 3%, transparent) 1px, transparent 1px);
+    linear-gradient(color-mix(in srgb, var(--color-text) 2.5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-text) 2.5%, transparent) 1px, transparent 1px);
   background-size: 72px 72px;
-  opacity: 0.45;
+  opacity: 0.35;
 }
 
 .hero-orb {
@@ -100,7 +101,7 @@ code,
   border-radius: 9999px;
   background: radial-gradient(circle at 35% 35%, var(--color-accent), var(--color-accent-2) 58%, transparent 72%);
   filter: blur(90px);
-  opacity: 0.15;
+  opacity: 0.12;
 }
 
 .nav-link {
@@ -276,5 +277,122 @@ input[type='color']::-moz-color-swatch {
 .project-backdrop-vignette {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, transparent 30%, rgba(10, 10, 10, 0.60) 100%);
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(160, 140, 110, 0.18) 100%);
+}
+
+/* ── Interactive hero and service illustrations ─────────────────────────── */
+
+@keyframes opus-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes opus-float-sm {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+
+.hero-float {
+  animation: opus-float 6s ease-in-out infinite;
+  will-change: transform;
+}
+
+.hero-float-slow {
+  animation: opus-float 8s ease-in-out 0.8s infinite;
+  will-change: transform;
+}
+
+.hero-float-sm {
+  animation: opus-float-sm 5s ease-in-out 0.4s infinite;
+  will-change: transform;
+}
+
+@keyframes opus-shimmer {
+  0% { transform: translateX(-160%) skewX(-18deg); }
+  55%, 100% { transform: translateX(220%) skewX(-18deg); }
+}
+
+@keyframes opus-bar-load {
+  0%, 100% { transform: scaleX(0.55); }
+  50% { transform: scaleX(1); }
+}
+
+@keyframes opus-glow-pulse {
+  0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.9; transform: translate(-50%, -50%) scale(1.12); }
+}
+
+@keyframes opus-dot-blink {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+.hero-shimmer { animation: opus-shimmer 4.5s ease-in-out 1.2s infinite; }
+.hero-bar { transform-origin: right; animation: opus-bar-load 5s ease-in-out infinite; }
+.hero-glow { animation: opus-glow-pulse 7s ease-in-out infinite; }
+.hero-blink { animation: opus-dot-blink 2.4s ease-in-out infinite; }
+
+@keyframes opus-service-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-4px) rotate(0.5deg); }
+}
+
+.service-illustration {
+  overflow: visible;
+}
+
+.service-illustration-art {
+  transform-origin: center;
+  animation: opus-service-float 5.5s ease-in-out infinite;
+  transition: transform 240ms ease;
+}
+
+.service-illustration-backdrop {
+  transform-origin: center;
+  transition: transform 300ms ease, opacity 300ms ease;
+}
+
+@media (hover: hover) {
+  .group:hover .service-illustration-art,
+  .group:focus-within .service-illustration-art {
+    animation-play-state: paused;
+    transform: translateY(-5px) scale(1.035);
+  }
+
+  .group:hover .service-illustration-backdrop,
+  .group:focus-within .service-illustration-backdrop {
+    transform: scale(1.04);
+    opacity: 0.78;
+  }
+}
+
+/* Horizontal card tracks keep long mobile sections compact and swipeable. */
+.opus-horizontal-track {
+  overscroll-behavior-inline: contain;
+  scroll-padding-inline: 1rem;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.opus-horizontal-track::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-float,
+  .hero-float-slow,
+  .hero-float-sm,
+  .hero-shimmer,
+  .hero-bar,
+  .hero-glow,
+  .hero-blink,
+  .service-illustration-art {
+    animation: none;
+  }
+
+  .hero-parallax {
+    transform: none !important;
+  }
+
+  html { scroll-behavior: auto; }
 }

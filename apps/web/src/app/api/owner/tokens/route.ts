@@ -14,7 +14,7 @@ import { env } from '@/lib/env';
 
 type Body = { productType?: unknown; token?: unknown; label?: unknown; reservedForDiscordId?: unknown };
 
-const PRODUCT_TYPES = ['ticket', 'voice_rooms', 'general'];
+const PRODUCT_TYPES = ['ticket', 'voice_rooms', 'general', 'broadcast'];
 const SNOWFLAKE = /^\d{17,20}$/;
 
 export async function POST(req: NextRequest) {

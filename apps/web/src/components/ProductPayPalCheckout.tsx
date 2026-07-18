@@ -12,7 +12,12 @@ type ProductPayPalCheckoutProps = {
   priceLabel: string;
   planId?: string;
   duration?: CheckoutDuration;
+  /** Discord server the bot will be provisioned to — required before paying. */
+  guildId?: string;
+  guildName?: string;
 };
+
+type BotInvite = { productType: string; name: string; url: string };
 
 type ApiResponse<T> =
   | { success: true; data: T }
@@ -165,8 +170,16 @@ export function ProductPayPalCheckout({
   priceLabel,
   planId = 'monthly',
   duration = 'monthly',
+  guildId = '',
+  guildName = '',
 }: ProductPayPalCheckoutProps) {
   const paypalRef = useRef<HTMLDivElement>(null);
+  // PayPal SDK callbacks capture their closure once at render time, so the
+  // freshest guild selection has to travel through refs (same as the cart).
+  const guildRef = useRef(guildId);
+  const guildNameRef = useRef(guildName);
+  guildRef.current = guildId;
+  guildNameRef.current = guildName;
   const cardButtonRef = useRef<HTMLDivElement>(null);
   const cardNameRef = useRef<HTMLDivElement>(null);
   const cardNumberRef = useRef<HTMLDivElement>(null);
@@ -183,6 +196,7 @@ export function ProductPayPalCheckout({
   const [applePayDevNote, setApplePayDevNote] = useState('');
   const [submittingCard, setSubmittingCard] = useState(false);
   const [submittingApplePay, setSubmittingApplePay] = useState(false);
+  const [invites, setInvites] = useState<BotInvite[]>([]);
 
   const amount = useMemo(() => amountFromPriceLabel(priceLabel), [priceLabel]);
   const currency = useMemo(() => currencyFromPriceLabel(priceLabel), [priceLabel]);
@@ -193,6 +207,11 @@ export function ProductPayPalCheckout({
   );
 
   const createOrder = useCallback(async () => {
+    if (!guildRef.current) {
+      setStatus('error');
+      setMessage('اختر السيرفر أولاً ليُفعّل البوت عليه تلقائياً.');
+      throw new Error('missing guild');
+    }
     setStatus('loading');
     setMessage('');
     const response = await fetch('/api/paypal/create-order', {
@@ -219,9 +238,15 @@ export function ProductPayPalCheckout({
       const response = await fetch('/api/paypal/capture-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderID, ...selectionPayload }),
+        body: JSON.stringify({ orderID, guildId: guildRef.current, guildName: guildNameRef.current, ...selectionPayload }),
       });
-      const json = await readJson<{ orderID: string; captureID: string | null; paymentStatus: string }>(response);
+      const json = await readJson<{
+        orderID: string;
+        captureID: string | null;
+        paymentStatus: string;
+        provisioning?: string;
+        invites?: BotInvite[];
+      }>(response);
       if (!json.success) {
         const errMsg = json.error?.message || 'Unable to capture order.';
         clientLog({
@@ -241,7 +266,12 @@ export function ProductPayPalCheckout({
         throw new Error('Unable to capture order.');
       }
       setStatus('success');
-      setMessage('تم الدفع بنجاح عبر PayPal. افتح تكت وأرسل رقم العملية لإكمال التفعيل.');
+      setInvites(json.data.invites ?? []);
+      setMessage(
+        json.data.provisioning === 'pending'
+          ? 'تم الدفع بنجاح! بوتك قيد التجهيز وسيُفعّل خلال دقائق — ستجده في لوحة التحكم.'
+          : 'تم الدفع والتفعيل بنجاح! أضف بوتك لسيرفرك من الزر بالأسفل.',
+      );
     },
     [selectionPayload, productName, priceLabel]
   );
@@ -474,7 +504,13 @@ export function ProductPayPalCheckout({
         </div>
       </div>
 
-      <div className="grid gap-4">
+      {!guildId ? (
+        <p className="mb-4 rounded-xl border border-[#f59e0b]/40 bg-[#f59e0b]/5 px-4 py-2.5 font-arabic text-sm text-[#f59e0b]">
+          اختر السيرفر بالأعلى لتفعيل الدفع.
+        </p>
+      ) : null}
+
+      <div className={`grid gap-4 ${!guildId ? 'pointer-events-none opacity-40' : ''}`}>
         <div>
           <p className="mb-2 text-xs font-bold text-[var(--color-muted)]">PayPal Checkout</p>
           <div ref={paypalRef} />
@@ -551,6 +587,29 @@ export function ProductPayPalCheckout({
         >
           {message}
         </p>
+      ) : null}
+
+      {status === 'success' && invites.length > 0 ? (
+        <div className="mt-3 grid gap-2 rounded-xl border border-[var(--color-accent-2)] bg-[var(--color-bg)] p-4">
+          <p className="font-arabic text-sm font-extrabold text-[var(--color-text)]">أضف بوتك لسيرفرك الآن</p>
+          <p className="font-arabic text-xs leading-6 text-[var(--color-muted)]">
+            افتح الرابط، وافق على الإضافة — البوت يدخل سيرفرك ويشتغل تلقائياً. (لا حاجة لأي توكن)
+          </p>
+          {invites.map((inv) => (
+            <a
+              key={inv.productType}
+              href={inv.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-full items-center justify-center rounded-lg bg-[var(--color-accent)] px-4 py-2.5 font-arabic text-sm font-extrabold text-black transition hover:opacity-90"
+            >
+              إضافة {inv.name} إلى السيرفر
+            </a>
+          ))}
+          <a href="/dashboard" className="mt-1 text-center font-arabic text-xs font-bold text-[var(--color-muted)] underline underline-offset-4 hover:text-[var(--color-text)]">
+            أو من لوحة التحكم
+          </a>
+        </div>
       ) : null}
     </div>
   );

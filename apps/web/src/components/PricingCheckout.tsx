@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Check, CheckCircle2, Send, ShoppingCart } from 'lucide-react';
 import { ProductPayPalCheckout } from '@/components/ProductPayPalCheckout';
+import { ServerSelect } from '@/components/ServerSelect';
 import { buildCartItem, useCart } from '@/components/cart/CartProvider';
 import type { Product } from '@/lib/site-content';
 
@@ -116,6 +117,8 @@ export function PricingCheckout({ products }: { products: Product[] }) {
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
   const [user, setUser] = useState<{ discord_user_id: string } | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [guildId, setGuildId] = useState('');
+  const [guildName, setGuildName] = useState('');
 
   useEffect(() => {
     fetch('/api/dashboard/me', { cache: 'no-store' })
@@ -160,10 +163,10 @@ export function PricingCheckout({ products }: { products: Product[] }) {
           'افتح تكت في سيرفرنا وأرسل رقم العملية — ستستلم كود تفعيلك الخاص داخل التكت',
         ]
       : [
-          'ادفع المبلغ عبر طريقة الدفع التي اخترتها',
+          'حوّل المبلغ عبر رابط PayPal.me أعلاه',
           `اكتب في ملاحظة الدفع: "${noteText}"`,
           'احفظ رقم العملية (Transaction ID)',
-          'افتح تكت في سيرفرنا وأرسل رقم العملية',
+          'افتح تكت في سيرفرنا وأرسل رقم العملية لتفعيل بوتك',
         ]
     : [];
 
@@ -270,6 +273,23 @@ export function PricingCheckout({ products }: { products: Product[] }) {
                 </div>
               ) : (
               <div className="grid gap-0">
+                {/* Server selector — the purchased bot is provisioned to this guild. */}
+                <div className="mb-6 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-6">
+                  <div className="mb-3">
+                    <p className="font-arabic text-lg font-extrabold text-[var(--color-text)]">اختر السيرفر</p>
+                    <p className="mt-1 text-sm leading-7 text-[var(--color-muted)]">
+                      نعرض فقط السيرفرات التي تملك فيها صلاحية <span className="font-bold text-[var(--color-text)]">Administrator</span> — بعد الدفع يُفعّل البوت عليه تلقائياً.
+                    </p>
+                  </div>
+                  <ServerSelect
+                    value={guildId}
+                    onSelect={(id, name) => {
+                      setGuildId(id);
+                      setGuildName(name);
+                    }}
+                  />
+                </div>
+
                 <div className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-6">
                   <div className="mb-5">
                     <p className="font-arabic text-lg font-extrabold text-[var(--color-text)]">تحويل مباشر عبر PayPal.me</p>
@@ -299,12 +319,14 @@ export function PricingCheckout({ products }: { products: Product[] }) {
                   priceLabel={selectedPriceLabel}
                   planId={billingPeriod}
                   duration={selectedDuration}
+                  guildId={guildId}
+                  guildName={guildName}
                 />
 
                 <div className="mt-6 w-full rounded-xl border border-[#334155] bg-[rgba(255,255,255,0.03)] p-4">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 size={18} className="text-[#60a5fa]" />
-                    <p className="font-arabic text-sm font-extrabold text-[var(--color-text)]">بعد إتمام الدفع</p>
+                    <p className="font-arabic text-sm font-extrabold text-[var(--color-text)]">عند الدفع عبر PayPal.me (التحويل اليدوي فقط)</p>
                   </div>
                   <ol className="mt-3 grid gap-2 text-sm leading-7 text-[#94a3b8]">
                     {payPalMeSteps.map((step, index) => (

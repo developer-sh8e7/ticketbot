@@ -105,29 +105,31 @@ export async function POST(req: NextRequest) {
       });
 
       if (provisionError) {
-        // Out of tokens (lost a stock race) — defer, don't fail the paid order.
-        if (/NO_TOKEN_AVAILABLE/.test(provisionError.message)) {
-          pending.push(productType);
-          await supabase.from('payment_events').insert({
-            provider: 'paypal',
-            event_type: 'provision_pending',
-            external_event_id: result.orderID,
-            // Self-contained so it can be fulfilled later without re-deriving anything.
-            payload: {
-              productType,
-              reason: 'no_token_available',
-              guildId,
-              guildName,
-              ownerId: session.discordUserId,
-              accountId: account.id,
-              planId: selection.plan.id,
-              durationDays: selection.plan.durationDays,
-              externalRef,
-            },
-          });
-          continue;
-        }
-        throw provisionError;
+        // The payment is already captured, so ANY provisioning failure (out of
+        // tokens, transient DB error, …) must defer the order — never 500 it.
+        // Deferred orders are retried by fulfillPendingProvisions when the
+        // owner tops up the pool (idempotent via the `provisioned` event check).
+        const outOfTokens = /NO_TOKEN_AVAILABLE/.test(provisionError.message);
+        pending.push(productType);
+        await supabase.from('payment_events').insert({
+          provider: 'paypal',
+          event_type: 'provision_pending',
+          external_event_id: result.orderID,
+          // Self-contained so it can be fulfilled later without re-deriving anything.
+          payload: {
+            productType,
+            reason: outOfTokens ? 'no_token_available' : 'provision_failed',
+            error: outOfTokens ? null : provisionError.message.slice(0, 300),
+            guildId,
+            guildName,
+            ownerId: session.discordUserId,
+            accountId: account.id,
+            planId: selection.plan.id,
+            durationDays: selection.plan.durationDays,
+            externalRef,
+          },
+        });
+        continue;
       }
       await supabase.from('payment_events').insert({ provider: 'paypal', event_type: 'provisioned', external_event_id: result.orderID, payload: { instance, productType } });
 
@@ -139,8 +141,8 @@ export async function POST(req: NextRequest) {
     // Alert the owner so they can top up the pool; the buyer is told it's coming.
     if (pending.length > 0) {
       sendBuyWebhook('provision_pending', {
-        title: '⚠️ دفع مكتمل بانتظار توكن',
-        description: `طلب \`${result.orderID.slice(0, 20)}\` دفع لكن لا يوجد توكن متاح. أضف توكناً للبركة لتفعيله.`,
+        title: '⚠️ دفع مكتمل بانتظار تفعيل',
+        description: `طلب \`${result.orderID.slice(0, 20)}\` مدفوع لكن لم يُفعّل تلقائياً (نفاد توكنات أو خطأ مؤقت). أضف توكناً للبركة وسيُفعّل فوراً.`,
         color: 0xf59e0b,
         fields: [
           { name: '📦 بانتظار', value: pending.map(productArabicName).join('، '), inline: false },

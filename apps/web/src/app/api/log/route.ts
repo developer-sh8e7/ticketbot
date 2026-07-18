@@ -2,39 +2,52 @@
  * Client-side log endpoint — proxies webhook events from the browser
  * so we don't expose server-side env vars to the client.
  *
+ * Hardened: rate-limited per IP, event types allow-listed, lengths clamped,
+ * and the footer is forced so browser-originated embeds can never impersonate
+ * server-side events (e.g. a forged "purchase success").
+ *
  * POST /api/log
- * Body: { eventType: string; title: string; description?: string; color?: number; fields?: {...}[]; footer?: string }
+ * Body: { eventType: string; title: string; description?: string; color?: number; fields?: {...}[] }
  */
+import { NextRequest } from 'next/server';
 import { sendBuyWebhook } from '@/lib/webhook';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 
-export async function POST(req: Request) {
+// Only the events the site's own client code actually sends.
+const ALLOWED_EVENTS = new Set(['capture_failed', 'payment_cancelled', 'payment_error']);
+const CLIENT_FOOTER = 'Opus • Client';
+
+export async function POST(req: NextRequest) {
   try {
-    // Read body as text first to diagnose empty/invalid requests
-    const text = await req.text();
-    if (!text.trim()) {
-      console.warn('[api/log] Empty request body');
-      return new Response(JSON.stringify({ ok: false, error: 'Empty body' }), {
-        status: 400,
+    if (!rateLimit(req, 'client-log', 10, 60_000).allowed) {
+      return new Response(JSON.stringify({ ok: false, error: 'rate_limited' }), {
+        status: 429,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
     let body: Record<string, unknown>;
     try {
-      body = JSON.parse(text);
+      body = (await req.json()) as Record<string, unknown>;
     } catch {
-      console.warn('[api/log] Invalid JSON:', text.slice(0, 200));
       return new Response(JSON.stringify({ ok: false, error: 'Invalid JSON' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    const eventType = typeof body.eventType === 'string' ? body.eventType.trim() : 'client_event';
-    const title = typeof body.title === 'string' ? body.title : '📝 حدث';
-    const description = typeof body.description === 'string' ? body.description : undefined;
+    const eventType = typeof body.eventType === 'string' ? body.eventType.trim() : '';
+    if (!ALLOWED_EVENTS.has(eventType)) {
+      return new Response(JSON.stringify({ ok: false, error: 'Unknown event type' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const title = typeof body.title === 'string' ? body.title.slice(0, 100) : '📝 حدث';
+    const description = typeof body.description === 'string' ? body.description.slice(0, 500) : undefined;
 
     let color = 0xff8a00;
     if (typeof body.color === 'number' && Number.isFinite(body.color)) {
@@ -43,39 +56,30 @@ export async function POST(req: Request) {
 
     let fields: { name: string; value: string; inline?: boolean }[] | undefined;
     if (Array.isArray(body.fields)) {
-      fields = body.fields.filter(
-        (f): f is { name: string; value: string; inline?: boolean } =>
-          f !== null && typeof f === 'object' && typeof (f as Record<string, unknown>).name === 'string' && typeof (f as Record<string, unknown>).value === 'string'
-      );
+      fields = body.fields
+        .filter(
+          (f): f is { name: string; value: string; inline?: boolean } =>
+            f !== null && typeof f === 'object' && typeof (f as Record<string, unknown>).name === 'string' && typeof (f as Record<string, unknown>).value === 'string'
+        )
+        .slice(0, 6)
+        .map((f) => ({ name: f.name.slice(0, 60), value: f.value.slice(0, 300), inline: f.inline === true }));
     }
-
-    const footer = typeof body.footer === 'string' ? body.footer : undefined;
 
     const sent = await sendBuyWebhook(eventType, {
       title,
       description,
       color,
       fields,
-      footer,
+      footer: CLIENT_FOOTER,
     });
 
-    if (!sent) {
-      // Discord webhook not configured or failed silently — still return 200
-      // so the client doesn't spam retries on a working site
-      return new Response(JSON.stringify({ ok: true, sent: false }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    return new Response(JSON.stringify({ ok: true, sent: true }), {
+    return new Response(JSON.stringify({ ok: true, sent }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[api/log] Unhandled error:', msg);
-    return new Response(JSON.stringify({ ok: false, error: msg }), {
+    console.error('[api/log] Unhandled error:', error instanceof Error ? error.message : 'Unknown error');
+    return new Response(JSON.stringify({ ok: false }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

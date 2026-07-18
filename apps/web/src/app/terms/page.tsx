@@ -108,7 +108,17 @@ export default function TermsPage() {
           <p>Opus Solutions reserves the right to update or modify these Terms of Service at any time. Material changes will be communicated through the website or via our Discord server. Your continued use of the Services after any changes take effect constitutes your acceptance of the updated Terms. If you do not agree with a change, you must stop using the Services and cancel your subscription before the change takes effect.</p>
         </Section>
 
-        <Section title="10. Contact">
+        <Section title="10. Website & Application Project Services — خدمات مشاريع المواقع والتطبيقات">
+          <p>For custom website, web application, and mobile application development projects (&ldquo;Project Services&rdquo;), the following additional terms apply:</p>
+          <ul className="list-inside list-disc space-y-1.5">
+            <li><strong>Revisions — التعديلات:</strong> each project package includes up to five (5) revisions during the development of the project (5 تعديلات أثناء المشروع). Additional revisions beyond this limit, or revisions that change the agreed scope of work, are quoted and agreed upon separately.</li>
+            <li><strong>Delivery time — مدة التسليم:</strong> delivery timelines are estimates that depend on the project&rsquo;s size, requirements, and any changes added during development. A clear schedule is agreed upon before work begins.</li>
+            <li><strong>Post-delivery support — الدعم الفني:</strong> every project includes free technical support for one week after delivery (دعم فني لمدة أسبوع بعد التسليم), covering bug fixes, usage guidance, and minor adjustments. Support beyond this period is available as a separate agreement.</li>
+            <li><strong>Hosting &amp; domain — الاستضافة والدومين:</strong> project prices cover design, development, and delivery. Hosting and domain registration are separate services unless explicitly included in a written offer.</li>
+          </ul>
+        </Section>
+
+        <Section title="11. Contact">
           <p>If you have any questions about these Terms of Service, please contact us on Discord: <DiscordLink /></p>
         </Section>
 

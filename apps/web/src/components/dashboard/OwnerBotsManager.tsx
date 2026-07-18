@@ -13,7 +13,7 @@ function csrf() {
   return m ? decodeURIComponent(m[1]) : '';
 }
 
-const PRODUCT: Record<string, string> = { ticket: 'التذاكر', voice_rooms: 'الرومات المؤقتة', general: 'السيستم' };
+const PRODUCT: Record<string, string> = { ticket: 'التذاكر', voice_rooms: 'الرومات المؤقتة', general: 'السيستم', broadcast: 'البرودكاست' };
 const STATUS: Record<string, { label: string; dot: string }> = {
   active: { label: 'نشط', dot: 'bg-emerald-400' },
   paused: { label: 'موقوف', dot: 'bg-amber-400' },

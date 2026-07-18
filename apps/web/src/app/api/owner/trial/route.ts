@@ -11,7 +11,7 @@ import { logWebsiteEvent } from '@/lib/events';
 type Body = { guildId?: unknown; ownerId?: unknown; productType?: unknown; days?: unknown; guildName?: unknown };
 
 const SNOWFLAKE = /^\d{17,20}$/;
-const PRODUCT_TYPES = ['ticket', 'voice_rooms', 'general'];
+const PRODUCT_TYPES = ['ticket', 'voice_rooms', 'general', 'broadcast'];
 
 export async function POST(req: NextRequest) {
   try {

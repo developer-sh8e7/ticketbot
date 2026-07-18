@@ -3,17 +3,18 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, LogOut, Menu, ShoppingCart, X } from 'lucide-react';
+import { LayoutDashboard, LogOut, Menu, ShoppingCart, X, Package, ShoppingCart as CartIcon, ShoppingBag, Rocket, FileText } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useCart } from '@/components/cart/CartProvider';
 
 const SUPPORT_URL = 'https://discord.gg/WRL';
 
-const links: [string, string][] = [
-  ['الرئيسية', '/'],
-  ['BOTS Discord', '/bots'],
-  ['اطلب موقعك أو تطبيقك', '/project-request'],
+const links: { label: string; href: string; icon: React.ComponentType<{ size?: number }> }[] = [
+  { label: 'الرئيسية', href: '/', icon: FileText },
+  { label: 'الباقات', href: '/#packages', icon: Package },
+  { label: 'BOTS Discord', href: '/bots', icon: Rocket },
+  { label: 'اطلب موقعك أو تطبيقك', href: '/project-request', icon: ShoppingBag },
 ];
 
 type SessionUser = { discord_user_id: string; username: string | null; avatar: string | null };
@@ -41,6 +42,26 @@ export function SiteNavbar() {
   }, []);
 
   useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  useEffect(() => {
     let active = true;
     fetch('/api/dashboard/me', { cache: 'no-store' })
       .then((res) => (res.ok ? res.json() : null))
@@ -56,10 +77,10 @@ export function SiteNavbar() {
 
   const isElevated = scrolled || open;
   const avatar = user ? discordAvatarUrl(user) : null;
-  const isDiscordArea = ['/bots', '/commands', '/pricing', '/cart', '/dashboard', '/login'].some((path) =>
+  const isDiscordArea = ['/bots', '/commands', '/pricing', '/cart', '/dashboard', '/login', '/packages'].some((path) =>
     pathname.startsWith(path)
   ) || (pathname.startsWith('/product/') && !pathname.startsWith('/product/custom'));
-  const visibleLinks: [string, string][] = isDiscordArea ? [...links, ['الدعم الفني', SUPPORT_URL]] : links;
+  const visibleLinks = isDiscordArea ? [...links, { label: 'الدعم الفني', href: SUPPORT_URL, icon: FileText }] : links;
 
   const CartButton = (
     <button
@@ -68,7 +89,7 @@ export function SiteNavbar() {
       className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-opus-border text-opus-text transition hover:border-opus-accent"
       aria-label="السلة"
     >
-      <ShoppingCart size={18} />
+      <CartIcon size={18} />
       {count > 0 ? (
         <span className="absolute -right-1.5 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-opus-accent px-1 font-english text-[11px] font-bold text-black">
           {count}
@@ -123,32 +144,33 @@ export function SiteNavbar() {
       dir="rtl"
       className={`fixed inset-x-0 top-0 z-50 border-b transition-all duration-200 ${
         isElevated
-          ? 'border-opus-border bg-[var(--navbar-bg)] backdrop-blur-[12px]'
+          ? 'border-opus-border bg-[var(--navbar-bg)] shadow-[0_10px_35px_rgba(45,40,32,0.06)] backdrop-blur-[12px]'
           : 'border-transparent bg-transparent'
       }`}
     >
-      <div className="mx-auto grid max-w-7xl grid-cols-[1fr_auto] items-center gap-4 px-4 py-3 md:grid-cols-[1fr_auto_1fr] md:px-8 lg:px-12">
-        <Link href="/" className="flex items-center gap-3" onClick={() => setOpen(false)}>
+      <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 py-3 sm:gap-4 md:grid-cols-[1fr_auto_1fr] md:px-8 lg:px-12">
+        <Link href="/" className="flex min-w-0 items-center gap-2.5 sm:gap-3" onClick={() => setOpen(false)}>
           <Image
             src="https://i.imgur.com/0404vFj.png"
             alt="Opus Solutions"
             width={44}
             height={44}
-            className="rounded-full"
+            className="h-10 w-10 shrink-0 rounded-full sm:h-11 sm:w-11"
             priority
           />
-          <span className="font-arabic text-lg font-extrabold tracking-tight text-opus-text">Opus Solutions</span>
+          <span className="truncate font-arabic text-base font-extrabold tracking-tight text-opus-text min-[350px]:text-lg">Opus Solutions</span>
         </Link>
 
-        <div className="hidden items-center gap-2 md:flex">
-          {visibleLinks.map(([label, href]) => (
+        <div className="hidden items-center gap-1 md:flex">
+          {visibleLinks.map(({ label, href, icon: Icon }) => (
             <Link
               key={href}
               href={href}
               target={href === SUPPORT_URL ? '_blank' : undefined}
               rel={href === SUPPORT_URL ? 'noopener noreferrer' : undefined}
-              className="nav-link rounded-lg px-4 py-2 text-sm font-semibold text-opus-muted transition hover:text-opus-text focus:outline-none"
+              className="nav-link flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-opus-muted transition hover:text-opus-text focus:outline-none"
             >
+              <Icon size={16} />
               {label}
             </Link>
           ))}
@@ -179,20 +201,21 @@ export function SiteNavbar() {
         initial={false}
         animate={open ? { height: 'auto', opacity: 1, y: 0 } : { height: 0, opacity: 0, y: -8 }}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className={`overflow-hidden border-t bg-[var(--navbar-bg)] backdrop-blur-[12px] md:hidden ${
+        className={`max-h-[calc(100dvh-68px)] overflow-y-auto border-t bg-[var(--navbar-bg)] backdrop-blur-[12px] md:hidden ${
           open ? 'border-opus-border' : 'border-transparent'
         }`}
       >
         <div className="grid gap-1 px-4 py-4 text-sm">
-          {visibleLinks.map(([label, href]) => (
+          {visibleLinks.map(({ label, href, icon: Icon }) => (
             <Link
               key={href}
               href={href}
               target={href === SUPPORT_URL ? '_blank' : undefined}
               rel={href === SUPPORT_URL ? 'noopener noreferrer' : undefined}
               onClick={() => setOpen(false)}
-              className="rounded-xl px-4 py-3 font-semibold text-opus-muted transition hover:bg-opus-surface hover:text-opus-text"
+              className="flex items-center gap-2 rounded-xl px-4 py-3 font-semibold text-opus-muted transition hover:bg-opus-surface hover:text-opus-text"
             >
+              <Icon size={18} />
               {label}
             </Link>
           ))}

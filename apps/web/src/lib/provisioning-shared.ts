@@ -5,12 +5,13 @@
 import { supabaseAdmin } from './supabase';
 
 /** Product types that consume a pooled bot token and auto-provision an instance. */
-export const PROVISIONABLE_TYPES = new Set(['ticket', 'voice_rooms', 'general']);
+export const PROVISIONABLE_TYPES = new Set(['ticket', 'voice_rooms', 'general', 'broadcast']);
 
 const ARABIC_NAMES: Record<string, string> = {
   ticket: 'بوت التذاكر',
   voice_rooms: 'الغرف المؤقتة',
   general: 'بوت الإدارة',
+  broadcast: 'بوت البرودكاست',
   humanguard: 'HumanGuard AI',
   custom: 'بوت مخصص',
 };

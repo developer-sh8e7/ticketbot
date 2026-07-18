@@ -22,3 +22,5 @@ coverage/
 apps/**/.next/
 .cache/
 **/.cache/
+
+.pi/
