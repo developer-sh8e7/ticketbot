@@ -21,6 +21,7 @@ import { MotionSection } from '@/components/MotionSection';
 import { PublicFrame } from '@/components/ui';
 import { PackagesSection, SELECT_CATEGORY_EVENT } from '@/components/PackagesSection';
 import { SectionNav } from '@/components/SectionNav';
+import { ScrollProgress } from '@/components/ScrollProgress';
 
 const audiences = [
   {
@@ -132,6 +133,7 @@ function selectPackagesCategory(category: string) {
 export default function HomePage() {
   return (
     <>
+      <ScrollProgress />
       <SectionNav items={sectionNavItems} />
       <PublicFrame>
         <div id="home" className="scroll-mt-24">

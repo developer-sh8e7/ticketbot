@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowDown, ArrowLeft } from 'lucide-react';
-import { HeroVisual } from '@/components/HeroVisual';
+import { HeroScene } from '@/components/HeroScene';
 
 const container = {
   hidden: { opacity: 0 },
@@ -70,7 +70,7 @@ export function HomeHero() {
           transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
           aria-hidden="true"
         >
-          <HeroVisual />
+          <HeroScene />
         </motion.div>
       </div>
     </section>
