@@ -28,7 +28,7 @@ export function CustomCursor() {
     };
     const over = (event: Event) => {
       const target = event.target as Element | null;
-      setHovering(!!target?.closest('a, button, [role="tab"], summary'));
+      setHovering(!!target?.closest('a, button, [role="tab"], summary, .package-orbit-canvas'));
     };
 
     window.addEventListener('pointermove', move, { passive: true });

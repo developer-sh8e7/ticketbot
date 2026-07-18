@@ -7,13 +7,13 @@ import type { ReactElement } from 'react';
 const SKIN = '#d9a271';
 const HAIR = '#2a2018';
 const PANTS = '#3f382e';
-const SHIRT = '#e86c00';
+const SHIRT = '#0fc98f';
 const SHIRT_ALT = '#4a5568';
 const PAPER = '#ffffff';
-const LINE = '#e3dccf';
-const SOFT = 'rgba(232,108,0,0.10)';
-const SOFT2 = 'rgba(232,108,0,0.22)';
-const INK_SOFT = 'rgba(45,40,32,0.25)';
+const LINE = '#d2e7e1';
+const SOFT = 'rgba(15,201,143,0.10)';
+const SOFT2 = 'rgba(15,201,143,0.22)';
+const INK_SOFT = 'rgba(7,51,46,0.25)';
 
 export type ServiceIllustrationVariant =
   | 'ecommerce'

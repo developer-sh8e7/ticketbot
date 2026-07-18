@@ -50,7 +50,7 @@ export function HomeHero() {
             <MagneticButton>
               <Link
                 href="/project-request"
-                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-6 py-3 font-arabic text-sm font-extrabold text-[var(--color-text)] shadow-[0_12px_28px_rgba(232,108,0,0.18)] transition hover:-translate-y-0.5 hover:bg-[var(--color-accent-2)] hover:text-white focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[var(--color-bg)] sm:w-auto"
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-6 py-3 font-arabic text-sm font-extrabold text-[var(--color-text)] shadow-[0_12px_28px_rgba(15,201,143,0.22)] transition hover:-translate-y-0.5 hover:bg-[var(--color-accent-2)] hover:text-white focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[var(--color-bg)] sm:w-auto"
               >
                 اطلب موقعك أو تطبيقك <ArrowLeft size={16} />
               </Link>

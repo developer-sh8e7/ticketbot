@@ -67,7 +67,7 @@ function PackagesContent() {
       </section>
 
       {/* What's Included Section */}
-      <section className="py-16 md:py-24 bg-[var(--color-surface)] border-y border-[var(--color-border)]">
+      <section className="border-y border-white/60 bg-[var(--color-surface)]/[0.58] py-16 backdrop-blur-xl md:py-24">
         <div className="mx-auto max-w-7xl px-4 md:px-8 lg:px-12">
           <div className="text-center mb-16">
             <h2 className="font-arabic text-3xl font-extrabold text-[var(--color-text)] md:text-4xl">

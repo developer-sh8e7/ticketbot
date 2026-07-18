@@ -226,7 +226,7 @@ function PanelPreview({ settings, emojis }: { settings: Settings; emojis: GuildE
   const previewMessage = settings.panel_message.trim() || 'مرحباً! اختر نوع طلبك من القائمة لفتح تذكرة، وسيتم خدمتك بأسرع وقت.';
 
   return (
-    <div className="sticky top-24 overflow-hidden rounded-3xl border border-opus-border bg-[radial-gradient(circle_at_top,rgba(255,138,0,0.12),transparent_38%),var(--color-surface)] shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
+    <div className="sticky top-24 overflow-hidden rounded-3xl border border-opus-border bg-[radial-gradient(circle_at_top,rgba(15,201,143,0.14),transparent_38%),var(--color-surface)] shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
       <div className="border-b border-opus-border/80 p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -507,7 +507,7 @@ export function TicketSettingsEditor({ botId }: { botId: string }) {
               <div key={c.key} className="rounded-2xl border border-opus-border bg-opus-bg/45 p-3">
                 <div className="grid gap-3 lg:grid-cols-[auto_220px_minmax(0,1fr)_minmax(0,1.2fr)_auto] lg:items-start">
                   <label className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-opus-border bg-opus-surface/60 px-3 py-2" title="مفعّل">
-                    <input type="checkbox" checked={c.enabled} onChange={(e) => setCategory(i, { enabled: e.target.checked })} className="h-4 w-4 accent-[var(--color-accent,#ff8a00)]" />
+                    <input type="checkbox" checked={c.enabled} onChange={(e) => setCategory(i, { enabled: e.target.checked })} className="h-4 w-4 accent-[var(--color-accent,#0fc98f)]" />
                     <span className="font-arabic text-[11px] text-opus-muted">مفعّل</span>
                   </label>
                   <EmojiPicker value={c.emoji || ''} onChange={(value) => setCategory(i, { emoji: value })} emojis={emojis} inputClass={input} compact />

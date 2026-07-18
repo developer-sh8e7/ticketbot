@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { Bot, BrainCircuit, Code2, FileText, MessageCircle, Package, ShieldCheck, Ticket, Undo2, UserCheck, UserPlus, Settings2 } from 'lucide-react';
 import { SiteNavbar } from '@/components/SiteNavbar';
+import { AuroraBackground } from '@/components/fx/AuroraBackground';
 import { cn } from '@/lib/cn';
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -10,7 +11,8 @@ export function Shell({ children }: { children: ReactNode }) {
 
 export function PublicFrame({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen overflow-hidden">
+    <div className="public-frame relative isolate min-h-screen overflow-hidden">
+      <AuroraBackground />
       <Navbar />
       <Shell>{children}</Shell>
       <Footer />
@@ -24,7 +26,7 @@ export function Navbar() {
 
 export function Footer() {
   return (
-    <footer dir="rtl" className="border-t border-[var(--color-border)] bg-[var(--color-bg)]">
+    <footer dir="rtl" className="relative z-10 border-t border-white/60 bg-[var(--color-bg)]/80 backdrop-blur-2xl">
       <div className="mx-auto max-w-7xl px-4 py-12 md:px-8 md:py-14 lg:px-12">
         <div className="grid grid-cols-2 gap-x-6 gap-y-9 md:grid-cols-4 md:gap-10">
           <div className="col-span-2 md:col-span-1">

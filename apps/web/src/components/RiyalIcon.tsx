@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 
-const RIYAL_IMAGE = 'https://i.imgur.com/rs8hC4g.png';
+const RIYAL_IMAGE = '/riyal.png';
 
 interface RiyalIconProps {
   size?: number;

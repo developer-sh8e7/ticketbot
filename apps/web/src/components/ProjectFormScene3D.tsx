@@ -85,17 +85,17 @@ export function ProjectFormScene3D({ step }: { step: Step }) {
     scene.add(group);
 
     scene.add(new THREE.AmbientLight(0xffffff, 1.45));
-    const key = new THREE.DirectionalLight(0xffad4a, 5.6);
+    const key = new THREE.DirectionalLight(0xb9f6e8, 5.6);
     key.position.set(4, 5, 5);
     scene.add(key);
-    const rim = new THREE.DirectionalLight(0x73809a, 2.1);
+    const rim = new THREE.DirectionalLight(0x66cddd, 2.1);
     rim.position.set(-4, 0, -2);
     scene.add(rim);
 
     const dark = new THREE.MeshPhysicalMaterial({ color: 0x171719, metalness: 0.58, roughness: 0.34, clearcoat: 0.5 });
-    const orange = new THREE.MeshPhysicalMaterial({ color: 0xff8a00, emissive: 0x5a2100, emissiveIntensity: 0.32, metalness: 0.44, roughness: 0.3, clearcoat: 0.72 });
+    const mint = new THREE.MeshPhysicalMaterial({ color: 0x0fc98f, emissive: 0x035b52, emissiveIntensity: 0.32, metalness: 0.44, roughness: 0.3, clearcoat: 0.72 });
     const edge = new THREE.LineBasicMaterial({ color: 0x686872, transparent: true, opacity: 0.62 });
-    const accentEdge = new THREE.LineBasicMaterial({ color: 0xffa433, transparent: true, opacity: 0.62 });
+    const accentEdge = new THREE.LineBasicMaterial({ color: 0x70e7c5, transparent: true, opacity: 0.62 });
     const geometries: THREE.BufferGeometry[] = [];
 
     const pieces = Array.from({ length: 7 }, (_, index) => {
@@ -104,7 +104,7 @@ export function ProjectFormScene3D({ step }: { step: Step }) {
       geometries.push(geometry, edgeGeometry);
       const node = new THREE.Group();
       node.add(
-        new THREE.Mesh(geometry, [1, 4, 6].includes(index) ? orange : dark),
+        new THREE.Mesh(geometry, [1, 4, 6].includes(index) ? mint : dark),
         new THREE.LineSegments(edgeGeometry, [1, 4, 6].includes(index) ? accentEdge : edge)
       );
       node.position.set((index - 3) * 0.9, 3 + index * 0.28, -1.8);
@@ -165,7 +165,7 @@ export function ProjectFormScene3D({ step }: { step: Step }) {
       observer.disconnect();
       geometries.forEach((geometry) => geometry.dispose());
       dark.dispose();
-      orange.dispose();
+      mint.dispose();
       edge.dispose();
       accentEdge.dispose();
       renderer.dispose();

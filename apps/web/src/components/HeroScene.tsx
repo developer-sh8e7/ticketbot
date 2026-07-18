@@ -6,7 +6,7 @@ import { LayoutDashboard, ShoppingCart, Smartphone } from 'lucide-react';
 import { HeroVisual } from '@/components/HeroVisual';
 
 /*
- * Real three.js hero scene — a glossy orange torus knot inside a particle
+ * Real three.js hero scene — a glossy mint torus knot inside a particle
  * halo with orbiting geometric satellites.
  *
  * Interactions:
@@ -50,13 +50,13 @@ export function HeroScene() {
     camera.position.set(0, 0, 7.2);
 
     scene.add(new THREE.AmbientLight(0xffffff, 1.7));
-    const keyLight = new THREE.DirectionalLight(0xffb45c, 4.2);
+    const keyLight = new THREE.DirectionalLight(0xb9f6e8, 4.2);
     keyLight.position.set(3.5, 4, 5);
     scene.add(keyLight);
-    const rimLight = new THREE.DirectionalLight(0x9aa6c8, 1.5);
+    const rimLight = new THREE.DirectionalLight(0x79dce8, 1.5);
     rimLight.position.set(-4, -1, -3);
     scene.add(rimLight);
-    const fillLight = new THREE.PointLight(0xff8a00, 2.2, 16, 1.4);
+    const fillLight = new THREE.PointLight(0x0fc98f, 2.2, 16, 1.4);
     fillLight.position.set(0, 0.4, 2.4);
     scene.add(fillLight);
 
@@ -69,15 +69,15 @@ export function HeroScene() {
       return obj;
     };
 
-    const ACCENT = 0xe86c00;
-    const INK = 0x3a332a;
-    const CREAM = 0xfbf7ef;
+    const ACCENT = 0x0fc98f;
+    const INK = 0x07332e;
+    const CREAM = 0xfbfefd;
 
     // ── central knot ────────────────────────────────────────────────────
     const knotGeo = track(new THREE.TorusKnotGeometry(1.02, 0.3, 256, 40));
     const knotMat = track(new THREE.MeshPhysicalMaterial({
       color: ACCENT,
-      emissive: 0x7a3800,
+      emissive: 0x035b52,
       emissiveIntensity: 0.32,
       metalness: 0.3,
       roughness: 0.28,

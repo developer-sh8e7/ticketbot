@@ -179,7 +179,7 @@ export default function HomePage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
                   dir="rtl"
-                  className="group rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_2px_12px_rgba(45,40,32,0.04)] transition-all duration-300 hover:border-[var(--color-accent)]/40 hover:shadow-[0_20px_50px_rgba(232,108,0,0.1)] focus-within:border-[var(--color-accent)]"
+                  className="group rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_2px_12px_rgba(45,40,32,0.04)] transition-all duration-300 hover:border-[var(--color-accent)]/40 hover:shadow-[0_20px_50px_rgba(15,201,143,0.14)] focus-within:border-[var(--color-accent)]"
                 >
                   <button
                     type="button"
@@ -224,7 +224,7 @@ export default function HomePage() {
         </MotionSection>
 
         {/* Stats */}
-        <MotionSection className="border-y border-[var(--color-border)] bg-[var(--color-surface)] py-10 md:py-24">
+        <MotionSection className="border-y border-white/60 bg-[var(--color-surface)]/[0.58] py-10 backdrop-blur-xl md:py-24">
           <div className="mx-auto max-w-7xl px-4 md:px-8 lg:px-12">
             <div className="grid grid-cols-3 gap-1 sm:gap-4 md:gap-8">
               {stats.map((stat, index) => (
@@ -267,7 +267,7 @@ export default function HomePage() {
             itemClassName="min-w-[82vw] snap-center sm:min-w-[380px] md:min-w-0"
           >
             {audiences.map(({ icon: Icon, title, description, points }) => (
-              <article key={title} dir="rtl" className="group h-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[0_2px_12px_rgba(45,40,32,0.04)] transition-all hover:border-[var(--color-accent)]/40 hover:shadow-[0_20px_50px_rgba(232,108,0,0.1)] sm:p-6">
+              <article key={title} dir="rtl" className="group h-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[0_2px_12px_rgba(45,40,32,0.04)] transition-all hover:border-[var(--color-accent)]/40 hover:shadow-[0_20px_50px_rgba(15,201,143,0.14)] sm:p-6">
                 <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)] transition-transform group-hover:scale-110">
                   <Icon size={22} />
                 </div>
@@ -310,7 +310,7 @@ export default function HomePage() {
                   viewport={{ once: true, margin: '-50px' }}
                   transition={{ duration: 0.5, delay: index * 0.08 }}
                   dir="rtl"
-                  className="group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] transition-all hover:-translate-y-1 hover:border-[var(--color-accent)]/50 hover:shadow-[0_20px_50px_rgba(232,108,0,0.1)]"
+                  className="group overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] transition-all hover:-translate-y-1 hover:border-[var(--color-accent)]/50 hover:shadow-[0_20px_50px_rgba(15,201,143,0.14)]"
                 >
                   <div className="relative aspect-video overflow-hidden">
                     <img
@@ -320,7 +320,7 @@ export default function HomePage() {
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                     <div className="absolute right-4 top-4 z-10">
-                      <span className="rounded-full bg-[var(--color-accent)] px-3 py-1 font-arabic text-xs font-bold text-white shadow-[0_6px_18px_rgba(232,108,0,0.35)]">{project.category}</span>
+                      <span className="rounded-full bg-[var(--color-accent)] px-3 py-1 font-arabic text-xs font-bold text-white shadow-[0_6px_18px_rgba(15,201,143,0.3)]">{project.category}</span>
                     </div>
                   </div>
                   <div className="p-5">
@@ -355,7 +355,7 @@ export default function HomePage() {
         </MotionSection>
 
         {/* FAQ Section */}
-        <MotionSection id="faq" className="scroll-mt-24 border-y border-[var(--color-border)] bg-[var(--color-surface)] py-12 md:py-20">
+        <MotionSection id="faq" className="scroll-mt-24 border-y border-white/60 bg-[var(--color-surface)]/[0.58] py-12 backdrop-blur-xl md:py-20">
           <div className="mx-auto max-w-3xl px-4 md:px-8 lg:px-12">
             <div dir="rtl" className="mb-8 text-center md:mb-16">
               <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">أسئلة شائعة</p>
@@ -393,7 +393,7 @@ export default function HomePage() {
 
         {/* CTA Section */}
         <MotionSection id="contact" className="scroll-mt-24 mx-[calc(50%-50vw)] w-screen py-12 md:py-20">
-          <div dir="rtl" className="relative overflow-hidden border-y border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-14 text-center sm:px-6 md:px-10 md:py-16">
+          <div dir="rtl" className="relative overflow-hidden border-y border-white/60 bg-[var(--color-surface)]/[0.62] px-5 py-14 text-center backdrop-blur-xl sm:px-6 md:px-10 md:py-16">
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--color-accent)] to-transparent" aria-hidden="true" />
             <div className="relative mx-auto max-w-6xl">
               <h2 className="font-arabic text-3xl font-extrabold tracking-tight text-[var(--color-text)] sm:text-4xl">جاهز تحول فكرتك إلى موقع أو تطبيق يعمل؟</h2>

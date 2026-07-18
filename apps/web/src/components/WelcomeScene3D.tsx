@@ -44,15 +44,15 @@ export function WelcomeScene3D({ variant = 'welcome' }: { variant?: SceneVariant
     const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
     camera.position.set(0, 0, 6.4);
 
-    // Lights — warm key + cool rim for depth on a light backdrop.
+    // Lights — icy key + teal rim for depth on a light backdrop.
     scene.add(new THREE.AmbientLight(0xffffff, 1.8));
-    const keyLight = new THREE.DirectionalLight(0xffb45c, 4.5);
+    const keyLight = new THREE.DirectionalLight(0xb9f6e8, 4.5);
     keyLight.position.set(3.5, 4, 5);
     scene.add(keyLight);
-    const rimLight = new THREE.DirectionalLight(0x9aa6c8, 1.6);
+    const rimLight = new THREE.DirectionalLight(0x79dce8, 1.6);
     rimLight.position.set(-4, -1, -3);
     scene.add(rimLight);
-    const fillLight = new THREE.PointLight(0xff8a00, 2.4, 14, 1.4);
+    const fillLight = new THREE.PointLight(0x0fc98f, 2.4, 14, 1.4);
     fillLight.position.set(0, 0, 2.2);
     scene.add(fillLight);
 
@@ -65,7 +65,7 @@ export function WelcomeScene3D({ variant = 'welcome' }: { variant?: SceneVariant
       return obj;
     };
 
-    const accent = 0xff7a00;
+    const accent = 0x0fc98f;
 
     // Inner glowing core — small emissive sphere.
     const coreGeo = track(new THREE.IcosahedronGeometry(0.55, 2));

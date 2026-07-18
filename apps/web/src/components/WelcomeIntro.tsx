@@ -65,7 +65,7 @@ export function WelcomeIntro() {
           <div
             className="pointer-events-none fixed inset-0 opacity-70"
             aria-hidden="true"
-            style={{ background: 'radial-gradient(circle at 22% 42%, rgba(255,138,0,0.1), transparent 34%)' }}
+            style={{ background: 'radial-gradient(circle at 22% 42%, rgba(15,201,143,0.14), transparent 34%)' }}
           />
 
           <header dir="rtl" className="pointer-events-none fixed inset-x-0 top-0 z-20 flex items-center justify-between px-5 py-5 sm:px-8">

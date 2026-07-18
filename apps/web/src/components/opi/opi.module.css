@@ -9,12 +9,12 @@
 }
 
 .svg {
-  filter: drop-shadow(0 10px 24px rgba(255, 138, 0, 0.22));
+  filter: drop-shadow(0 10px 24px rgba(15, 201, 143, 0.24));
   transition: filter 250ms ease;
 }
 
 .mascotBtn:hover .svg {
-  filter: drop-shadow(0 12px 30px rgba(255, 138, 0, 0.38));
+  filter: drop-shadow(0 12px 30px rgba(15, 201, 143, 0.4));
 }
 
 .bob {

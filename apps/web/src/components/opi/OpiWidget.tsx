@@ -219,7 +219,7 @@ export function OpiWidget() {
       ref={rootRef}
       dir="rtl"
       className={`${styles.root} font-arabic`}
-      style={{ '--opi': '#ff8a00', '--opi-soft': 'rgba(255,138,0,0.14)', '--opi-border': 'rgba(255,138,0,0.45)' } as CSSProperties}
+      style={{ '--opi': '#0fc98f', '--opi-soft': 'rgba(15,201,143,0.14)', '--opi-border': 'rgba(15,201,143,0.45)' } as CSSProperties}
     >
       {/* ambient speech bubble */}
       <AnimatePresence>
