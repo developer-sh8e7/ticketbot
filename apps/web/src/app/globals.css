@@ -500,90 +500,70 @@ body.custom-cursor, body.custom-cursor * { cursor: none !important; }
   to { background-position: -150% 0, 0 0; }
 }
 
-/* ── Full-screen package launch transition ──────────────────────────────── */
-
-.package-experience-reveal {
-  background:
-    radial-gradient(circle at 18% 22%, rgba(86, 207, 220, 0.84), transparent 34%),
-    radial-gradient(circle at 78% 18%, rgba(204, 244, 75, 0.7), transparent 30%),
-    radial-gradient(circle at 74% 78%, rgba(40, 218, 160, 0.78), transparent 35%),
-    linear-gradient(135deg, #e8f7f5 0%, #f9fcfb 44%, #d6f1f0 100%);
-}
-
-.package-modal-aurora {
+/* The details stay in context; the connector itself is rendered by Three.js. */
+.package-orbit-detail {
   position: absolute;
-  inset: -30%;
-  z-index: 1;
-  pointer-events: none;
-  background:
-    conic-gradient(from 45deg at 50% 50%, rgba(56, 182, 201, 0.34), rgba(47, 227, 161, 0.2), rgba(217, 244, 95, 0.27), rgba(165, 230, 240, 0.37), rgba(56, 182, 201, 0.34));
-  filter: blur(80px);
-  animation: package-modal-flow 18s linear infinite;
-  mix-blend-mode: multiply;
-}
-
-.package-speed-lines {
-  position: absolute;
-  inset: -20%;
-  z-index: 2;
-  pointer-events: none;
-  opacity: 0.24;
-  background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,0.64) 0deg 0.25deg, transparent 0.35deg 7deg);
-  mask-image: radial-gradient(circle at center, transparent 0 12%, #000 34%, transparent 72%);
-  animation: package-speed-sweep 8s linear infinite;
-}
-
-.package-launch-ring {
-  z-index: 4;
-  pointer-events: none;
+  top: clamp(1rem, 3.2vw, 2.75rem);
+  z-index: 5;
+  width: min(390px, calc(100vw - 2rem));
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.84);
+  border-radius: 1.75rem;
+  background: rgba(248, 253, 251, 0.78);
+  padding: 1.25rem;
   box-shadow:
-    0 0 0 18px rgba(255, 255, 255, 0.18),
-    0 0 80px rgba(56, 182, 201, 0.58),
-    inset 0 0 30px rgba(217, 244, 95, 0.54);
-  will-change: transform, filter, opacity;
+    0 28px 90px rgba(4, 51, 44, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(24px) saturate(1.18);
 }
 
-@keyframes package-modal-flow {
-  from { transform: rotate(0deg) scale(0.9); }
-  50% { transform: rotate(180deg) scale(1.12); }
-  to { transform: rotate(360deg) scale(0.9); }
+.package-orbit-detail.is-right {
+  right: clamp(1rem, 4vw, 4rem);
 }
 
-@keyframes package-speed-sweep {
-  from { transform: rotate(0deg) scale(0.88); }
-  to { transform: rotate(360deg) scale(1.12); }
+.package-orbit-detail.is-left {
+  left: clamp(1rem, 4vw, 4rem);
+}
+
+.package-orbit-detail-glow {
+  position: absolute;
+  inset: auto -20% -55% 20%;
+  height: 80%;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(47, 227, 161, 0.3), rgba(217, 244, 95, 0.16) 45%, transparent 72%);
+  filter: blur(28px);
+  pointer-events: none;
 }
 
 @media (max-width: 719px) {
   .package-orbit-shell {
-    min-height: 390px;
+    min-height: 500px;
   }
 
   .package-orbit-mount {
-    height: 100vw;
-    min-height: 390px;
-    max-height: 640px;
+    height: 125vw;
+    min-height: 500px;
+    max-height: 620px;
   }
 
-  .package-speed-lines {
-    opacity: 0.14;
+  .package-orbit-detail {
+    top: 0.75rem;
+    right: 0.75rem !important;
+    left: 0.75rem !important;
+    width: auto;
+    max-height: 245px;
+    border-radius: 1.4rem;
+    padding: 1rem;
   }
-}
 
-@media (max-width: 639px) {
-  .package-orbit-summary {
-    margin-inline: 0.25rem;
+  .package-orbit-detail ul,
+  .package-orbit-detail p {
+    display: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .package-modal-aurora,
-  .package-speed-lines,
   .package-orbit-loading {
     animation: none !important;
-  }
-
-  .package-speed-lines {
-    display: none;
   }
 }

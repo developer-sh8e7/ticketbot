@@ -1,20 +1,25 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
+  ArrowLeft,
+  Check,
   ShoppingCart,
   LayoutDashboard,
   GraduationCap,
   LayoutTemplate,
   Smartphone,
   Layers,
-  MousePointerClick,
   Sparkles,
+  X,
 } from 'lucide-react';
-import { PackageDetailsModal } from '@/components/PackageDetailsModal';
-import { PackageOrbitScene, type PackageOrbitItem } from '@/components/PackageOrbitScene';
+import {
+  PackageOrbitScene,
+  type PackageOrbitInteraction,
+  type PackageOrbitItem,
+} from '@/components/PackageOrbitScene';
 import { PriceWithRiyal } from '@/components/RiyalIcon';
 
 export const packages = [
@@ -183,18 +188,19 @@ export function PackagesSection({ initialCategory = 'all' }: { initialCategory?:
   const [selectedCategory, setSelectedCategory] = useState(
     validCategories.has(initialCategory) ? initialCategory : 'all'
   );
-  const [previewId, setPreviewId] = useState(
-    validCategories.has(initialCategory) && initialCategory !== 'all' ? initialCategory : packages[0].id
-  );
-  const [openPackage, setOpenPackage] = useState<{
+  const [hoveredPackage, setHoveredPackage] = useState<{
     package: typeof packages[0];
-    origin: { x: number; y: number };
+    interaction: PackageOrbitInteraction;
   } | null>(null);
+  const [selectedPackage, setSelectedPackage] = useState<{
+    package: typeof packages[0];
+    interaction: PackageOrbitInteraction;
+  } | null>(null);
+  const hoverClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const nextCategory = validCategories.has(initialCategory) ? initialCategory : 'all';
     setSelectedCategory(nextCategory);
-    if (nextCategory !== 'all') setPreviewId(nextCategory);
   }, [initialCategory]);
 
   useEffect(() => {
@@ -202,19 +208,40 @@ export function PackagesSection({ initialCategory = 'all' }: { initialCategory?:
       const category = (event as CustomEvent<string>).detail;
       if (validCategories.has(category)) {
         setSelectedCategory(category);
-        if (category !== 'all') setPreviewId(category);
       }
     };
     window.addEventListener(SELECT_CATEGORY_EVENT, onSelect);
     return () => window.removeEventListener(SELECT_CATEGORY_EVENT, onSelect);
   }, []);
 
-  const previewPackage = packages.find((pkg) => pkg.id === previewId) ?? packages[0];
-  const focusId = selectedCategory === 'all' ? null : selectedCategory;
+  useEffect(() => () => {
+    if (hoverClearTimer.current) clearTimeout(hoverClearTimer.current);
+  }, []);
 
-  const openDetails = (pkg: typeof packages[0] | PackageOrbitItem, origin: { x: number; y: number }) => {
+  const focusId = selectedCategory === 'all' ? null : selectedCategory;
+  const displayedPackage = hoveredPackage ?? selectedPackage;
+
+  const resolvePackage = (pkg: PackageOrbitItem) => {
+    return packages.find((candidate) => candidate.id === pkg.id) ?? null;
+  };
+
+  const showHoverDetails = (pkg: PackageOrbitItem | null, interaction?: PackageOrbitInteraction) => {
+    if (hoverClearTimer.current) clearTimeout(hoverClearTimer.current);
+    if (pkg && interaction) {
+      const fullPackage = resolvePackage(pkg);
+      if (fullPackage) setHoveredPackage({ package: fullPackage, interaction });
+      return;
+    }
+    hoverClearTimer.current = setTimeout(() => setHoveredPackage(null), 180);
+  };
+
+  const toggleSelectedDetails = (pkg: PackageOrbitItem | null, interaction: PackageOrbitInteraction) => {
+    if (!pkg) {
+      setSelectedPackage(null);
+      return;
+    }
     const fullPackage = packages.find((candidate) => candidate.id === pkg.id);
-    if (fullPackage) setOpenPackage({ package: fullPackage, origin });
+    if (fullPackage) setSelectedPackage({ package: fullPackage, interaction });
   };
 
   return (
@@ -230,7 +257,6 @@ export function PackagesSection({ initialCategory = 'all' }: { initialCategory?:
             key={cat.id}
             onClick={() => {
               setSelectedCategory(cat.id);
-              if (cat.id !== 'all') setPreviewId(cat.id);
             }}
             role="tab"
             aria-selected={selectedCategory === cat.id}
@@ -250,53 +276,95 @@ export function PackagesSection({ initialCategory = 'all' }: { initialCategory?:
         <PackageOrbitScene
           items={packages}
           focusId={focusId}
-          onHoverChange={(item) => {
-            if (item) setPreviewId(item.id);
-          }}
-          onActivate={openDetails}
+          selectedId={selectedPackage?.package.id ?? null}
+          onHoverChange={showHoverDetails}
+          onActivate={toggleSelectedDetails}
         />
         <div className="package-orbit-edge package-orbit-edge-start" aria-hidden="true" />
         <div className="package-orbit-edge package-orbit-edge-end" aria-hidden="true" />
-      </div>
 
-      <motion.div
-        key={previewPackage.id}
-        initial={{ opacity: 0, y: 12, filter: 'blur(8px)' }}
-        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-        transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-        className="package-orbit-summary relative z-10 mx-auto -mt-8 max-w-3xl rounded-[2rem] border border-white/70 bg-[var(--color-surface)]/[0.72] p-4 shadow-[0_24px_80px_rgba(14,138,163,0.12)] backdrop-blur-2xl sm:p-5"
-        aria-live="polite"
-      >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-xs font-bold text-[var(--color-accent-2)]">
-              <Sparkles size={14} />
-              <span>{previewPackage.category}</span>
-            </div>
-            <h3 className="mt-1.5 font-arabic text-xl font-extrabold text-[var(--color-text)] sm:text-2xl">{previewPackage.name}</h3>
-            <p className="mt-1 line-clamp-1 font-arabic text-sm leading-7 text-[var(--color-muted)]">{previewPackage.description}</p>
-          </div>
-          <div className="flex shrink-0 items-center justify-between gap-4 sm:justify-end">
-            <PriceWithRiyal amount={previewPackage.price} size="lg" />
-            <button
-              type="button"
-              onClick={(event) => {
-                const rect = event.currentTarget.getBoundingClientRect();
-                openDetails(previewPackage, { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+        <AnimatePresence mode="wait">
+          {displayedPackage ? (
+            <motion.aside
+              key={`${displayedPackage.package.id}-${displayedPackage === selectedPackage ? 'selected' : 'hovered'}`}
+              initial={{ opacity: 0, y: 18, scale: 0.94, filter: 'blur(12px)' }}
+              animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: 10, scale: 0.97, filter: 'blur(8px)' }}
+              transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+              className={`package-orbit-detail ${displayedPackage.interaction.side === 'right' ? 'is-right' : 'is-left'}`}
+              onPointerEnter={() => {
+                if (hoverClearTimer.current) clearTimeout(hoverClearTimer.current);
               }}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--color-text)] px-5 py-2.5 font-arabic text-sm font-extrabold text-[var(--color-surface)] transition hover:-translate-y-0.5 hover:bg-[var(--color-accent-2)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+              onPointerLeave={() => {
+                if (!selectedPackage) showHoverDetails(null);
+              }}
+              aria-live="polite"
             >
-              تفاصيل الباقة
-              <MousePointerClick size={16} />
-            </button>
-          </div>
-        </div>
-      </motion.div>
+              <div className="package-orbit-detail-glow" aria-hidden="true" />
+              <div className="relative z-10">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="inline-flex items-center gap-2 font-arabic text-xs font-extrabold text-[var(--color-accent-2)]">
+                      <Sparkles size={14} />
+                      {displayedPackage.package.category}
+                    </div>
+                    <h3 className="mt-2 font-arabic text-2xl font-extrabold leading-tight text-[var(--color-text)] sm:text-3xl">
+                      {displayedPackage.package.name}
+                    </h3>
+                  </div>
+                  {selectedPackage ? (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPackage(null)}
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/80 bg-white/60 text-[var(--color-text)] transition hover:rotate-90 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                      aria-label="إغلاق تفاصيل الباقة"
+                    >
+                      <X size={17} />
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="mt-4 flex items-end justify-between gap-4 border-y border-[var(--color-text)]/10 py-3">
+                  <PriceWithRiyal amount={displayedPackage.package.price} size="lg" />
+                  {displayedPackage.package.discount > 0 ? (
+                    <span className="rounded-full bg-[var(--aurora-lime)] px-3 py-1 font-arabic text-xs font-extrabold text-[var(--color-on-accent)]">
+                      وفر {displayedPackage.package.discount}%
+                    </span>
+                  ) : null}
+                </div>
+
+                <p className="mt-3 line-clamp-2 font-arabic text-sm leading-7 text-[var(--color-muted)]">
+                  {displayedPackage.package.description}
+                </p>
+
+                <ul className="mt-3 grid gap-1.5">
+                  {displayedPackage.package.features.slice(0, 3).map((feature) => (
+                    <li key={feature} className="flex items-start gap-2 font-arabic text-xs leading-6 text-[var(--color-text)]">
+                      <span className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)] text-[var(--color-on-accent)]">
+                        <Check size={10} strokeWidth={3} />
+                      </span>
+                      <span className="line-clamp-1">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Link
+                  href="/project-request"
+                  className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--color-text)] px-5 py-2.5 font-arabic text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[var(--color-accent-2)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                >
+                  ابدأ مشروعك
+                  <ArrowLeft size={16} />
+                </Link>
+              </div>
+            </motion.aside>
+          ) : null}
+        </AnimatePresence>
+      </div>
 
       <div className="mt-4 flex flex-col items-center justify-center gap-1 text-center font-arabic text-xs text-[var(--color-muted)] sm:flex-row sm:gap-3">
         <span>المسار يتحرك بشكل مستمر</span>
         <span className="hidden h-1 w-1 rounded-full bg-[var(--color-accent)] sm:block" />
-        <span>مرر المؤشر لرفع الباقة واضغط عليها للتفاصيل</span>
+        <span>مرر المؤشر للتفاصيل، واضغط لتثبيتها</span>
         <Link href="/project-request" className="mt-2 font-extrabold text-[var(--color-accent-2)] underline underline-offset-4 sm:mt-0">أو اطلب عرض مخصص</Link>
       </div>
 
@@ -308,12 +376,6 @@ export function PackagesSection({ initialCategory = 'all' }: { initialCategory?:
         ))}
       </ul>
 
-      <PackageDetailsModal
-        isOpen={!!openPackage}
-        onClose={() => setOpenPackage(null)}
-        package={openPackage?.package}
-        origin={openPackage?.origin}
-      />
     </div>
   );
 }
