@@ -24,18 +24,15 @@ type PackageOrbitSceneProps = {
 type OrbitMesh = THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> & {
   userData: {
     itemIndex: number;
+    copyIndex: number;
     hoverAmount: number;
     opacity: number;
   };
 };
 
-type OrbitHitMesh = THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> & {
-  userData: { visualIndex: number };
-};
-
-const CARD_COPIES = 35;
-const CARD_TEXTURE_WIDTH = 640;
-const CARD_TEXTURE_HEIGHT = 960;
+const CARD_COPIES = 64;
+const CARD_TEXTURE_WIDTH = 600;
+const CARD_TEXTURE_HEIGHT = 1200;
 
 const cardPalettes = [
   { glow: '#18d6a0', wash: '#dff9f1', edge: '#71e7c8' },
@@ -94,41 +91,41 @@ function makeCardTexture(item: PackageOrbitItem, index: number, renderer: THREE.
   const palette = cardPalettes[index % cardPalettes.length];
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  roundedRect(ctx, 18, 18, 604, 924, 54);
-  ctx.fillStyle = 'rgba(250, 254, 253, 0.965)';
+  roundedRect(ctx, 18, 18, 564, 1164, 52);
+  ctx.fillStyle = 'rgba(250, 254, 253, 0.975)';
   ctx.fill();
 
   ctx.save();
-  roundedRect(ctx, 18, 18, 604, 924, 54);
+  roundedRect(ctx, 18, 18, 564, 1164, 52);
   ctx.clip();
 
-  const topWash = ctx.createLinearGradient(0, 0, CARD_TEXTURE_WIDTH, CARD_TEXTURE_HEIGHT);
-  topWash.addColorStop(0, palette.wash);
-  topWash.addColorStop(0.42, 'rgba(251, 254, 253, 0.1)');
-  topWash.addColorStop(1, palette.wash);
-  ctx.fillStyle = topWash;
+  const wash = ctx.createLinearGradient(40, 30, 560, 1160);
+  wash.addColorStop(0, palette.wash);
+  wash.addColorStop(0.46, 'rgba(251, 254, 253, 0.28)');
+  wash.addColorStop(1, palette.wash);
+  ctx.fillStyle = wash;
   ctx.globalAlpha = 0.72;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  const lowerGlow = ctx.createRadialGradient(116, 850, 10, 116, 850, 360);
+  const lowerGlow = ctx.createRadialGradient(112, 1090, 10, 112, 1090, 420);
   lowerGlow.addColorStop(0, palette.glow);
   lowerGlow.addColorStop(0.48, `${palette.edge}cc`);
   lowerGlow.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.globalAlpha = item.popular ? 0.82 : 0.48;
+  ctx.globalAlpha = item.popular ? 0.84 : 0.52;
   ctx.fillStyle = lowerGlow;
-  ctx.fillRect(0, 500, canvas.width, 460);
+  ctx.fillRect(0, 650, canvas.width, 550);
 
-  const sideGlow = ctx.createRadialGradient(610, 110, 0, 610, 110, 320);
+  const sideGlow = ctx.createRadialGradient(570, 115, 0, 570, 115, 330);
   sideGlow.addColorStop(0, palette.edge);
   sideGlow.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.globalAlpha = 0.28;
+  ctx.globalAlpha = 0.25;
   ctx.fillStyle = sideGlow;
-  ctx.fillRect(300, 0, 340, 420);
+  ctx.fillRect(280, 0, 320, 440);
   ctx.restore();
   ctx.globalAlpha = 1;
 
-  roundedRect(ctx, 18, 18, 604, 924, 54);
-  ctx.strokeStyle = item.popular ? `${palette.glow}b8` : 'rgba(255,255,255,0.92)';
+  roundedRect(ctx, 18, 18, 564, 1164, 52);
+  ctx.strokeStyle = item.popular ? `${palette.glow}c4` : 'rgba(255,255,255,0.94)';
   ctx.lineWidth = item.popular ? 5 : 3;
   ctx.stroke();
 
@@ -138,59 +135,69 @@ function makeCardTexture(item: PackageOrbitItem, index: number, renderer: THREE.
 
   ctx.fillStyle = '#0b8d78';
   ctx.font = '700 25px "Cairo", sans-serif';
-  ctx.fillText(item.category, 554, 102);
+  ctx.fillText(item.category, 522, 105);
 
   if (item.popular) {
-    roundedRect(ctx, 64, 67, 145, 50, 25);
+    roundedRect(ctx, 54, 66, 150, 50, 25);
     ctx.fillStyle = '#d8f75a';
     ctx.fill();
     ctx.fillStyle = '#07332e';
     ctx.textAlign = 'center';
     ctx.font = '800 22px "Cairo", sans-serif';
-    ctx.fillText('الأكثر طلبا', 136, 101);
+    ctx.fillText('الأكثر طلبا', 129, 100);
   }
 
   ctx.textAlign = 'right';
   ctx.fillStyle = '#07332e';
-  ctx.font = '800 49px "Cairo", sans-serif';
-  const nameLines = rtlLines(ctx, item.name, 490, 2);
-  nameLines.forEach((line, lineIndex) => ctx.fillText(line, 554, 225 + lineIndex * 68));
+  ctx.font = '800 50px "Cairo", sans-serif';
+  const nameLines = rtlLines(ctx, item.name, 462, 2);
+  nameLines.forEach((line, lineIndex) => ctx.fillText(line, 522, 255 + lineIndex * 70));
 
   ctx.fillStyle = '#517069';
   ctx.font = '500 27px "Cairo", sans-serif';
-  const descriptionLines = rtlLines(ctx, item.description, 490, 3);
-  descriptionLines.forEach((line, lineIndex) => ctx.fillText(line, 554, 395 + lineIndex * 47));
+  const descriptionLines = rtlLines(ctx, item.description, 462, 3);
+  descriptionLines.forEach((line, lineIndex) => ctx.fillText(line, 522, 440 + lineIndex * 48));
 
   ctx.strokeStyle = 'rgba(7, 51, 46, 0.12)';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(68, 570);
-  ctx.lineTo(554, 570);
+  ctx.moveTo(58, 650);
+  ctx.lineTo(522, 650);
   ctx.stroke();
 
-  ctx.fillStyle = '#07332e';
-  ctx.font = '800 72px "Cairo", sans-serif';
-  ctx.fillText(item.price.toLocaleString('ar-SA'), 554, 685);
-  const priceWidth = ctx.measureText(item.price.toLocaleString('ar-SA')).width;
   ctx.fillStyle = '#0b8d78';
-  ctx.font = '800 27px "Cairo", sans-serif';
-  ctx.fillText('ر.س', 535 - priceWidth, 682);
+  ctx.font = '700 24px "Cairo", sans-serif';
+  ctx.fillText('السعر بعد الخصم', 522, 725);
+
+  const currentPrice = item.price.toLocaleString('ar-SA');
+  ctx.fillStyle = '#07332e';
+  ctx.font = '800 76px "Cairo", sans-serif';
+  ctx.fillText(currentPrice, 522, 820);
+  const priceWidth = ctx.measureText(currentPrice).width;
+  ctx.fillStyle = '#0b8d78';
+  ctx.font = '800 26px "Cairo", sans-serif';
+  ctx.fillText('ر.س', 505 - priceWidth, 816);
 
   if (item.originalPrice > item.price) {
+    const oldPrice = `بدلا من ${item.originalPrice.toLocaleString('ar-SA')} ر.س`;
     ctx.fillStyle = '#6c8580';
-    ctx.font = '600 25px "Cairo", sans-serif';
-    ctx.fillText(`بدلا من ${item.originalPrice.toLocaleString('ar-SA')} ر.س`, 554, 743);
-    const oldWidth = ctx.measureText(`بدلا من ${item.originalPrice.toLocaleString('ar-SA')} ر.س`).width;
+    ctx.font = '600 24px "Cairo", sans-serif';
+    ctx.fillText(oldPrice, 522, 875);
+    const oldWidth = ctx.measureText(oldPrice).width;
     ctx.strokeStyle = '#6c8580';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(554 - oldWidth, 733);
-    ctx.lineTo(554, 733);
+    ctx.moveTo(522 - oldWidth, 866);
+    ctx.lineTo(522, 866);
     ctx.stroke();
   }
 
-  roundedRect(ctx, 68, 808, 486, 82, 41);
-  const buttonGradient = ctx.createLinearGradient(68, 808, 554, 890);
+  ctx.fillStyle = '#517069';
+  ctx.font = '600 23px "Cairo", sans-serif';
+  ctx.fillText('تصميم وبرمجة وتسليم ودعم فني', 522, 948);
+
+  roundedRect(ctx, 58, 1032, 484, 90, 45);
+  const buttonGradient = ctx.createLinearGradient(58, 1032, 542, 1122);
   buttonGradient.addColorStop(0, '#bdf04f');
   buttonGradient.addColorStop(0.52, '#39d9a2');
   buttonGradient.addColorStop(1, '#5bcad9');
@@ -198,8 +205,8 @@ function makeCardTexture(item: PackageOrbitItem, index: number, renderer: THREE.
   ctx.fill();
   ctx.fillStyle = '#07332e';
   ctx.textAlign = 'center';
-  ctx.font = '800 28px "Cairo", sans-serif';
-  ctx.fillText('اضغط وشوف التفاصيل', 311, 860);
+  ctx.font = '800 27px "Cairo", sans-serif';
+  ctx.fillText('اضغط وشوف التفاصيل', 300, 1089);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -262,15 +269,6 @@ export function PackageOrbitScene({ items, focusId = null, onActivate, onHoverCh
       const textures = items.map((item, index) => makeCardTexture(item, index, renderer));
       const geometry = new THREE.PlaneGeometry(1, 1);
       const meshes: OrbitMesh[] = [];
-      const hitMeshes: OrbitHitMesh[] = [];
-      const hitMaterial = new THREE.MeshBasicMaterial({
-        transparent: true,
-        opacity: 0,
-        colorWrite: false,
-        depthTest: false,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-      });
 
       for (let index = 0; index < CARD_COPIES; index += 1) {
         const itemIndex = index % items.length;
@@ -284,21 +282,17 @@ export function PackageOrbitScene({ items, focusId = null, onActivate, onHoverCh
           side: THREE.DoubleSide,
         });
         const mesh = new THREE.Mesh(geometry, material) as OrbitMesh;
-        mesh.userData = { itemIndex, hoverAmount: 0, opacity: 1 };
+        mesh.userData = { itemIndex, copyIndex: index, hoverAmount: 0, opacity: 1 };
         meshes.push(mesh);
         scene.add(mesh);
-
-        const hitMesh = new THREE.Mesh(geometry, hitMaterial) as OrbitHitMesh;
-        hitMesh.userData = { visualIndex: index };
-        hitMeshes.push(hitMesh);
-        scene.add(hitMesh);
       }
 
       let width = 1;
       let height = 1;
-      let cardWidth = 210;
-      let cardHeight = 330;
-      let stride = 150;
+      let cardWidth = 190;
+      let cardHeight = 422;
+      let stride = 127;
+      const baseY = new Float32Array(CARD_COPIES);
 
       const resize = () => {
         const rect = mount.getBoundingClientRect();
@@ -310,19 +304,26 @@ export function PackageOrbitScene({ items, focusId = null, onActivate, onHoverCh
         camera.top = height / 2;
         camera.bottom = -height / 2;
         camera.updateProjectionMatrix();
-        cardWidth = Math.min(226, Math.max(154, width * 0.395));
-        cardHeight = cardWidth * 1.5;
-        stride = cardWidth * (width < 640 ? 0.65 : 0.72);
+        cardWidth = Math.min(220, Math.max(width < 720 ? 90 : 145, width * (width < 720 ? 0.25 : 0.115)));
+        cardHeight = cardWidth / 0.45;
+        stride = cardHeight * 0.3;
       };
       resize();
       const resizeObserver = new ResizeObserver(resize);
       resizeObserver.observe(mount);
 
-      const raycaster = new THREE.Raycaster();
       const pointer = new THREE.Vector2(4, 4);
+      const projected = new THREE.Vector3();
       let pointerInside = false;
+      let pointerDown = false;
+      let dragged = false;
+      let dragDistance = 0;
+      let lastPointerX = 0;
+      let lastPointerY = 0;
       let hovered: OrbitMesh | null = null;
       let notifiedHoverId: string | null = null;
+      let targetTravel = 0;
+      let travel = 0;
 
       const updatePointer = (event: PointerEvent | MouseEvent) => {
         const rect = mount.getBoundingClientRect();
@@ -331,31 +332,93 @@ export function PackageOrbitScene({ items, focusId = null, onActivate, onHoverCh
         pointerInside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
       };
 
-      const pickHovered = () => {
-        if (!pointerInside) return null;
-        raycaster.setFromCamera(pointer, camera);
-        const hit = raycaster.intersectObjects(hitMeshes, false)[0]?.object as OrbitHitMesh | undefined;
-        return hit ? meshes[hit.userData.visualIndex] : null;
+      const hoverStrength = (mesh: OrbitMesh) => {
+        if (!pointerInside || !mesh.visible) return 0;
+        projected.copy(mesh.position);
+        projected.y = baseY[mesh.userData.copyIndex];
+        projected.project(camera);
+        const dx = (pointer.x - projected.x) * (width / height);
+        const dy = (pointer.y - projected.y) * 0.1;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const t = THREE.MathUtils.clamp(1 - distance / 0.3, 0, 1);
+        return t * t * (3 - 2 * t);
+      };
+
+      const closestCard = () => {
+        let closest: OrbitMesh | null = null;
+        let strongest = 0;
+        for (const mesh of meshes) {
+          const strength = hoverStrength(mesh);
+          if (strength > strongest) {
+            strongest = strength;
+            closest = mesh;
+          }
+        }
+        return strongest > 0.025 ? closest : null;
       };
 
       const onPointerMove = (event: PointerEvent) => {
         updatePointer(event);
+        if (!pointerDown) return;
+        const dx = event.clientX - lastPointerX;
+        const dy = event.clientY - lastPointerY;
+        lastPointerX = event.clientX;
+        lastPointerY = event.clientY;
+        dragDistance += Math.abs(dx) + Math.abs(dy);
+        if (dragDistance > 7) dragged = true;
+        if (Math.abs(dx) > Math.abs(dy) * 0.55) {
+          targetTravel -= dx * (0.2 * CARD_COPIES * stride / height);
+        }
       };
-      const onPointerLeave = () => {
-        pointerInside = false;
-        pointer.set(4, 4);
-      };
-      const onClick = (event: MouseEvent) => {
+
+      const onPointerDown = (event: PointerEvent) => {
         updatePointer(event);
-        const picked = pickHovered();
-        if (!picked) return;
-        const item = items[picked.userData.itemIndex];
+        pointerDown = true;
+        dragged = false;
+        dragDistance = 0;
+        lastPointerX = event.clientX;
+        lastPointerY = event.clientY;
+        renderer.domElement.setPointerCapture?.(event.pointerId);
+      };
+
+      const onPointerUp = (event: PointerEvent) => {
+        updatePointer(event);
+        const selected = !dragged ? closestCard() : null;
+        pointerDown = false;
+        if (renderer.domElement.hasPointerCapture?.(event.pointerId)) {
+          renderer.domElement.releasePointerCapture(event.pointerId);
+        }
+        if (!selected) return;
+        const item = items[selected.userData.itemIndex];
         activateRef.current(item, { x: event.clientX, y: event.clientY });
       };
 
+      const onPointerCancel = (event: PointerEvent) => {
+        pointerDown = false;
+        dragged = true;
+        pointerInside = false;
+        if (renderer.domElement.hasPointerCapture?.(event.pointerId)) {
+          renderer.domElement.releasePointerCapture(event.pointerId);
+        }
+      };
+
+      const onPointerLeave = () => {
+        if (pointerDown) return;
+        pointerInside = false;
+        pointer.set(4, 4);
+      };
+
+      const onWheel = (event: WheelEvent) => {
+        if (event.deltaY === 0) return;
+        targetTravel += stride * 0.32;
+      };
+
       renderer.domElement.addEventListener('pointermove', onPointerMove);
+      renderer.domElement.addEventListener('pointerdown', onPointerDown);
+      renderer.domElement.addEventListener('pointerup', onPointerUp);
+      renderer.domElement.addEventListener('pointercancel', onPointerCancel);
       renderer.domElement.addEventListener('pointerleave', onPointerLeave);
-      renderer.domElement.addEventListener('click', onClick);
+      renderer.domElement.addEventListener('wheel', onWheel, { passive: true });
 
       let visible = true;
       const intersectionObserver = new IntersectionObserver((entries) => {
@@ -363,7 +426,6 @@ export function PackageOrbitScene({ items, focusId = null, onActivate, onHoverCh
       }, { rootMargin: '180px' });
       intersectionObserver.observe(mount);
 
-      let travel = 0;
       let previousTime = performance.now();
       let raf = 0;
 
@@ -373,77 +435,84 @@ export function PackageOrbitScene({ items, focusId = null, onActivate, onHoverCh
         previousTime = time;
         if (!visible || document.hidden) return;
 
-        const speed = reducedMotion ? 0 : width < 640 ? 52 : 92;
-        travel += dt * speed;
+        targetTravel += (reducedMotion ? 0 : stride * 0.64) * dt;
         const totalWidth = CARD_COPIES * stride;
-        if (travel >= totalWidth) travel %= totalWidth;
+        if (Math.abs(targetTravel) > totalWidth * 3) {
+          const cycles = Math.trunc(targetTravel / totalWidth);
+          targetTravel -= cycles * totalWidth;
+          travel -= cycles * totalWidth;
+        }
+        travel = THREE.MathUtils.damp(travel, targetTravel, 5, dt);
 
+        const mobileLayout = width < 720 || isCoarse;
         for (let index = 0; index < meshes.length; index += 1) {
           const mesh = meshes[index];
-          const hitMesh = hitMeshes[index];
           let x = index * stride - travel;
           x = ((x + totalWidth / 2) % totalWidth + totalWidth) % totalWidth - totalWidth / 2;
-          const normalized = THREE.MathUtils.clamp(x / Math.max(width * 0.5, 1), -1.25, 1.25);
-          const curve = Math.pow(Math.abs(normalized), 1.72);
-          const baseY = 18 - curve * Math.min(118, height * 0.23);
-          const baseZ = 150 - Math.abs(normalized) * 54;
+          const normalized = THREE.MathUtils.clamp(x / Math.max(width * 0.5, 1), -1.35, 1.35);
 
-          mesh.position.x = x;
-          mesh.position.y = baseY + mesh.userData.hoverAmount * Math.min(138, height * 0.28);
-          mesh.position.z = baseZ + mesh.userData.hoverAmount * 260;
-          mesh.rotation.z = -normalized * 0.105 * (1 - mesh.userData.hoverAmount * 0.75);
-          mesh.rotation.y = normalized * 0.16 * (1 - mesh.userData.hoverAmount);
+          let y = -height * 0.08 - 0.1 * x * x / cardHeight;
+          if (mobileLayout) {
+            const centerDistance = THREE.MathUtils.clamp(Math.abs(x) / (cardHeight * 0.35), 0, 1);
+            const centerLift = 1 - centerDistance * centerDistance * (3 - 2 * centerDistance);
+            y = -height * 0.02 + centerLift * cardHeight * 0.5 - 0.1 * x * x / cardHeight;
+          }
+          baseY[index] = y;
 
-          const hoverScale = 1 + mesh.userData.hoverAmount * 0.075;
-          mesh.scale.set(cardWidth * hoverScale, cardHeight * hoverScale, 1);
+          mesh.position.set(x, y, 150 - Math.abs(normalized) * 54);
+          mesh.rotation.set(0, 0, 0);
+          mesh.scale.set(cardWidth, cardHeight, 1);
           mesh.visible = Math.abs(x) < width / 2 + cardWidth;
-
-          // Cover the union of the resting and lifted card positions. The hit
-          // target never follows hover, so the visible card cannot escape the
-          // pointer and oscillate between raised and resting states.
-          const maxLift = Math.min(138, height * 0.28);
-          hitMesh.position.set(x, baseY + maxLift / 2, baseZ);
-          hitMesh.rotation.set(0, normalized * 0.16, -normalized * 0.105);
-          hitMesh.scale.set(cardWidth * 1.1, cardHeight + maxLift, 1);
-          hitMesh.visible = mesh.visible;
 
           const item = items[mesh.userData.itemIndex];
           const focusOpacity = focusIdRef.current && focusIdRef.current !== item.id ? 0.47 : 1;
-          mesh.userData.opacity += (focusOpacity - mesh.userData.opacity) * Math.min(1, dt * 7);
+          mesh.userData.opacity = THREE.MathUtils.damp(mesh.userData.opacity, focusOpacity, 5, dt);
           mesh.material.opacity = mesh.userData.opacity;
         }
 
         scene.updateMatrixWorld(true);
-        const nextHovered = pickHovered();
-        hovered = nextHovered?.visible ? nextHovered : null;
+        hovered = null;
+        let strongestHover = 0;
         for (const mesh of meshes) {
-          const target = mesh === hovered ? 1 : 0;
-          mesh.userData.hoverAmount += (target - mesh.userData.hoverAmount) * Math.min(1, dt * 12);
+          const strength = mobileLayout ? 0 : hoverStrength(mesh);
+          mesh.userData.hoverAmount = THREE.MathUtils.damp(mesh.userData.hoverAmount, strength, 5, dt);
+          mesh.position.y += mesh.userData.hoverAmount * cardHeight * 0.55;
+          if (strength > strongestHover) {
+            strongestHover = strength;
+            hovered = mesh;
+          }
         }
+        if (strongestHover <= 0.025) hovered = null;
 
         const hoverId = hovered ? items[hovered.userData.itemIndex].id : null;
         if (hoverId !== notifiedHoverId) {
           notifiedHoverId = hoverId;
           hoverChangeRef.current?.(hovered ? items[hovered.userData.itemIndex] : null);
         }
-        renderer.domElement.style.cursor = hovered ? 'pointer' : 'grab';
+        renderer.domElement.style.cursor = pointerDown ? 'grabbing' : hovered ? 'pointer' : 'grab';
 
+        scene.updateMatrixWorld(true);
         renderer.render(scene, camera);
       };
 
       raf = requestAnimationFrame(render);
       setReady(true);
 
+      let cleaned = false;
       cleanup = () => {
+        if (cleaned) return;
+        cleaned = true;
         cancelAnimationFrame(raf);
         intersectionObserver.disconnect();
         resizeObserver.disconnect();
         renderer.domElement.removeEventListener('webglcontextlost', onContextLost);
         renderer.domElement.removeEventListener('pointermove', onPointerMove);
+        renderer.domElement.removeEventListener('pointerdown', onPointerDown);
+        renderer.domElement.removeEventListener('pointerup', onPointerUp);
+        renderer.domElement.removeEventListener('pointercancel', onPointerCancel);
         renderer.domElement.removeEventListener('pointerleave', onPointerLeave);
-        renderer.domElement.removeEventListener('click', onClick);
+        renderer.domElement.removeEventListener('wheel', onWheel);
         meshes.forEach((mesh) => mesh.material.dispose());
-        hitMaterial.dispose();
         textures.forEach((texture) => texture.dispose());
         geometry.dispose();
         renderer.dispose();

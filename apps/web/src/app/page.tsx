@@ -25,7 +25,6 @@ import { ScrollProgress } from '@/components/ScrollProgress';
 import { SmoothScroll, scrollToSection } from '@/components/fx/SmoothScroll';
 import { Preloader } from '@/components/fx/Preloader';
 import { CustomCursor } from '@/components/fx/CustomCursor';
-import { Marquee } from '@/components/fx/Marquee';
 import { RevealText } from '@/components/fx/RevealText';
 
 const audiences = [
@@ -146,11 +145,6 @@ export default function HomePage() {
       <PublicFrame>
         <div id="home" className="scroll-mt-24">
           <HomeHero />
-        </div>
-
-        {/* scrolling capabilities band */}
-        <div className="mx-[calc(50%-50vw)] w-screen overflow-hidden py-4">
-          <Marquee items={['مواقع تعريفية', 'متاجر إلكترونية', 'تطبيقات جوال', 'مشاريع تخرج', 'صفحات هبوط', 'لوحات تحكم']} />
         </div>
 
         {/* What do you need — service cards (filter the packages below) */}

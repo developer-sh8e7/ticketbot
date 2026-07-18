@@ -1,11 +1,17 @@
 export function AuroraBackground() {
   return (
     <div className="site-aurora" aria-hidden="true">
-      <div className="aurora-blob aurora-blob-a" />
-      <div className="aurora-blob aurora-blob-b" />
-      <div className="aurora-blob aurora-blob-c" />
-      <div className="aurora-blob aurora-blob-d" />
-      <div className="aurora-veil" />
+      <video
+        className="site-aurora-video"
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        poster="/backgrounds/humain-one-flow-poster.webp"
+      >
+        <source src="/backgrounds/humain-one-flow.mp4" type="video/mp4" />
+      </video>
     </div>
   );
 }

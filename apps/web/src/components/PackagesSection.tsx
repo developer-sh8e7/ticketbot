@@ -247,7 +247,6 @@ export function PackagesSection({ initialCategory = 'all' }: { initialCategory?:
       </div>
 
       <div className="package-orbit-shell relative mx-[calc(50%-50vw)] mt-4 w-screen overflow-hidden sm:mt-6">
-        <div className="package-orbit-aura" aria-hidden="true" />
         <PackageOrbitScene
           items={packages}
           focusId={focusId}
