@@ -544,24 +544,6 @@ body.custom-cursor, body.custom-cursor * { cursor: none !important; }
   pointer-events: none;
 }
 
-/* Poster overlay — sits at z-index 1 (above the video) and toggles
-   visible when the video is paused/waiting (showing black on mobile). */
-.media-panel-poster {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background-position: center;
-  background-size: cover;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.25s ease;
-  will-change: opacity;
-}
-
-.media-panel-poster.is-visible {
-  opacity: 1;
-}
-
 /* Calm the artwork so interface text always wins. */
 .media-panel-veil {
   position: absolute;
