@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
+  ArrowLeft,
   ArrowRight,
   BriefcaseBusiness,
-  Check,
   GraduationCap,
   LayoutTemplate,
   Award,
@@ -19,6 +19,7 @@ import { ServiceIllustration } from '@/components/ServiceIllustrations';
 import { MotionGrid } from '@/components/MotionGrid';
 import { MotionSection } from '@/components/MotionSection';
 import { PublicFrame } from '@/components/ui';
+import { AudienceCard, CardFlow, SolutionCard } from '@/components/FlowCard';
 import { PackagesSection, SELECT_CATEGORY_EVENT } from '@/components/PackagesSection';
 import { SectionNav } from '@/components/SectionNav';
 import { ScrollProgress } from '@/components/ScrollProgress';
@@ -49,12 +50,12 @@ const audiences = [
 ] as const;
 
 const categoryCards = [
-  { id: 'corporate', label: 'مواقع تعريفية', illustration: 'corporate', category: 'corporate' },
-  { id: 'ecommerce', label: 'متاجر إلكترونية', illustration: 'ecommerce', category: 'ecommerce' },
-  { id: 'landing', label: 'صفحات هبوط', illustration: 'landing', category: 'landing' },
-  { id: 'uiux', label: 'واجهات وتجربة استخدام', illustration: 'uiux', category: 'all' },
-  { id: 'graduation', label: 'مشاريع تخرج', illustration: 'graduation', category: 'graduation' },
-  { id: 'mobile', label: 'تطبيقات جوال', illustration: 'mobile', category: 'mobile-app' },
+  { id: 'corporate', label: 'مواقع تعريفية', description: 'موقع تعريفي احترافي للشركات والمؤسسات — يعرض خدماتك، فريقك، أعمالك بتجربة مميزة', illustration: 'corporate', category: 'corporate' },
+  { id: 'ecommerce', label: 'متاجر إلكترونية', description: 'متجر إلكتروني كامل بجميع الميزات للبيع أونلاين — منتجات، دفع، شحن، لوحة تحكم', illustration: 'ecommerce', category: 'ecommerce' },
+  { id: 'landing', label: 'صفحات هبوط', description: 'صفحة هبوط (Landing Page) عالية التحويل للمطاعم، العروض، الحملات، إطلاق المنتجات', illustration: 'landing', category: 'landing' },
+  { id: 'uiux', label: 'واجهات وتجربة استخدام', description: 'دراسة جدوى تقنية وتصميم تجربة مستخدم (UX/UI)', illustration: 'uiux', category: 'all' },
+  { id: 'graduation', label: 'مشاريع تخرج', description: 'موقع أو تطبيق لمشروع التخرج الجامعي — فكرة، تصميم، برمجة، توثيق، عرض تقديمي', illustration: 'graduation', category: 'graduation' },
+  { id: 'mobile', label: 'تطبيقات جوال', description: 'تطبيق جوال أصلي (iOS/Android) أو كروس بلاتفورم — من الفكرة للنشر على المتاجر', illustration: 'mobile', category: 'mobile-app' },
 ] as const;
 
 const stats = [
@@ -165,30 +166,22 @@ export default function HomePage() {
               </motion.p>
             </div>
 
-            <MotionGrid className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
+            <MotionGrid className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 sm:gap-5 lg:grid-cols-3">
               {categoryCards.map((cat, index) => (
-                <motion.article
+                <SolutionCard
                   key={cat.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
-                  dir="rtl"
-                  className="group rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_2px_12px_rgba(45,40,32,0.04)] transition-all duration-300 hover:border-[var(--color-accent)]/40 hover:shadow-[0_20px_50px_rgba(15,201,143,0.14)] focus-within:border-[var(--color-accent)]"
-                >
-                  <button
-                    type="button"
-                    onClick={() => selectPackagesCategory(cat.category)}
-                    className="flex h-full min-h-44 w-full flex-col items-center justify-center px-2.5 py-5 text-center outline-none sm:min-h-56 sm:px-6 sm:pb-7 sm:pt-8"
-                  >
+                  label={cat.label}
+                  description={cat.description}
+                  index={index}
+                  variant={(['glass', 'tint', 'solid'] as const)[index % 3]}
+                  onExplore={() => selectPackagesCategory(cat.category)}
+                  visual={(
                     <ServiceIllustration
                       variant={cat.illustration}
-                      className="service-illustration h-24 w-auto max-w-full sm:h-32 md:h-36"
+                      className="service-illustration h-28 w-auto max-w-full sm:h-32 md:h-36"
                     />
-                    <h3 className="mt-3 font-arabic text-sm font-extrabold leading-6 text-[var(--color-text)] transition-colors group-hover:text-[var(--color-accent)] sm:mt-6 sm:text-lg">
-                      {cat.label}
-                    </h3>
-                  </button>
-                </motion.article>
+                  )}
+                />
               ))}
             </MotionGrid>
           </div>
@@ -218,25 +211,36 @@ export default function HomePage() {
         </MotionSection>
 
         {/* Stats */}
-        <MotionSection className="border-y border-white/60 bg-[var(--color-surface)]/[0.58] py-10 backdrop-blur-xl md:py-24">
-          <div className="mx-auto max-w-7xl px-4 md:px-8 lg:px-12">
-            <div className="grid grid-cols-3 gap-1 sm:gap-4 md:gap-8">
+        <MotionSection className="stat-band py-10 md:py-20">
+          <span className="stat-band-sweep" aria-hidden="true" />
+          <div className="relative mx-auto max-w-7xl px-4 md:px-8 lg:px-12">
+            <div className="grid grid-cols-3">
               {stats.map((stat, index) => (
                 <motion.div
                   key={stat.label}
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-50px' }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="p-2 text-center sm:p-6"
+                  transition={{ duration: 0.6, delay: index * 0.12 }}
+                  className={`stat-cell p-2 text-center sm:p-6 ${index > 0 ? 'stat-cell-divided' : ''}`}
                 >
-                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)] sm:mb-4 sm:h-16 sm:w-16 sm:rounded-2xl">
-                    <stat.icon size={24} className="sm:h-7 sm:w-7" />
-                  </div>
-                  <div className="font-english text-3xl font-extrabold text-[var(--color-text)] sm:text-4xl md:text-5xl lg:text-6xl">
+                  <div className="stat-number font-english text-4xl font-extrabold sm:text-5xl md:text-6xl lg:text-7xl">
                     <AnimatedCounter value={stat.value} suffix={stat.suffix} />
                   </div>
-                  <p className="mt-1.5 font-arabic text-xs leading-5 text-[var(--color-muted)] sm:mt-2 sm:text-base">{stat.label}</p>
+                  <motion.span
+                    initial={{ scaleX: 0 }}
+                    whileInView={{ scaleX: 1 }}
+                    viewport={{ once: true, margin: '-50px' }}
+                    transition={{ duration: 0.7, delay: 0.35 + index * 0.12, ease: [0.22, 1, 0.36, 1] }}
+                    className="stat-underline"
+                    aria-hidden="true"
+                  />
+                  <p className="mt-2.5 flex items-center justify-center gap-1.5 font-arabic text-xs leading-5 text-[var(--color-muted)] sm:mt-3 sm:gap-2 sm:text-base">
+                    <span className="stat-icon">
+                      <stat.icon size={14} className="sm:h-4 sm:w-4" />
+                    </span>
+                    {stat.label}
+                  </p>
                 </motion.div>
               ))}
             </div>
@@ -246,38 +250,28 @@ export default function HomePage() {
         {/* Audiences */}
         <MotionSection className="py-12 md:py-20">
           <div dir="rtl" className="mx-auto max-w-7xl px-4 md:px-8 lg:px-12 text-center">
-            <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">حلول تناسب احتياجك</p>
-            <h2 className="mt-3 font-arabic text-3xl font-extrabold tracking-tight text-[var(--color-text)] sm:text-4xl">
-              <RevealText text="وش تبي نبني لك؟" />
+            <p className="section-eyebrow font-arabic">حلول تناسب احتياجك</p>
+            <h2 className="mt-4 text-balance font-arabic text-3xl font-extrabold leading-snug tracking-tight text-[var(--color-text)] sm:text-4xl md:text-5xl">
+              <RevealText text="وش تبي نبني لك؟" accentWords={['نبني']} />
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl font-arabic text-sm leading-8 text-[var(--color-muted)]">
+            <p className="mx-auto mt-4 max-w-2xl font-arabic text-sm leading-8 text-[var(--color-muted)] sm:text-base">
               نصمم ونبرمج مواقع وتطبيقات وأنظمة رقمية للطلاب وأصحاب الأفكار والأعمال.
             </p>
           </div>
 
-          <p dir="rtl" className="mt-6 px-4 text-center font-arabic text-xs text-[var(--color-muted)] md:hidden">اسحب عشان تشوف كل الخيارات</p>
-          <MotionGrid
-            className="opus-horizontal-track mx-auto mt-4 flex max-w-7xl snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 md:mt-10 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible md:px-8 lg:px-12"
-            itemClassName="min-w-[82vw] snap-center sm:min-w-[380px] md:min-w-0"
-          >
-            {audiences.map(({ icon: Icon, title, description, points }) => (
-              <article key={title} dir="rtl" className="group h-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[0_2px_12px_rgba(45,40,32,0.04)] transition-all hover:border-[var(--color-accent)]/40 hover:shadow-[0_20px_50px_rgba(15,201,143,0.14)] sm:p-6">
-                <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)] transition-transform group-hover:scale-110">
-                  <Icon size={22} />
-                </div>
-                <h3 className="font-arabic text-xl font-extrabold text-[var(--color-text)]">{title}</h3>
-                <p className="mt-3 font-arabic text-sm leading-7 text-[var(--color-muted)]">{description}</p>
-                <ul className="mt-5 grid gap-2">
-                  {points.map((point) => (
-                    <li key={point} className="flex items-start gap-2 font-arabic text-sm leading-7 text-[var(--color-muted)]">
-                      <Check size={16} className="mt-1 shrink-0 text-[var(--color-accent-2)]" />
-                      <span>{point}</span>
-                    </li>
-                  ))}
-                </ul>
-              </article>
+          <div className="mx-auto mt-8 grid max-w-7xl items-start gap-4 px-4 md:mt-12 md:grid-cols-3 md:gap-5 md:px-8 lg:px-12">
+            {audiences.map(({ icon, title, description, points }, index) => (
+              <AudienceCard
+                key={title}
+                icon={icon}
+                title={title}
+                description={description}
+                points={points}
+                variant={(['solid', 'glass', 'tint'] as const)[index % 3]}
+                index={index}
+              />
             ))}
-          </MotionGrid>
+          </div>
         </MotionSection>
 
         {/* Latest Projects */}
@@ -386,14 +380,21 @@ export default function HomePage() {
         </MotionSection>
 
         {/* CTA Section */}
-        <MotionSection id="contact" className="scroll-mt-24 mx-[calc(50%-50vw)] w-screen py-12 md:py-20">
-          <div dir="rtl" className="relative overflow-hidden border-y border-white/60 bg-[var(--color-surface)]/[0.62] px-5 py-14 text-center backdrop-blur-xl sm:px-6 md:px-10 md:py-16">
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--color-accent)] to-transparent" aria-hidden="true" />
-            <div className="relative mx-auto max-w-6xl">
-              <h2 className="font-arabic text-3xl font-extrabold tracking-tight text-[var(--color-text)] sm:text-4xl">جاهز تحول فكرتك إلى موقع أو تطبيق يعمل؟</h2>
-              <p className="mx-auto mt-4 max-w-xl font-arabic text-sm leading-7 text-[var(--color-muted)]">أرسل فكرتك حتى لو كانت غير مرتبة، وسنساعدك على تحديد الخطوة المناسبة.</p>
-              <div className="mt-7">
-                <Link href="/project-request" className="inline-flex items-center justify-center rounded-xl bg-[var(--color-accent)] px-7 py-3.5 font-arabic text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:opacity-90">اطلب موقعك أو تطبيقك</Link>
+        <MotionSection id="contact" className="scroll-mt-24 py-12 md:py-20">
+          <div className="mx-auto max-w-7xl px-4 md:px-8 lg:px-12">
+            <div dir="rtl" className="cta-panel px-5 py-14 text-center sm:px-6 md:px-10 md:py-20">
+              <CardFlow seed={3} intensity="bold" />
+              <div className="relative z-10 mx-auto max-w-3xl">
+                <h2 className="text-balance font-arabic text-3xl font-extrabold leading-snug tracking-tight text-[var(--color-text)] sm:text-4xl md:text-5xl">
+                  <RevealText text="جاهز تحول فكرتك إلى موقع أو تطبيق يعمل؟" accentWords={['فكرتك']} />
+                </h2>
+                <p className="mx-auto mt-5 max-w-xl font-arabic text-sm leading-8 text-[var(--color-muted)] sm:text-base">أرسل فكرتك حتى لو كانت غير مرتبة، وسنساعدك على تحديد الخطوة المناسبة.</p>
+                <div className="mt-8">
+                  <Link href="/project-request" className="cta-button font-arabic">
+                    اطلب موقعك أو تطبيقك
+                    <ArrowLeft size={16} />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

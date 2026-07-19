@@ -3,8 +3,9 @@
 import { motion } from 'framer-motion';
 
 /**
- * Awwwards-style headline reveal: each word slides up out of its own clip
- * mask with a stagger. Pass plain text; accent words get the brand color.
+ * Awwwards-style headline reveal: each word rises in with a soft blur and a
+ * stagger. No clip masks — Arabic descenders and trailing words must never
+ * be cut off on any screen size. Accent words get the brand color.
  */
 export function RevealText({
   text,
@@ -20,19 +21,19 @@ export function RevealText({
   const words = text.split(' ');
 
   return (
-    <span className={className} aria-label={text}>
+    <span className={`whitespace-normal overflow-visible ${className ?? ''}`} aria-label={text}>
       {words.map((word, i) => (
-        <span key={`${word}-${i}`} className="inline-block overflow-hidden pb-[0.12em] -mb-[0.12em] align-baseline">
+        <span key={`${word}-${i}`} className="inline-block align-baseline">
           <motion.span
-            initial={{ y: '115%', rotate: 4, opacity: 0 }}
-            whileInView={{ y: '0%', rotate: 0, opacity: 1 }}
-            viewport={{ once: true, margin: '-60px' }}
+            initial={{ y: '0.55em', opacity: 0, filter: 'blur(6px)' }}
+            whileInView={{ y: '0em', opacity: 1, filter: 'blur(0px)' }}
+            viewport={{ once: true, amount: 0.4 }}
             transition={{ duration: 0.7, delay: delay + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
             className={`inline-block will-change-transform ${accentWords.includes(word) ? 'text-[var(--color-accent)]' : ''}`}
           >
             {word}
           </motion.span>
-          {i < words.length - 1 ? ' ' : null}
+          {i < words.length - 1 ? ' ' : null}
         </span>
       ))}
     </span>
