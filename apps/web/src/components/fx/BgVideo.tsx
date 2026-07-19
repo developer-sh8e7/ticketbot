@@ -3,18 +3,9 @@
 import { useEffect, useRef } from 'react';
 
 /**
- * Decorative background video: muted, looping, seamless playback.
- *
- * On mobile, pausing/resuming on scroll (IntersectionObserver) causes
- * the video decoder to flush, leaving a black frame until the next
- * playable frame loads.  The fix: never pause during scroll — only
- * pause when the browser tab is hidden.  The `autoPlay` + `muted`
- + `playsInline` attributes handle the initial start; we call
- * play() explicitly as a safety net for browsers that block autoplay
- * even when muted.
- *
- * Reduced‑motion users get the static poster instead.
- * Purely visual (aria-hidden).
+ * Decorative background video: muted, looping, plays while visible,
+ * pauses when off-screen or when the tab is hidden.
+ * Purely visual (aria-hidden); the poster paints before the video loads.
  */
 export function BgVideo({ src, poster }: { src: string; poster?: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -28,8 +19,8 @@ export function BgVideo({ src, poster }: { src: string; poster?: string }) {
 
     let destroyed = false;
 
-    /** Attempt playback — retry once after a short load delay. */
-    const playSafe = () => {
+    /** Attempt playback with one retry after a short load delay. */
+    const tryPlay = () => {
       if (destroyed) return;
       video.play().catch(() => {
         if (!destroyed) {
@@ -40,18 +31,30 @@ export function BgVideo({ src, poster }: { src: string; poster?: string }) {
       });
     };
 
-    // Start on mount (autoPlay may be blocked on some mobile browsers)
-    playSafe();
+    // Play on mount (autoPlay may be blocked on mobile)
+    tryPlay();
 
-    // Pause only when the tab is hidden — never pause during scroll.
-    // On mobile, pause/resume during scroll triggers black frames
-    // because the browser flushes the video decoder.
+    // Pause when off-screen, resume when visible
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (destroyed) return;
+        if (entry.isIntersecting) {
+          tryPlay();
+        } else {
+          video.pause();
+        }
+      },
+      { rootMargin: '200px' },
+    );
+    observer.observe(video);
+
+    // Pause when tab hidden, resume when visible
     const onVisibility = () => {
       if (destroyed) return;
       if (document.hidden) {
         video.pause();
       } else {
-        playSafe();
+        tryPlay();
       }
     };
     document.addEventListener('visibilitychange', onVisibility);
@@ -59,12 +62,13 @@ export function BgVideo({ src, poster }: { src: string; poster?: string }) {
     // React to reduced-motion preference changes
     const onMotionChange = (e: MediaQueryListEvent) => {
       if (e.matches) video.pause();
-      else playSafe();
+      else tryPlay();
     };
     reducedMotion.addEventListener('change', onMotionChange);
 
     return () => {
       destroyed = true;
+      observer.disconnect();
       document.removeEventListener('visibilitychange', onVisibility);
       reducedMotion.removeEventListener('change', onMotionChange);
     };
