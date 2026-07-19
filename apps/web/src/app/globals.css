@@ -1683,7 +1683,7 @@ body.custom-cursor, body.custom-cursor * { cursor: none !important; }
 
 @media (prefers-reduced-motion: reduce) {
   .media-panel-video {
-    /* Post visibility handled by JS — poster shows as fallback */
+    display: none;
   }
 
   .pkg-card:hover {

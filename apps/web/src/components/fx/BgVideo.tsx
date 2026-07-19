@@ -3,9 +3,10 @@
 import { useEffect, useRef } from 'react';
 
 /**
- * Decorative background video: muted, looping, plays while visible,
- * pauses when off-screen or when the tab is hidden.
- * Purely visual (aria-hidden); the poster paints before the video loads.
+ * Decorative background video: muted, looping, lazy — plays only while near
+ * the viewport and pauses off-screen or when the tab is hidden, so it never
+ * competes with page performance. Purely visual (aria-hidden); the poster
+ * paints instantly before the video is ready.
  */
 export function BgVideo({ src, poster }: { src: string; poster?: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -15,62 +16,30 @@ export function BgVideo({ src, poster }: { src: string; poster?: string }) {
     if (!video) return;
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    if (reducedMotion.matches) return;
 
-    let destroyed = false;
-
-    /** Attempt playback with one retry after a short load delay. */
-    const tryPlay = () => {
-      if (destroyed) return;
-      video.play().catch(() => {
-        if (!destroyed) {
-          setTimeout(() => {
-            if (!destroyed) video.play().catch(() => {});
-          }, 400);
-        }
-      });
-    };
-
-    // Play on mount (autoPlay may be blocked on mobile)
-    tryPlay();
-
-    // Pause when off-screen, resume when visible
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (destroyed) return;
-        if (entry.isIntersecting) {
-          tryPlay();
-        } else {
-          video.pause();
-        }
-      },
-      { rootMargin: '200px' },
-    );
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !reducedMotion.matches) video.play().catch(() => {});
+      else video.pause();
+    }, { rootMargin: '160px' });
     observer.observe(video);
 
-    // Pause when tab hidden, resume when visible
     const onVisibility = () => {
-      if (destroyed) return;
-      if (document.hidden) {
-        video.pause();
-      } else {
-        tryPlay();
-      }
+      if (document.hidden) video.pause();
+      else if (!reducedMotion.matches && video.getBoundingClientRect().top < window.innerHeight) video.play().catch(() => {});
+    };
+    const onMotionPreference = () => {
+      if (reducedMotion.matches) video.pause();
+      else onVisibility();
     };
     document.addEventListener('visibilitychange', onVisibility);
+    reducedMotion.addEventListener('change', onMotionPreference);
 
-    // React to reduced-motion preference changes
-    const onMotionChange = (e: MediaQueryListEvent) => {
-      if (e.matches) video.pause();
-      else tryPlay();
-    };
-    reducedMotion.addEventListener('change', onMotionChange);
+    if (reducedMotion.matches) video.pause();
 
     return () => {
-      destroyed = true;
       observer.disconnect();
       document.removeEventListener('visibilitychange', onVisibility);
-      reducedMotion.removeEventListener('change', onMotionChange);
+      reducedMotion.removeEventListener('change', onMotionPreference);
     };
   }, []);
 
@@ -84,7 +53,7 @@ export function BgVideo({ src, poster }: { src: string; poster?: string }) {
       muted
       loop
       playsInline
-      preload="auto"
+      preload="metadata"
       disablePictureInPicture
       aria-hidden="true"
       tabIndex={-1}
