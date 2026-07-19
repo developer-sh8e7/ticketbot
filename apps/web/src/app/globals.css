@@ -542,10 +542,25 @@ body.custom-cursor, body.custom-cursor * { cursor: none !important; }
   height: 100%;
   object-fit: cover;
   pointer-events: none;
-  /* Poster fallback when the video decoder has no frame (edge case on mobile).
-     The attribute poster= paints while the source loads; this CSS background
-     catches any gap where the video element shows a black frame. */
-  background: var(--color-surface) center/cover no-repeat;
+}
+
+/* Poster overlay — sits at z‑index 1 (above the video) and toggles
+   visible when the video is paused/waiting (showing black on mobile).
+   The BgVideo component adds/removes the .is-visible class. */
+.media-panel-poster {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-position: center;
+  background-size: cover;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  will-change: opacity;
+}
+
+.media-panel-poster.is-visible {
+  opacity: 1;
 }
 
 /* Calm the artwork so interface text always wins. */
