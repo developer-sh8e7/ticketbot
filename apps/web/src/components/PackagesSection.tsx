@@ -16,10 +16,10 @@ import {
   X,
 } from 'lucide-react';
 import {
-  PackageOrbitScene,
-  type PackageOrbitInteraction,
-  type PackageOrbitItem,
-} from '@/components/PackageOrbitScene';
+  PackageArcCarousel,
+  type PackageArcInteraction,
+  type PackageArcItem,
+} from '@/components/PackageArcCarousel';
 import { PriceWithRiyal } from '@/components/RiyalIcon';
 
 export const packages = [
@@ -190,7 +190,7 @@ export function PackagesSection({ initialCategory = 'all' }: { initialCategory?:
   );
   const [selectedPackage, setSelectedPackage] = useState<{
     package: typeof packages[0];
-    interaction: PackageOrbitInteraction;
+    interaction: PackageArcInteraction;
   } | null>(null);
 
   useEffect(() => {
@@ -212,7 +212,7 @@ export function PackagesSection({ initialCategory = 'all' }: { initialCategory?:
   const focusId = selectedCategory === 'all' ? null : selectedCategory;
   const displayedPackage = selectedPackage;
 
-  const toggleSelectedDetails = (pkg: PackageOrbitItem | null, interaction: PackageOrbitInteraction) => {
+  const toggleSelectedDetails = (pkg: PackageArcItem | null, interaction: PackageArcInteraction) => {
     if (!pkg) {
       setSelectedPackage(null);
       return;
@@ -250,7 +250,7 @@ export function PackagesSection({ initialCategory = 'all' }: { initialCategory?:
       </div>
 
       <div className="package-orbit-shell relative mx-[calc(50%-50vw)] mt-4 w-screen overflow-hidden sm:mt-6">
-        <PackageOrbitScene
+        <PackageArcCarousel
           items={packages}
           focusId={focusId}
           selectedId={selectedPackage?.package.id ?? null}
@@ -379,7 +379,7 @@ export function PackagesSection({ initialCategory = 'all' }: { initialCategory?:
       </div>
 
       <div className="mt-4 flex flex-col items-center justify-center gap-1 text-center font-arabic text-xs text-[var(--color-muted)] sm:flex-row sm:gap-3">
-        <span>المسار يتحرك بشكل مستمر</span>
+        <span>اسحب البطاقات يمين ويسار</span>
         <span className="hidden h-1 w-1 rounded-full bg-[var(--color-accent)] sm:block" />
         <span>اضغط على البطاقة لاطلاق التفاصيل</span>
         <Link href="/project-request" className="mt-2 font-extrabold text-[var(--color-accent-2)] underline underline-offset-4 sm:mt-0">أو اطلب عرض مخصص</Link>

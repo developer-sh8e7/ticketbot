@@ -415,57 +415,228 @@ body.custom-cursor, body.custom-cursor * { cursor: none !important; }
   }
 }
 
-/* ── Three.js package orbit ─────────────────────────────────────────────── */
+/* ── Package arc carousel ──────────────────────────────────────────────── */
 
 .package-orbit-shell {
-  min-height: min(835px, calc(100vw / 2.3));
   isolation: isolate;
 }
 
-.package-orbit-mount {
+.arc-stage {
   position: relative;
   z-index: 1;
   width: 100%;
-  height: min(835px, calc(100vw / 2.3));
-  min-height: 520px;
+  height: clamp(500px, 45vw, 640px);
   overflow: hidden;
   touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  perspective: 1300px;
+  perspective-origin: 50% 30%;
+  cursor: grab;
 }
 
-.package-orbit-canvas {
+.arc-stage.is-dragging {
+  cursor: grabbing;
+}
+
+.arc-card {
   position: absolute;
-  inset: 0;
-  display: block;
+  top: 43%;
+  left: 50%;
+  width: var(--card-w, 240px);
+  aspect-ratio: 3 / 5;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: right;
+  transform: translate(-50%, -50%);
+  transform-style: preserve-3d;
+  will-change: transform, opacity;
+  opacity: 0;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.arc-card-inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   height: 100%;
-  opacity: 0;
-  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity;
+  overflow: hidden;
+  border-radius: clamp(22px, calc(var(--card-w, 240px) * 0.115), 30px);
+  border: 1px solid color-mix(in srgb, rgba(255, 255, 255, 0.5) calc(var(--p, 0) * 100%), rgba(255, 255, 255, 0.85));
+  background: color-mix(in srgb, rgba(251, 254, 253, 0.14) calc(var(--p, 0) * 100%), rgba(251, 254, 253, 0.6));
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  box-shadow:
+    0 24px 60px color-mix(in srgb, rgba(1, 117, 125, 0.42) calc(var(--p, 0) * 100%), rgba(7, 51, 46, 0.13)),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  color: color-mix(in srgb, #ffffff calc(var(--p, 0) * 100%), var(--color-text));
+  transition: translate 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease;
+  animation: arc-card-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--i, 0) * 80ms) backwards;
 }
 
-.package-orbit-mount.is-ready .package-orbit-canvas {
-  opacity: 1;
+.arc-card:hover .arc-card-inner {
+  translate: 0 -8px;
 }
 
-.package-orbit-loading {
+.arc-card:focus-visible .arc-card-inner {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.arc-card.is-selected .arc-card-inner {
+  border-color: color-mix(in srgb, #ffffff calc(var(--p, 0) * 100%), var(--color-accent));
+  box-shadow:
+    0 30px 74px color-mix(in srgb, rgba(1, 117, 125, 0.5) calc(var(--p, 0) * 100%), rgba(15, 201, 143, 0.26)),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.arc-card-gradient {
   position: absolute;
-  left: 50%;
-  top: 48%;
-  width: min(226px, 42vw);
-  aspect-ratio: 1 / 2;
-  border: 1px solid rgba(255, 255, 255, 0.82);
-  border-radius: 28px;
+  inset: 0;
   background:
-    linear-gradient(105deg, transparent 28%, rgba(255, 255, 255, 0.74) 45%, transparent 62%) 0 0 / 240% 100%,
-    linear-gradient(160deg, rgba(255, 255, 255, 0.68), rgba(168, 234, 226, 0.42));
-  box-shadow: 0 24px 70px rgba(14, 138, 163, 0.11);
-  transform: translate(-50%, -50%);
-  animation: package-card-loading 1.6s linear infinite;
-  transition: opacity 300ms ease;
+    radial-gradient(120% 90% at 85% -10%, rgba(83, 240, 178, 0.85) 0%, transparent 52%),
+    linear-gradient(168deg, #00e08f -4%, #01757d 94%);
+  opacity: var(--p, 0);
 }
 
-.package-orbit-mount.is-ready .package-orbit-loading {
-  opacity: 0;
+.arc-card-sheen {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(90% 42% at 50% 0%, rgba(255, 255, 255, 0.5), transparent 70%);
+  opacity: calc(0.55 + var(--p, 0) * 0.2);
+}
+
+.arc-card-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: clamp(1rem, calc(var(--card-w, 240px) * 0.085), 1.4rem);
+}
+
+.arc-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.arc-card-category {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: color-mix(in srgb, rgba(255, 255, 255, 0.92) calc(var(--p, 0) * 100%), var(--color-accent-2));
+}
+
+.arc-card-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: color-mix(in srgb, rgba(255, 255, 255, 0.2) calc(var(--p, 0) * 100%), rgba(15, 201, 143, 0.12));
+  color: color-mix(in srgb, #ffffff calc(var(--p, 0) * 100%), var(--color-accent));
+}
+
+.arc-card-name {
+  margin-top: 0.65rem;
+  font-size: clamp(1.15rem, calc(var(--card-w, 240px) * 0.088), 1.4rem);
+  font-weight: 800;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.arc-card-desc {
+  margin-top: 0.4rem;
+  font-size: 0.72rem;
+  line-height: 1.75;
+  color: color-mix(in srgb, rgba(255, 255, 255, 0.82) calc(var(--p, 0) * 100%), var(--color-muted));
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.arc-card-divider {
+  margin-top: auto;
+  height: 1px;
+  background: color-mix(in srgb, rgba(255, 255, 255, 0.32) calc(var(--p, 0) * 100%), rgba(7, 51, 46, 0.1));
+}
+
+.arc-card-price-label {
+  margin-top: 0.7rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: color-mix(in srgb, rgba(255, 255, 255, 0.85) calc(var(--p, 0) * 100%), var(--color-accent-2));
+}
+
+.arc-card-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.arc-card-price {
+  font-size: clamp(1.7rem, calc(var(--card-w, 240px) * 0.135), 2.15rem);
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.arc-card-currency {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: color-mix(in srgb, rgba(255, 255, 255, 0.85) calc(var(--p, 0) * 100%), var(--color-accent-2));
+}
+
+.arc-card-old-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.arc-card-old {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: color-mix(in srgb, rgba(255, 255, 255, 0.68) calc(var(--p, 0) * 100%), var(--color-muted));
+}
+
+.arc-card-save {
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  background: color-mix(in srgb, rgba(255, 255, 255, 0.22) calc(var(--p, 0) * 100%), var(--aurora-lime));
+  color: color-mix(in srgb, #ffffff calc(var(--p, 0) * 100%), var(--color-on-accent));
+}
+
+.arc-card-foot {
+  margin-top: 0.85rem;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: color-mix(in srgb, rgba(255, 255, 255, 0.72) calc(var(--p, 0) * 100%), var(--color-accent-2));
+}
+
+@keyframes arc-card-in {
+  from {
+    translate: 0 44px;
+    opacity: 0;
+  }
+  to {
+    translate: 0 0;
+    opacity: 1;
+  }
 }
 
 .package-orbit-edge {
@@ -486,21 +657,7 @@ body.custom-cursor, body.custom-cursor * { cursor: none !important; }
   background: linear-gradient(to right, color-mix(in srgb, var(--color-bg) 62%, transparent), transparent);
 }
 
-.package-orbit-fallback {
-  border: 1px solid rgba(255, 255, 255, 0.78);
-  border-radius: 28px;
-  background: rgba(251, 254, 253, 0.72);
-  padding: 1.5rem;
-  box-shadow: 0 24px 70px rgba(14, 138, 163, 0.1);
-  backdrop-filter: blur(24px);
-}
-
-@keyframes package-card-loading {
-  from { background-position: 150% 0, 0 0; }
-  to { background-position: -150% 0, 0 0; }
-}
-
-/* The details stay in context; the connector itself is rendered by Three.js. */
+/* The details panel stays overlaid on the arc shell. */
 .package-orbit-detail {
   position: absolute;
   top: clamp(1rem, 3.2vw, 2.75rem);
@@ -654,14 +811,15 @@ body.custom-cursor, body.custom-cursor * { cursor: none !important; }
 }
 
 @media (max-width: 719px) {
-  .package-orbit-shell {
-    min-height: 560px;
+  .arc-stage {
+    height: min(150vw, 585px);
+    min-height: 470px;
+    perspective: 1000px;
   }
 
-  .package-orbit-mount {
-    height: 145vw;
-    min-height: 560px;
-    max-height: 650px;
+  .arc-card-inner {
+    backdrop-filter: blur(14px) saturate(1.12);
+    -webkit-backdrop-filter: blur(14px) saturate(1.12);
   }
 
   .package-orbit-detail {
@@ -681,10 +839,14 @@ body.custom-cursor, body.custom-cursor * { cursor: none !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .package-orbit-loading,
+  .arc-card-inner,
   .package-orbit-detail::before,
   .package-orbit-detail-scan,
   .package-orbit-live-dot::before {
     animation: none !important;
+  }
+
+  .arc-card:hover .arc-card-inner {
+    translate: 0 0;
   }
 }
