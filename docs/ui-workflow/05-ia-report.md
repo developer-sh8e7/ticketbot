@@ -34,7 +34,7 @@
 ## Cross-page User Flows
 
 ```text
-/packages → hover/tap card → contextual details → ابدأ مشروعك → /project-request
+/packages → left-click/tap card → staged signal → contextual details → ابدأ مشروعك → /project-request
 /packages → filter category → inspect matching package → /project-request
 /packages → اطلب عرض مخصص → /project-request
 ```

@@ -25,7 +25,6 @@ type PackageOrbitSceneProps = {
   focusId?: string | null;
   selectedId?: string | null;
   onActivate: (item: PackageOrbitItem | null, interaction: PackageOrbitInteraction) => void;
-  onHoverChange?: (item: PackageOrbitItem | null, interaction?: PackageOrbitInteraction) => void;
 };
 
 type OrbitCard = {
@@ -220,6 +219,8 @@ function makeConnector() {
     blending: THREE.AdditiveBlending,
     uniforms: {
       uOpacity: { value: 0 },
+      uProgress: { value: 0 },
+      uTime: { value: 0 },
       uMint: { value: new THREE.Color('#16d9a1') },
       uLime: { value: new THREE.Color('#cef42e') },
     },
@@ -233,15 +234,21 @@ function makeConnector() {
     fragmentShader: `
       varying vec2 vUv;
       uniform float uOpacity;
+      uniform float uProgress;
+      uniform float uTime;
       uniform vec3 uMint;
       uniform vec3 uLime;
       void main() {
         float center = 1.0 - abs(vUv.y * 2.0 - 1.0);
-        float feather = smoothstep(0.0, 0.78, center);
-        float reveal = smoothstep(0.0, 0.13, vUv.x);
-        float tail = 1.0 - smoothstep(0.94, 1.0, vUv.x);
+        float feather = smoothstep(0.0, 0.88, center);
+        float core = smoothstep(0.7, 1.0, center);
+        float pathMask = 1.0 - smoothstep(uProgress, uProgress + 0.012, vUv.x);
+        float head = 1.0 - smoothstep(0.0, 0.045, abs(vUv.x - uProgress));
+        float packetWave = 0.5 + 0.5 * sin(vUv.x * 115.0 - uTime * 8.0);
+        float packets = pow(packetWave, 18.0) * smoothstep(0.08, 0.3, vUv.x);
         vec3 color = mix(uMint, uLime, smoothstep(0.25, 1.0, vUv.x));
-        gl_FragColor = vec4(color, feather * reveal * max(tail, 0.35) * uOpacity);
+        float alpha = (feather * 0.36 + core * 0.72 + packets * 0.62 + head) * pathMask * uOpacity;
+        gl_FragColor = vec4(color, alpha);
       }
     `,
   });
@@ -252,13 +259,32 @@ function makeConnector() {
   return { mesh, geometry, material };
 }
 
-function cubicPoint(target: THREE.Vector3, p0: THREE.Vector3, p1: THREE.Vector3, p2: THREE.Vector3, p3: THREE.Vector3, t: number) {
-  const inv = 1 - t;
-  target.set(0, 0, 0)
-    .addScaledVector(p0, inv * inv * inv)
-    .addScaledVector(p1, 3 * inv * inv * t)
-    .addScaledVector(p2, 3 * inv * t * t)
-    .addScaledVector(p3, t * t * t);
+function signalPathPoint(
+  target: THREE.Vector3,
+  source: THREE.Vector3,
+  verticalEnd: THREE.Vector3,
+  cornerEnd: THREE.Vector3,
+  endpoint: THREE.Vector3,
+  t: number
+) {
+  if (t <= 0.64) {
+    const p = t / 0.64;
+    target.lerpVectors(source, verticalEnd, 1 - Math.pow(1 - p, 3));
+    return;
+  }
+  if (t <= 0.76) {
+    const p = (t - 0.64) / 0.12;
+    const inv = 1 - p;
+    const middleWeight = 2 * inv * p;
+    target.set(
+      verticalEnd.x * inv * inv + verticalEnd.x * middleWeight + cornerEnd.x * p * p,
+      verticalEnd.y * inv * inv + cornerEnd.y * middleWeight + cornerEnd.y * p * p,
+      verticalEnd.z * inv * inv + verticalEnd.z * middleWeight + cornerEnd.z * p * p
+    );
+    return;
+  }
+  const p = (t - 0.76) / 0.24;
+  target.lerpVectors(cornerEnd, endpoint, 1 - Math.pow(1 - p, 2));
 }
 
 export function PackageOrbitScene({
@@ -266,20 +292,17 @@ export function PackageOrbitScene({
   focusId = null,
   selectedId = null,
   onActivate,
-  onHoverChange,
 }: PackageOrbitSceneProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const focusIdRef = useRef(focusId);
   const selectedIdRef = useRef(selectedId);
   const activateRef = useRef(onActivate);
-  const hoverChangeRef = useRef(onHoverChange);
   const [fallback, setFallback] = useState(false);
   const [ready, setReady] = useState(false);
 
   focusIdRef.current = focusId;
   selectedIdRef.current = selectedId;
   activateRef.current = onActivate;
-  hoverChangeRef.current = onHoverChange;
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -347,6 +370,8 @@ export function PackageOrbitScene({
             metalness: 0,
             clearcoat: 0.42,
             clearcoatRoughness: 0.38,
+            emissive: palette.glow,
+            emissiveIntensity: 0,
             transparent: true,
             opacity: 0.97,
           })
@@ -379,6 +404,36 @@ export function PackageOrbitScene({
       targetDot.renderOrder = 1001;
       scene.add(sourceDot, targetDot);
 
+      const launchRingGeometry = new THREE.RingGeometry(7, 9, 36);
+      const launchRings = Array.from({ length: 3 }, (_, index) => {
+        const material = new THREE.MeshBasicMaterial({
+          color: index === 2 ? '#cef42e' : '#16d9a1',
+          transparent: true,
+          opacity: 0,
+          depthTest: false,
+          blending: THREE.AdditiveBlending,
+        });
+        const ring = new THREE.Mesh(launchRingGeometry, material);
+        ring.renderOrder = 1002;
+        scene.add(ring);
+        return ring;
+      });
+
+      const packetGeometry = new THREE.CircleGeometry(3.6, 18);
+      const signalPackets = Array.from({ length: 4 }, (_, index) => {
+        const material = new THREE.MeshBasicMaterial({
+          color: index % 2 === 0 ? '#d9f45f' : '#65f4cd',
+          transparent: true,
+          opacity: 0,
+          depthTest: false,
+          blending: THREE.AdditiveBlending,
+        });
+        const packet = new THREE.Mesh(packetGeometry, material);
+        packet.renderOrder = 1003;
+        scene.add(packet);
+        return packet;
+      });
+
       let width = 1;
       let height = 1;
       let cardHeight = 422;
@@ -407,8 +462,8 @@ export function PackageOrbitScene({
       const projected = new THREE.Vector3();
       const source = new THREE.Vector3();
       const target = new THREE.Vector3();
-      const controlA = new THREE.Vector3();
-      const controlB = new THREE.Vector3();
+      const verticalEnd = new THREE.Vector3();
+      const cornerEnd = new THREE.Vector3();
       const curvePoint = new THREE.Vector3();
       const previousCurvePoint = new THREE.Vector3();
       let pointerInside = false;
@@ -419,12 +474,10 @@ export function PackageOrbitScene({
       let lastPointerY = 0;
       let hovered: OrbitCard | null = null;
       let selected: OrbitCard | null = null;
-      let hoverSide: 'left' | 'right' = 'right';
-      let selectedSide: 'left' | 'right' = 'right';
-      let notifiedHoverCopy = -1;
       let targetTravel = 0;
       let travel = 0;
       let connectorOpacity = 0;
+      let selectionStartedAt = 0;
 
       const interactionFor = (card: OrbitCard, side: 'left' | 'right'): PackageOrbitInteraction => {
         projected.set(0, 0.14, 0.03);
@@ -486,6 +539,7 @@ export function PackageOrbitScene({
       };
 
       const onPointerDown = (event: PointerEvent) => {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
         updatePointer(event);
         pointerDown = true;
         dragged = false;
@@ -496,6 +550,7 @@ export function PackageOrbitScene({
       };
 
       const onPointerUp = (event: PointerEvent) => {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
         updatePointer(event);
         const picked = !dragged ? closestCard() : null;
         pointerDown = false;
@@ -505,15 +560,15 @@ export function PackageOrbitScene({
         if (!picked) return;
 
         if (selected === picked) {
-          const side = selectedSide;
           selected = null;
-          activateRef.current(null, interactionFor(picked, side));
+          selectionStartedAt = 0;
+          activateRef.current(null, interactionFor(picked, 'left'));
           return;
         }
 
         selected = picked;
-        selectedSide = picked.group.position.x < 0 ? 'right' : 'left';
-        activateRef.current(items[picked.itemIndex], interactionFor(picked, selectedSide));
+        selectionStartedAt = performance.now();
+        activateRef.current(items[picked.itemIndex], interactionFor(picked, 'left'));
       };
 
       const onPointerCancel = (event: PointerEvent) => {
@@ -549,38 +604,48 @@ export function PackageOrbitScene({
       }, { rootMargin: '180px' });
       intersectionObserver.observe(mount);
 
-      const updateConnector = (active: OrbitCard | null, side: 'left' | 'right', dt: number) => {
+      const updateConnector = (active: OrbitCard | null, dt: number, time: number) => {
         const targetOpacity = active?.group.visible ? 1 : 0;
-        connectorOpacity = THREE.MathUtils.damp(connectorOpacity, targetOpacity, 7, dt);
+        connectorOpacity = THREE.MathUtils.damp(connectorOpacity, targetOpacity, 8, dt);
+        const elapsed = active && selectionStartedAt ? Math.max(0, (time - selectionStartedAt) / 1000) : 0;
+        const rawProgress = reducedMotion ? (active ? 1 : 0) : THREE.MathUtils.clamp((elapsed - 0.09) / 0.72, 0, 1);
+        const progress = 1 - Math.pow(1 - rawProgress, 3);
+
         connector.material.uniforms.uOpacity.value = connectorOpacity;
+        connector.material.uniforms.uProgress.value = progress;
+        connector.material.uniforms.uTime.value = time / 1000;
         sourceDotMaterial.opacity = connectorOpacity;
-        targetDotMaterial.opacity = connectorOpacity;
+        targetDotMaterial.opacity = connectorOpacity * THREE.MathUtils.smoothstep(progress, 0.82, 1);
         connector.mesh.visible = connectorOpacity > 0.003;
         sourceDot.visible = connector.mesh.visible;
         targetDot.visible = connector.mesh.visible;
-        if (!active || connectorOpacity <= 0.003) return;
 
-        source.set(0, width < 720 ? -0.18 : 0.12, 0.035);
+        if (!active || connectorOpacity <= 0.003) {
+          launchRings.forEach((ring) => { ring.visible = false; });
+          signalPackets.forEach((packet) => { packet.visible = false; });
+          return;
+        }
+
+        source.set(0, width < 720 ? -0.12 : 0.08, 0.035);
         active.group.localToWorld(source);
 
         const panelWidth = Math.min(390, width - 24);
+        const panelInset = width < 720 ? 12 : Math.min(64, Math.max(16, width * 0.04));
         const anchorX = width < 720
-          ? 0
-          : side === 'right'
-            ? width / 2 - panelWidth - 22
-            : -width / 2 + panelWidth + 22;
-        target.set(anchorX, height / 2 - (width < 720 ? 54 : 52), 310);
-        const mobileBend = width < 720 ? cardHeight * 0.18 : 0;
-        controlA.copy(source).add(new THREE.Vector3(side === 'right' ? mobileBend : -mobileBend, cardHeight * 0.27, 90));
-        controlB.copy(target).add(new THREE.Vector3(side === 'right' ? -cardHeight * (width < 720 ? 0.3 : 0.12) : cardHeight * (width < 720 ? 0.3 : 0.12), -cardHeight * 0.1, -45));
+          ? width / 2 - 24
+          : -width / 2 + panelInset + panelWidth;
+        target.set(anchorX, height / 2 - (width < 720 ? 50 : 54), 315);
+
+        const direction = target.x < source.x ? -1 : 1;
+        verticalEnd.set(source.x, target.y - 24, 280);
+        cornerEnd.set(source.x + direction * 24, target.y, 305);
 
         const position = connector.geometry.getAttribute('position') as THREE.BufferAttribute;
-        const lineWidth = width < 720 ? 5 : 7;
+        const lineWidth = width < 720 ? 6 : 8;
         for (let index = 0; index <= CURVE_SEGMENTS; index += 1) {
           const t = index / CURVE_SEGMENTS;
-          cubicPoint(curvePoint, source, controlA, controlB, target, t);
-          const nextT = Math.min(1, t + 1 / CURVE_SEGMENTS);
-          cubicPoint(previousCurvePoint, source, controlA, controlB, target, nextT);
+          signalPathPoint(curvePoint, source, verticalEnd, cornerEnd, target, t);
+          signalPathPoint(previousCurvePoint, source, verticalEnd, cornerEnd, target, Math.min(1, t + 1 / CURVE_SEGMENTS));
           const tangentX = previousCurvePoint.x - curvePoint.x;
           const tangentY = previousCurvePoint.y - curvePoint.y;
           const tangentLength = Math.max(0.001, Math.hypot(tangentX, tangentY));
@@ -591,11 +656,33 @@ export function PackageOrbitScene({
         }
         position.needsUpdate = true;
 
-        sourceDot.position.copy(source).setZ(315);
-        targetDot.position.copy(target).setZ(315);
-        const pulse = 1 + Math.sin(performance.now() * 0.005) * 0.12;
+        sourceDot.position.copy(source).setZ(318);
+        targetDot.position.copy(target).setZ(318);
+        const pulse = 1 + Math.sin(time * 0.008) * 0.16;
         sourceDot.scale.setScalar(pulse);
-        targetDot.scale.setScalar(0.9 + connectorOpacity * 0.25);
+        targetDot.scale.setScalar(0.9 + connectorOpacity * 0.32);
+        targetDot.rotation.z = time * 0.0018;
+
+        launchRings.forEach((ring, index) => {
+          const ringProgress = reducedMotion ? 1 : THREE.MathUtils.clamp((elapsed - index * 0.08) / 0.64, 0, 1);
+          ring.visible = ringProgress < 1 && connectorOpacity > 0.01;
+          ring.position.copy(source).setZ(319 + index);
+          ring.scale.setScalar(0.35 + ringProgress * (4.2 + index * 0.65));
+          (ring.material as THREE.MeshBasicMaterial).opacity = (1 - ringProgress) * connectorOpacity * 0.8;
+          ring.rotation.z = ringProgress * (index % 2 === 0 ? 0.8 : -0.8);
+        });
+
+        signalPackets.forEach((packet, index) => {
+          const pathPosition = (elapsed * 0.48 + index * 0.23) % 1;
+          const packetVisible = progress > 0.18 && pathPosition < progress - 0.025;
+          packet.visible = packetVisible;
+          if (!packetVisible) return;
+          signalPathPoint(packet.position, source, verticalEnd, cornerEnd, target, pathPosition);
+          packet.position.z = 322;
+          const packetPulse = 0.75 + Math.sin(time * 0.012 + index * 1.7) * 0.24;
+          packet.scale.setScalar(packetPulse);
+          (packet.material as THREE.MeshBasicMaterial).opacity = connectorOpacity * 0.88;
+        });
       };
 
       let previousTime = performance.now();
@@ -607,10 +694,15 @@ export function PackageOrbitScene({
         previousTime = time;
         if (!visible || document.hidden) return;
 
-        if (!selectedIdRef.current) selected = null;
-        else if (selected && items[selected.itemIndex].id !== selectedIdRef.current) selected = null;
+        if (!selectedIdRef.current) {
+          selected = null;
+          selectionStartedAt = 0;
+        } else if (selected && items[selected.itemIndex].id !== selectedIdRef.current) {
+          selected = null;
+          selectionStartedAt = 0;
+        }
 
-        targetTravel += (reducedMotion ? 0 : stride * 0.64) * dt;
+        targetTravel += (reducedMotion || selected ? 0 : stride * 0.64) * dt;
         const totalWidth = CARD_COPIES * stride;
         if (Math.abs(targetTravel) > totalWidth * 3) {
           const cycles = Math.trunc(targetTravel / totalWidth);
@@ -641,7 +733,8 @@ export function PackageOrbitScene({
 
           const item = items[card.itemIndex];
           const filterOpacity = focusIdRef.current && focusIdRef.current !== item.id ? 0.42 : 1;
-          card.opacity = THREE.MathUtils.damp(card.opacity, filterOpacity, 5, dt);
+          const selectionOpacity = selected && card !== selected ? 0.34 : 1;
+          card.opacity = THREE.MathUtils.damp(card.opacity, Math.min(filterOpacity, selectionOpacity), 5, dt);
           card.body.material.opacity = 0.97 * card.opacity;
           card.face.material.opacity = card.opacity;
         }
@@ -651,11 +744,15 @@ export function PackageOrbitScene({
         let strongestHover = 0;
         for (const card of cards) {
           const strength = mobileLayout ? 0 : hoverStrength(card);
-          const selectedStrength = card === selected && !mobileLayout ? 1 : 0;
-          const targetStrength = Math.max(strength, selectedStrength);
-          card.hoverAmount = THREE.MathUtils.damp(card.hoverAmount, targetStrength, 5, dt);
+          const selectedStrength = card === selected ? (mobileLayout ? 0.62 : 1) : 0;
+          const targetStrength = Math.max(strength * 0.14, selectedStrength);
+          card.hoverAmount = THREE.MathUtils.damp(card.hoverAmount, targetStrength, card === selected ? 7 : 5, dt);
           card.group.position.y += card.hoverAmount * cardHeight * 0.55;
-          card.group.position.z += card.hoverAmount * 70;
+          card.group.position.z += card.hoverAmount * 82;
+          card.group.scale.multiplyScalar(1 + card.hoverAmount * 0.028);
+          card.body.material.emissiveIntensity = card === selected
+            ? 0.16 + Math.sin(time * 0.006) * 0.035
+            : card.hoverAmount * 0.035;
           if (strength > strongestHover) {
             strongestHover = strength;
             hovered = card;
@@ -663,20 +760,8 @@ export function PackageOrbitScene({
         }
         if (strongestHover <= 0.025) hovered = null;
 
-        if (hovered?.copyIndex !== notifiedHoverCopy) {
-          notifiedHoverCopy = hovered?.copyIndex ?? -1;
-          if (hovered) {
-            hoverSide = hovered.group.position.x < 0 ? 'right' : 'left';
-            hoverChangeRef.current?.(items[hovered.itemIndex], interactionFor(hovered, hoverSide));
-          } else {
-            hoverChangeRef.current?.(null);
-          }
-        }
-
-        const active = hovered ?? selected;
-        const activeSide = hovered ? hoverSide : selectedSide;
         scene.updateMatrixWorld(true);
-        updateConnector(active, activeSide, dt);
+        updateConnector(selected, dt, time);
         renderer.domElement.style.cursor = pointerDown ? 'grabbing' : hovered ? 'pointer' : 'grab';
         renderer.render(scene, camera);
       };
@@ -711,6 +796,10 @@ export function PackageOrbitScene({
         sourceDotMaterial.dispose();
         targetDot.geometry.dispose();
         targetDotMaterial.dispose();
+        launchRings.forEach((ring) => (ring.material as THREE.MeshBasicMaterial).dispose());
+        launchRingGeometry.dispose();
+        signalPackets.forEach((packet) => (packet.material as THREE.MeshBasicMaterial).dispose());
+        packetGeometry.dispose();
         renderer.dispose();
         renderer.forceContextLoss();
         if (renderer.domElement.parentElement === mount) mount.removeChild(renderer.domElement);
@@ -736,7 +825,7 @@ export function PackageOrbitScene({
               const rect = event.currentTarget.getBoundingClientRect();
               onActivate(item, {
                 origin: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 },
-                side: rect.left + rect.width / 2 < window.innerWidth / 2 ? 'right' : 'left',
+                side: 'left',
               });
             }}
             className="package-orbit-fallback min-w-[78vw] snap-center text-right sm:min-w-[320px]"

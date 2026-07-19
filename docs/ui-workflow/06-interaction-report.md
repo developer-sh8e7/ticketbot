@@ -2,56 +2,58 @@
 
 ## Interaction Principles
 
-- الاهتمام يرفع البطاقة ولا يكبرها بشكل يسبب layout shift.
-- تفاصيل الباقة تظهر في سياق المسار ولا توقف تمرير الصفحة.
-- hover للمعاينة، click للتثبيت، tap للتثبيت على الجوال.
+- hover لا يفتح التفاصيل ولا يشغل الموصل؛ يمنح البطاقة حركة خفيفة بنسبة 14% فقط.
+- ضغطة الماوس اليسار او tap هي المشغل الوحيد للتسلسل الكامل.
 - السحب الافقي لا يحتسب اختيارا بعد تجاوز 7px.
-- كل حركة تعتمد delta time وتخميد حتى تبقى ثابتة بين الشاشات.
+- عند الاختيار يتوقف التحرك التلقائي، تخفت البطاقات الاخرى، وترتفع البطاقة المحددة.
+- الاشارة تشبه مسار بيانات او طاقة منظم، وليست برق او كهرباء متعرجة.
 
 ## State Matrix
 
 | Component/Area | Default | Hover | Focus | Active | Disabled | Error |
 |---|---|---|---|---|---|---|
-| Card | يتحرك على القوس | يرتفع حتى 0.55 من الارتفاع ويظهر الخط | المحتوى مكشوف في القائمة الدلالية | click يثبت الرفع واللوحة | غير مستخدم | fallback HTML |
-| Category pill | سطح شفاف | لون نص اوضح | ring مرئي | mint filled | غير مستخدم | غير مستخدم |
-| Detail panel | مخفي | يظهر بمعاينة | الازرار لها ring | ثابت مع زر اغلاق | غير مستخدم | لا يفتح عند غياب بيانات كاملة |
+| Card | يتحرك على القوس | ارتفاع خفيف بدون معلومات | المحتوى في القائمة الدلالية | يرتفع ويتوهج وتتوقف الحركة | غير مستخدم | fallback HTML |
+| Connector | مخفي | يبقى مخفيا | غير مستخدم | ينطلق عموديا ثم ينعطف اعلى اليسار | غير مستخدم | لا يظهر |
+| Detail panel | مخفي | يبقى مخفيا | الازرار لها ring | يتكون بعد وصول الاشارة مع زر اغلاق | غير مستخدم | لا يفتح |
 | CTA | dark pill | يرتفع 2px ويتحول teal | ring mint | ينتقل للنموذج | غير مستخدم | تنقل Next.js المعتاد |
 
 ## Loading / Empty / Error / Success States
 
-- Loading: بطاقة shimmer واحدة حتى `document.fonts.ready` وانشاء الخامات.
-- Empty: لا ينشأ المشهد اذا كانت قائمة الباقات فارغة.
-- Error: عند فشل WebGL او `webglcontextlost` يظهر carousel HTML افقي.
-- Success: البطاقة مرفوعة، خط منحني ظاهر، اللوحة تعرض الاسم والسعر والخصم والCTA.
+- Loading: بطاقة shimmer حتى تجهيز الخطوط والخامات.
+- Empty: لا ينشأ المشهد اذا كانت القائمة فارغة.
+- Error: carousel HTML افقي عند فشل WebGL او فقدان السياق.
+- Success: البطاقة منفصلة بصريا، الاشارة مكتملة، لوحة الاعلى يسار تعرض المعلومات.
 
-## Motion System
+## Motion Choreography
 
-| Motion | Duration | Easing | Trigger | Purpose |
-|---|---:|---|---|---|
-| Auto travel | مستمر | delta-time linear ثم damp 5 | visibility + عدم reduced motion | حياة مستمرة للمسار |
-| Hover lift | 200-500ms حسب المسافة | `MathUtils.damp(..., 5, dt)` | pointer proximity | فصل البطاقة النشطة |
-| Connector | نحو 420ms | damp 7 + shader opacity | hover/selection | ربط البطاقة بالمعلومة |
-| Panel enter | 420ms | `[0.16,1,0.3,1]` | details become active | ظهور واضح بلا bounce |
-| Canvas ready | 700ms | ease-out CSS | WebGL initialized | اخفاء loading بدون flash |
+| المرحلة | الزمن التقريبي | التقنية | النتيجة |
+|---|---:|---|---|
+| Card lock | 0-350ms | `MathUtils.damp` بقوة 7 | ارتفاع، scale خفيف، emissive pulse وتعتيم البقية |
+| Source ignition | 0-640ms | 3 حلقات RingGeometry | موجات اطلاق متتابعة من البطاقة |
+| Vertical signal | 90-550ms | GLSL ribbon reveal | خط مستقيم يصعد من البطاقة |
+| Corner + branch | 450-810ms | piecewise path مع زاوية مستديرة | انعطاف الى الاعلى يسار |
+| Data packets | مستمر بعد 180ms | 4 Mesh packets + shader pulses | نقاط طاقة تتحرك داخل المسار |
+| Panel shell | 720-1440ms | Framer scaleX/scaleY/blur | بناء سطح اللوحة من نقطة الربط |
+| Panel scan | 1080-2230ms | CSS scan line | مسح بصري للوحة |
+| Content reveal | 1020-2220ms | staggered Framer Motion | label ثم العنوان والسعر والمزايا والCTA |
 
 ## Keyboard and Mobile Behavior
 
-- الجوال: tap يختار، tap/زر الاغلاق يلغي، swipe افقي يحرك المسار، `touch-action: pan-y` يحافظ على تمرير الصفحة.
-- سطح المكتب: hover يعاين، click يثبت، drag يحرك، wheel يدفع المسار قليلا.
-- المحتوى الكامل الاساسي موجود في قائمة HTML دلالية خارج Canvas لقارئات الشاشة.
-- CTA وزر الاغلاق عناصر HTML فعلية.
+- Desktop: زر الماوس اليسار فقط يختار؛ الزر الايمن لا يشغل شيء. drag يحرك وwheel يدفع المسار.
+- Mobile: tap يختار، زر الاغلاق يلغي، وswipe افقي يحرك المسار.
+- لوحة الجوال مختصرة حتى لا تصبح تجربة كاملة الشاشة.
+- المحتوى الاساسي موجود في قائمة HTML دلالية خارج Canvas.
 
 ## Accessibility Notes
 
-- Canvas `aria-hidden` لانه عرض بصري مكرر لمحتوى HTML.
+- Canvas `aria-hidden` لانه يكرر بيانات HTML.
 - `aria-live=polite` على لوحة التفاصيل.
 - زر الاغلاق له label عربي واضح.
-- التباين داكن على سطح فاتح ويستهدف WCAG AA.
-- لا تعتمد المعلومة على اللون فقط؛ الرفع واللوحة والنص تعمل معا.
+- المعلومة لا تعتمد على اللون وحده؛ البطاقة ترتفع والبقية تخفت واللوحة تظهر نصيا.
 
 ## Reduced Motion Behavior
 
 - يوقف الحركة الذاتية.
-- تبقى استجابة hover/tap الوظيفية بتخميد هادئ.
-- يتوقف shimmer animation عبر CSS.
-- يبقى fallback النصي متاحا.
+- يظهر مسار الاشارة مباشرة بدل التسلسل الطويل.
+- تتوقف حلقات الاطلاق وscan وborder pulse.
+- يبقى الضغط واللوحة وCTA شغالة.
