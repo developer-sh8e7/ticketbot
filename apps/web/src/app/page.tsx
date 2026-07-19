@@ -19,10 +19,10 @@ import { ServiceIllustration } from '@/components/ServiceIllustrations';
 import { MotionGrid } from '@/components/MotionGrid';
 import { MotionSection } from '@/components/MotionSection';
 import { PublicFrame } from '@/components/ui';
-import { AudienceCard, CardFlow, SolutionCard } from '@/components/FlowCard';
+import { AudienceCard, SolutionCard } from '@/components/FlowCard';
 import { PackagesSection, SELECT_CATEGORY_EVENT } from '@/components/PackagesSection';
-import { SectionNav } from '@/components/SectionNav';
 import { ScrollProgress } from '@/components/ScrollProgress';
+import { BgVideo } from '@/components/fx/BgVideo';
 import { SmoothScroll, scrollToSection } from '@/components/fx/SmoothScroll';
 import { Preloader } from '@/components/fx/Preloader';
 import { CustomCursor } from '@/components/fx/CustomCursor';
@@ -50,12 +50,12 @@ const audiences = [
 ] as const;
 
 const categoryCards = [
-  { id: 'corporate', label: 'مواقع تعريفية', description: 'موقع تعريفي احترافي للشركات والمؤسسات — يعرض خدماتك، فريقك، أعمالك بتجربة مميزة', illustration: 'corporate', category: 'corporate' },
-  { id: 'ecommerce', label: 'متاجر إلكترونية', description: 'متجر إلكتروني كامل بجميع الميزات للبيع أونلاين — منتجات، دفع، شحن، لوحة تحكم', illustration: 'ecommerce', category: 'ecommerce' },
-  { id: 'landing', label: 'صفحات هبوط', description: 'صفحة هبوط (Landing Page) عالية التحويل للمطاعم، العروض، الحملات، إطلاق المنتجات', illustration: 'landing', category: 'landing' },
-  { id: 'uiux', label: 'واجهات وتجربة استخدام', description: 'دراسة جدوى تقنية وتصميم تجربة مستخدم (UX/UI)', illustration: 'uiux', category: 'all' },
-  { id: 'graduation', label: 'مشاريع تخرج', description: 'موقع أو تطبيق لمشروع التخرج الجامعي — فكرة، تصميم، برمجة، توثيق، عرض تقديمي', illustration: 'graduation', category: 'graduation' },
-  { id: 'mobile', label: 'تطبيقات جوال', description: 'تطبيق جوال أصلي (iOS/Android) أو كروس بلاتفورم — من الفكرة للنشر على المتاجر', illustration: 'mobile', category: 'mobile-app' },
+  { id: 'corporate', label: 'مواقع تعريفية', description: 'موقع تعريفي احترافي للشركات والمؤسسات — يعرض خدماتك، فريقك، أعمالك بتجربة مميزة', illustration: 'corporate', category: 'corporate', image: '/cards/cardopus8.jpg', tone: 'dark' },
+  { id: 'ecommerce', label: 'متاجر إلكترونية', description: 'متجر إلكتروني كامل بجميع الميزات للبيع أونلاين — منتجات، دفع، شحن، لوحة تحكم', illustration: 'ecommerce', category: 'ecommerce', image: '/cards/cardopus3.jpg', tone: 'light' },
+  { id: 'landing', label: 'صفحات هبوط', description: 'صفحة هبوط (Landing Page) عالية التحويل للمطاعم، العروض، الحملات، إطلاق المنتجات', illustration: 'landing', category: 'landing', image: '/cards/cardopus1.jpg', tone: 'light' },
+  { id: 'uiux', label: 'واجهات وتجربة استخدام', description: 'دراسة جدوى تقنية وتصميم تجربة مستخدم (UX/UI)', illustration: 'uiux', category: 'all', image: '/cards/cardopus5.jpg', tone: 'dark' },
+  { id: 'graduation', label: 'مشاريع تخرج', description: 'موقع أو تطبيق لمشروع التخرج الجامعي — فكرة، تصميم، برمجة، توثيق، عرض تقديمي', illustration: 'graduation', category: 'graduation', image: '/cards/cardopus4.jpg', tone: 'light' },
+  { id: 'mobile', label: 'تطبيقات جوال', description: 'تطبيق جوال أصلي (iOS/Android) أو كروس بلاتفورم — من الفكرة للنشر على المتاجر', illustration: 'mobile', category: 'mobile-app', image: '/cards/cardopus7.jpg', tone: 'dark' },
 ] as const;
 
 const stats = [
@@ -121,15 +121,6 @@ const faqs = [
   },
 ] as const;
 
-const sectionNavItems = [
-  { id: 'home', label: 'الرئيسية' },
-  { id: 'services', label: 'ماذا تحتاج؟' },
-  { id: 'packages', label: 'الباقات والأسعار' },
-  { id: 'projects', label: 'أحدث أعمالنا' },
-  { id: 'faq', label: 'أسئلة شائعة' },
-  { id: 'contact', label: 'اطلب موقعك' },
-];
-
 function selectPackagesCategory(category: string) {
   window.dispatchEvent(new CustomEvent(SELECT_CATEGORY_EVENT, { detail: category }));
   scrollToSection('packages');
@@ -142,7 +133,6 @@ export default function HomePage() {
       <SmoothScroll />
       <CustomCursor />
       <ScrollProgress />
-      <SectionNav items={sectionNavItems} />
       <PublicFrame>
         <div id="home" className="scroll-mt-24">
           <HomeHero />
@@ -174,6 +164,8 @@ export default function HomePage() {
                   description={cat.description}
                   index={index}
                   variant={(['glass', 'tint', 'solid'] as const)[index % 3]}
+                  image={cat.image}
+                  tone={cat.tone}
                   onExplore={() => selectPackagesCategory(cat.category)}
                   visual={(
                     <ServiceIllustration
@@ -187,34 +179,44 @@ export default function HomePage() {
           </div>
         </MotionSection>
 
-        {/* Packages — full pricing on the same page */}
+        {/* Packages — one contained video-backed pricing panel */}
         <MotionSection id="packages" className="scroll-mt-24 py-12 md:py-20">
-          <div className="mx-auto max-w-7xl px-4 md:px-8 lg:px-12">
-            <div dir="rtl" className="mb-8 text-center md:mb-12">
-              <h2 className="font-arabic text-3xl font-extrabold tracking-tight text-[var(--color-text)] sm:text-4xl md:text-5xl">
-                <RevealText text="الباقات والأسعار" accentWords={['والأسعار']} />
-              </h2>
-              <p className="mx-auto mt-4 max-w-2xl font-arabic text-base leading-7 text-[var(--color-muted)] sm:text-lg sm:leading-8">
-                أسعار واضحة بدون رسوم مخفية. كل باقة تشمل التصميم والبرمجة والتسليم ودعم فني لمدة أسبوع.
-              </p>
+          <div className="mx-auto max-w-[88rem] px-3 sm:px-4 md:px-8">
+            <div dir="rtl" className="pricing-panel">
+              <span className="pricing-panel-fallback" aria-hidden="true" />
+              <BgVideo src="/cards/card-3.mp4" poster="/cards/card-3-poster.jpg" />
+              <span className="pricing-panel-veil" aria-hidden="true" />
+
+              <div className="pricing-panel-content">
+                <div className="mb-8 text-center md:mb-12">
+                  <h2 className="font-arabic text-3xl font-extrabold tracking-tight text-[var(--color-text)] sm:text-4xl md:text-5xl">
+                    <RevealText text="الباقات والأسعار" accentWords={['والأسعار']} />
+                  </h2>
+                  <p className="mx-auto mt-4 max-w-2xl font-arabic text-base leading-7 text-[var(--color-muted)] sm:text-lg sm:leading-8">
+                    أسعار واضحة بدون رسوم مخفية. كل باقة تشمل التصميم والبرمجة والتسليم ودعم فني لمدة أسبوع.
+                  </p>
+                </div>
+
+                <PackagesSection />
+
+                <p className="mt-8 text-center font-arabic text-sm text-[var(--color-muted)] md:mt-10">
+                  تبي تفاصيل أكثر عن كل باقة؟{' '}
+                  <Link href="/packages" className="font-extrabold text-[var(--color-accent-2)] underline underline-offset-4 hover:text-[var(--color-text)]">
+                    صفحة الباقات الكاملة
+                  </Link>
+                </p>
+              </div>
             </div>
-
-            <PackagesSection />
-
-            <p dir="rtl" className="mt-10 text-center font-arabic text-sm text-[var(--color-muted)]">
-              تبي تفاصيل أكثر عن كل باقة؟{' '}
-              <Link href="/packages" className="font-extrabold text-[var(--color-accent)] underline underline-offset-4 hover:text-[var(--color-accent-2)]">
-                صفحة الباقات الكاملة
-              </Link>
-            </p>
           </div>
         </MotionSection>
 
         {/* Stats */}
-        <MotionSection className="stat-band py-10 md:py-20">
-          <span className="stat-band-sweep" aria-hidden="true" />
-          <div className="relative mx-auto max-w-7xl px-4 md:px-8 lg:px-12">
-            <div className="grid grid-cols-3">
+        <MotionSection className="py-10 md:py-16">
+          <div className="mx-auto max-w-7xl px-4 md:px-8 lg:px-12">
+            <div className="media-panel">
+              <BgVideo src="/cards/card-3.mp4" poster="/cards/card-3-poster.jpg" />
+              <span className="media-panel-veil" aria-hidden="true" />
+              <div className="relative z-10 grid grid-cols-3 px-1 py-8 sm:px-6 md:py-14">
               {stats.map((stat, index) => (
                 <motion.div
                   key={stat.label}
@@ -243,6 +245,7 @@ export default function HomePage() {
                   </p>
                 </motion.div>
               ))}
+              </div>
             </div>
           </div>
         </MotionSection>
@@ -343,7 +346,7 @@ export default function HomePage() {
         </MotionSection>
 
         {/* FAQ Section */}
-        <MotionSection id="faq" className="scroll-mt-24 border-y border-white/60 bg-[var(--color-surface)]/[0.58] py-12 backdrop-blur-xl md:py-20">
+        <MotionSection id="faq" className="scroll-mt-24 border-y border-[var(--color-border)]/70 bg-[var(--color-surface)]/[0.58] py-12 backdrop-blur-xl md:py-20">
           <div className="mx-auto max-w-3xl px-4 md:px-8 lg:px-12">
             <div dir="rtl" className="mb-8 text-center md:mb-16">
               <p className="font-arabic text-sm font-bold text-[var(--color-accent)]">أسئلة شائعة</p>
@@ -382,8 +385,9 @@ export default function HomePage() {
         {/* CTA Section */}
         <MotionSection id="contact" className="scroll-mt-24 py-12 md:py-20">
           <div className="mx-auto max-w-7xl px-4 md:px-8 lg:px-12">
-            <div dir="rtl" className="cta-panel px-5 py-14 text-center sm:px-6 md:px-10 md:py-20">
-              <CardFlow seed={3} intensity="bold" />
+            <div dir="rtl" className="media-panel px-5 py-14 text-center sm:px-6 md:px-10 md:py-20">
+              <BgVideo src="/cards/card-2.mp4" poster="/cards/card-2-poster.jpg" />
+              <span className="media-panel-veil" aria-hidden="true" />
               <div className="relative z-10 mx-auto max-w-3xl">
                 <h2 className="text-balance font-arabic text-3xl font-extrabold leading-snug tracking-tight text-[var(--color-text)] sm:text-4xl md:text-5xl">
                   <RevealText text="جاهز تحول فكرتك إلى موقع أو تطبيق يعمل؟" accentWords={['فكرتك']} />

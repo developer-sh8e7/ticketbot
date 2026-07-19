@@ -1,26 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft,
+  BadgeCheck,
   Check,
-  ShoppingCart,
-  LayoutDashboard,
+  Clock,
   GraduationCap,
-  LayoutTemplate,
-  Smartphone,
   Layers,
-  Sparkles,
+  LayoutDashboard,
+  LayoutTemplate,
+  LifeBuoy,
+  ShoppingCart,
+  Smartphone,
   X,
 } from 'lucide-react';
-import {
-  PackageArcCarousel,
-  type PackageArcInteraction,
-  type PackageArcItem,
-} from '@/components/PackageArcCarousel';
-import { PriceWithRiyal } from '@/components/RiyalIcon';
 
 export const packages = [
   {
@@ -184,14 +181,241 @@ const validCategories = new Set(packageCategories.map((c) => c.id));
 /** Event other components can dispatch to filter this section: `new CustomEvent('opus-select-category', { detail: 'ecommerce' })` */
 export const SELECT_CATEGORY_EVENT = 'opus-select-category';
 
+type Package = (typeof packages)[number];
+
+const CARD_FEATURE_COUNT = 4;
+
+/* One artwork per package, in display order. object-position keeps each
+   image's brightest zone behind the dark heading text and pushes the deep
+   teal areas toward the card bottom where the opaque CTA sits. */
+const CARD_ART = [
+  { src: '/cards/bgahcard-1.png', position: '20% 0%' },
+  { src: '/cards/bgahcard-2.png', position: '0% 0%' },
+  { src: '/cards/bgahcard-3.png', position: '50% 30%' },
+  { src: '/cards/bgahcard-4.png', position: '100% 0%' },
+  { src: '/cards/bgahcard-5.png', position: '0% 0%' },
+] as const;
+
+function PackagePrice({ pkg, size = 'card' }: { pkg: Package; size?: 'card' | 'modal' }) {
+  return (
+    <span className={`pkg-price-row ${size === 'modal' ? 'pkg-price-row-modal' : ''}`}>
+      <span className="pkg-price">
+        {pkg.price.toLocaleString('ar-SA')}
+        <small>ر.س</small>
+      </span>
+      {pkg.originalPrice > pkg.price ? (
+        <s className="pkg-price-old">{pkg.originalPrice.toLocaleString('ar-SA')} ر.س</s>
+      ) : null}
+      {pkg.discount > 0 ? <span className="pkg-price-save">وفر {pkg.discount}%</span> : null}
+    </span>
+  );
+}
+
+function PackageCard({
+  pkg,
+  index,
+  dimmed,
+  selected,
+  onOpen,
+}: {
+  pkg: Package;
+  index: number;
+  dimmed: boolean;
+  selected: boolean;
+  onOpen: (pkg: Package, trigger: HTMLElement) => void;
+}) {
+  const Icon = pkg.icon;
+  const art = CARD_ART[index % CARD_ART.length];
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 26 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.5, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
+      className={`pkg-card ${pkg.popular ? 'pkg-card-featured' : ''} ${dimmed ? 'is-dimmed' : ''} ${selected ? 'is-selected' : ''}`}
+    >
+      <span className="pkg-card-art" aria-hidden="true">
+        <Image
+          src={art.src}
+          alt=""
+          fill
+          sizes="(max-width: 639px) 92vw, (max-width: 1023px) 46vw, 30vw"
+          quality={82}
+          className="pkg-card-art-img"
+          style={{ objectPosition: art.position }}
+        />
+        <span className="pkg-card-art-veil" />
+      </span>
+      <button
+        type="button"
+        className="pkg-card-body font-arabic"
+        onClick={(event) => onOpen(pkg, event.currentTarget)}
+        aria-haspopup="dialog"
+        aria-expanded={selected}
+        aria-label={`عرض تفاصيل باقة ${pkg.name}`}
+      >
+        <span className="pkg-card-top">
+          <span className="pkg-chip">
+            <Icon size={21} strokeWidth={1.9} />
+          </span>
+          {pkg.popular ? <span className="pkg-card-badge">الأكثر طلبًا</span> : null}
+        </span>
+
+        <span className="pkg-card-category">{pkg.category}</span>
+        <strong className="pkg-card-name">{pkg.name}</strong>
+        <span className="pkg-card-desc">{pkg.description}</span>
+
+        <PackagePrice pkg={pkg} />
+
+        <span className="pkg-card-divider" aria-hidden="true" />
+
+        <ul className="pkg-features">
+          {pkg.features.slice(0, CARD_FEATURE_COUNT).map((feature) => (
+            <li key={feature}>
+              <span className="pkg-check">
+                <Check size={11} strokeWidth={3} />
+              </span>
+              {feature}
+            </li>
+          ))}
+        </ul>
+        {pkg.features.length > CARD_FEATURE_COUNT ? (
+          <span className="pkg-card-more-count">و{pkg.features.length - CARD_FEATURE_COUNT} ميزات أخرى ضمن الباقة</span>
+        ) : null}
+
+        <span className="pkg-card-cta">
+          عرض التفاصيل والطلب
+          <span className="pkg-card-cta-arrow">
+            <ArrowLeft size={15} />
+          </span>
+        </span>
+      </button>
+    </motion.article>
+  );
+}
+
+function PackageModal({ pkg, onClose }: { pkg: Package | null; onClose: () => void }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!pkg) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+      if (event.key !== 'Tab' || !panelRef.current) return;
+
+      const focusable = Array.from(
+        panelRef.current.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    panelRef.current?.focus({ preventScroll: true });
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [pkg, onClose]);
+
+  return (
+    <AnimatePresence>
+      {pkg ? (
+        <motion.div
+          className="pkg-modal-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.22 }}
+          onClick={onClose}
+        >
+          <motion.div
+            ref={panelRef}
+            tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            aria-label={pkg.name}
+            dir="rtl"
+            className="pkg-modal font-arabic"
+            initial={{ opacity: 0, y: 64, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 48, scale: 0.98 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <span className="pkg-modal-handle" aria-hidden="true" />
+
+            <div className="pkg-modal-head">
+              <span className="pkg-chip">
+                <pkg.icon size={22} strokeWidth={1.9} />
+              </span>
+              <div className="pkg-modal-titles">
+                <span className="pkg-card-category">{pkg.category}</span>
+                <strong className="pkg-modal-name">{pkg.name}</strong>
+              </div>
+              <button type="button" onClick={onClose} className="pkg-modal-close" aria-label="إغلاق">
+                <X size={18} />
+              </button>
+            </div>
+
+            <p className="pkg-modal-desc">{pkg.description}</p>
+
+            <div className="pkg-modal-meta">
+              <span>
+                <Clock size={15} />
+                {pkg.deliveryTime}
+              </span>
+              <span>
+                <BadgeCheck size={15} />
+                {pkg.quality}
+              </span>
+              <span>
+                <LifeBuoy size={15} />
+                {pkg.support}
+              </span>
+            </div>
+
+            <ul className="pkg-features pkg-modal-features">
+              {pkg.features.map((feature) => (
+                <li key={feature}>
+                  <span className="pkg-check">
+                    <Check size={11} strokeWidth={3} />
+                  </span>
+                  {feature}
+                </li>
+              ))}
+            </ul>
+
+            <div className="pkg-modal-footer">
+              <PackagePrice pkg={pkg} size="modal" />
+              <Link href="/project-request" className="pkg-modal-cta">
+                اطلب هذه الباقة
+                <ArrowLeft size={16} />
+              </Link>
+            </div>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+}
+
 export function PackagesSection({ initialCategory = 'all' }: { initialCategory?: string }) {
   const [selectedCategory, setSelectedCategory] = useState(
     validCategories.has(initialCategory) ? initialCategory : 'all'
   );
-  const [selectedPackage, setSelectedPackage] = useState<{
-    package: typeof packages[0];
-    interaction: PackageArcInteraction;
-  } | null>(null);
+  const [activePackage, setActivePackage] = useState<Package | null>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const nextCategory = validCategories.has(initialCategory) ? initialCategory : 'all';
@@ -210,189 +434,79 @@ export function PackagesSection({ initialCategory = 'all' }: { initialCategory?:
   }, []);
 
   const focusId = selectedCategory === 'all' ? null : selectedCategory;
-  const displayedPackage = selectedPackage;
 
-  const toggleSelectedDetails = (pkg: PackageArcItem | null, interaction: PackageArcInteraction) => {
-    if (!pkg) {
-      setSelectedPackage(null);
-      return;
-    }
-    const fullPackage = packages.find((candidate) => candidate.id === pkg.id);
-    if (fullPackage) setSelectedPackage({ package: fullPackage, interaction });
+  const openPackage = (pkg: Package, trigger: HTMLElement) => {
+    triggerRef.current = trigger;
+    setActivePackage(pkg);
+  };
+
+  const closePackage = () => {
+    setActivePackage(null);
+    triggerRef.current?.focus();
   };
 
   return (
     <div dir="rtl" className="relative">
-      {/* Category Tabs */}
-      <div
-        className="opus-horizontal-track relative z-10 -mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:flex-wrap sm:items-center sm:justify-center sm:overflow-visible sm:px-0"
-        role="tablist"
-        aria-label="تصنيف الباقات"
-      >
-        {packageCategories.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => {
-              setSelectedCategory(cat.id);
-            }}
-            role="tab"
-            aria-selected={selectedCategory === cat.id}
-            className={`inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full px-4 py-2.5 font-arabic text-sm font-bold backdrop-blur-xl transition-all duration-300 ${
-              selectedCategory === cat.id
-                ? 'border border-white/70 bg-[var(--color-accent)] text-[var(--color-on-accent)] shadow-[0_12px_34px_rgba(15,201,143,0.24)]'
-                : 'border border-white/70 bg-[var(--color-surface)]/75 text-[var(--color-muted)] hover:border-[var(--color-accent)]/50 hover:text-[var(--color-text)]'
-            }`}
-          >
-            <cat.icon size={16} />
-            {cat.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="package-orbit-shell relative mx-[calc(50%-50vw)] mt-4 w-screen overflow-hidden sm:mt-6">
-        <PackageArcCarousel
-          items={packages}
-          focusId={focusId}
-          selectedId={selectedPackage?.package.id ?? null}
-          onActivate={toggleSelectedDetails}
-        />
-        <div className="package-orbit-edge package-orbit-edge-start" aria-hidden="true" />
-        <div className="package-orbit-edge package-orbit-edge-end" aria-hidden="true" />
-
-        <AnimatePresence mode="wait">
-          {displayedPackage ? (
-            <motion.aside
-              key={displayedPackage.package.id}
-              initial={{ opacity: 0, scaleX: 0.05, scaleY: 0.08, x: 26, filter: 'blur(18px)' }}
-              animate={{ opacity: 1, scaleX: 1, scaleY: 1, x: 0, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, scaleX: 0.08, scaleY: 0.12, x: 18, filter: 'blur(12px)' }}
-              transition={{ duration: 0.72, delay: 0.72, ease: [0.16, 1, 0.3, 1] }}
-              style={{ transformOrigin: '100% 14%' }}
-              className="package-orbit-detail is-left"
-              aria-live="polite"
+      <div className="relative z-10">
+        {/* Category Tabs */}
+        <div
+          className="opus-horizontal-track -mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:flex-wrap sm:items-center sm:justify-center sm:overflow-visible sm:px-0"
+          role="tablist"
+          aria-label="تصنيف الباقات"
+        >
+          {packageCategories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => {
+                setSelectedCategory(cat.id);
+              }}
+              role="tab"
+              aria-selected={selectedCategory === cat.id}
+              className={`inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full px-4 py-2.5 font-arabic text-sm font-bold backdrop-blur-xl transition-all duration-300 ${
+                selectedCategory === cat.id
+                  ? 'border border-white/70 bg-[var(--color-accent)] text-[var(--color-on-accent)] shadow-[0_12px_34px_rgba(15,201,143,0.24)]'
+                  : 'border border-white/70 bg-[var(--color-surface)]/75 text-[var(--color-muted)] hover:border-[var(--color-accent)]/50 hover:text-[var(--color-text)]'
+              }`}
             >
-              <div className="package-orbit-detail-glow" aria-hidden="true" />
-              <div className="package-orbit-detail-scan" aria-hidden="true" />
-              <i className="package-orbit-corner package-orbit-corner-tl" aria-hidden="true" />
-              <i className="package-orbit-corner package-orbit-corner-br" aria-hidden="true" />
-              <div className="relative z-10">
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.48, delay: 1.02, ease: [0.16, 1, 0.3, 1] }}
-                  className="mb-3 flex items-center justify-between font-english text-[10px] font-bold tracking-[0.18em] text-[var(--color-accent-2)]"
-                >
-                  <span>OPUS / PACKAGE SIGNAL</span>
-                  <span className="package-orbit-live-dot">LIVE</span>
-                </motion.div>
+              <cat.icon size={16} />
+              {cat.label}
+            </button>
+          ))}
+        </div>
 
-                <motion.div
-                  initial={{ opacity: 0, y: 18, filter: 'blur(8px)' }}
-                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                  transition={{ duration: 0.54, delay: 1.1, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex items-start justify-between gap-4"
-                >
-                  <div>
-                    <div className="inline-flex items-center gap-2 font-arabic text-xs font-extrabold text-[var(--color-accent-2)]">
-                      <Sparkles size={14} />
-                      {displayedPackage.package.category}
-                    </div>
-                    <h3 className="mt-2 font-arabic text-2xl font-extrabold leading-tight text-[var(--color-text)] sm:text-3xl">
-                      {displayedPackage.package.name}
-                    </h3>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedPackage(null)}
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/80 bg-white/60 text-[var(--color-text)] transition hover:rotate-90 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                    aria-label="إغلاق تفاصيل الباقة"
-                  >
-                    <X size={17} />
-                  </button>
-                </motion.div>
+        <div className="packages-grid mt-6 grid items-stretch gap-4 sm:mt-8 sm:grid-cols-2 md:gap-5 lg:grid-cols-6">
+          {packages.map((pkg, index) => (
+            <PackageCard
+              key={pkg.id}
+              pkg={pkg}
+              index={index}
+              dimmed={Boolean(focusId && focusId !== pkg.id)}
+              selected={activePackage?.id === pkg.id}
+              onOpen={openPackage}
+            />
+          ))}
+        </div>
 
-                <motion.div
-                  initial={{ opacity: 0, scaleX: 0.2 }}
-                  animate={{ opacity: 1, scaleX: 1 }}
-                  transition={{ duration: 0.62, delay: 1.22, ease: [0.16, 1, 0.3, 1] }}
-                  style={{ transformOrigin: 'right' }}
-                  className="mt-4 flex items-end justify-between gap-4 border-y border-[var(--color-text)]/10 py-3"
-                >
-                  <PriceWithRiyal amount={displayedPackage.package.price} size="lg" />
-                  {displayedPackage.package.discount > 0 ? (
-                    <span className="rounded-full bg-[var(--aurora-lime)] px-3 py-1 font-arabic text-xs font-extrabold text-[var(--color-on-accent)]">
-                      وفر {displayedPackage.package.discount}%
-                    </span>
-                  ) : null}
-                </motion.div>
+        <p className="mt-8 text-center font-arabic text-xs text-[var(--color-muted)] sm:text-sm">
+          اضغط على أي باقة لعرض تفاصيلها الكاملة وطلبها،{' '}
+          <Link
+            href="/project-request"
+            className="font-extrabold text-[var(--color-accent-2)] underline underline-offset-4"
+          >
+            أو اطلب عرض مخصص
+          </Link>
+        </p>
 
-                <motion.p
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.48, delay: 1.34, ease: [0.16, 1, 0.3, 1] }}
-                  className="mt-3 line-clamp-2 font-arabic text-sm leading-7 text-[var(--color-muted)]"
-                >
-                  {displayedPackage.package.description}
-                </motion.p>
-
-                <motion.ul
-                  initial="hidden"
-                  animate="visible"
-                  variants={{
-                    hidden: {},
-                    visible: { transition: { delayChildren: 1.42, staggerChildren: 0.08 } },
-                  }}
-                  className="mt-3 grid gap-1.5"
-                >
-                  {displayedPackage.package.features.slice(0, 3).map((feature) => (
-                    <motion.li
-                      key={feature}
-                      variants={{ hidden: { opacity: 0, x: 16 }, visible: { opacity: 1, x: 0 } }}
-                      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                      className="flex items-start gap-2 font-arabic text-xs leading-6 text-[var(--color-text)]"
-                    >
-                      <span className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)] text-[var(--color-on-accent)]">
-                        <Check size={10} strokeWidth={3} />
-                      </span>
-                      <span className="line-clamp-1">{feature}</span>
-                    </motion.li>
-                  ))}
-                </motion.ul>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 14, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.52, delay: 1.7, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <Link
-                    href="/project-request"
-                    className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--color-text)] px-5 py-2.5 font-arabic text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[var(--color-accent-2)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                  >
-                    ابدأ مشروعك
-                    <ArrowLeft size={16} />
-                  </Link>
-                </motion.div>
-              </div>
-            </motion.aside>
-          ) : null}
-        </AnimatePresence>
+        <ul className="sr-only" aria-label="قائمة الباقات النصية">
+          {packages.map((pkg) => (
+            <li key={pkg.id}>
+              <strong>{pkg.name}</strong>: {pkg.description} — {pkg.price.toLocaleString('ar-SA')} ريال
+            </li>
+          ))}
+        </ul>
       </div>
 
-      <div className="mt-4 flex flex-col items-center justify-center gap-1 text-center font-arabic text-xs text-[var(--color-muted)] sm:flex-row sm:gap-3">
-        <span>اسحب البطاقات يمين ويسار</span>
-        <span className="hidden h-1 w-1 rounded-full bg-[var(--color-accent)] sm:block" />
-        <span>اضغط على البطاقة لاطلاق التفاصيل</span>
-        <Link href="/project-request" className="mt-2 font-extrabold text-[var(--color-accent-2)] underline underline-offset-4 sm:mt-0">أو اطلب عرض مخصص</Link>
-      </div>
-
-      <ul className="sr-only" aria-label="قائمة الباقات النصية">
-        {packages.map((pkg) => (
-          <li key={pkg.id}>
-            <strong>{pkg.name}</strong>: {pkg.description} — {pkg.price.toLocaleString('ar-SA')} ريال
-          </li>
-        ))}
-      </ul>
-
+      <PackageModal pkg={activePackage} onClose={closePackage} />
     </div>
   );
 }

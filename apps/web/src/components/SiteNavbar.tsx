@@ -28,6 +28,9 @@ function discordAvatarUrl(user: SessionUser) {
 
 export function SiteNavbar() {
   const pathname = usePathname();
+  const isDiscordArea = ['/bots', '/commands', '/pricing', '/cart', '/dashboard', '/login'].some((path) =>
+    pathname.startsWith(path)
+  ) || (pathname.startsWith('/product/') && !pathname.startsWith('/product/custom'));
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -62,6 +65,11 @@ export function SiteNavbar() {
   }, [open]);
 
   useEffect(() => {
+    if (!isDiscordArea) {
+      setAuthChecked(true);
+      return undefined;
+    }
+
     let active = true;
     fetch('/api/dashboard/me', { cache: 'no-store' })
       .then((res) => (res.ok ? res.json() : null))
@@ -73,13 +81,10 @@ export function SiteNavbar() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [isDiscordArea]);
 
   const isElevated = scrolled || open;
   const avatar = user ? discordAvatarUrl(user) : null;
-  const isDiscordArea = ['/bots', '/commands', '/pricing', '/cart', '/dashboard', '/login', '/packages'].some((path) =>
-    pathname.startsWith(path)
-  ) || (pathname.startsWith('/product/') && !pathname.startsWith('/product/custom'));
   const visibleLinks = isDiscordArea ? [...links, { label: 'الدعم الفني', href: SUPPORT_URL, icon: FileText }] : links;
 
   const CartButton = (

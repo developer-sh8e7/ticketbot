@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
+import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, Check } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -189,10 +190,13 @@ type SolutionCardProps = {
   variant: AudienceCardVariant;
   index: number;
   onExplore: () => void;
+  /** Background artwork; when set it replaces the blob flow. `tone` picks the veil + text scheme. */
+  image?: string;
+  tone?: 'light' | 'dark';
 };
 
 /** Mobile-first solution card with an intentional two-step reveal before navigation. */
-export function SolutionCard({ label, description, visual, variant, index, onExplore }: SolutionCardProps) {
+export function SolutionCard({ label, description, visual, variant, index, onExplore, image, tone = 'light' }: SolutionCardProps) {
   const [open, setOpen] = useState(false);
   const themeForeground = useThemeForeground();
 
@@ -210,10 +214,23 @@ export function SolutionCard({ label, description, visual, variant, index, onExp
         delay: index * 0.07,
         ease: [0.22, 1, 0.36, 1],
       }}
-      className={`solution-flow-card flow-card-${variant} ${open ? 'is-open' : ''}`}
+      className={`solution-flow-card ${image ? `solution-flow-media solution-flow-${tone}` : `flow-card-${variant}`} ${open ? 'is-open' : ''}`}
       style={{ '--flow-card-fg': themeForeground, transformPerspective: 1100 } as CSSProperties}
     >
-      <CardFlow seed={index + 7} intensity={variant === 'solid' ? 'bold' : 'soft'} />
+      {image ? (
+        <span className="solution-flow-bg" aria-hidden="true">
+          <Image
+            src={image}
+            alt=""
+            fill
+            sizes="(max-width: 479px) 92vw, (max-width: 1023px) 46vw, 30vw"
+            className="solution-flow-bg-img"
+          />
+          <span className="solution-flow-bg-veil" />
+        </span>
+      ) : (
+        <CardFlow seed={index + 7} intensity={variant === 'solid' ? 'bold' : 'soft'} />
+      )}
       <span className="flow-card-sweep" aria-hidden="true" />
 
       <motion.button

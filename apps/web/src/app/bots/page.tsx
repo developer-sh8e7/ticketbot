@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { ArrowLeft, SquareTerminal } from 'lucide-react';
 import { FaqAccordion } from '@/components/FaqAccordion';
 import { HomeProductsGrid } from '@/components/HomeProductsGrid';
@@ -9,6 +10,7 @@ import { PublicFrame } from '@/components/ui';
 import { WelcomeScene3D } from '@/components/WelcomeScene3D';
 import { products } from '@/lib/site-content';
 import { getPublicStock } from '@/lib/public-stock';
+import { getSession } from '@/lib/sessions';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +21,27 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function BotsPage() {
+type BotsPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+function botsReturnTo(params: Record<string, string | string[] | undefined>) {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (Array.isArray(value)) value.forEach((item) => query.append(key, item));
+    else if (value !== undefined) query.set(key, value);
+  }
+  const encoded = query.toString();
+  return encoded ? `/bots?${encoded}` : '/bots';
+}
+
+export default async function BotsPage({ searchParams }: BotsPageProps) {
+  const session = await getSession();
+  if (!session) {
+    const returnTo = botsReturnTo(await searchParams);
+    redirect(`/api/auth/discord?returnTo=${encodeURIComponent(returnTo)}`);
+  }
+
   const botProducts = products().filter((product) => product.key !== 'custom');
   const stock = await getPublicStock();
   const productCards = botProducts.map((product) => {

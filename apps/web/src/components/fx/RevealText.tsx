@@ -23,16 +23,21 @@ export function RevealText({
   return (
     <span className={`whitespace-normal overflow-visible ${className ?? ''}`} aria-label={text}>
       {words.map((word, i) => (
-        <span key={`${word}-${i}`} className="inline-block align-baseline">
-          <motion.span
-            initial={{ y: '0.55em', opacity: 0, filter: 'blur(6px)' }}
-            whileInView={{ y: '0em', opacity: 1, filter: 'blur(0px)' }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ duration: 0.7, delay: delay + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
-            className={`inline-block will-change-transform ${accentWords.includes(word) ? 'text-[var(--color-accent)]' : ''}`}
-          >
-            {word}
-          </motion.span>
+        // The word-space text node must sit BETWEEN the inline-block wrappers:
+        // trailing whitespace inside an inline-block collapses, which visually
+        // fuses Arabic words together.
+        <span key={`${word}-${i}`}>
+          <span className="inline-block align-baseline">
+            <motion.span
+              initial={{ y: '0.55em', opacity: 0, filter: 'blur(6px)' }}
+              whileInView={{ y: '0em', opacity: 1, filter: 'blur(0px)' }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 0.7, delay: delay + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+              className={`inline-block will-change-transform ${accentWords.includes(word) ? 'text-[var(--color-accent)]' : ''}`}
+            >
+              {word}
+            </motion.span>
+          </span>
           {i < words.length - 1 ? ' ' : null}
         </span>
       ))}

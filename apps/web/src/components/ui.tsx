@@ -26,7 +26,7 @@ export function Navbar() {
 
 export function Footer() {
   return (
-    <footer dir="rtl" className="relative z-10 border-t border-white/60 bg-[var(--color-bg)]/80 backdrop-blur-2xl">
+    <footer dir="rtl" className="relative z-10 border-t border-[var(--color-border)]/70 bg-[var(--color-bg)]/80 backdrop-blur-2xl">
       <div className="mx-auto max-w-7xl px-4 py-12 md:px-8 md:py-14 lg:px-12">
         <div className="grid grid-cols-2 gap-x-6 gap-y-9 md:grid-cols-4 md:gap-10">
           <div className="col-span-2 md:col-span-1">

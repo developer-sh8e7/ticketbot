@@ -2,6 +2,7 @@
 
 import { Suspense } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -18,19 +19,20 @@ import {
 } from 'lucide-react';
 import { PublicFrame } from '@/components/ui';
 import { PackagesSection } from '@/components/PackagesSection';
+import { BgVideo } from '@/components/fx/BgVideo';
 
 export default function PackagesPage() {
-  return (
-    <Suspense fallback={null}>
-      <PackagesContent />
-    </Suspense>
-  );
+  return <PackagesContent />;
+}
+
+/* Only this small child reads the query string, so the Suspense boundary
+   covers just the pricing grid instead of deferring the whole page. */
+function PackagesWithCategory() {
+  const searchParams = useSearchParams();
+  return <PackagesSection initialCategory={searchParams.get('cat') ?? 'all'} />;
 }
 
 function PackagesContent() {
-  const searchParams = useSearchParams();
-  const catParam = searchParams.get('cat') ?? 'all';
-
   return (
     <PublicFrame>
     <div dir="rtl">
@@ -60,9 +62,15 @@ function PackagesContent() {
       </section>
 
       {/* Packages Grid */}
-      <section id="packages" className="pb-16 md:pb-24">
-        <div className="mx-auto max-w-7xl px-4 md:px-8 lg:px-12">
-          <PackagesSection initialCategory={catParam} />
+      <section id="packages" className="relative pb-16 pt-6 md:pb-24">
+        <div className="packages-scene" aria-hidden="true">
+          <Image src="/cards/cardopus6.jpg" alt="" fill sizes="100vw" className="packages-scene-img" />
+          <span className="packages-scene-veil" />
+        </div>
+        <div className="relative z-10 mx-auto max-w-7xl px-4 md:px-8 lg:px-12">
+          <Suspense fallback={<PackagesSection />}>
+            <PackagesWithCategory />
+          </Suspense>
         </div>
       </section>
 
@@ -168,7 +176,10 @@ function PackagesContent() {
       {/* CTA Section */}
       <section className="pb-16 md:pb-24">
         <div className="mx-auto max-w-7xl px-4 md:px-8 lg:px-12">
-          <div className="relative overflow-hidden rounded-3xl border border-[var(--color-border)] bg-gradient-to-br from-[var(--color-accent)] via-[var(--color-accent)]/90 to-[var(--color-accent-2)] p-8 md:p-12 lg:p-16 text-center">
+          <div className="custom-quote-panel p-8 text-center md:p-12 lg:p-16">
+            <span className="custom-quote-fallback" aria-hidden="true" />
+            <BgVideo src="/cards/card-1.mp4" poster="/cards/card-1-poster.jpg" />
+            <span className="custom-quote-veil" aria-hidden="true" />
             <div className="relative z-10">
               <h2 className="font-arabic text-3xl font-extrabold text-white md:text-4xl lg:text-5xl">
                 لم تجد ما يناسبك تماماً؟
