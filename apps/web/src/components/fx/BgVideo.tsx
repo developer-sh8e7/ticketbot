@@ -29,13 +29,18 @@ export function BgVideo({ src, poster }: { src: string; poster?: string }) {
 
     if (reducedMotion.matches) return;
 
-    // Play on mount (autoPlay may be blocked on mobile)
-    video.play().catch(() => {});
+    // Play on mount — retry once after a short load delay
+    const playVideo = () => {
+      video.play().catch(() => {
+        setTimeout(() => video.play().catch(() => {}), 300);
+      });
+    };
+    playVideo();
 
     // Pause when tab hidden, resume when visible
     const onVisibility = () => {
       if (document.hidden) video.pause();
-      else video.play().catch(() => {});
+      else playVideo();
     };
     document.addEventListener('visibilitychange', onVisibility);
 
@@ -45,7 +50,7 @@ export function BgVideo({ src, poster }: { src: string; poster?: string }) {
         video.pause();
         showPoster();
       } else {
-        video.play().catch(() => {});
+        playVideo();
       }
     };
     reducedMotion.addEventListener('change', onMotionChange);
@@ -78,7 +83,7 @@ export function BgVideo({ src, poster }: { src: string; poster?: string }) {
         muted
         loop
         playsInline
-        preload="metadata"
+        preload="auto"
         disablePictureInPicture
         aria-hidden="true"
         tabIndex={-1}
