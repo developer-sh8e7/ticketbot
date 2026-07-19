@@ -575,6 +575,12 @@ body.custom-cursor, body.custom-cursor * { cursor: none !important; }
   );
 }
 
+.stat-cell {
+  /* Allow the cell to shrink so the grid track can hold a long counter
+     (e.g. `100%`) without clipping its edge on mobile. */
+  min-width: 0;
+}
+
 .stat-cell-divided {
   border-inline-start: 1px solid transparent;
   border-image: linear-gradient(
@@ -592,6 +598,9 @@ body.custom-cursor, body.custom-cursor * { cursor: none !important; }
   background-clip: text;
   color: transparent;
   letter-spacing: -0.02em;
+  white-space: nowrap;
+  word-break: keep-all;
+  line-height: 1;
 }
 
 .stat-underline {

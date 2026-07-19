@@ -4,8 +4,17 @@ import { useEffect, useRef } from 'react';
 
 /**
  * Decorative background video: muted, looping.
- * Only pauses when the browser tab is hidden.
- * Purely visual (aria-hidden); the poster paints before the video loads.
+ * Robust playback for desktop AND mobile (iOS Safari + Android Chrome):
+ *   - IntersectionObserver retries play() every time the panel scrolls in
+ *     (mobile browsers often block autoplay until the element is on screen)
+ *   - listens for `loadeddata`/`canplay` and tries to play as soon as data is
+ *     available, so a slow `preload="auto"` over cellular data doesn't strand
+ *     the poster forever
+ *   - retries play() on a short escalating schedule (300ms → 1200ms) and again
+ *     on every visibilitychange / intersection event
+ *   - pauses when the tab is hidden or the panel is off-screen (saves battery)
+ *   - poster overlay disappears the moment `playing` fires
+ * Purely visual (aria-hidden).
  */
 export function BgVideo({ src, poster }: { src: string; poster?: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -21,47 +30,131 @@ export function BgVideo({ src, poster }: { src: string; poster?: string }) {
     // ── Poster visibility ──────────────────────────────────────────
     const showPoster = () => posterEl.classList.add('is-visible');
     const hidePoster = () => posterEl.classList.remove('is-visible');
-    video.addEventListener('playing', hidePoster);
-    video.addEventListener('pause', showPoster);
-    video.addEventListener('waiting', showPoster);
-    video.addEventListener('error', showPoster);
+    const onPlaying = () => hidePoster();
+    const onPause = () => showPoster();
+    const onWaiting = () => showPoster();
+    const onError = () => showPoster();
+    video.addEventListener('playing', onPlaying);
+    video.addEventListener('pause', onPause);
+    video.addEventListener('waiting', onWaiting);
+    video.addEventListener('error', onError);
     posterEl.classList.add('is-visible');
 
-    if (reducedMotion.matches) return;
+    if (reducedMotion.matches) {
+      // Honour reduced-motion: leave poster visible, don't try to play.
+      return () => {
+        video.removeEventListener('playing', onPlaying);
+        video.removeEventListener('pause', onPause);
+        video.removeEventListener('waiting', onWaiting);
+        video.removeEventListener('error', onError);
+      };
+    }
 
-    // Play on mount — retry once after a short load delay
-    const playVideo = () => {
-      video.play().catch(() => {
-        setTimeout(() => video.play().catch(() => {}), 300);
-      });
+    // ── Play helpers ──────────────────────────────────────────────
+    // Many mobile browsers reject play() if it isn't user-driven OR if the
+    // element isn't ready. We retry a few times and again on intersection.
+    let retryHandle: number | undefined;
+    let cancelled = false;
+
+    const attemptPlay = () => {
+      if (cancelled) return;
+      video
+        .play()
+        .then(() => hidePoster())
+        .catch((err) => {
+          if (cancelled) return;
+          // NotAllowedError => autoplay blocked; AbortError => play() interrupted
+          // by pause(). Either way: schedule another attempt later.
+          if (err?.name && err.name !== 'NotAllowedError' && err.name !== 'AbortError') {
+            // eslint-disable-next-line no-console
+            console.debug('[BgVideo] play() failed:', err.name);
+          }
+        });
     };
-    playVideo();
+
+    const scheduleRetry = (delay: number) => {
+      if (retryHandle) window.clearTimeout(retryHandle);
+      retryHandle = window.setTimeout(() => {
+        if (!cancelled && !reducedMotion.matches) attemptPlay();
+      }, delay);
+    };
+
+    const onLoadedData = () => {
+      // Data is ready — try to start now (covers the slow-cellular case).
+      attemptPlay();
+    };
+    const onCanPlay = () => attemptPlay();
+    video.addEventListener('loadeddata', onLoadedData);
+    video.addEventListener('canplay', onCanPlay);
+
+    // Kick off playback + escalating retries
+    attemptPlay();
+    scheduleRetry(300);
+    scheduleRetry(1200);
 
     // Pause when tab hidden, resume when visible
     const onVisibility = () => {
-      if (document.hidden) video.pause();
-      else playVideo();
+      if (cancelled) return;
+      if (document.hidden) {
+        video.pause();
+        showPoster();
+      } else {
+        attemptPlay();
+        scheduleRetry(400);
+      }
     };
     document.addEventListener('visibilitychange', onVisibility);
 
     // React to reduced-motion preference changes
     const onMotionChange = (e: MediaQueryListEvent) => {
+      if (cancelled) return;
       if (e.matches) {
+        if (retryHandle) window.clearTimeout(retryHandle);
         video.pause();
         showPoster();
       } else {
-        playVideo();
+        attemptPlay();
+        scheduleRetry(300);
       }
     };
     reducedMotion.addEventListener('change', onMotionChange);
 
+    // IntersectionObserver: re-attempt play whenever the panel is on screen.
+    // This is the main fix for mobile — autoplay is often deferred until the
+    // element actually intersects the viewport.
+    let intersectionObserver: IntersectionObserver | null = null;
+    if (typeof IntersectionObserver !== 'undefined') {
+      intersectionObserver = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (cancelled) return;
+            if (entry.isIntersecting) {
+              attemptPlay();
+              scheduleRetry(250);
+            } else {
+              // Off-screen: pause to save battery/CPU
+              video.pause();
+              showPoster();
+            }
+          }
+        },
+        { root: null, rootMargin: '200px', threshold: 0.01 },
+      );
+      intersectionObserver.observe(video);
+    }
+
     return () => {
-      video.removeEventListener('playing', hidePoster);
-      video.removeEventListener('pause', showPoster);
-      video.removeEventListener('waiting', showPoster);
-      video.removeEventListener('error', showPoster);
+      cancelled = true;
+      if (retryHandle) window.clearTimeout(retryHandle);
+      video.removeEventListener('playing', onPlaying);
+      video.removeEventListener('pause', onPause);
+      video.removeEventListener('waiting', onWaiting);
+      video.removeEventListener('error', onError);
+      video.removeEventListener('loadeddata', onLoadedData);
+      video.removeEventListener('canplay', onCanPlay);
       document.removeEventListener('visibilitychange', onVisibility);
       reducedMotion.removeEventListener('change', onMotionChange);
+      intersectionObserver?.disconnect();
     };
   }, []);
 
